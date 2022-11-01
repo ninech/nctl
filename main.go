@@ -14,8 +14,9 @@ import (
 )
 
 type flags struct {
-	Namespace  string `help:"Limit commands to a namespace." short:"n"`
-	APICluster string `help:"Context name of the API cluster." default:"nineapis.ch"`
+	Namespace  string           `help:"Limit commands to a namespace." short:"n"`
+	APICluster string           `help:"Context name of the API cluster." default:"nineapis.ch"`
+	Version    kong.VersionFlag `name:"version" help:"Print version information and quit."`
 }
 
 type rootCommand struct {
@@ -25,9 +26,17 @@ type rootCommand struct {
 	Completions kongplete.InstallCompletions `cmd:"" help:"Print shell completions."`
 }
 
+var version = "dev"
+
 func main() {
 	nctl := &rootCommand{}
-	parser := kong.Must(nctl, kong.Name("nctl"), kong.Description("Interact with Nine API resources."), kong.UsageOnError())
+	parser := kong.Must(
+		nctl,
+		kong.Name("nctl"),
+		kong.Description("Interact with Nine API resources."),
+		kong.UsageOnError(),
+		kong.Vars{"version": version},
+	)
 
 	// completion handling
 	kongplete.Complete(parser, kongplete.WithPredictor("file", complete.PredictFiles("*")))
