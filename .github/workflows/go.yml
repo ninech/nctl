@@ -2,15 +2,20 @@ name: go
 
 on: [pull_request]
 
+env:
+  GOPRIVATE: github.com/ninech/apis
+  GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+
 jobs:
   golangci:
     name: lint
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
         with:
           go-version: 1.19
-      - uses: actions/checkout@v3
+      - run: git config --global url.https://$GH_ACCESS_TOKEN@github.com/.insteadOf https://github.com/
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
@@ -24,7 +29,7 @@ jobs:
     - uses: actions/setup-go@v3
       with:
         go-version: 1.19
-
+    - run: git config --global url.https://$GH_ACCESS_TOKEN@github.com/.insteadOf https://github.com/
     - name: Get dependencies
       run: go get -v -t -d ./...
 
