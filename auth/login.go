@@ -119,7 +119,7 @@ func login(newConfig *clientcmdapi.Config, kubeconfigPath string, opts ...loginO
 		return err
 	}
 
-	fmt.Printf(" ✓ added %s to kubeconfig 📝\n", kubeconfig.CurrentContext)
+	fmt.Printf(" ✓ added %s to kubeconfig 📋\n", kubeconfig.CurrentContext)
 
 	if loginConfig.execPlugin {
 		authInfo := newConfig.AuthInfos[newConfig.CurrentContext]
@@ -139,19 +139,4 @@ func login(newConfig *clientcmdapi.Config, kubeconfigPath string, opts ...loginO
 	}
 
 	return err
-}
-
-func mergeConfig(from, to *clientcmdapi.Config) {
-	for k, v := range from.Clusters {
-		to.Clusters[k] = v
-	}
-
-	for k, v := range from.AuthInfos {
-		to.AuthInfos[k] = v
-	}
-	for k, v := range from.Contexts {
-		to.Contexts[k] = v
-	}
-
-	to.CurrentContext = from.CurrentContext
 }

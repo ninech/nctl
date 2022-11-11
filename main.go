@@ -8,6 +8,8 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/auth"
+	"github.com/ninech/nctl/create"
+	"github.com/ninech/nctl/delete"
 	"github.com/ninech/nctl/get"
 	"github.com/posener/complete"
 	"github.com/willabides/kongplete"
@@ -24,6 +26,8 @@ type rootCommand struct {
 	Get         get.Cmd                      `cmd:"" help:"Get resource."`
 	Auth        auth.Cmd                     `cmd:"" help:"Authenticate with resource."`
 	Completions kongplete.InstallCompletions `cmd:"" help:"Print shell completions."`
+	Create      create.Cmd                   `cmd:"" help:"Create resource."`
+	Delete      delete.Cmd                   `cmd:"" help:"Delete resource."`
 }
 
 var version = "dev"
