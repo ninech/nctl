@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
 
 	"github.com/alecthomas/kong"
@@ -33,6 +35,10 @@ type rootCommand struct {
 var version = "dev"
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	setupSignalHandler(ctx, cancel)
+
 	nctl := &rootCommand{}
 	parser := kong.Must(
 		nctl,
@@ -40,32 +46,49 @@ func main() {
 		kong.Description("Interact with Nine API resources."),
 		kong.UsageOnError(),
 		kong.Vars{"version": version},
+		kong.BindTo(ctx, (*context.Context)(nil)),
 	)
 
 	// completion handling
 	kongplete.Complete(parser, kongplete.WithPredictor("file", complete.PredictFiles("*")))
 
-	ctx, err := parser.Parse(os.Args[1:])
+	kongCtx, err := parser.Parse(os.Args[1:])
 	parser.FatalIfErrorf(err)
 
 	// handle the login/oidc cmds separately as we should not try to get the
 	// API client if we're not logged in.
-	if strings.HasPrefix(ctx.Command(), auth.LoginCmdName) {
-		ctx.FatalIfErrorf(nctl.Auth.Login.Run(ctx.Model.Name))
+	if strings.HasPrefix(kongCtx.Command(), auth.LoginCmdName) {
+		kongCtx.FatalIfErrorf(nctl.Auth.Login.Run(kongCtx.Model.Name))
 		return
 	}
 
-	if strings.HasPrefix(ctx.Command(), auth.OIDCCmdName) {
-		ctx.FatalIfErrorf(nctl.Auth.OIDC.Run())
+	if strings.HasPrefix(kongCtx.Command(), auth.OIDCCmdName) {
+		kongCtx.FatalIfErrorf(nctl.Auth.OIDC.Run(ctx))
 		return
 	}
 
 	client, err := api.New(nctl.APICluster, nctl.Namespace)
 	if err != nil {
 		fmt.Println(err)
-		fmt.Printf("\nUnable to get API client, are you logged in?\n\nUse `%s %s` to login.\n", ctx.Model.Name, auth.LoginCmdName)
+		fmt.Printf("\nUnable to get API client, are you logged in?\n\nUse `%s %s` to login.\n", kongCtx.Model.Name, auth.LoginCmdName)
 		os.Exit(1)
 	}
 
-	ctx.FatalIfErrorf(ctx.Run(client))
+	kongCtx.FatalIfErrorf(kongCtx.Run(ctx, client))
+}
+
+func setupSignalHandler(ctx context.Context, cancel context.CancelFunc) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		defer func() {
+			signal.Stop(c)
+		}()
+
+		select {
+		case <-c:
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
 }
