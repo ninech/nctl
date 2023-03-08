@@ -14,7 +14,7 @@ import (
 type LoginCmd struct {
 	Organization string `arg:"" help:"Name of the organization to login to."`
 	APIURL       string `help:"The URL of the Nine API" default:"https://nineapis.ch"`
-	IssuerURL    string `help:"Issuer URL is the OIDC issuer URL of the API." default:"https://auth.nine.ch/auth/realms/cust"`
+	IssuerURL    string `help:"Issuer URL is the OIDC issuer URL of the API." default:"https://auth.nine.ch/auth/realms/pub"`
 	ClientID     string `help:"Client ID is the OIDC client ID of the API." default:"nineapis.ch-f178254"`
 	ExecPlugin   bool   `help:"Automatically run exec plugin after writing the kubeconfig." hidden:"" default:"true"`
 }
