@@ -19,14 +19,14 @@ type ClusterCmd struct {
 
 const kubeconfigSecretKey = "kubeconfig"
 
-func (a *ClusterCmd) Run(client *api.Client) error {
+func (a *ClusterCmd) Run(ctx context.Context, client *api.Client) error {
 	name, err := clusterName(a.Name, client.Namespace)
 	if err != nil {
 		return err
 	}
 
 	cluster := &infrastructure.KubernetesCluster{}
-	if err := client.Get(context.Background(), name, cluster); err != nil {
+	if err := client.Get(ctx, name, cluster); err != nil {
 		return err
 	}
 
@@ -35,7 +35,7 @@ func (a *ClusterCmd) Run(client *api.Client) error {
 	}
 
 	secret := &corev1.Secret{}
-	if err := client.Get(context.Background(), types.NamespacedName{
+	if err := client.Get(ctx, types.NamespacedName{
 		Name:      cluster.Spec.WriteConnectionSecretToReference.Name,
 		Namespace: cluster.Spec.WriteConnectionSecretToReference.Namespace,
 	}, secret); err != nil {

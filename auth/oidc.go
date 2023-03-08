@@ -45,7 +45,7 @@ var (
 	defaultAuthTimeout   = 180 * time.Second
 )
 
-func (o *OIDCCmd) Run() error {
+func (o *OIDCCmd) Run(ctx context.Context) error {
 	in := credentialplugin.Input{
 		Provider: oidc.Provider{
 			IssuerURL:    o.IssuerURL,
@@ -107,7 +107,7 @@ func (o *OIDCCmd) Run() error {
 		in.TokenCacheDir = path.Join(homedir.HomeDir(), defaultTokenCachePath)
 	}
 
-	if err := getToken.Do(context.Background(), in); err != nil {
+	if err := getToken.Do(ctx, in); err != nil {
 		return fmt.Errorf("error getting OIDC token: %w", err)
 	}
 

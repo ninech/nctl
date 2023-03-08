@@ -17,7 +17,7 @@ import (
 )
 
 type Client struct {
-	runtimeclient.Client
+	runtimeclient.WithWatch
 	Config         *rest.Config
 	KubeconfigPath string
 	Namespace      string
@@ -45,12 +45,12 @@ func New(apiClusterContext, namespace string) (*Client, error) {
 	mapper.Add(infrastructure.KubernetesClusterGroupVersionKind, meta.RESTScopeNamespace)
 	mapper.Add(corev1.SchemeGroupVersion.WithKind("Secret"), meta.RESTScopeNamespace)
 
-	c, err := runtimeclient.New(client.Config, runtimeclient.Options{Scheme: scheme, Mapper: mapper})
+	c, err := runtimeclient.NewWithWatch(client.Config, runtimeclient.Options{Scheme: scheme, Mapper: mapper})
 	if err != nil {
 		return nil, err
 	}
 
-	client.Client = c
+	client.WithWatch = c
 	return client, nil
 }
 

@@ -14,7 +14,7 @@ import (
 
 type clustersCmd struct{}
 
-func (l *clustersCmd) Run(client *api.Client, get *Cmd) error {
+func (l *clustersCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
 	clusterList := &infrastructure.KubernetesClusterList{}
 
 	listOpts := []runtimeclient.ListOption{}
@@ -22,7 +22,7 @@ func (l *clustersCmd) Run(client *api.Client, get *Cmd) error {
 		listOpts = append(listOpts, runtimeclient.InNamespace(client.Namespace))
 	}
 
-	if err := client.List(context.Background(), clusterList, listOpts...); err != nil {
+	if err := client.List(ctx, clusterList, listOpts...); err != nil {
 		return err
 	}
 

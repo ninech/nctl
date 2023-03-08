@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"io"
 	"log"
 	"os"
@@ -71,7 +72,7 @@ func TestClusterCmd(t *testing.T) {
 
 	// we run without the execPlugin, that would be something for an e2e test
 	cmd := &ClusterCmd{Name: ContextName(cluster), ExecPlugin: false}
-	if err := cmd.Run(&api.Client{Client: client, KubeconfigPath: kubeconfig.Name()}); err != nil {
+	if err := cmd.Run(context.TODO(), &api.Client{WithWatch: client, KubeconfigPath: kubeconfig.Name()}); err != nil {
 		t.Fatal(err)
 	}
 
