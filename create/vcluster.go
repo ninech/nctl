@@ -2,20 +2,15 @@ package create
 
 import (
 	"context"
-	"fmt"
-	"math/rand"
 	"time"
 
-	"github.com/briandowns/spinner"
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-	"github.com/lucasepe/codename"
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/auth"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/apimachinery/pkg/watch"
 )
 
 type vclusterCmd struct {
@@ -31,74 +26,45 @@ type vclusterCmd struct {
 }
 
 func (vc *vclusterCmd) Run(ctx context.Context, client *api.Client) error {
+	c := newCreator(vc.newCluster(client.Namespace), "vcluster", &infrastructure.KubernetesClusterList{})
 	ctx, cancel := context.WithTimeout(ctx, vc.WaitTimeout)
 	defer cancel()
 
-	if vc.Name == "" {
-		vc.Name = codename.Generate(rand.New(rand.NewSource(time.Now().UnixNano())), 0)
+	if err := c.createResource(ctx, vc.WaitTimeout, client); err != nil {
+		return err
 	}
-
-	cluster := vc.newCluster(client.Namespace)
-
-	if err := client.Create(ctx, cluster); err != nil {
-		return fmt.Errorf("unable to create vcluster: %w", err)
-	}
-
-	fmt.Printf(" ✓ created vcluster %q\n", cluster.Name)
 
 	if !vc.Wait {
 		return nil
 	}
 
-	return waitForCreation(ctx, client, cluster)
+	return c.wait(ctx, client, func(event watch.Event) (bool, error) {
+		if c, ok := event.Object.(*infrastructure.KubernetesCluster); ok {
+			if vc.isAvailable(c) {
+				clustercmd := auth.ClusterCmd{Name: auth.ContextName(c), ExecPlugin: true}
+				return true, clustercmd.Run(ctx, client)
+			}
+		}
+
+		return false, nil
+	})
 }
 
-func waitForCreation(ctx context.Context, client *api.Client, cluster *infrastructure.KubernetesCluster) error {
-	fmt.Println(" ✓ waiting for vcluster to be ready ⏳")
-	spin := spinner.New(spinner.CharSets[7], 100*time.Millisecond)
-	spin.Prefix = " "
-	spin.Start()
-	defer spin.Stop()
-
-	watch, err := client.Watch(
-		ctx, &infrastructure.KubernetesClusterList{},
-		runtimeclient.InNamespace(client.Namespace),
-		runtimeclient.MatchingFields{"metadata.name": cluster.Name},
-	)
-	if err != nil {
-		return fmt.Errorf("unable to watch vcluster: %w", err)
-	}
-
-	for {
-		select {
-		case res := <-watch.ResultChan():
-			if c, ok := res.Object.(*infrastructure.KubernetesCluster); ok {
-				if isAvailable(c) {
-					watch.Stop()
-					spin.Stop()
-
-					fmt.Println(" ✓ vcluster ready 🐧")
-					clustercmd := auth.ClusterCmd{Name: auth.ContextName(c), ExecPlugin: true}
-					return clustercmd.Run(ctx, client)
-				}
-			}
-		case <-ctx.Done():
-			spin.Stop()
-			return fmt.Errorf("timeout waiting for vcluster")
-		}
-	}
+func (vc *vclusterCmd) isAvailable(cluster *infrastructure.KubernetesCluster) bool {
+	return isAvailable(cluster) && len(cluster.Status.AtProvider.APIEndpoint) != 0
 }
 
 func (vc *vclusterCmd) newCluster(namespace string) *infrastructure.KubernetesCluster {
+	name := getName(vc.Name)
 	return &infrastructure.KubernetesCluster{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      vc.Name,
+			Name:      name,
 			Namespace: namespace,
 		},
 		Spec: infrastructure.KubernetesClusterSpec{
 			ResourceSpec: runtimev1.ResourceSpec{
 				WriteConnectionSecretToReference: &runtimev1.SecretReference{
-					Name:      vc.Name,
+					Name:      name,
 					Namespace: namespace,
 				},
 			},
@@ -118,10 +84,4 @@ func (vc *vclusterCmd) newCluster(namespace string) *infrastructure.KubernetesCl
 			},
 		},
 	}
-}
-
-func isAvailable(cluster *infrastructure.KubernetesCluster) bool {
-	return cluster.GetCondition(runtimev1.TypeReady).Reason == runtimev1.ReasonAvailable &&
-		cluster.GetCondition(runtimev1.TypeReady).Status == corev1.ConditionTrue &&
-		len(cluster.Status.AtProvider.APIEndpoint) != 0
 }

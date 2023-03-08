@@ -6,6 +6,8 @@ import (
 	"os/user"
 	"path/filepath"
 
+	"github.com/ninech/apis"
+	iam "github.com/ninech/apis/iam/v1alpha1"
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -43,6 +45,7 @@ func New(apiClusterContext, namespace string) (*Client, error) {
 	// we statically define a RESTMapper in order to avoid slow discovery
 	mapper := meta.NewDefaultRESTMapper(scheme.PrioritizedVersionsAllGroups())
 	mapper.Add(infrastructure.KubernetesClusterGroupVersionKind, meta.RESTScopeNamespace)
+	mapper.Add(iam.APIServiceAccountGroupVersionKind, meta.RESTScopeNamespace)
 	mapper.Add(corev1.SchemeGroupVersion.WithKind("Secret"), meta.RESTScopeNamespace)
 
 	c, err := runtimeclient.NewWithWatch(client.Config, runtimeclient.Options{Scheme: scheme, Mapper: mapper})
@@ -57,7 +60,7 @@ func New(apiClusterContext, namespace string) (*Client, error) {
 // NewScheme returns a *runtime.Scheme with all the relevant types registered.
 func NewScheme() (*runtime.Scheme, error) {
 	scheme := runtime.NewScheme()
-	if err := infrastructure.SchemeBuilder.AddToScheme(scheme); err != nil {
+	if err := apis.AddToScheme(scheme); err != nil {
 		return nil, err
 	}
 	if err := corev1.AddToScheme(scheme); err != nil {

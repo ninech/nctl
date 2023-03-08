@@ -9,7 +9,6 @@ import (
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/auth"
-	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type clustersCmd struct{}
@@ -17,22 +16,12 @@ type clustersCmd struct{}
 func (l *clustersCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
 	clusterList := &infrastructure.KubernetesClusterList{}
 
-	listOpts := []runtimeclient.ListOption{}
-	if !get.AllNamespaces {
-		listOpts = append(listOpts, runtimeclient.InNamespace(client.Namespace))
-	}
-
-	if err := client.List(ctx, clusterList, listOpts...); err != nil {
+	if err := list(ctx, client, clusterList, get.AllNamespaces); err != nil {
 		return err
 	}
 
 	if len(clusterList.Items) == 0 {
-		if client.Namespace == "" {
-			fmt.Println("no clusters found")
-			return nil
-		}
-
-		fmt.Printf("no clusters found in namespace %s\n", client.Namespace)
+		printEmptyMessage(infrastructure.KubernetesClusterKind, client.Namespace)
 		return nil
 	}
 
