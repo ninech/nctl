@@ -10,12 +10,16 @@ Flags:
   -h, --help                         Show context-sensitive help.
   -n, --namespace=STRING             Limit commands to a namespace.
       --api-cluster="nineapis.ch"    Context name of the API cluster.
+      --version                      Print version information and quit.
 
 Commands:
   get clusters
     Get Kubernetes Clusters.
 
-  auth login
+  get apiserviceaccounts (asa)
+    Get API Service Accounts
+
+  auth login <organization>
     Login to nineapis.ch.
 
   auth cluster <name>
@@ -23,6 +27,18 @@ Commands:
 
   completions
     Print shell completions.
+
+  create vcluster [<name>]
+    Create a new vcluster.
+
+  create apiserviceaccount (asa) [<name>]
+    Create a new API Service Account.
+
+  delete vcluster <name>
+    Delete a vcluster.
+
+  delete apiserviceaccount (asa) <name>
+    Delete a new API Service Account.
 
 Run "nctl <command> --help" for more information on a command.
 ```
