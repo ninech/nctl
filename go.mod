@@ -6,9 +6,10 @@ require (
 	github.com/alecthomas/kong v0.7.0
 	github.com/briandowns/spinner v1.19.0
 	github.com/crossplane/crossplane-runtime v0.15.1
+	github.com/gobuffalo/flect v0.2.3
 	github.com/int128/kubelogin v1.25.3
 	github.com/lucasepe/codename v0.2.0
-	github.com/ninech/apis v0.0.0-20221027121839-bd1dacbe165c
+	github.com/ninech/apis v0.0.0-20230309144709-d1d14d316770
 	github.com/posener/complete v1.2.3
 	github.com/willabides/kongplete v0.3.0
 	k8s.io/api v0.25.3
@@ -18,10 +19,12 @@ require (
 )
 
 require (
+	github.com/Masterminds/semver/v3 v3.1.1 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/alexflint/go-filemutex v1.2.0 // indirect
 	github.com/coreos/go-oidc/v3 v3.2.0 // indirect
+	github.com/crossplane-contrib/provider-helm v0.9.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
 	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
@@ -53,6 +56,7 @@ require (
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/prometheus/common v0.37.0 // indirect
 	github.com/riywo/loginshell v0.0.0-20200815045211-7d26008be1ab // indirect
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
@@ -73,6 +77,7 @@ require (
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	helm.sh/helm/v3 v3.6.3 // indirect
 	k8s.io/klog/v2 v2.70.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1 // indirect
 	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed // indirect

@@ -7,7 +7,6 @@ import (
 
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -30,15 +29,8 @@ func (a *ClusterCmd) Run(ctx context.Context, client *api.Client) error {
 		return err
 	}
 
-	if cluster.Spec.WriteConnectionSecretToReference == nil {
-		return fmt.Errorf("cluster connection secret reference is empty")
-	}
-
-	secret := &corev1.Secret{}
-	if err := client.Get(ctx, types.NamespacedName{
-		Name:      cluster.Spec.WriteConnectionSecretToReference.Name,
-		Namespace: cluster.Spec.WriteConnectionSecretToReference.Namespace,
-	}, secret); err != nil {
+	secret, err := client.GetConnectionSecret(ctx, cluster)
+	if err != nil {
 		return err
 	}
 
