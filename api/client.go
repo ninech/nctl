@@ -1,17 +1,20 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/user"
 	"path/filepath"
 
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/ninech/apis"
 	iam "github.com/ninech/apis/iam/v1alpha1"
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -70,7 +73,7 @@ func NewScheme() (*runtime.Scheme, error) {
 }
 
 // adapted from https://github.com/kubernetes-sigs/controller-runtime/blob/4c9c9564e4652bbdec14a602d6196d8622500b51/pkg/client/config/config.go#L116
-func (n *Client) loadConfig(context string) error {
+func (c *Client) loadConfig(context string) error {
 	loadingRules, err := LoadingRules()
 	if err != nil {
 		return err
@@ -80,13 +83,34 @@ func (n *Client) loadConfig(context string) error {
 	if err != nil {
 		return err
 	}
-	if n.Namespace == "" {
-		n.Namespace = namespace
+	if c.Namespace == "" {
+		c.Namespace = namespace
 	}
-	n.Config = cfg
-	n.KubeconfigPath = loadingRules.GetDefaultFilename()
+	c.Config = cfg
+	c.KubeconfigPath = loadingRules.GetDefaultFilename()
 
 	return nil
+}
+
+func (c *Client) Name(name string) types.NamespacedName {
+	return types.NamespacedName{Name: name, Namespace: c.Namespace}
+}
+
+func (c *Client) GetConnectionSecret(ctx context.Context, mg resource.Managed) (*corev1.Secret, error) {
+	if mg.GetWriteConnectionSecretToReference() == nil {
+		return nil, fmt.Errorf("%T %s/%s has no connection secret ref set", mg, mg.GetName(), mg.GetNamespace())
+	}
+
+	nsName := types.NamespacedName{
+		Name:      mg.GetWriteConnectionSecretToReference().Name,
+		Namespace: mg.GetWriteConnectionSecretToReference().Namespace,
+	}
+	secret := &corev1.Secret{}
+	if err := c.Get(ctx, nsName, secret); err != nil {
+		return nil, fmt.Errorf("unable to get referenced secret %v: %w", nsName, err)
+	}
+
+	return secret, nil
 }
 
 func LoadingRules() (*clientcmd.ClientConfigLoadingRules, error) {

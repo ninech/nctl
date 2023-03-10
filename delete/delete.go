@@ -10,7 +10,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/ninech/nctl/api"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 type Cmd struct {
@@ -45,8 +44,7 @@ func (d *deleter) deleteResource(ctx context.Context, client *api.Client, waitTi
 	defer cancel()
 
 	// check if the the resource even exists before going any further
-	nsName := types.NamespacedName{Name: d.mg.GetName(), Namespace: d.mg.GetNamespace()}
-	if err := client.Get(ctx, nsName, d.mg); err != nil {
+	if err := client.Get(ctx, client.Name(d.mg.GetName()), d.mg); err != nil {
 		return fmt.Errorf("unable to get %s %q: %w", d.kind, d.mg.GetName(), err)
 	}
 
@@ -82,8 +80,7 @@ func (d *deleter) waitForDeletion(ctx context.Context, client *api.Client) error
 	for {
 		select {
 		case <-ticker.C:
-			nsName := types.NamespacedName{Name: d.mg.GetName(), Namespace: d.mg.GetNamespace()}
-			if err := client.Get(ctx, nsName, d.mg); err != nil {
+			if err := client.Get(ctx, client.Name(d.mg.GetName()), d.mg); err != nil {
 				if errors.IsNotFound(err) {
 					spin.Stop()
 
