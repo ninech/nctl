@@ -795,6 +795,10 @@ github.com/ninech/apis v0.0.0-20230309090302-9ed639d8fe58 h1:e8PRpyhxlk7e6HSj2oi
 github.com/ninech/apis v0.0.0-20230309090302-9ed639d8fe58/go.mod h1:pxBEpOWISbspDHCfzDddkv9CC8X11pbHMnKfQ782t2w=
 github.com/ninech/apis v0.0.0-20230309144709-d1d14d316770 h1:Yi6HMecGyMKT4PCqT9EyxJBKeZwFi+liN7QgLArmg9A=
 github.com/ninech/apis v0.0.0-20230309144709-d1d14d316770/go.mod h1:pxBEpOWISbspDHCfzDddkv9CC8X11pbHMnKfQ782t2w=
+github.com/ninech/apis v0.0.0-20230320134722-cddcd41f19e5 h1:815LwARwMbPHL6akqNaToh5aEnFCAPJrBbYEi1ImyQ0=
+github.com/ninech/apis v0.0.0-20230320134722-cddcd41f19e5/go.mod h1:pxBEpOWISbspDHCfzDddkv9CC8X11pbHMnKfQ782t2w=
+github.com/ninech/apis v0.0.0-20230321122757-56502c35f76e h1:Xi1L2hg1hCnjv+j8SpP6wl306kIiiG3WTwLpitbNd0M=
+github.com/ninech/apis v0.0.0-20230321122757-56502c35f76e/go.mod h1:pxBEpOWISbspDHCfzDddkv9CC8X11pbHMnKfQ782t2w=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=

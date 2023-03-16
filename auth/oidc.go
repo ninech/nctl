@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"path"
@@ -45,7 +46,7 @@ var (
 	defaultAuthTimeout   = 180 * time.Second
 )
 
-func (o *OIDCCmd) Run(ctx context.Context) error {
+func (o *OIDCCmd) Run(ctx context.Context, out io.Writer) error {
 	in := credentialplugin.Input{
 		Provider: oidc.Provider{
 			IssuerURL:    o.IssuerURL,
@@ -96,7 +97,7 @@ func (o *OIDCCmd) Run(ctx context.Context) error {
 		Logger:               logger,
 		TokenCacheRepository: &repository.Repository{},
 		Writer: &writer.Writer{
-			Stdout: os.Stdout,
+			Stdout: out,
 		},
 		Mutex: &mutex.Mutex{
 			Logger: logger,
