@@ -24,4 +24,43 @@ changelog:
       - '^docs:'
       - '^test:'
 
+brews:
+  - name: nctl
+
+    # GOARM to specify which 32-bit arm version to use if there are multiple
+    # versions from the build section. Brew formulas support only one 32-bit
+    # version.
+    # Default is 6 for all artifacts or each id if there are multiple versions.
+    goarm: 6
+
+    # GOAMD64 to specify which amd64 version to use if there are multiple
+    # versions from the build section.
+    # Default is v1.
+    goamd64: v1
+
+    tap:
+      owner: ninech
+      name: homebrew-taps
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+
+    url_template: "https://github.com/ninech/nctl/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    
+    commit_author:
+      name: nine.ch Bot
+      email: ninech-bot@users.noreply.github.com
+    
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    homepage: "https://github.com/ninech/nctl"
+    description: "Interact with Nine API resources."
+    license: "Apache 2.0"
+
+    # Setting this will prevent goreleaser to actually try to commit the updated
+    # formula - instead, the formula file will be stored on the dist folder only,
+    # leaving the responsibility of publishing it to the user.
+    # If set to auto, the release will not be uploaded to the homebrew tap
+    # in case there is an indicator for prerelease in the tag e.g. v1.0.0-rc1
+    # Default is false.
+    skip_upload: false
+
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json

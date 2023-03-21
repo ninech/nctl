@@ -791,12 +791,6 @@ github.com/nats-io/nuid v1.0.1/go.mod h1:19wcPz3Ph3q0Jbyiqsd0kePYG7A95tJPxeL+1OS
 github.com/ncw/swift v1.0.47/go.mod h1:23YIA4yWVnGwv2dQlN4bB7egfYX6YLn0Yo/S6zZO/ZM=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e h1:fD57ERR4JtEqsWbfPhv4DMiApHyliiK5xCTNVSPiaAs=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
-github.com/ninech/apis v0.0.0-20230309090302-9ed639d8fe58 h1:e8PRpyhxlk7e6HSj2oiqtEfCPoUp5qUmsUz2fOD3KKU=
-github.com/ninech/apis v0.0.0-20230309090302-9ed639d8fe58/go.mod h1:pxBEpOWISbspDHCfzDddkv9CC8X11pbHMnKfQ782t2w=
-github.com/ninech/apis v0.0.0-20230309144709-d1d14d316770 h1:Yi6HMecGyMKT4PCqT9EyxJBKeZwFi+liN7QgLArmg9A=
-github.com/ninech/apis v0.0.0-20230309144709-d1d14d316770/go.mod h1:pxBEpOWISbspDHCfzDddkv9CC8X11pbHMnKfQ782t2w=
-github.com/ninech/apis v0.0.0-20230320134722-cddcd41f19e5 h1:815LwARwMbPHL6akqNaToh5aEnFCAPJrBbYEi1ImyQ0=
-github.com/ninech/apis v0.0.0-20230320134722-cddcd41f19e5/go.mod h1:pxBEpOWISbspDHCfzDddkv9CC8X11pbHMnKfQ782t2w=
 github.com/ninech/apis v0.0.0-20230321122757-56502c35f76e h1:Xi1L2hg1hCnjv+j8SpP6wl306kIiiG3WTwLpitbNd0M=
 github.com/ninech/apis v0.0.0-20230321122757-56502c35f76e/go.mod h1:pxBEpOWISbspDHCfzDddkv9CC8X11pbHMnKfQ782t2w=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
