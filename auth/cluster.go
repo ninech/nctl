@@ -2,21 +2,21 @@ package auth
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
+	"net/url"
+	"os"
 	"strings"
 
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 type ClusterCmd struct {
 	Name       string `arg:"" help:"Name of the cluster to authenticate with. Also accepts 'name/namespace' format."`
 	ExecPlugin bool   `help:"Automatically run exec plugin after writing the kubeconfig."`
 }
-
-const kubeconfigSecretKey = "kubeconfig"
 
 func (a *ClusterCmd) Run(ctx context.Context, client *api.Client) error {
 	name, err := clusterName(a.Name, client.Namespace)
@@ -29,14 +29,37 @@ func (a *ClusterCmd) Run(ctx context.Context, client *api.Client) error {
 		return err
 	}
 
-	secret, err := client.GetConnectionSecret(ctx, cluster)
+	apiEndpoint, err := url.Parse(cluster.Status.AtProvider.APIEndpoint)
 	if err != nil {
-		return err
+		return fmt.Errorf("invalid cluster API endpoint: %w", err)
 	}
 
-	cfg, err := clientcmd.Load(secret.Data[kubeconfigSecretKey])
+	issuerURL, err := url.Parse(cluster.Status.AtProvider.OIDCIssuerURL)
 	if err != nil {
-		return err
+		return fmt.Errorf("invalid cluster OIDC issuer url: %w", err)
+	}
+
+	caCert, err := base64.StdEncoding.DecodeString(cluster.Status.AtProvider.APICACert)
+	if err != nil {
+		return fmt.Errorf("unable to decode API CA certificate: %w", err)
+	}
+
+	// not sure if this should ever happen but better than getting a panic
+	if len(os.Args) == 0 {
+		return fmt.Errorf("could not get command name from os.Args")
+	}
+	command := os.Args[0]
+
+	cfg, err := newAPIConfig(
+		apiEndpoint,
+		issuerURL,
+		command,
+		cluster.Status.AtProvider.OIDCClientID,
+		overrideName(ContextName(cluster)),
+		setCACert(caCert),
+	)
+	if err != nil {
+		return fmt.Errorf("unable to create kubeconfig: %w", err)
 	}
 
 	if err := login(cfg, client.KubeconfigPath, runExecPlugin(a.ExecPlugin)); err != nil {

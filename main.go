@@ -63,7 +63,7 @@ func main() {
 	}
 
 	if strings.HasPrefix(kongCtx.Command(), auth.OIDCCmdName) {
-		kongCtx.FatalIfErrorf(nctl.Auth.OIDC.Run(ctx))
+		kongCtx.FatalIfErrorf(nctl.Auth.OIDC.Run(ctx, os.Stdout))
 		return
 	}
 

@@ -1,11 +1,14 @@
 package auth
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"os/exec"
 
+	"github.com/alecthomas/kong"
 	"github.com/ninech/nctl/api"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -39,7 +42,7 @@ func (l *LoginCmd) Run(command string) error {
 		return err
 	}
 
-	cfg, err := apiConfig(apiURL, issuerURL, command, l.ClientID)
+	cfg, err := newAPIConfig(apiURL, issuerURL, command, l.ClientID)
 	if err != nil {
 		return err
 	}
@@ -47,26 +50,55 @@ func (l *LoginCmd) Run(command string) error {
 	return login(cfg, loadingRules.GetDefaultFilename(), runExecPlugin(l.ExecPlugin), namespace(l.Organization))
 }
 
-func apiConfig(apiURL, issuerURL *url.URL, command, clientID string) (*clientcmdapi.Config, error) {
+type apiConfig struct {
+	name   string
+	caCert []byte
+}
+
+type apiConfigOption func(*apiConfig)
+
+func overrideName(name string) apiConfigOption {
+	return func(ac *apiConfig) {
+		ac.name = name
+	}
+}
+
+func setCACert(caCert []byte) apiConfigOption {
+	return func(ac *apiConfig) {
+		ac.caCert = caCert
+	}
+}
+
+func newAPIConfig(apiURL, issuerURL *url.URL, command, clientID string, opts ...apiConfigOption) (*clientcmdapi.Config, error) {
+	cfg := &apiConfig{
+		name: apiURL.Host,
+	}
+
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
+	// we make sure our command is in the $PATH as the client-go credential plugin will need to find it.
 	if _, err := exec.LookPath(command); err != nil && command != "" {
 		return nil, fmt.Errorf("%s not found in $PATH, please add it first before logging in", command)
 	}
 
 	return &clientcmdapi.Config{
 		Clusters: map[string]*clientcmdapi.Cluster{
-			apiURL.Host: {
-				Server: apiURL.String(),
+			cfg.name: {
+				Server:                   apiURL.String(),
+				CertificateAuthorityData: cfg.caCert,
 			},
 		},
 		Contexts: map[string]*clientcmdapi.Context{
-			apiURL.Host: {
-				Cluster:  apiURL.Host,
-				AuthInfo: apiURL.Host,
+			cfg.name: {
+				Cluster:  cfg.name,
+				AuthInfo: cfg.name,
 			},
 		},
-		CurrentContext: apiURL.Host,
+		CurrentContext: cfg.name,
 		AuthInfos: map[string]*clientcmdapi.AuthInfo{
-			apiURL.Host: {
+			cfg.name: {
 				Exec: execConfig(command, clientID, issuerURL),
 			},
 		},
@@ -120,19 +152,28 @@ func login(newConfig *clientcmdapi.Config, kubeconfigPath string, opts ...loginO
 	}
 
 	fmt.Printf(" ✓ added %s to kubeconfig 📋\n", kubeconfig.CurrentContext)
-
 	if loginConfig.execPlugin {
 		authInfo := newConfig.AuthInfos[newConfig.CurrentContext]
 		if authInfo == nil || authInfo.Exec == nil {
 			return fmt.Errorf("no Exec found in authInfo")
 		}
 
-		cmd := exec.Command(authInfo.Exec.Command, authInfo.Exec.Args...)
-		// we want to see potential errors of the auth plugin
-		cmd.Stderr = os.Stderr
+		// construct and run the auth oidc command via kong
+		parser, err := kong.New(&OIDCCmd{})
+		if err != nil {
+			return fmt.Errorf("unable to parse OIDCCmd: %w", err)
+		}
+		ctx, err := parser.Parse(authInfo.Exec.Args[2:])
+		if err != nil {
+			return fmt.Errorf("unable to parse args: %w", err)
+		}
+		ctx.BindTo(context.Background(), (*context.Context)(nil))
+		// we want to discard the output of the login command as we don't need
+		// the returned token in this case.
+		ctx.BindTo(io.Discard, (*io.Writer)(nil))
 
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("unable to login, make sure kubectl and kubelogin is installed: %w", err)
+		if err := ctx.Run(); err != nil {
+			return fmt.Errorf("unable to login: %w", err)
 		}
 
 		fmt.Printf(" ✓ logged into cluster %s 🚀\n", kubeconfig.CurrentContext)
