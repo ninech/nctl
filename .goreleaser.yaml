@@ -63,4 +63,21 @@ brews:
     # Default is false.
     skip_upload: false
 
+nfpms:
+  - id: packages
+    license: Apache 2.0
+    formats:
+      - deb
+      - rpm
+    package_name: nctl
+    file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    maintainer: 'Nine Platform Team <platform@nine.ch>'
+
+publishers:
+  - name: fury.io
+    ids:
+      - packages
+    dir: "{{ dir .ArtifactPath }}"
+    cmd: curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_TOKEN }}@push.fury.io/ninedev/
+
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
