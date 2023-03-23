@@ -3,11 +3,13 @@ package delete
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/briandowns/spinner"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	"github.com/mattn/go-isatty"
 	"github.com/ninech/nctl/api"
 	"k8s.io/apimachinery/pkg/api/errors"
 )
@@ -72,7 +74,9 @@ func (d *deleter) deleteResource(ctx context.Context, client *api.Client, waitTi
 func (d *deleter) waitForDeletion(ctx context.Context, client *api.Client) error {
 	spin := spinner.New(spinner.CharSets[7], 100*time.Millisecond)
 	spin.Prefix = " "
-	spin.Start()
+	if isatty.IsTerminal(os.Stdout.Fd()) {
+		spin.Start()
+	}
 	defer spin.Stop()
 
 	ticker := time.NewTicker(time.Second)

@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"os"
 	"time"
 
 	"github.com/briandowns/spinner"
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/lucasepe/codename"
+	"github.com/mattn/go-isatty"
 	"github.com/ninech/nctl/api"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -51,7 +53,9 @@ func (w *creator) wait(ctx context.Context, client *api.Client, onResult resultF
 	fmt.Printf(" ✓ waiting for %s to be ready ⏳\n", w.kind)
 	spin := spinner.New(spinner.CharSets[7], 100*time.Millisecond)
 	spin.Prefix = " "
-	spin.Start()
+	if isatty.IsTerminal(os.Stdout.Fd()) {
+		spin.Start()
+	}
 	defer spin.Stop()
 
 	watch, err := client.Watch(
