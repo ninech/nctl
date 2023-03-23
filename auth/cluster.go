@@ -62,7 +62,7 @@ func (a *ClusterCmd) Run(ctx context.Context, client *api.Client) error {
 		return fmt.Errorf("unable to create kubeconfig: %w", err)
 	}
 
-	if err := login(cfg, client.KubeconfigPath, runExecPlugin(a.ExecPlugin)); err != nil {
+	if err := login(cfg, client.KubeconfigPath, runExecPlugin(a.ExecPlugin), switchCurrentContext()); err != nil {
 		return fmt.Errorf("error logging in to cluster %s: %w", name, err)
 	}
 

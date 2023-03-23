@@ -64,8 +64,6 @@ func TestClusterCmd(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	log.Printf("%s", b)
-
 	merged, err := clientcmd.Load(b)
 	if err != nil {
 		t.Fatal(err)
