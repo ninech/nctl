@@ -20,8 +20,6 @@ func mergeConfig(from, to *clientcmdapi.Config) {
 	for k, v := range from.Contexts {
 		to.Contexts[k] = v
 	}
-
-	to.CurrentContext = from.CurrentContext
 }
 
 func RemoveClusterFromConfig(client *api.Client, clusterContext string) error {

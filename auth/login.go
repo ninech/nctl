@@ -106,8 +106,9 @@ func newAPIConfig(apiURL, issuerURL *url.URL, command, clientID string, opts ...
 }
 
 type loginConfig struct {
-	execPlugin bool
-	namespace  string
+	execPlugin           bool
+	namespace            string
+	switchCurrentContext bool
 }
 
 type loginOption func(*loginConfig)
@@ -123,6 +124,14 @@ func runExecPlugin(enabled bool) loginOption {
 func namespace(context string) loginOption {
 	return func(l *loginConfig) {
 		l.namespace = context
+	}
+}
+
+// switchCurrentContext sets the context of the merged kubeconfig to the one
+// defined in the newConfig
+func switchCurrentContext() loginOption {
+	return func(l *loginConfig) {
+		l.switchCurrentContext = true
 	}
 }
 
@@ -147,11 +156,15 @@ func login(newConfig *clientcmdapi.Config, kubeconfigPath string, opts ...loginO
 
 	mergeConfig(newConfig, kubeconfig)
 
+	if loginConfig.switchCurrentContext {
+		kubeconfig.CurrentContext = newConfig.CurrentContext
+	}
+
 	if err := clientcmd.WriteToFile(*kubeconfig, kubeconfigPath); err != nil {
 		return err
 	}
 
-	fmt.Printf(" ✓ added %s to kubeconfig 📋\n", kubeconfig.CurrentContext)
+	fmt.Printf(" ✓ added %s to kubeconfig 📋\n", newConfig.CurrentContext)
 	if loginConfig.execPlugin {
 		authInfo := newConfig.AuthInfos[newConfig.CurrentContext]
 		if authInfo == nil || authInfo.Exec == nil {
@@ -176,7 +189,7 @@ func login(newConfig *clientcmdapi.Config, kubeconfigPath string, opts ...loginO
 			return fmt.Errorf("unable to login: %w", err)
 		}
 
-		fmt.Printf(" ✓ logged into cluster %s 🚀\n", kubeconfig.CurrentContext)
+		fmt.Printf(" ✓ logged into cluster %s 🚀\n", newConfig.CurrentContext)
 	}
 
 	return err

@@ -42,7 +42,7 @@ func TestLoginCmd(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	checkConfig(t, merged, 2, apiHost)
+	checkConfig(t, merged, 2, "existing")
 }
 
 func checkConfig(t *testing.T, cfg *clientcmdapi.Config, expectedLen int, expectedContext string) {
