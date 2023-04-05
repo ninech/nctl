@@ -147,3 +147,7 @@ func loadConfigWithContext(apiServerURL string, loader clientcmd.ClientConfigLoa
 	cfg, err := clientConfig.ClientConfig()
 	return cfg, ns, err
 }
+
+func ObjectName(obj runtimeclient.Object) types.NamespacedName {
+	return types.NamespacedName{Name: obj.GetName(), Namespace: obj.GetNamespace()}
+}

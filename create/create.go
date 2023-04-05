@@ -37,10 +37,7 @@ func newCreator(mg resource.Managed, resourceName string, objectList runtimeclie
 	return &creator{mg: mg, kind: resourceName, objectList: objectList}
 }
 
-func (c *creator) createResource(ctx context.Context, waitTimeout time.Duration, client *api.Client) error {
-	ctx, cancel := context.WithTimeout(ctx, waitTimeout)
-	defer cancel()
-
+func (c *creator) createResource(ctx context.Context, client *api.Client) error {
 	if err := client.Create(ctx, c.mg); err != nil {
 		return fmt.Errorf("unable to create %s %q: %w", c.kind, c.mg.GetName(), err)
 	}

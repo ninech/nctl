@@ -30,7 +30,7 @@ func (vc *vclusterCmd) Run(ctx context.Context, client *api.Client) error {
 	ctx, cancel := context.WithTimeout(ctx, vc.WaitTimeout)
 	defer cancel()
 
-	if err := c.createResource(ctx, vc.WaitTimeout, client); err != nil {
+	if err := c.createResource(ctx, client); err != nil {
 		return err
 	}
 
