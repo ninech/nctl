@@ -19,6 +19,8 @@ import (
 )
 
 type Cmd struct {
+	Filename          string               `short:"f" predictor:"file"`
+	FromFile          fromFile             `cmd:"" default:"1" name:"-f <file>" help:"Create any resource from a yaml or json file."`
 	VCluster          vclusterCmd          `cmd:"" name:"vcluster" help:"Create a new vcluster."`
 	APIServiceAccount apiServiceAccountCmd `cmd:"" name:"apiserviceaccount" aliases:"asa" help:"Create a new API Service Account."`
 }
@@ -37,10 +39,7 @@ func newCreator(mg resource.Managed, resourceName string, objectList runtimeclie
 	return &creator{mg: mg, kind: resourceName, objectList: objectList}
 }
 
-func (c *creator) createResource(ctx context.Context, waitTimeout time.Duration, client *api.Client) error {
-	ctx, cancel := context.WithTimeout(ctx, waitTimeout)
-	defer cancel()
-
+func (c *creator) createResource(ctx context.Context, client *api.Client) error {
 	if err := client.Create(ctx, c.mg); err != nil {
 		return fmt.Errorf("unable to create %s %q: %w", c.kind, c.mg.GetName(), err)
 	}

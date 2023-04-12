@@ -21,7 +21,7 @@ func (asa *apiServiceAccountCmd) Run(ctx context.Context, client *api.Client) er
 	ctx, cancel := context.WithTimeout(ctx, asa.WaitTimeout)
 	defer cancel()
 
-	if err := c.createResource(ctx, asa.WaitTimeout, client); err != nil {
+	if err := c.createResource(ctx, client); err != nil {
 		return err
 	}
 
