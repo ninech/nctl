@@ -15,6 +15,8 @@ import (
 )
 
 type Cmd struct {
+	Filename          string               `short:"f" predictor:"file"`
+	FromFile          fromFile             `cmd:"" default:"1" name:"-f <file>" help:"Delete any resource from a yaml or json file."`
 	VCluster          vclusterCmd          `cmd:"" name:"vcluster" help:"Delete a vcluster."`
 	APIServiceAccount apiServiceAccountCmd `cmd:"" name:"apiserviceaccount" aliases:"asa" help:"Delete a new API Service Account."`
 }

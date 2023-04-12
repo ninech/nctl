@@ -10,9 +10,10 @@ require (
 	github.com/int128/kubelogin v1.25.3
 	github.com/lucasepe/codename v0.2.0
 	github.com/mattn/go-isatty v0.0.18
-	github.com/ninech/apis v0.0.0-20230321122757-56502c35f76e
+	github.com/ninech/apis v0.0.0-20230405094104-05c6ac3c53c8
 	github.com/posener/complete v1.2.3
 	github.com/willabides/kongplete v0.3.0
+	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 	k8s.io/api v0.25.3
 	k8s.io/apimachinery v0.25.3
 	k8s.io/client-go v0.25.3

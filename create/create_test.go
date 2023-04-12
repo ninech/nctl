@@ -10,6 +10,7 @@ import (
 	"github.com/ninech/nctl/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/watch"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -70,7 +71,11 @@ func TestCreate(t *testing.T) {
 		}
 	}()
 
-	if err := c.wait(ctx, apiClient, resourceAvailable); err != nil {
+	resultFuncCalled := false
+	if err := c.wait(ctx, apiClient, func(event watch.Event) (bool, error) {
+		resultFuncCalled = true
+		return resourceAvailable(event)
+	}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -79,5 +84,9 @@ func TestCreate(t *testing.T) {
 
 	for err := range errChan {
 		t.Fatal(err)
+	}
+
+	if !resultFuncCalled {
+		t.Fatal("result func has not been called")
 	}
 }

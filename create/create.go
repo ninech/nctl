@@ -19,6 +19,8 @@ import (
 )
 
 type Cmd struct {
+	Filename          string               `short:"f" predictor:"file"`
+	FromFile          fromFile             `cmd:"" default:"1" name:"-f <file>" help:"Create any resource from a yaml or json file."`
 	VCluster          vclusterCmd          `cmd:"" name:"vcluster" help:"Create a new vcluster."`
 	APIServiceAccount apiServiceAccountCmd `cmd:"" name:"apiserviceaccount" aliases:"asa" help:"Create a new API Service Account."`
 }

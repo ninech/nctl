@@ -9,8 +9,6 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/ninech/apis"
-	iam "github.com/ninech/apis/iam/v1alpha1"
-	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -45,13 +43,13 @@ func New(apiClusterContext, namespace string) (*Client, error) {
 		return nil, err
 	}
 
-	// we statically define a RESTMapper in order to avoid slow discovery
-	mapper := meta.NewDefaultRESTMapper(scheme.PrioritizedVersionsAllGroups())
-	mapper.Add(infrastructure.KubernetesClusterGroupVersionKind, meta.RESTScopeNamespace)
-	mapper.Add(iam.APIServiceAccountGroupVersionKind, meta.RESTScopeNamespace)
+	mapper := apis.StaticRESTMapper(scheme)
 	mapper.Add(corev1.SchemeGroupVersion.WithKind("Secret"), meta.RESTScopeNamespace)
 
-	c, err := runtimeclient.NewWithWatch(client.Config, runtimeclient.Options{Scheme: scheme, Mapper: mapper})
+	c, err := runtimeclient.NewWithWatch(client.Config, runtimeclient.Options{
+		Scheme: scheme,
+		Mapper: mapper,
+	})
 	if err != nil {
 		return nil, err
 	}
