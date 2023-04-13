@@ -45,7 +45,7 @@ func main() {
 	parser := kong.Must(
 		nctl,
 		kong.Name("nctl"),
-		kong.Description("Interact with Nine API resources."),
+		kong.Description("Interact with Nine API resources. See https://docs.nineapis.ch for the full API docs."),
 		kong.UsageOnError(),
 		kong.Vars{"version": version},
 		kong.BindTo(ctx, (*context.Context)(nil)),
