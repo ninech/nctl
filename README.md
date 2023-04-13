@@ -4,7 +4,7 @@
 $ nctl --help
 Usage: nctl <command>
 
-Interact with Nine API resources.
+Interact with Nine API resources. See https://docs.nineapis.ch for the full API docs.
 
 Run "nctl <command> --help" for more information on a command.
 ```
