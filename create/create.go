@@ -22,6 +22,7 @@ type Cmd struct {
 	FromFile          fromFile             `cmd:"" default:"1" name:"-f <file>" help:"Create any resource from a yaml or json file."`
 	VCluster          vclusterCmd          `cmd:"" name:"vcluster" help:"Create a new vcluster."`
 	APIServiceAccount apiServiceAccountCmd `cmd:"" name:"apiserviceaccount" aliases:"asa" help:"Create a new API Service Account."`
+	Application       applicationCmd       `cmd:"" name:"application" aliases:"app" help:"Create a new deplo.io Application. (Beta - requires access)"`
 }
 
 // resultFunc is the function called on a watch event during creation. It
@@ -174,7 +175,7 @@ func (w *waitStage) wait(ctx context.Context, client *api.Client) error {
 			}
 		case <-ctx.Done():
 			msg := "timeout waiting for %s"
-			spinner.StopFailMessage(fmt.Sprintf(msg, w.kind))
+			spinner.StopFailMessage(format.ProgressMessagef("", msg, w.kind))
 			_ = spinner.StopFail()
 
 			return fmt.Errorf(msg, w.kind)

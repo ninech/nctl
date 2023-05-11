@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+
 	"os"
 	"os/signal"
 	"strings"
 
 	"github.com/alecthomas/kong"
+
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/apply"
 	"github.com/ninech/nctl/auth"
