@@ -17,11 +17,11 @@ type apiServiceAccountCmd struct {
 }
 
 func (asa *apiServiceAccountCmd) Run(ctx context.Context, client *api.Client) error {
-	c := newCreator(asa.newAPIServiceAccount(client.Namespace), iam.APIServiceAccountKind, &iam.APIServiceAccountList{})
+	c := newCreator(client, asa.newAPIServiceAccount(client.Namespace), iam.APIServiceAccountKind)
 	ctx, cancel := context.WithTimeout(ctx, asa.WaitTimeout)
 	defer cancel()
 
-	if err := c.createResource(ctx, client); err != nil {
+	if err := c.createResource(ctx); err != nil {
 		return err
 	}
 
@@ -29,7 +29,10 @@ func (asa *apiServiceAccountCmd) Run(ctx context.Context, client *api.Client) er
 		return nil
 	}
 
-	return c.wait(ctx, client, resourceAvailable)
+	return c.wait(ctx, waitStage{
+		objectList: &iam.APIServiceAccountList{},
+		onResult:   resourceAvailable,
+	})
 }
 
 func (asa *apiServiceAccountCmd) newAPIServiceAccount(namespace string) *iam.APIServiceAccount {

@@ -26,11 +26,12 @@ type vclusterCmd struct {
 }
 
 func (vc *vclusterCmd) Run(ctx context.Context, client *api.Client) error {
-	c := newCreator(vc.newCluster(client.Namespace), "vcluster", &infrastructure.KubernetesClusterList{})
+	cluster := vc.newCluster(client.Namespace)
+	c := newCreator(client, cluster, "vcluster")
 	ctx, cancel := context.WithTimeout(ctx, vc.WaitTimeout)
 	defer cancel()
 
-	if err := c.createResource(ctx, client); err != nil {
+	if err := c.createResource(ctx); err != nil {
 		return err
 	}
 
@@ -38,16 +39,20 @@ func (vc *vclusterCmd) Run(ctx context.Context, client *api.Client) error {
 		return nil
 	}
 
-	return c.wait(ctx, client, func(event watch.Event) (bool, error) {
-		if c, ok := event.Object.(*infrastructure.KubernetesCluster); ok {
-			if vc.isAvailable(c) {
-				clustercmd := auth.ClusterCmd{Name: auth.ContextName(c), ExecPlugin: true}
-				return true, clustercmd.Run(ctx, client)
+	if err := c.wait(ctx, waitStage{
+		objectList: &infrastructure.KubernetesClusterList{},
+		onResult: func(event watch.Event) (bool, error) {
+			if c, ok := event.Object.(*infrastructure.KubernetesCluster); ok {
+				return vc.isAvailable(c), nil
 			}
-		}
+			return false, nil
+		}},
+	); err != nil {
+		return err
+	}
 
-		return false, nil
-	})
+	clustercmd := auth.ClusterCmd{Name: auth.ContextName(cluster), ExecPlugin: true}
+	return clustercmd.Run(ctx, client)
 }
 
 func (vc *vclusterCmd) isAvailable(cluster *infrastructure.KubernetesCluster) bool {

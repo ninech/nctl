@@ -35,14 +35,14 @@ func TestCreate(t *testing.T) {
 		},
 	}
 
-	c := newCreator(asa, "apiserviceaccount", &iam.APIServiceAccountList{})
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()
 	apiClient := &api.Client{WithWatch: client, Namespace: "default"}
+	c := newCreator(apiClient, asa, "apiserviceaccount")
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	if err := c.createResource(ctx, apiClient); err != nil {
+	if err := c.createResource(ctx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -72,9 +72,12 @@ func TestCreate(t *testing.T) {
 	}()
 
 	resultFuncCalled := false
-	if err := c.wait(ctx, apiClient, func(event watch.Event) (bool, error) {
-		resultFuncCalled = true
-		return resourceAvailable(event)
+	if err := c.wait(ctx, waitStage{
+		objectList: &iam.APIServiceAccountList{},
+		onResult: func(event watch.Event) (bool, error) {
+			resultFuncCalled = true
+			return resourceAvailable(event)
+		},
 	}); err != nil {
 		t.Fatal(err)
 	}
