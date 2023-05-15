@@ -10,6 +10,7 @@ import (
 
 	"github.com/alecthomas/kong"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/format"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
@@ -164,7 +165,7 @@ func login(newConfig *clientcmdapi.Config, kubeconfigPath string, opts ...loginO
 		return err
 	}
 
-	fmt.Printf(" ✓ added %s to kubeconfig 📋\n", newConfig.CurrentContext)
+	format.PrintSuccessf("📋", "added %s to kubeconfig", newConfig.CurrentContext)
 	if loginConfig.execPlugin {
 		authInfo := newConfig.AuthInfos[newConfig.CurrentContext]
 		if authInfo == nil || authInfo.Exec == nil {
@@ -189,7 +190,7 @@ func login(newConfig *clientcmdapi.Config, kubeconfigPath string, opts ...loginO
 			return fmt.Errorf("unable to login: %w", err)
 		}
 
-		fmt.Printf(" ✓ logged into cluster %s 🚀\n", newConfig.CurrentContext)
+		format.PrintSuccessf("🚀", "logged into cluster %s", newConfig.CurrentContext)
 	}
 
 	return err

@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/format"
 	"golang.org/x/exp/maps"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -63,7 +64,7 @@ func File(ctx context.Context, client *api.Client, filename string, opts ...Opti
 		if err := client.Delete(ctx, obj); err != nil {
 			return err
 		}
-		printSuccessMessage("deleted", obj)
+		format.PrintSuccessf("🗑", "deleted %s", formatObj(obj))
 
 		return nil
 	}
@@ -75,7 +76,7 @@ func File(ctx context.Context, client *api.Client, filename string, opts ...Opti
 		return err
 	}
 
-	printSuccessMessage("created", obj)
+	format.PrintSuccessf("🏗", "created %s", formatObj(obj))
 	return nil
 }
 
@@ -102,14 +103,10 @@ func update(ctx context.Context, client *api.Client, obj *unstructured.Unstructu
 		return err
 	}
 
-	printSuccessMessage("applied", obj)
+	format.PrintSuccessf("🏗", "applied %s", formatObj(obj))
 	return nil
 }
 
-func printSuccessMessage(message string, obj client.Object) {
-	fmt.Printf(
-		" ✓ %s %s %s/%s\n", message,
-		obj.GetObjectKind().GroupVersionKind().Kind,
-		obj.GetName(), obj.GetNamespace(),
-	)
+func formatObj(obj client.Object) string {
+	return fmt.Sprintf("%s %s/%s", obj.GetObjectKind().GroupVersionKind().Kind, obj.GetName(), obj.GetNamespace())
 }

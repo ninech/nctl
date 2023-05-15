@@ -4,15 +4,13 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"os"
 	"time"
 
-	"github.com/briandowns/spinner"
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/lucasepe/codename"
-	"github.com/mattn/go-isatty"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/format"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,59 +28,134 @@ type Cmd struct {
 type resultFunc func(watch.Event) (bool, error)
 
 type creator struct {
-	kind       string
-	mg         resource.Managed
-	objectList runtimeclient.ObjectList
+	client *api.Client
+	mg     resource.Managed
+	kind   string
 }
 
-func newCreator(mg resource.Managed, resourceName string, objectList runtimeclient.ObjectList) *creator {
-	return &creator{mg: mg, kind: resourceName, objectList: objectList}
+type waitStage struct {
+	kind        string
+	waitMessage *message
+	doneMessage *message
+	objectList  runtimeclient.ObjectList
+	listOpts    []runtimeclient.ListOption
+	onResult    resultFunc
 }
 
-func (c *creator) createResource(ctx context.Context, client *api.Client) error {
-	if err := client.Create(ctx, c.mg); err != nil {
+type message struct {
+	icon     string
+	text     string
+	disabled bool
+}
+
+func (m *message) progress() string {
+	if m.disabled {
+		return ""
+	}
+
+	return format.ProgressMessagef(m.icon, m.text)
+}
+
+func (m *message) printSuccess() {
+	if m.disabled {
+		return
+	}
+
+	format.PrintSuccessf(m.icon, m.text)
+}
+
+func newCreator(client *api.Client, mg resource.Managed, resourceName string) *creator {
+	return &creator{client: client, mg: mg, kind: resourceName}
+}
+
+func (c *creator) createResource(ctx context.Context) error {
+	if err := c.client.Create(ctx, c.mg); err != nil {
 		return fmt.Errorf("unable to create %s %q: %w", c.kind, c.mg.GetName(), err)
 	}
 
-	fmt.Printf(" ✓ created %s %q\n", c.kind, c.mg.GetName())
+	format.PrintSuccessf("🏗", "created %s %q", c.kind, c.mg.GetName())
 	return nil
 }
 
-func (w *creator) wait(ctx context.Context, client *api.Client, onResult resultFunc) error {
-	fmt.Printf(" ✓ waiting for %s to be ready ⏳\n", w.kind)
-	spin := spinner.New(spinner.CharSets[7], 100*time.Millisecond)
-	spin.Prefix = " "
-	if isatty.IsTerminal(os.Stdout.Fd()) {
-		spin.Start()
+func (c *creator) wait(ctx context.Context, stages ...waitStage) error {
+	for _, stage := range stages {
+		stage.setDefaults(c)
+		if err := stage.wait(ctx, c.client); err != nil {
+			return err
+		}
 	}
-	defer spin.Stop()
 
-	watch, err := client.Watch(
-		ctx, w.objectList,
-		runtimeclient.InNamespace(w.mg.GetNamespace()),
-		runtimeclient.MatchingFields{"metadata.name": w.mg.GetName()},
+	return nil
+}
+
+func (w *waitStage) setDefaults(c *creator) {
+	if len(w.kind) == 0 {
+		w.kind = c.kind
+	}
+
+	if w.waitMessage == nil {
+		w.waitMessage = &message{
+			text: fmt.Sprintf("waiting for %s to be ready", w.kind),
+			icon: "⏳",
+		}
+	}
+
+	if w.doneMessage == nil {
+		w.doneMessage = &message{
+			text: fmt.Sprintf("%s ready", w.kind),
+			icon: "🛫",
+		}
+	}
+
+	if len(w.listOpts) == 0 {
+		w.listOpts = []runtimeclient.ListOption{
+			runtimeclient.InNamespace(c.mg.GetNamespace()),
+			runtimeclient.MatchingFields{"metadata.name": c.mg.GetName()},
+		}
+	}
+}
+
+func (w *waitStage) wait(ctx context.Context, client *api.Client) error {
+	spinner, err := format.NewSpinner(
+		w.waitMessage.progress(),
+		w.waitMessage.progress(),
 	)
 	if err != nil {
+		return err
+	}
+
+	_ = spinner.Start()
+	defer func() { _ = spinner.Stop() }()
+
+	watch, err := client.Watch(ctx, w.objectList, w.listOpts...)
+	if err != nil {
+		_ = spinner.StopFail()
 		return fmt.Errorf("unable to watch %s: %w", w.kind, err)
 	}
 
 	for {
 		select {
 		case res := <-watch.ResultChan():
-			done, err := onResult(res)
+			done, err := w.onResult(res)
 			if err != nil {
+				_ = spinner.StopFail()
 				return err
 			}
 
 			if done {
 				watch.Stop()
-				spin.Stop()
-				fmt.Printf(" ✓ %s ready 🐧\n", w.kind)
+				_ = spinner.Stop()
+				// print out the done message directly
+				w.doneMessage.printSuccess()
+
 				return nil
 			}
 		case <-ctx.Done():
-			spin.Stop()
-			return fmt.Errorf("timeout waiting for %s", w.kind)
+			msg := "timeout waiting for %s"
+			spinner.StopFailMessage(fmt.Sprintf(msg, w.kind))
+			_ = spinner.StopFail()
+
+			return fmt.Errorf(msg, w.kind)
 		}
 	}
 }

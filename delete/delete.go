@@ -3,14 +3,11 @@ package delete
 import (
 	"context"
 	"fmt"
-	"os"
-	"strings"
 	"time"
 
-	"github.com/briandowns/spinner"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
-	"github.com/mattn/go-isatty"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/format"
 	"k8s.io/apimachinery/pkg/api/errors"
 )
 
@@ -53,8 +50,12 @@ func (d *deleter) deleteResource(ctx context.Context, client *api.Client, waitTi
 	}
 
 	if !force {
-		if !confirmf("do you really want to delete the %s %q?", d.kind, d.mg.GetName()) {
-			fmt.Printf(" ✗ %s deletion canceled\n", d.kind)
+		ok, err := format.Confirmf("do you really want to delete the %s %q?", d.kind, d.mg.GetName())
+		if err != nil {
+			return err
+		}
+		if !ok {
+			format.PrintFailuref("", "%s deletion canceled", d.kind)
 			return nil
 		}
 	}
@@ -62,24 +63,29 @@ func (d *deleter) deleteResource(ctx context.Context, client *api.Client, waitTi
 	if err := client.Delete(ctx, d.mg); err != nil {
 		return fmt.Errorf("unable to delete %s %q: %w", d.kind, d.mg.GetName(), err)
 	}
-	fmt.Printf(" ✓ %s deletion started\n", d.kind)
 
 	if wait {
 		if err := d.waitForDeletion(ctx, client); err != nil {
 			return err
 		}
+	} else {
+		format.PrintSuccessf("🗑", "%s deletion started", d.kind)
 	}
 
 	return d.cleanup(client)
 }
 
 func (d *deleter) waitForDeletion(ctx context.Context, client *api.Client) error {
-	spin := spinner.New(spinner.CharSets[7], 100*time.Millisecond)
-	spin.Prefix = " "
-	if isatty.IsTerminal(os.Stdout.Fd()) {
-		spin.Start()
+	spinner, err := format.NewSpinner(
+		format.ProgressMessagef("⏳", "%s is being deleted", d.kind),
+		format.ProgressMessagef("🗑", "%s deleted", d.kind),
+	)
+	if err != nil {
+		return err
 	}
-	defer spin.Stop()
+
+	_ = spinner.Start()
+	defer func() { _ = spinner.Stop() }()
 
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
@@ -88,32 +94,19 @@ func (d *deleter) waitForDeletion(ctx context.Context, client *api.Client) error
 		case <-ticker.C:
 			if err := client.Get(ctx, client.Name(d.mg.GetName()), d.mg); err != nil {
 				if errors.IsNotFound(err) {
-					spin.Stop()
-
-					fmt.Printf(" ✓ %s deleted 🗑\n", d.kind)
+					_ = spinner.Stop()
 					return nil
 				}
+
+				_ = spinner.StopFail()
 				return fmt.Errorf("unable to get %s %q: %w", d.kind, d.mg.GetName(), err)
 			}
 		case <-ctx.Done():
-			spin.Stop()
+			msg := "timeout waiting for %s"
+			spinner.StopFailMessage(format.ProgressMessagef("", msg, d.kind))
+			_ = spinner.StopFail()
+
 			return fmt.Errorf("timeout waiting for %s", d.kind)
 		}
 	}
-}
-
-func confirmf(format string, a ...any) bool {
-	var input string
-
-	fmt.Printf("%s [y|n]: ", fmt.Sprintf(format, a...))
-	_, err := fmt.Scanln(&input)
-	if err != nil {
-		panic(err)
-	}
-	input = strings.ToLower(input)
-
-	if input == "y" || input == "yes" {
-		return true
-	}
-	return false
 }
