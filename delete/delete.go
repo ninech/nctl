@@ -14,9 +14,9 @@ import (
 type Cmd struct {
 	Filename          string               `short:"f" predictor:"file"`
 	FromFile          fromFile             `cmd:"" default:"1" name:"-f <file>" help:"Delete any resource from a yaml or json file."`
-	VCluster          vclusterCmd          `cmd:"" name:"vcluster" help:"Delete a vcluster."`
-	APIServiceAccount apiServiceAccountCmd `cmd:"" name:"apiserviceaccount" aliases:"asa" help:"Delete an API Service Account."`
-	Application       applicationCmd       `cmd:"" name:"application" aliases:"app" help:"Delete a deplo.io Application. (Beta - requires access)"`
+	VCluster          vclusterCmd          `cmd:"" group:"infrastructure.nine.ch" name:"vcluster" help:"Delete a vcluster."`
+	APIServiceAccount apiServiceAccountCmd `cmd:"" group:"iam.nine.ch" name:"apiserviceaccount" aliases:"asa" help:"Delete an API Service Account."`
+	Application       applicationCmd       `cmd:"" group:"deplo.io" name:"application" aliases:"app" help:"Delete a deplo.io Application. (Beta - requires access)"`
 }
 
 // cleanupFunc is called after the resource has been deleted in order to do

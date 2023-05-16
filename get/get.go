@@ -13,9 +13,9 @@ import (
 type Cmd struct {
 	Output             output                `help:"Configures list output. ${enum}" short:"o" enum:"full,no-header,contexts" default:"full"`
 	AllNamespaces      bool                  `help:"apply the get over all namespaces." short:"A"`
-	Clusters           clustersCmd           `cmd:"" help:"Get Kubernetes Clusters."`
-	APIServiceAccounts apiServiceAccountsCmd `cmd:"" name:"apiserviceaccounts" aliases:"asa" help:"Get API Service Accounts."`
-	Applications       applicationsCmd       `cmd:"" name:"applications" aliases:"app,apps" help:"Get deplo.io Applications. (Beta - requires access)"`
+	Clusters           clustersCmd           `cmd:"" group:"infrastructure.nine.ch" help:"Get Kubernetes Clusters."`
+	APIServiceAccounts apiServiceAccountsCmd `cmd:"" group:"iam.nine.ch" name:"apiserviceaccounts" aliases:"asa" help:"Get API Service Accounts."`
+	Applications       applicationsCmd       `cmd:"" group:"deplo.io" name:"applications" aliases:"app,apps" help:"Get deplo.io Applications. (Beta - requires access)"`
 
 	opts []runtimeclient.ListOption
 }
