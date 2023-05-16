@@ -9,6 +9,7 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/util"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -304,12 +305,7 @@ func waitForRelease(app *apps.Application) waitStage {
 }
 
 func printUnverifiedHostsMessage(app *apps.Application) {
-	unverifiedHosts := []string{}
-	for _, host := range app.Status.AtProvider.Hosts {
-		if host.LatestSuccess == nil {
-			unverifiedHosts = append(unverifiedHosts, host.Name)
-		}
-	}
+	unverifiedHosts := util.UnverifiedAppHosts(app)
 
 	if len(unverifiedHosts) != 0 {
 		fmt.Println("You configured the following hosts:")
