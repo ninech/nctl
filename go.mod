@@ -8,7 +8,7 @@ require (
 	github.com/gobuffalo/flect v0.2.3
 	github.com/int128/kubelogin v1.25.3
 	github.com/lucasepe/codename v0.2.0
-	github.com/ninech/apis v0.0.0-20230405094104-05c6ac3c53c8
+	github.com/ninech/apis v0.0.0-20230510151919-2b04a7af4f60
 	github.com/posener/complete v1.2.3
 	github.com/theckman/yacspin v0.13.12
 	github.com/willabides/kongplete v0.3.0

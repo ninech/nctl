@@ -13,6 +13,7 @@ import (
 	"github.com/ninech/nctl/internal/format"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/util/retry"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -80,7 +81,9 @@ func (c *creator) createResource(ctx context.Context) error {
 func (c *creator) wait(ctx context.Context, stages ...waitStage) error {
 	for _, stage := range stages {
 		stage.setDefaults(c)
-		if err := stage.wait(ctx, c.client); err != nil {
+		if err := retry.OnError(retry.DefaultRetry, isWatchError, func() error {
+			return stage.wait(ctx, c.client)
+		}); err != nil {
 			return err
 		}
 	}
@@ -115,6 +118,19 @@ func (w *waitStage) setDefaults(c *creator) {
 	}
 }
 
+type watchError struct {
+	kind string
+}
+
+func (werr watchError) Error() string {
+	return fmt.Sprintf("error watching %s, the API might be experiencing connectivity issues", werr.kind)
+}
+
+func isWatchError(err error) bool {
+	_, ok := err.(watchError)
+	return ok
+}
+
 func (w *waitStage) wait(ctx context.Context, client *api.Client) error {
 	spinner, err := format.NewSpinner(
 		w.waitMessage.progress(),
@@ -127,7 +143,7 @@ func (w *waitStage) wait(ctx context.Context, client *api.Client) error {
 	_ = spinner.Start()
 	defer func() { _ = spinner.Stop() }()
 
-	watch, err := client.Watch(ctx, w.objectList, w.listOpts...)
+	wa, err := client.Watch(ctx, w.objectList, w.listOpts...)
 	if err != nil {
 		_ = spinner.StopFail()
 		return fmt.Errorf("unable to watch %s: %w", w.kind, err)
@@ -135,7 +151,13 @@ func (w *waitStage) wait(ctx context.Context, client *api.Client) error {
 
 	for {
 		select {
-		case res := <-watch.ResultChan():
+		case res := <-wa.ResultChan():
+			if res.Type == watch.Error || res.Type == "" {
+				spinner.StopFailMessage(format.ProgressMessagef("", "error watching %s", w.kind))
+				_ = spinner.StopFail()
+				return watchError{kind: w.kind}
+			}
+
 			done, err := w.onResult(res)
 			if err != nil {
 				_ = spinner.StopFail()
@@ -143,7 +165,7 @@ func (w *waitStage) wait(ctx context.Context, client *api.Client) error {
 			}
 
 			if done {
-				watch.Stop()
+				wa.Stop()
 				_ = spinner.Stop()
 				// print out the done message directly
 				w.doneMessage.printSuccess()
