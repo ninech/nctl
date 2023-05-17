@@ -16,14 +16,16 @@ import (
 	"github.com/ninech/nctl/create"
 	"github.com/ninech/nctl/delete"
 	"github.com/ninech/nctl/get"
+	"github.com/ninech/nctl/logs"
 	"github.com/posener/complete"
 	"github.com/willabides/kongplete"
 )
 
 type flags struct {
-	Namespace  string           `help:"Limit commands to a namespace." short:"n"`
-	APICluster string           `help:"Context name of the API cluster." default:"nineapis.ch"`
-	Version    kong.VersionFlag `name:"version" help:"Print version information and quit."`
+	Namespace     string           `help:"Limit commands to a namespace." short:"n"`
+	APICluster    string           `help:"Context name of the API cluster." default:"nineapis.ch"`
+	LogAPIAddress string           `help:"Address of the deplo.io logging API server." default:"https://logs.deplo.io"`
+	Version       kong.VersionFlag `name:"version" help:"Print version information and quit."`
 }
 
 type rootCommand struct {
@@ -34,6 +36,7 @@ type rootCommand struct {
 	Create      create.Cmd                   `cmd:"" help:"Create resource."`
 	Apply       apply.Cmd                    `cmd:"" help:"Apply resource."`
 	Delete      delete.Cmd                   `cmd:"" help:"Delete resource."`
+	Logs        logs.Cmd                     `cmd:"" help:"Get logs of resource."`
 }
 
 var version = "dev"
@@ -71,7 +74,7 @@ func main() {
 		return
 	}
 
-	client, err := api.New(nctl.APICluster, nctl.Namespace)
+	client, err := api.New(nctl.APICluster, nctl.Namespace, api.LogClient(nctl.LogAPIAddress))
 	if err != nil {
 		fmt.Println(err)
 		fmt.Printf("\nUnable to get API client, are you logged in?\n\nUse `%s %s` to login.\n", kongCtx.Model.Name, auth.LoginCmdName)
