@@ -8,7 +8,7 @@ require (
 	github.com/gobuffalo/flect v0.2.3
 	github.com/int128/kubelogin v1.25.3
 	github.com/lucasepe/codename v0.2.0
-	github.com/ninech/apis v0.0.0-20230405094104-05c6ac3c53c8
+	github.com/ninech/apis v0.0.0-20230510151919-2b04a7af4f60
 	github.com/posener/complete v1.2.3
 	github.com/theckman/yacspin v0.13.12
 	github.com/willabides/kongplete v0.3.0
@@ -16,6 +16,7 @@ require (
 	k8s.io/api v0.25.3
 	k8s.io/apimachinery v0.25.3
 	k8s.io/client-go v0.25.3
+	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed
 	sigs.k8s.io/controller-runtime v0.13.0
 )
 
@@ -83,7 +84,6 @@ require (
 	helm.sh/helm/v3 v3.6.3 // indirect
 	k8s.io/klog/v2 v2.70.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1 // indirect
-	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
