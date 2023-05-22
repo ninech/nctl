@@ -6,9 +6,10 @@ import (
 	"strings"
 	"time"
 
-	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	apps "github.com/ninech/apis/apps/v1alpha1"
+	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/utils/pointer"
@@ -19,14 +20,21 @@ type applicationCmd struct {
 	Name        string            `arg:"" default:"" help:"Name of the application. A random name is generated if omitted."`
 	Wait        bool              `default:"true" help:"Wait until application is fully created."`
 	WaitTimeout time.Duration     `default:"10m" help:"Duration to wait for application getting ready. Only relevant if wait is set."`
-	GitURL      string            `required:"" help:"URL to the Git repository containing the application source. Both HTTPS and SSH formats are supported."`
-	GitSubPath  string            `help:"SubPath is a path in the git repo which contains the application code. If not given, the root directory of the git repo will be used."`
-	GitRevision string            `default:"main" help:"Revision defines the revision of the source to deploy the application to. This can be a commit, tag or branch."`
+	Git         gitConfig         `embed:"" prefix:"git-"`
 	Size        string            `default:"micro" help:"Size of the app."`
 	Port        int32             `default:"8080" help:"Port the app is listening on."`
 	Replicas    int32             `default:"1" help:"Amount of replicas of the running app."`
 	Hosts       []string          `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
 	Env         map[string]string `help:"Environment variables which are passed to the app at runtime."`
+}
+
+type gitConfig struct {
+	URL           string `required:"" help:"URL to the Git repository containing the application source. Both HTTPS and SSH formats are supported."`
+	SubPath       string `help:"SubPath is a path in the git repo which contains the application code. If not given, the root directory of the git repo will be used."`
+	Revision      string `default:"main" help:"Revision defines the revision of the source to deploy the application to. This can be a commit, tag or branch."`
+	Username      string `help:"Username to use when authenticating to the git repository over HTTPS." env:"GIT_USERNAME"`
+	Password      string `help:"Password to use when authenticating to the git repository over HTTPS. In case of GitHub or GitLab, this can also be an access token." env:"GIT_PASSWORD"`
+	SSHPrivateKey string `help:"Private key in x509 format to connect to the git repository via SSH." env:"GIT_SSH_PRIVATE_KEY"`
 }
 
 const (
@@ -44,6 +52,21 @@ const (
 func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	fmt.Println("Creating a new application")
 	newApp := app.newApplication(client.Namespace)
+
+	if gitAuthEnabled(app.Git) {
+		// for git auth we create a separate secret and then reference it in the app.
+		secret := gitAuthSecret(app.Git, newApp.Name, client.Namespace)
+		if err := client.Create(ctx, secret); err != nil {
+			return fmt.Errorf("unable to create git auth secret: %w", err)
+		}
+
+		newApp.Spec.ForProvider.Git.Auth = &apps.GitAuth{
+			FromSecret: &meta.LocalReference{
+				Name: secret.GetName(),
+			},
+		}
+	}
+
 	c := newCreator(client, newApp, strings.ToLower(apps.ApplicationKind))
 	ctx, cancel := context.WithTimeout(ctx, app.WaitTimeout)
 	defer cancel()
@@ -84,24 +107,19 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 func (app *applicationCmd) newApplication(namespace string) *apps.Application {
 	name := getName(app.Name)
 	size := apps.ApplicationSize(app.Size)
+
 	return &apps.Application{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
 		Spec: apps.ApplicationSpec{
-			ResourceSpec: runtimev1.ResourceSpec{
-				WriteConnectionSecretToReference: &runtimev1.SecretReference{
-					Name:      name,
-					Namespace: namespace,
-				},
-			},
 			ForProvider: apps.ApplicationParameters{
 				Git: apps.ApplicationGitConfig{
 					GitTarget: apps.GitTarget{
-						URL:      app.GitURL,
-						SubPath:  app.GitSubPath,
-						Revision: app.GitRevision,
+						URL:      app.Git.URL,
+						SubPath:  app.Git.SubPath,
+						Revision: app.Git.Revision,
 					},
 				},
 				Hosts: app.Hosts,
@@ -113,6 +131,35 @@ func (app *applicationCmd) newApplication(namespace string) *apps.Application {
 				},
 			},
 		},
+	}
+}
+
+func gitAuthEnabled(git gitConfig) bool {
+	if len(git.Username) != 0 ||
+		len(git.Password) != 0 ||
+		len(git.SSHPrivateKey) != 0 {
+		return true
+	}
+
+	return false
+}
+
+func gitAuthSecret(git gitConfig, name, namespace string) *corev1.Secret {
+	data := map[string][]byte{}
+
+	if len(git.SSHPrivateKey) != 0 {
+		data["privatekey"] = []byte(git.SSHPrivateKey)
+	} else if len(git.Username) != 0 && len(git.Password) != 0 {
+		data["username"] = []byte(git.Username)
+		data["password"] = []byte(git.Password)
+	}
+
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Data: data,
 	}
 }
 

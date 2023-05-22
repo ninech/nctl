@@ -21,41 +21,99 @@ func TestApplication(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmd := applicationCmd{
-		Wait:        false,
-		Name:        "custom-name",
-		GitURL:      "https://github.com/ninech/doesnotexist.git",
-		GitSubPath:  "/my/app",
-		GitRevision: "superbug",
-		Size:        "mini",
-		Hosts:       []string{"custom.example.org", "custom2.example.org"},
-		Port:        1337,
-		Replicas:    42,
-		Env:         map[string]string{"hello": "world"},
-	}
-
-	app := cmd.newApplication("default")
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()
 	apiClient := &api.Client{WithWatch: client, Namespace: "default"}
-
 	ctx := context.Background()
-	if err := cmd.Run(ctx, apiClient); err != nil {
-		t.Fatal(err)
+
+	cases := map[string]struct {
+		cmd      applicationCmd
+		checkApp func(t *testing.T, cmd applicationCmd, app *apps.Application)
+	}{
+		"without git auth": {
+			cmd: applicationCmd{
+				Git: gitConfig{
+					URL:      "https://github.com/ninech/doesnotexist.git",
+					SubPath:  "/my/app",
+					Revision: "superbug",
+				},
+				Wait:     false,
+				Name:     "custom-name",
+				Size:     "mini",
+				Hosts:    []string{"custom.example.org", "custom2.example.org"},
+				Port:     1337,
+				Replicas: 42,
+				Env:      map[string]string{"hello": "world"},
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				assert.Equal(t, cmd.Name, app.Name)
+				assert.Equal(t, cmd.Git.URL, app.Spec.ForProvider.Git.URL)
+				assert.Equal(t, cmd.Git.SubPath, app.Spec.ForProvider.Git.SubPath)
+				assert.Equal(t, cmd.Git.Revision, app.Spec.ForProvider.Git.Revision)
+				assert.Equal(t, cmd.Hosts, app.Spec.ForProvider.Hosts)
+				assert.Equal(t, apps.ApplicationSize(cmd.Size), *app.Spec.ForProvider.Config.Size)
+				assert.Equal(t, int32(cmd.Port), *app.Spec.ForProvider.Config.Port)
+				assert.Equal(t, int32(cmd.Replicas), *app.Spec.ForProvider.Config.Replicas)
+				assert.Equal(t, toEnvVars(cmd.Env), app.Spec.ForProvider.Config.Env)
+				assert.Nil(t, app.Spec.ForProvider.Git.Auth)
+			},
+		},
+		"with user/pass git auth": {
+			cmd: applicationCmd{
+				Git: gitConfig{
+					URL:      "https://github.com/ninech/doesnotexist.git",
+					Username: "deploy",
+					Password: "hunter2",
+				},
+				Wait: false,
+				Name: "user-pass-auth",
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				authSecret := gitAuthSecret(cmd.Git, app.Name, app.Namespace)
+				if err := apiClient.Get(ctx, api.ObjectName(authSecret), authSecret); err != nil {
+					t.Fatal(err)
+				}
+
+				assert.Equal(t, cmd.Git.Username, string(authSecret.Data["username"]))
+				assert.Equal(t, cmd.Git.Password, string(authSecret.Data["password"]))
+			},
+		},
+		"with ssh key git auth": {
+			cmd: applicationCmd{
+				Git: gitConfig{
+					URL:           "https://github.com/ninech/doesnotexist.git",
+					SSHPrivateKey: "fakekey",
+				},
+				Wait: false,
+				Name: "ssh-key-auth",
+				Size: "mini",
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				authSecret := gitAuthSecret(cmd.Git, app.Name, app.Namespace)
+				if err := apiClient.Get(ctx, api.ObjectName(authSecret), authSecret); err != nil {
+					t.Fatal(err)
+				}
+
+				assert.Equal(t, cmd.Git.SSHPrivateKey, string(authSecret.Data["privatekey"]))
+			},
+		},
 	}
 
-	if err := apiClient.Get(ctx, api.ObjectName(app), app); err != nil {
-		t.Fatal(err)
-	}
+	for name, tc := range cases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			app := tc.cmd.newApplication("default")
 
-	assert.Equal(t, cmd.Name, app.Name)
-	assert.Equal(t, cmd.GitURL, app.Spec.ForProvider.Git.URL)
-	assert.Equal(t, cmd.GitSubPath, app.Spec.ForProvider.Git.SubPath)
-	assert.Equal(t, cmd.GitRevision, app.Spec.ForProvider.Git.Revision)
-	assert.Equal(t, cmd.Hosts, app.Spec.ForProvider.Hosts)
-	assert.Equal(t, apps.ApplicationSize(cmd.Size), *app.Spec.ForProvider.Config.Size)
-	assert.Equal(t, int32(cmd.Port), *app.Spec.ForProvider.Config.Port)
-	assert.Equal(t, int32(cmd.Replicas), *app.Spec.ForProvider.Config.Replicas)
-	assert.Equal(t, toEnvVars(cmd.Env), app.Spec.ForProvider.Config.Env)
+			if err := tc.cmd.Run(ctx, apiClient); err != nil {
+				t.Fatal(err)
+			}
+
+			if err := apiClient.Get(ctx, api.ObjectName(app), app); err != nil {
+				t.Fatal(err)
+			}
+
+			tc.checkApp(t, tc.cmd, app)
+		})
+	}
 }
 
 func TestApplicationWait(t *testing.T) {
