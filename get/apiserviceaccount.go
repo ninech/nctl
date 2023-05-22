@@ -23,31 +23,9 @@ const (
 
 func (asa *apiServiceAccountsCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
 	header := get.Output == full
-
-	if len(asa.Name) != 0 {
-		sa := &iam.APIServiceAccount{}
-		if err := client.Get(ctx, client.Name(asa.Name), sa); err != nil {
-			return fmt.Errorf("unable to get API Service Account %s: %w", asa.Name, err)
-		}
-
-		if asa.PrintToken {
-			return asa.printToken(ctx, client, sa)
-		}
-
-		if asa.PrintKubeconfig {
-			return asa.printKubeconfig(ctx, client, sa)
-		}
-
-		return asa.print([]iam.APIServiceAccount{*sa}, header)
-	}
-
-	if asa.PrintToken || asa.PrintKubeconfig {
-		return fmt.Errorf("name is not set, token or kubeconfig can only be printed for a single API Service Account")
-	}
-
 	asaList := &iam.APIServiceAccountList{}
 
-	if err := list(ctx, client, asaList, get.AllNamespaces); err != nil {
+	if err := get.list(ctx, client, asaList, matchName(asa.Name)); err != nil {
 		return err
 	}
 
@@ -56,18 +34,34 @@ func (asa *apiServiceAccountsCmd) Run(ctx context.Context, client *api.Client, g
 		return nil
 	}
 
-	return asa.print(asaList.Items, header)
+	if len(asa.Name) != 0 {
+		if asa.PrintToken {
+			return asa.printToken(ctx, client, &asaList.Items[0])
+		}
+
+		if asa.PrintKubeconfig {
+			return asa.printKubeconfig(ctx, client, &asaList.Items[0])
+		}
+
+		return asa.print(asaList.Items, get, header)
+	}
+
+	if asa.PrintToken || asa.PrintKubeconfig {
+		return fmt.Errorf("name is not set, token or kubeconfig can only be printed for a single API Service Account")
+	}
+
+	return asa.print(asaList.Items, get, header)
 }
 
-func (asa *apiServiceAccountsCmd) print(sas []iam.APIServiceAccount, header bool) error {
+func (asa *apiServiceAccountsCmd) print(sas []iam.APIServiceAccount, get *Cmd, header bool) error {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 
 	if header {
-		fmt.Fprintf(w, "%s\t%s\t%s\n", "NAME", "NAMESPACE", "ROLE")
+		get.writeHeader(w, "NAME", "ROLE")
 	}
 
 	for _, sa := range sas {
-		fmt.Fprintf(w, "%s\t%s\t%s\n", sa.Name, sa.Namespace, sa.Spec.ForProvider.Role)
+		get.writeTabRow(w, sa.Namespace, sa.Name, string(sa.Spec.ForProvider.Role))
 	}
 
 	return w.Flush()
