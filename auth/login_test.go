@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path"
 	"testing"
 
 	"k8s.io/client-go/tools/clientcmd"
@@ -85,6 +86,42 @@ func TestLoginStaticToken(t *testing.T) {
 	if kc.AuthInfos[apiHost].Exec != nil {
 		t.Fatalf("expected execConfig to be empty, got %v", kc.AuthInfos[apiHost].Exec)
 	}
+}
+
+func TestLoginCmdWithoutExistingKubeconfig(t *testing.T) {
+	dir, err := os.MkdirTemp("", "nctl-test-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+
+	kubeconfig := path.Join(dir, "test-kubeconfig.yaml")
+	os.Setenv(clientcmd.RecommendedConfigPathEnvVar, kubeconfig)
+
+	apiHost := "api.example.org"
+	// we run without the execPlugin, that would be something for an e2e test
+	cmd := &LoginCmd{Organization: "test", ExecPlugin: false, APIURL: "https://" + apiHost, IssuerURL: "https://auth.example.org"}
+	if err := cmd.Run(context.Background(), ""); err != nil {
+		t.Fatal(err)
+	}
+
+	f, err := os.Open(kubeconfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// read out the kubeconfig again to test the contents
+	b, err := io.ReadAll(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	kc, err := clientcmd.Load(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	checkConfig(t, kc, 1, apiHost)
 }
 
 func checkConfig(t *testing.T, cfg *clientcmdapi.Config, expectedLen int, expectedContext string) {
