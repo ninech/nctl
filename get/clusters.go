@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"text/tabwriter"
 
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
@@ -27,9 +28,9 @@ func (l *clustersCmd) Run(ctx context.Context, client *api.Client, get *Cmd) err
 
 	switch get.Output {
 	case full:
-		return printClusters(clusterList.Items, true)
+		return printClusters(clusterList.Items, get, true)
 	case noHeader:
-		return printClusters(clusterList.Items, false)
+		return printClusters(clusterList.Items, get, false)
 	case contexts:
 		for _, cluster := range clusterList.Items {
 			fmt.Printf("%s\n", auth.ContextName(&cluster))
@@ -39,11 +40,11 @@ func (l *clustersCmd) Run(ctx context.Context, client *api.Client, get *Cmd) err
 	return nil
 }
 
-func printClusters(clusters []infrastructure.KubernetesCluster, header bool) error {
+func printClusters(clusters []infrastructure.KubernetesCluster, get *Cmd, header bool) error {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
 
 	if header {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", "NAME", "NAMESPACE", "PROVIDER", "NUM_NODES")
+		get.writeHeader(w, "NAME", "PROVIDER", "NUM_NODES")
 	}
 
 	for _, cluster := range clusters {
@@ -60,8 +61,7 @@ func printClusters(clusters []infrastructure.KubernetesCluster, header bool) err
 		if cluster.Spec.ForProvider.VCluster != nil {
 			provider = "vcluster"
 		}
-
-		fmt.Fprintf(w, "%s\t%s\t%s\t%v\n", cluster.Name, cluster.Namespace, provider, numNodes)
+		get.writeTabRow(w, cluster.Namespace, cluster.Name, provider, strconv.Itoa(numNodes))
 	}
 
 	return w.Flush()

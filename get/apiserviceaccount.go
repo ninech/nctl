@@ -43,25 +43,25 @@ func (asa *apiServiceAccountsCmd) Run(ctx context.Context, client *api.Client, g
 			return asa.printKubeconfig(ctx, client, &asaList.Items[0])
 		}
 
-		return asa.print(asaList.Items, header)
+		return asa.print(asaList.Items, get, header)
 	}
 
 	if asa.PrintToken || asa.PrintKubeconfig {
 		return fmt.Errorf("name is not set, token or kubeconfig can only be printed for a single API Service Account")
 	}
 
-	return asa.print(asaList.Items, header)
+	return asa.print(asaList.Items, get, header)
 }
 
-func (asa *apiServiceAccountsCmd) print(sas []iam.APIServiceAccount, header bool) error {
+func (asa *apiServiceAccountsCmd) print(sas []iam.APIServiceAccount, get *Cmd, header bool) error {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 
 	if header {
-		fmt.Fprintf(w, "%s\t%s\t%s\n", "NAME", "NAMESPACE", "ROLE")
+		get.writeHeader(w, "NAME", "ROLE")
 	}
 
 	for _, sa := range sas {
-		fmt.Fprintf(w, "%s\t%s\t%s\n", sa.Name, sa.Namespace, sa.Spec.ForProvider.Role)
+		get.writeTabRow(w, sa.Namespace, sa.Name, string(sa.Spec.ForProvider.Role))
 	}
 
 	return w.Flush()
