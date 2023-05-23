@@ -12,6 +12,7 @@ import (
 	"github.com/grafana/loki/pkg/logcli/output"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/log"
+	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -83,7 +84,7 @@ func TestApplication(t *testing.T) {
 			}
 
 			if tc.expectedLines != 0 {
-				assert.Equal(t, countLines(buf.String()), tc.expectedLines)
+				assert.Equal(t, test.CountLines(buf.String()), tc.expectedLines)
 			}
 
 			if tc.cmd.Output == "json" {
@@ -104,14 +105,4 @@ func TestApplication(t *testing.T) {
 		})
 	}
 
-}
-
-func countLines(s string) int {
-	count := 0
-	for _, c := range s {
-		if c == '\n' {
-			count++
-		}
-	}
-	return count
 }

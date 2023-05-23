@@ -2,6 +2,7 @@ package get
 
 import (
 	"context"
+	"io"
 	"os"
 	"strings"
 	"text/tabwriter"
@@ -13,6 +14,7 @@ import (
 
 type applicationsCmd struct {
 	Name string `arg:"" help:"Name of the Application to get. If omitted all in the namespace will be listed." default:""`
+	out  io.Writer
 }
 
 func (cmd *applicationsCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
@@ -27,18 +29,23 @@ func (cmd *applicationsCmd) Run(ctx context.Context, client *api.Client, get *Cm
 		return nil
 	}
 
+	out := cmd.out
+	if out == nil {
+		out = os.Stdout
+	}
+
 	switch get.Output {
 	case full:
-		return printApplication(appList.Items, get, true)
+		return printApplication(appList.Items, get, out, true)
 	case noHeader:
-		return printApplication(appList.Items, get, false)
+		return printApplication(appList.Items, get, out, false)
 	}
 
 	return nil
 }
 
-func printApplication(apps []apps.Application, get *Cmd, header bool) error {
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
+func printApplication(apps []apps.Application, get *Cmd, out io.Writer, header bool) error {
+	w := tabwriter.NewWriter(out, 0, 0, 4, ' ', 0)
 
 	if header {
 		get.writeHeader(w, "NAME", "HOSTS", "UNVERIFIED_HOSTS")
