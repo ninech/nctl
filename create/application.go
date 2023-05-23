@@ -126,8 +126,8 @@ func (app *applicationCmd) newApplication(namespace string) *apps.Application {
 				Hosts: app.Hosts,
 				Config: apps.Config{
 					Size:     &size,
-					Replicas: pointer.Int32Ptr(app.Replicas),
-					Port:     pointer.Int32Ptr(app.Port),
+					Replicas: pointer.Int32(app.Replicas),
+					Port:     pointer.Int32(app.Port),
 					Env:      toEnvVars(app.Env),
 				},
 			},
