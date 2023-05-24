@@ -1,1 +1,8 @@
 dist/
+
+### vscode ###
+.vscode/*
+*.code-workspace
+
+### MacOS ###
+.DS_Store
