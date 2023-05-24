@@ -13,7 +13,6 @@ require (
 	github.com/lucasepe/codename v0.2.0
 	github.com/ninech/apis v0.0.0-20230510151919-2b04a7af4f60
 	github.com/posener/complete v1.2.3
-	github.com/prometheus/common v0.39.0
 	github.com/stretchr/testify v1.8.1
 	github.com/theckman/yacspin v0.13.12
 	github.com/willabides/kongplete v0.3.0
@@ -129,6 +128,7 @@ require (
 	github.com/prometheus/alertmanager v0.25.0 // indirect
 	github.com/prometheus/client_golang v1.14.0 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
+	github.com/prometheus/common v0.39.0 // indirect
 	github.com/prometheus/common/sigv4 v0.1.0 // indirect
 	github.com/prometheus/exporter-toolkit v0.8.2 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
