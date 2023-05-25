@@ -31,25 +31,25 @@ func TestApplication(t *testing.T) {
 	ctx := context.Background()
 
 	cases := map[string]struct {
-		cmd           applicationCmd
+		cmd           logsCmd
 		expectedLines int
 	}{
 		"line limit": {
-			cmd: applicationCmd{
+			cmd: logsCmd{
 				Output: "default",
 				Lines:  10,
 			},
 			expectedLines: 10,
 		},
 		"json output": {
-			cmd: applicationCmd{
+			cmd: logsCmd{
 				Output: "json",
 				Lines:  8,
 			},
 			expectedLines: 8,
 		},
 		"follow": {
-			cmd: applicationCmd{
+			cmd: logsCmd{
 				Output: "default",
 				Follow: true,
 			},
@@ -58,7 +58,7 @@ func TestApplication(t *testing.T) {
 			expectedLines: len(lines),
 		},
 		"follow json": {
-			cmd: applicationCmd{
+			cmd: logsCmd{
 				Output: "json",
 				Follow: true,
 			},
@@ -79,7 +79,7 @@ func TestApplication(t *testing.T) {
 
 			tc.cmd.out = out
 
-			if err := tc.cmd.Run(ctx, apiClient, &Cmd{}); err != nil {
+			if err := tc.cmd.Run(ctx, apiClient, "app", "app-name"); err != nil {
 				t.Fatal(err)
 			}
 
@@ -100,9 +100,7 @@ func TestApplication(t *testing.T) {
 					assert.Equal(t, lines[i], logLine.Line)
 				}
 			}
-
 			buf.Reset()
 		})
 	}
-
 }
