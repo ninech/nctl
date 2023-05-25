@@ -3,12 +3,10 @@ package auth
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/url"
 	"os"
 	"os/exec"
 
-	"github.com/alecthomas/kong"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
 	"k8s.io/client-go/tools/clientcmd"
@@ -27,7 +25,7 @@ const (
 	LoginCmdName = "auth login"
 )
 
-func (l *LoginCmd) Run(command string) error {
+func (l *LoginCmd) Run(ctx context.Context, command string) error {
 	loadingRules, err := api.LoadingRules()
 	if err != nil {
 		return err
@@ -48,7 +46,7 @@ func (l *LoginCmd) Run(command string) error {
 		return err
 	}
 
-	return login(cfg, loadingRules.GetDefaultFilename(), runExecPlugin(l.ExecPlugin), namespace(l.Organization))
+	return login(ctx, cfg, loadingRules.GetDefaultFilename(), runExecPlugin(l.ExecPlugin), namespace(l.Organization))
 }
 
 type apiConfig struct {
@@ -136,7 +134,7 @@ func switchCurrentContext() loginOption {
 	}
 }
 
-func login(newConfig *clientcmdapi.Config, kubeconfigPath string, opts ...loginOption) error {
+func login(ctx context.Context, newConfig *clientcmdapi.Config, kubeconfigPath string, opts ...loginOption) error {
 	loginConfig := &loginConfig{}
 	for _, opt := range opts {
 		opt(loginConfig)
@@ -172,22 +170,10 @@ func login(newConfig *clientcmdapi.Config, kubeconfigPath string, opts ...loginO
 			return fmt.Errorf("no Exec found in authInfo")
 		}
 
-		// construct and run the auth oidc command via kong
-		parser, err := kong.New(&OIDCCmd{})
-		if err != nil {
-			return fmt.Errorf("unable to parse OIDCCmd: %w", err)
-		}
-		ctx, err := parser.Parse(authInfo.Exec.Args[2:])
-		if err != nil {
-			return fmt.Errorf("unable to parse args: %w", err)
-		}
-		ctx.BindTo(context.Background(), (*context.Context)(nil))
-		// we want to discard the output of the login command as we don't need
-		// the returned token in this case.
-		ctx.BindTo(io.Discard, (*io.Writer)(nil))
-
-		if err := ctx.Run(); err != nil {
-			return fmt.Errorf("unable to login: %w", err)
+		// we discard the returned token as we just want to trigger the auth
+		// flow and populate the cache.
+		if _, err := api.GetTokenFromExecConfig(ctx, authInfo.Exec); err != nil {
+			return err
 		}
 
 		format.PrintSuccessf("🚀", "logged into cluster %s", newConfig.CurrentContext)

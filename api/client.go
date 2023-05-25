@@ -9,6 +9,7 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/ninech/apis"
+	"github.com/ninech/nctl/api/log"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -24,19 +25,29 @@ type Client struct {
 	Config         *rest.Config
 	KubeconfigPath string
 	Namespace      string
+	Log            *log.Client
+	Token          string
 }
+
+type ClientOpt func(c *Client) error
 
 // New returns a new Client by loading a kubeconfig with the supplied context
 // and namespace. The kubeconfig is discovered like this:
 // * KUBECONFIG environment variable pointing at a file
 // * $HOME/.kube/config if exists
-func New(apiClusterContext, namespace string) (*Client, error) {
+func New(ctx context.Context, apiClusterContext, namespace string, opts ...ClientOpt) (*Client, error) {
 	client := &Client{
 		Namespace: namespace,
 	}
 	if err := client.loadConfig(apiClusterContext); err != nil {
 		return nil, err
 	}
+
+	token, err := GetTokenFromConfig(ctx, client.Config)
+	if err != nil {
+		return nil, err
+	}
+	client.Token = token
 
 	scheme, err := NewScheme()
 	if err != nil {
@@ -53,9 +64,27 @@ func New(apiClusterContext, namespace string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	client.WithWatch = c
+
+	for _, opt := range opts {
+		if err := opt(client); err != nil {
+			return nil, err
+		}
+	}
+
 	return client, nil
+}
+
+// LogClient sets up a log client connected to the provided address.
+func LogClient(address string) ClientOpt {
+	return func(c *Client) error {
+		logClient, err := log.NewClient(address, c.Token, c.Namespace)
+		if err != nil {
+			return fmt.Errorf("unable to create log client: %w", err)
+		}
+		c.Log = logClient
+		return nil
+	}
 }
 
 // NewScheme returns a *runtime.Scheme with all the relevant types registered.
