@@ -65,7 +65,7 @@ func main() {
 	// handle the login/oidc cmds separately as we should not try to get the
 	// API client if we're not logged in.
 	if strings.HasPrefix(kongCtx.Command(), auth.LoginCmdName) {
-		kongCtx.FatalIfErrorf(nctl.Auth.Login.Run(kongCtx.Model.Name))
+		kongCtx.FatalIfErrorf(nctl.Auth.Login.Run(ctx, kongCtx.Model.Name))
 		return
 	}
 
@@ -74,7 +74,7 @@ func main() {
 		return
 	}
 
-	client, err := api.New(nctl.APICluster, nctl.Namespace, api.LogClient(nctl.LogAPIAddress))
+	client, err := api.New(ctx, nctl.APICluster, nctl.Namespace, api.LogClient(nctl.LogAPIAddress))
 	if err != nil {
 		fmt.Println(err)
 		fmt.Printf("\nUnable to get API client, are you logged in?\n\nUse `%s %s` to login.\n", kongCtx.Model.Name, auth.LoginCmdName)

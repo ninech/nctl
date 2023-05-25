@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"io"
 	"log"
 	"os"
@@ -27,7 +28,7 @@ func TestLoginCmd(t *testing.T) {
 	apiHost := "api.example.org"
 	// we run without the execPlugin, that would be something for an e2e test
 	cmd := &LoginCmd{Organization: "test", ExecPlugin: false, APIURL: "https://" + apiHost, IssuerURL: "https://auth.example.org"}
-	if err := cmd.Run(""); err != nil {
+	if err := cmd.Run(context.Background(), ""); err != nil {
 		t.Fatal(err)
 	}
 

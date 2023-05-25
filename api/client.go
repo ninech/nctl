@@ -26,6 +26,7 @@ type Client struct {
 	KubeconfigPath string
 	Namespace      string
 	Log            *log.Client
+	Token          string
 }
 
 type ClientOpt func(c *Client) error
@@ -34,13 +35,19 @@ type ClientOpt func(c *Client) error
 // and namespace. The kubeconfig is discovered like this:
 // * KUBECONFIG environment variable pointing at a file
 // * $HOME/.kube/config if exists
-func New(apiClusterContext, namespace string, opts ...ClientOpt) (*Client, error) {
+func New(ctx context.Context, apiClusterContext, namespace string, opts ...ClientOpt) (*Client, error) {
 	client := &Client{
 		Namespace: namespace,
 	}
 	if err := client.loadConfig(apiClusterContext); err != nil {
 		return nil, err
 	}
+
+	token, err := GetTokenFromConfig(ctx, client.Config)
+	if err != nil {
+		return nil, err
+	}
+	client.Token = token
 
 	scheme, err := NewScheme()
 	if err != nil {
@@ -71,7 +78,7 @@ func New(apiClusterContext, namespace string, opts ...ClientOpt) (*Client, error
 // LogClient sets up a log client connected to the provided address.
 func LogClient(address string) ClientOpt {
 	return func(c *Client) error {
-		logClient, err := log.NewClient(address, c.Config.BearerToken, c.Namespace)
+		logClient, err := log.NewClient(address, c.Token, c.Namespace)
 		if err != nil {
 			return fmt.Errorf("unable to create log client: %w", err)
 		}
