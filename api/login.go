@@ -44,8 +44,12 @@ var (
 )
 
 // GetTokenFromConfig takes a rest.Config and returns a valid OIDC access
-// token.
+// token or the static bearer token if it's set in the config.
 func GetTokenFromConfig(ctx context.Context, cfg *rest.Config) (string, error) {
+	if len(cfg.BearerToken) != 0 {
+		return cfg.BearerToken, nil
+	}
+
 	if cfg.ExecProvider == nil {
 		return "", fmt.Errorf("config does not contain execProvider")
 	}

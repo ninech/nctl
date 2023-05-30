@@ -15,7 +15,8 @@ import (
 
 type LoginCmd struct {
 	Organization string `arg:"" help:"Name of the organization to login to."`
-	APIURL       string `help:"The URL of the Nine API" default:"https://nineapis.ch"`
+	APIURL       string `help:"The URL of the Nine API" default:"https://nineapis.ch" env:"NCTL_API_URL" name:"api-url"`
+	APIToken     string `help:"Use a static API token instead of using an OIDC login." env:"NCTL_API_TOKEN"`
 	IssuerURL    string `help:"Issuer URL is the OIDC issuer URL of the API." default:"https://auth.nine.ch/auth/realms/pub"`
 	ClientID     string `help:"Client ID is the OIDC client ID of the API." default:"nineapis.ch-f178254"`
 	ExecPlugin   bool   `help:"Automatically run exec plugin after writing the kubeconfig." hidden:"" default:"true"`
@@ -41,7 +42,13 @@ func (l *LoginCmd) Run(ctx context.Context, command string) error {
 		return err
 	}
 
-	cfg, err := newAPIConfig(apiURL, issuerURL, command, l.ClientID)
+	opts := []apiConfigOption{}
+	if len(l.APIToken) != 0 {
+		l.ExecPlugin = false
+		opts = append(opts, useStaticToken(l.APIToken))
+	}
+
+	cfg, err := newAPIConfig(apiURL, issuerURL, command, l.ClientID, opts...)
 	if err != nil {
 		return err
 	}
@@ -51,6 +58,7 @@ func (l *LoginCmd) Run(ctx context.Context, command string) error {
 
 type apiConfig struct {
 	name   string
+	token  string
 	caCert []byte
 }
 
@@ -68,6 +76,12 @@ func setCACert(caCert []byte) apiConfigOption {
 	}
 }
 
+func useStaticToken(token string) apiConfigOption {
+	return func(ac *apiConfig) {
+		ac.token = token
+	}
+}
+
 func newAPIConfig(apiURL, issuerURL *url.URL, command, clientID string, opts ...apiConfigOption) (*clientcmdapi.Config, error) {
 	cfg := &apiConfig{
 		name: apiURL.Host,
@@ -77,12 +91,7 @@ func newAPIConfig(apiURL, issuerURL *url.URL, command, clientID string, opts ...
 		opt(cfg)
 	}
 
-	// we make sure our command is in the $PATH as the client-go credential plugin will need to find it.
-	if _, err := exec.LookPath(command); err != nil && command != "" {
-		return nil, fmt.Errorf("%s not found in $PATH, please add it first before logging in", command)
-	}
-
-	return &clientcmdapi.Config{
+	clientConfig := &clientcmdapi.Config{
 		Clusters: map[string]*clientcmdapi.Cluster{
 			cfg.name: {
 				Server:                   apiURL.String(),
@@ -95,13 +104,27 @@ func newAPIConfig(apiURL, issuerURL *url.URL, command, clientID string, opts ...
 				AuthInfo: cfg.name,
 			},
 		},
+		AuthInfos:      map[string]*clientcmdapi.AuthInfo{},
 		CurrentContext: cfg.name,
-		AuthInfos: map[string]*clientcmdapi.AuthInfo{
-			cfg.name: {
-				Exec: execConfig(command, clientID, issuerURL),
-			},
-		},
-	}, nil
+	}
+
+	if len(cfg.token) != 0 {
+		clientConfig.AuthInfos[cfg.name] = &clientcmdapi.AuthInfo{
+			Token: cfg.token,
+		}
+		return clientConfig, nil
+	}
+
+	// we make sure our command is in the $PATH as the client-go credential plugin will need to find it.
+	if _, err := exec.LookPath(command); err != nil && command != "" {
+		return nil, fmt.Errorf("%s not found in $PATH, please add it first before logging in", command)
+	}
+
+	clientConfig.AuthInfos[cfg.name] = &clientcmdapi.AuthInfo{
+		Exec: execConfig(command, clientID, issuerURL),
+	}
+
+	return clientConfig, nil
 }
 
 type loginConfig struct {
