@@ -3,13 +3,13 @@ package get
 import (
 	"context"
 	"io"
-	"os"
 	"strings"
 	"text/tabwriter"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/format"
 )
 
 type applicationsCmd struct {
@@ -29,16 +29,13 @@ func (cmd *applicationsCmd) Run(ctx context.Context, client *api.Client, get *Cm
 		return nil
 	}
 
-	out := cmd.out
-	if out == nil {
-		out = os.Stdout
-	}
-
 	switch get.Output {
 	case full:
-		return printApplication(appList.Items, get, out, true)
+		return printApplication(appList.Items, get, defaultOut(cmd.out), true)
 	case noHeader:
-		return printApplication(appList.Items, get, out, false)
+		return printApplication(appList.Items, get, defaultOut(cmd.out), false)
+	case yamlOut:
+		return format.PrettyPrintObjects(appList.GetItems(), format.PrintOpts{Out: defaultOut(cmd.out)})
 	}
 
 	return nil

@@ -2,10 +2,19 @@ package format
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"strings"
 	"time"
 
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	"github.com/fatih/color"
+	"github.com/goccy/go-yaml"
+	"github.com/goccy/go-yaml/lexer"
+	"github.com/goccy/go-yaml/printer"
 	"github.com/theckman/yacspin"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -76,5 +85,118 @@ func spinnerConfig(message, stopMessage string) yacspin.Config {
 		StopFailMessage:   message,
 		StopCharacter:     SuccessChar,
 		StopFailCharacter: FailureChar,
+	}
+}
+
+const escape = "\x1b"
+
+func format(attr color.Attribute) string {
+	return fmt.Sprintf("%s[%dm", escape, attr)
+}
+
+// PrintOpts customizes the printing.
+type PrintOpts struct {
+	// Out will be used to print to if set instead of stdout.
+	Out io.Writer
+}
+
+// PrettyPrintObjects prints the supplied objects in "pretty" colored yaml
+// with some metadata, status and other default fields stripped out. If
+// multiple objects are supplied, they will be divided with a yaml divider.
+func PrettyPrintObjects[T resource.Managed](objs []T, opts PrintOpts) error {
+	for i, obj := range objs {
+		if err := prettyPrintObject(obj, opts); err != nil {
+			return err
+		}
+		// if there's another object we print a yaml divider
+		if i != len(objs)-1 {
+			fmt.Println("---")
+		}
+	}
+
+	return nil
+}
+
+// prettyPrintObject strips the supplied obj and prints it out similar to how
+// https://github.com/goccy/go-yaml#ycat does it.
+func prettyPrintObject(obj resource.Managed, opts PrintOpts) error {
+	strippedObj, err := stripObj(obj)
+	if err != nil {
+		return err
+	}
+
+	b, err := yaml.Marshal(strippedObj)
+	if err != nil {
+		return err
+	}
+
+	p := printer.Printer{
+		LineNumber: false,
+		Bool: printerProperty(&printer.Property{
+			Prefix: format(color.FgHiMagenta),
+			Suffix: format(color.Reset),
+		}),
+		MapKey: printerProperty(&printer.Property{
+			Prefix: format(color.FgHiCyan),
+			Suffix: format(color.Reset),
+		}),
+		Number: printerProperty(&printer.Property{
+			Prefix: format(color.FgHiMagenta),
+			Suffix: format(color.Reset),
+		}),
+		String: printerProperty(&printer.Property{
+			Prefix: format(color.FgHiGreen),
+			Suffix: format(color.Reset),
+		}),
+	}
+
+	output := []byte(p.PrintTokens(lexer.Tokenize(string(b))) + "\n")
+
+	if opts.Out == nil {
+		opts.Out = os.Stdout
+	}
+
+	_, err = opts.Out.Write(output)
+	return err
+}
+
+// stripObj removes some fields which simply add clutter to the yaml output.
+// The object should still be applyable afterwards as just defaults and
+// computed fields get removed.
+func stripObj(obj resource.Managed) (map[string]any, error) {
+	strippedObj := obj.DeepCopyObject().(resource.Managed)
+	strippedObj.SetManagedFields(nil)
+	strippedObj.SetResourceVersion("")
+	strippedObj.SetUID("")
+	strippedObj.SetGeneration(0)
+	strippedObj.SetProviderConfigReference(nil)
+	strippedObj.SetDeletionPolicy("")
+	strippedObj.SetFinalizers(nil)
+
+	annotations := strippedObj.GetAnnotations()
+	for k := range annotations {
+		if strings.HasPrefix(k, "crossplane.io") ||
+			strings.HasPrefix(k, "kubectl.kubernetes.io") {
+			delete(annotations, k)
+		}
+	}
+	strippedObj.SetAnnotations(annotations)
+
+	// some fields cannot be removed with a Set, so we convert to unstructured
+	// to get rid of these.
+	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(strippedObj)
+	if err != nil {
+		return nil, err
+	}
+
+	unstructured.RemoveNestedField(unstructuredObj, "status", "conditions")
+	unstructured.RemoveNestedField(unstructuredObj, "metadata", "creationTimestamp")
+
+	return unstructuredObj, nil
+}
+
+func printerProperty(p *printer.Property) printer.PrintFunc {
+	return func() *printer.Property {
+		return p
 	}
 }

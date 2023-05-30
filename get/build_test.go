@@ -16,6 +16,10 @@ import (
 
 func TestBuild(t *testing.T) {
 	build := apps.Build{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       apps.BuildKind,
+			APIVersion: apps.BuildGroupVersionKind.Version,
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "default",

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/gobuffalo/flect"
 	"github.com/ninech/nctl/api"
@@ -11,7 +12,7 @@ import (
 )
 
 type Cmd struct {
-	Output             output                `help:"Configures list output. ${enum}" short:"o" enum:"full,no-header,contexts" default:"full"`
+	Output             output                `help:"Configures list output. ${enum}" short:"o" enum:"full,no-header,contexts,yaml" default:"full"`
 	AllNamespaces      bool                  `help:"apply the get over all namespaces." short:"A"`
 	Clusters           clustersCmd           `cmd:"" group:"infrastructure.nine.ch" help:"Get Kubernetes Clusters."`
 	APIServiceAccounts apiServiceAccountsCmd `cmd:"" group:"iam.nine.ch" name:"apiserviceaccounts" aliases:"asa" help:"Get API Service Accounts."`
@@ -27,6 +28,7 @@ const (
 	full     output = "full"
 	noHeader output = "no-header"
 	contexts output = "contexts"
+	yamlOut  output = "yaml"
 )
 
 type listOpt func(cmd *Cmd)
@@ -86,4 +88,11 @@ func printEmptyMessage(kind, namespace string) {
 	}
 
 	fmt.Printf("no %s found in namespace %s\n", flect.Pluralize(kind), namespace)
+}
+
+func defaultOut(out io.Writer) io.Writer {
+	if out == nil {
+		return os.Stdout
+	}
+	return out
 }

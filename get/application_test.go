@@ -26,7 +26,7 @@ func TestApplication(t *testing.T) {
 	app2.Name = app2.Name + "-2"
 
 	get := &Cmd{
-		Output: "full",
+		Output: full,
 	}
 
 	scheme, err := api.NewScheme()
@@ -63,7 +63,7 @@ func TestApplication(t *testing.T) {
 	assert.Equal(t, 2, test.CountLines(buf.String()))
 	buf.Reset()
 
-	get.Output = "no-header"
+	get.Output = noHeader
 	if err := cmd.Run(ctx, apiClient, get); err != nil {
 		t.Fatal(err)
 	}

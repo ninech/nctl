@@ -56,16 +56,18 @@ func (cmd *buildCmd) Run(ctx context.Context, client *api.Client, get *Cmd) erro
 
 	switch get.Output {
 	case full:
-		return printBuild(buildList.Items, get, true)
+		return printBuild(buildList.Items, get, defaultOut(cmd.out), true)
 	case noHeader:
-		return printBuild(buildList.Items, get, false)
+		return printBuild(buildList.Items, get, defaultOut(cmd.out), false)
+	case yamlOut:
+		return format.PrettyPrintObjects(buildList.GetItems(), format.PrintOpts{Out: defaultOut(cmd.out)})
 	}
 
 	return nil
 }
 
-func printBuild(builds []apps.Build, get *Cmd, header bool) error {
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
+func printBuild(builds []apps.Build, get *Cmd, out io.Writer, header bool) error {
+	w := tabwriter.NewWriter(out, 0, 0, 4, ' ', 0)
 
 	if header {
 		get.writeHeader(w, "NAME", "STATUS", "AGE")

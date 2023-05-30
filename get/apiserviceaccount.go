@@ -8,6 +8,7 @@ import (
 
 	iam "github.com/ninech/apis/iam/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/format"
 )
 
 type apiServiceAccountsCmd struct {
@@ -22,7 +23,6 @@ const (
 )
 
 func (asa *apiServiceAccountsCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
-	header := get.Output == full
 	asaList := &iam.APIServiceAccountList{}
 
 	if err := get.list(ctx, client, asaList, matchName(asa.Name)); err != nil {
@@ -42,15 +42,22 @@ func (asa *apiServiceAccountsCmd) Run(ctx context.Context, client *api.Client, g
 		if asa.PrintKubeconfig {
 			return asa.printKubeconfig(ctx, client, &asaList.Items[0])
 		}
-
-		return asa.print(asaList.Items, get, header)
 	}
 
 	if asa.PrintToken || asa.PrintKubeconfig {
 		return fmt.Errorf("name is not set, token or kubeconfig can only be printed for a single API Service Account")
 	}
 
-	return asa.print(asaList.Items, get, header)
+	switch get.Output {
+	case full:
+		return asa.print(asaList.Items, get, true)
+	case noHeader:
+		return asa.print(asaList.Items, get, false)
+	case yamlOut:
+		return format.PrettyPrintObjects(asaList.GetItems(), format.PrintOpts{})
+	}
+
+	return nil
 }
 
 func (asa *apiServiceAccountsCmd) print(sas []iam.APIServiceAccount, get *Cmd, header bool) error {
