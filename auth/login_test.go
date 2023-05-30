@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -44,6 +45,46 @@ func TestLoginCmd(t *testing.T) {
 	}
 
 	checkConfig(t, merged, 2, "existing")
+}
+
+func TestLoginStaticToken(t *testing.T) {
+	kubeconfig, err := os.CreateTemp("", "*-kubeconfig.yaml")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer os.Remove(kubeconfig.Name())
+
+	os.Setenv(clientcmd.RecommendedConfigPathEnvVar, kubeconfig.Name())
+
+	apiHost := "api.example.org"
+	token := "faketoken"
+
+	cmd := &LoginCmd{Organization: "test", APIURL: "https://" + apiHost, APIToken: token}
+	if err := cmd.Run(context.Background(), ""); err != nil {
+		t.Fatal(err)
+	}
+
+	// read out the kubeconfig again to test the contents
+	b, err := io.ReadAll(kubeconfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	kc, err := clientcmd.Load(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Printf("%s", b)
+	checkConfig(t, kc, 1, "")
+
+	if token != kc.AuthInfos[apiHost].Token {
+		t.Fatalf("expected token to be %s, got %s", token, kc.AuthInfos[apiHost].Token)
+	}
+
+	if kc.AuthInfos[apiHost].Exec != nil {
+		t.Fatalf("expected execConfig to be empty, got %v", kc.AuthInfos[apiHost].Exec)
+	}
 }
 
 func checkConfig(t *testing.T, cfg *clientcmdapi.Config, expectedLen int, expectedContext string) {
