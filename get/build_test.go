@@ -14,16 +14,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func TestApplication(t *testing.T) {
-	app := apps.Application{
+func TestBuild(t *testing.T) {
+	build := apps.Build{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       apps.BuildKind,
+			APIVersion: apps.BuildGroupVersionKind.Version,
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "default",
 		},
-		Spec: apps.ApplicationSpec{},
+		Spec: apps.BuildSpec{},
 	}
-	app2 := app
-	app2.Name = app2.Name + "-2"
+	build2 := build
+	build2.Name = build2.Name + "-2"
 
 	get := &Cmd{
 		Output: full,
@@ -36,15 +40,15 @@ func TestApplication(t *testing.T) {
 
 	client := fake.NewClientBuilder().
 		WithScheme(scheme).
-		WithIndex(&apps.Application{}, "metadata.name", func(o client.Object) []string {
+		WithIndex(&apps.Build{}, "metadata.name", func(o client.Object) []string {
 			return []string{o.GetName()}
 		}).
-		WithObjects(&app, &app2).Build()
+		WithObjects(&build, &build2).Build()
 	apiClient := &api.Client{WithWatch: client, Namespace: "default"}
 	ctx := context.Background()
 
 	buf := &bytes.Buffer{}
-	cmd := applicationsCmd{
+	cmd := buildCmd{
 		out: buf,
 	}
 
@@ -55,7 +59,7 @@ func TestApplication(t *testing.T) {
 	assert.Equal(t, 3, test.CountLines(buf.String()))
 	buf.Reset()
 
-	cmd.Name = app.Name
+	cmd.Name = build.Name
 	if err := cmd.Run(ctx, apiClient, get); err != nil {
 		t.Fatal(err)
 	}

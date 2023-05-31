@@ -10,6 +10,7 @@ import (
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/auth"
+	"github.com/ninech/nctl/internal/format"
 )
 
 type clustersCmd struct{}
@@ -31,6 +32,8 @@ func (l *clustersCmd) Run(ctx context.Context, client *api.Client, get *Cmd) err
 		return printClusters(clusterList.Items, get, true)
 	case noHeader:
 		return printClusters(clusterList.Items, get, false)
+	case yamlOut:
+		return format.PrettyPrintObjects(clusterList.GetItems(), format.PrintOpts{})
 	case contexts:
 		for _, cluster := range clusterList.Items {
 			fmt.Printf("%s\n", auth.ContextName(&cluster))

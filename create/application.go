@@ -39,8 +39,6 @@ type gitConfig struct {
 }
 
 const (
-	applicationNameLabel = "application.apps.nine.ch/name"
-
 	buildStatusRunning = "running"
 	buildStatusSuccess = "success"
 	buildStatusError   = "error"
@@ -192,7 +190,7 @@ func waitForBuildStart(app *apps.Application) waitStage {
 		objectList: &apps.BuildList{},
 		listOpts: []runtimeclient.ListOption{
 			runtimeclient.InNamespace(app.GetNamespace()),
-			runtimeclient.MatchingLabels{applicationNameLabel: app.GetName()},
+			runtimeclient.MatchingLabels{util.ApplicationNameLabel: app.GetName()},
 		},
 		waitMessage: &message{
 			text: "waiting for build to start",
@@ -227,7 +225,7 @@ func waitForBuildFinish(app *apps.Application) waitStage {
 		objectList: &apps.BuildList{},
 		listOpts: []runtimeclient.ListOption{
 			runtimeclient.InNamespace(app.GetNamespace()),
-			runtimeclient.MatchingLabels{applicationNameLabel: app.GetName()},
+			runtimeclient.MatchingLabels{util.ApplicationNameLabel: app.GetName()},
 		},
 		waitMessage: &message{
 			text: "building application",
@@ -276,7 +274,7 @@ func waitForRelease(app *apps.Application) waitStage {
 		objectList: &apps.ReleaseList{},
 		listOpts: []runtimeclient.ListOption{
 			runtimeclient.InNamespace(app.GetNamespace()),
-			runtimeclient.MatchingLabels{applicationNameLabel: app.GetName()},
+			runtimeclient.MatchingLabels{util.ApplicationNameLabel: app.GetName()},
 		},
 		waitMessage: &message{
 			text: "releasing application",

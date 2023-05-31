@@ -9,6 +9,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/util"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -134,7 +135,7 @@ func TestApplicationWait(t *testing.T) {
 			Name:      "any-name",
 			Namespace: namespace,
 			Labels: map[string]string{
-				applicationNameLabel: cmd.Name,
+				util.ApplicationNameLabel: cmd.Name,
 			},
 		},
 	}
@@ -144,7 +145,7 @@ func TestApplicationWait(t *testing.T) {
 			Name:      "another-name",
 			Namespace: namespace,
 			Labels: map[string]string{
-				applicationNameLabel: cmd.Name,
+				util.ApplicationNameLabel: cmd.Name,
 			},
 		},
 	}
