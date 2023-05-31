@@ -17,6 +17,7 @@ import (
 	"github.com/ninech/nctl/delete"
 	"github.com/ninech/nctl/get"
 	"github.com/ninech/nctl/logs"
+	"github.com/ninech/nctl/update"
 	"github.com/posener/complete"
 	"github.com/willabides/kongplete"
 )
@@ -37,6 +38,7 @@ type rootCommand struct {
 	Apply       apply.Cmd                    `cmd:"" help:"Apply resource."`
 	Delete      delete.Cmd                   `cmd:"" help:"Delete resource."`
 	Logs        logs.Cmd                     `cmd:"" help:"Get logs of resource."`
+	Update      update.Cmd                   `cmd:"" help:"Update resource."`
 }
 
 var version = "dev"
