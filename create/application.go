@@ -10,13 +10,14 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/utils/pointer"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// note: when adding/changing fields here also make sure to carry it over to
+// update/application.go.
 type applicationCmd struct {
 	Name        string            `arg:"" default:"" help:"Name of the application. A random name is generated if omitted."`
 	Wait        bool              `default:"true" help:"Wait until application is fully created."`
@@ -30,12 +31,12 @@ type applicationCmd struct {
 }
 
 type gitConfig struct {
-	URL           string `required:"" help:"URL to the Git repository containing the application source. Both HTTPS and SSH formats are supported."`
-	SubPath       string `help:"SubPath is a path in the git repo which contains the application code. If not given, the root directory of the git repo will be used."`
-	Revision      string `default:"main" help:"Revision defines the revision of the source to deploy the application to. This can be a commit, tag or branch."`
-	Username      string `help:"Username to use when authenticating to the git repository over HTTPS." env:"GIT_USERNAME"`
-	Password      string `help:"Password to use when authenticating to the git repository over HTTPS. In case of GitHub or GitLab, this can also be an access token." env:"GIT_PASSWORD"`
-	SSHPrivateKey string `help:"Private key in x509 format to connect to the git repository via SSH." env:"GIT_SSH_PRIVATE_KEY"`
+	URL           string  `required:"" help:"URL to the Git repository containing the application source. Both HTTPS and SSH formats are supported."`
+	SubPath       string  `help:"SubPath is a path in the git repo which contains the application code. If not given, the root directory of the git repo will be used."`
+	Revision      string  `default:"main" help:"Revision defines the revision of the source to deploy the application to. This can be a commit, tag or branch."`
+	Username      *string `help:"Username to use when authenticating to the git repository over HTTPS." env:"GIT_USERNAME"`
+	Password      *string `help:"Password to use when authenticating to the git repository over HTTPS. In case of GitHub or GitLab, this can also be an access token." env:"GIT_PASSWORD"`
+	SSHPrivateKey *string `help:"Private key in x509 format to connect to the git repository via SSH." env:"GIT_SSH_PRIVATE_KEY"`
 }
 
 const (
@@ -52,9 +53,15 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	fmt.Println("Creating a new application")
 	newApp := app.newApplication(client.Namespace)
 
-	if gitAuthEnabled(app.Git) {
+	auth := util.GitAuth{
+		Username:      app.Git.Username,
+		Password:      app.Git.Password,
+		SSHPrivateKey: app.Git.SSHPrivateKey,
+	}
+
+	if auth.Enabled() {
 		// for git auth we create a separate secret and then reference it in the app.
-		secret := gitAuthSecret(app.Git, newApp.Name, client.Namespace)
+		secret := auth.Secret(newApp.Name, client.Namespace)
 		if err := client.Create(ctx, secret); err != nil {
 			return fmt.Errorf("unable to create git auth secret: %w", err)
 		}
@@ -126,48 +133,11 @@ func (app *applicationCmd) newApplication(namespace string) *apps.Application {
 					Size:     &size,
 					Replicas: pointer.Int32(app.Replicas),
 					Port:     pointer.Int32(app.Port),
-					Env:      toEnvVars(app.Env),
+					Env:      util.EnvVarsFromMap(app.Env),
 				},
 			},
 		},
 	}
-}
-
-func gitAuthEnabled(git gitConfig) bool {
-	if len(git.Username) != 0 ||
-		len(git.Password) != 0 ||
-		len(git.SSHPrivateKey) != 0 {
-		return true
-	}
-
-	return false
-}
-
-func gitAuthSecret(git gitConfig, name, namespace string) *corev1.Secret {
-	data := map[string][]byte{}
-
-	if len(git.SSHPrivateKey) != 0 {
-		data["privatekey"] = []byte(git.SSHPrivateKey)
-	} else if len(git.Username) != 0 && len(git.Password) != 0 {
-		data["username"] = []byte(git.Username)
-		data["password"] = []byte(git.Password)
-	}
-
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Data: data,
-	}
-}
-
-func toEnvVars(env map[string]string) apps.EnvVars {
-	vars := apps.EnvVars{}
-	for k, v := range env {
-		vars = append(vars, apps.EnvVar{Name: k, Value: v})
-	}
-	return vars
 }
 
 type buildError struct {

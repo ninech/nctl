@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -54,7 +55,7 @@ func TestApplication(t *testing.T) {
 				assert.Equal(t, apps.ApplicationSize(cmd.Size), *app.Spec.ForProvider.Config.Size)
 				assert.Equal(t, int32(cmd.Port), *app.Spec.ForProvider.Config.Port)
 				assert.Equal(t, int32(cmd.Replicas), *app.Spec.ForProvider.Config.Replicas)
-				assert.Equal(t, toEnvVars(cmd.Env), app.Spec.ForProvider.Config.Env)
+				assert.Equal(t, util.EnvVarsFromMap(cmd.Env), app.Spec.ForProvider.Config.Env)
 				assert.Nil(t, app.Spec.ForProvider.Git.Auth)
 			},
 		},
@@ -62,39 +63,41 @@ func TestApplication(t *testing.T) {
 			cmd: applicationCmd{
 				Git: gitConfig{
 					URL:      "https://github.com/ninech/doesnotexist.git",
-					Username: "deploy",
-					Password: "hunter2",
+					Username: pointer.String("deploy"),
+					Password: pointer.String("hunter2"),
 				},
 				Wait: false,
 				Name: "user-pass-auth",
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
-				authSecret := gitAuthSecret(cmd.Git, app.Name, app.Namespace)
+				auth := util.GitAuth{Username: cmd.Git.Username, Password: cmd.Git.Password}
+				authSecret := auth.Secret(app.Name, app.Namespace)
 				if err := apiClient.Get(ctx, api.ObjectName(authSecret), authSecret); err != nil {
 					t.Fatal(err)
 				}
 
-				assert.Equal(t, cmd.Git.Username, string(authSecret.Data["username"]))
-				assert.Equal(t, cmd.Git.Password, string(authSecret.Data["password"]))
+				assert.Equal(t, *cmd.Git.Username, string(authSecret.Data[util.UsernameSecretKey]))
+				assert.Equal(t, *cmd.Git.Password, string(authSecret.Data[util.PasswordSecretKey]))
 			},
 		},
 		"with ssh key git auth": {
 			cmd: applicationCmd{
 				Git: gitConfig{
 					URL:           "https://github.com/ninech/doesnotexist.git",
-					SSHPrivateKey: "fakekey",
+					SSHPrivateKey: pointer.String("fakekey"),
 				},
 				Wait: false,
 				Name: "ssh-key-auth",
 				Size: "mini",
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
-				authSecret := gitAuthSecret(cmd.Git, app.Name, app.Namespace)
+				auth := util.GitAuth{SSHPrivateKey: cmd.Git.SSHPrivateKey}
+				authSecret := auth.Secret(app.Name, app.Namespace)
 				if err := apiClient.Get(ctx, api.ObjectName(authSecret), authSecret); err != nil {
 					t.Fatal(err)
 				}
 
-				assert.Equal(t, cmd.Git.SSHPrivateKey, string(authSecret.Data["privatekey"]))
+				assert.Equal(t, *cmd.Git.SSHPrivateKey, string(authSecret.Data[util.PrivateKeySecretKey]))
 			},
 		},
 	}
