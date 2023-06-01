@@ -12,5 +12,11 @@ type applicationCmd struct {
 }
 
 func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
-	return cmd.logsCmd.Run(ctx, client, "app", cmd.Name)
+	return cmd.logsCmd.Run(ctx, client, ApplicationQuery(cmd.Name, client.Namespace))
+}
+
+const appLabel = "app"
+
+func ApplicationQuery(name, namespace string) string {
+	return queryString(appLabel, name, namespace)
 }

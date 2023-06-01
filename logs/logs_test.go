@@ -79,7 +79,7 @@ func TestApplication(t *testing.T) {
 
 			tc.cmd.out = out
 
-			if err := tc.cmd.Run(ctx, apiClient, "app", "app-name"); err != nil {
+			if err := tc.cmd.Run(ctx, apiClient, ApplicationQuery("app-name", "app-ns")); err != nil {
 				t.Fatal(err)
 			}
 

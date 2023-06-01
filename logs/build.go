@@ -12,5 +12,11 @@ type buildCmd struct {
 }
 
 func (cmd *buildCmd) Run(ctx context.Context, client *api.Client) error {
-	return cmd.logsCmd.Run(ctx, client, "build", cmd.Name)
+	return cmd.logsCmd.Run(ctx, client, BuildQuery(cmd.Name, client.Namespace))
+}
+
+const buildLabel = "build"
+
+func BuildQuery(name, namespace string) string {
+	return queryString(buildLabel, name, namespace)
 }

@@ -6,10 +6,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/grafana/loki/pkg/logproto"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/log"
 	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/logs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/utils/pointer"
@@ -92,10 +95,14 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		waitForRelease(newApp),
 	); err != nil {
 		if buildErr, ok := err.(buildError); ok {
-			buildErr.printMessage()
+			if err := buildErr.printMessage(ctx, client); err != nil {
+				return fmt.Errorf("%s: %w", buildErr, err)
+			}
 		}
 		if releaseErr, ok := err.(releaseError); ok {
-			releaseErr.printMessage()
+			if err := releaseErr.printMessage(ctx, client, newApp); err != nil {
+				return fmt.Errorf("%s: %w", releaseErr, err)
+			}
 		}
 		return err
 	}
@@ -148,10 +155,10 @@ func (b buildError) Error() string {
 	return fmt.Sprintf("build failed with status %s", b.build.Status.AtProvider.BuildStatus)
 }
 
-func (b buildError) printMessage() {
-	fmt.Printf("\nYour build has failed with status %q. To view the build logs run the command:\n",
-		b.build.Status.AtProvider.BuildStatus)
-	fmt.Printf("  nctl logs build %s\n\n", b.build.Name)
+func (b buildError) printMessage(ctx context.Context, client *api.Client) error {
+	fmt.Printf("\nYour build has failed with status %q. Here are the last %v lines of the log:\n\n",
+		b.build.Status.AtProvider.BuildStatus, errorLogLines)
+	return printBuildLogs(ctx, client, b.build)
 }
 
 func waitForBuildStart(app *apps.Application) waitStage {
@@ -232,10 +239,10 @@ func (r releaseError) Error() string {
 	return fmt.Sprintf("release failed with status %s", r.release.Status.AtProvider.ReleaseStatus)
 }
 
-func (r releaseError) printMessage() {
-	fmt.Printf("\nYour release has failed with status %q. To view the release logs run the command:\n",
-		r.release.Status.AtProvider.ReleaseStatus)
-	fmt.Printf("  nctl logs release %s\n\n", r.release.Name)
+func (r releaseError) printMessage(ctx context.Context, client *api.Client, app *apps.Application) error {
+	fmt.Printf("\nYour release has failed with status %q. Here are the last %v lines of the log:\n\n",
+		r.release.Status.AtProvider.ReleaseStatus, errorLogLines)
+	return printReleaseLogs(ctx, client, r.release)
 }
 
 func waitForRelease(app *apps.Application) waitStage {
@@ -284,5 +291,35 @@ func printUnverifiedHostsMessage(app *apps.Application) {
 
 		fmt.Printf("\nTo make your app available on them, make sure they have a CNAME record targeting %q.\n",
 			app.Status.AtProvider.CNAMETarget)
+	}
+}
+
+func printBuildLogs(ctx context.Context, client *api.Client, build *apps.Build) error {
+	return client.Log.QueryRange(
+		ctx, client.Log.StdOut,
+		errorLogQuery(logs.BuildQuery(build.Name, build.Namespace)),
+	)
+}
+
+func printReleaseLogs(ctx context.Context, client *api.Client, release *apps.Release) error {
+	return client.Log.QueryRange(
+		ctx, client.Log.StdOut,
+		errorLogQuery(logs.ApplicationQuery(release.Labels[util.ApplicationNameLabel], release.Namespace)),
+	)
+}
+
+// we print the last 20 lines of the log. In most cases this should be
+// enough to give a hint about the problem but we might need to tweak this
+// value a bit in the future.
+const errorLogLines = 20
+
+func errorLogQuery(queryString string) log.Query {
+	return log.Query{
+		QueryString: queryString,
+		Limit:       errorLogLines,
+		Start:       time.Now().Add(-time.Hour),
+		End:         time.Now(),
+		Direction:   logproto.BACKWARD,
+		Quiet:       true,
 	}
 }
