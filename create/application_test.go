@@ -1,30 +1,31 @@
 package create
 
 import (
+	"bytes"
 	"context"
 	"testing"
 	"time"
 
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	"github.com/grafana/loki/pkg/logcli/output"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/log"
 	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestApplication(t *testing.T) {
-	scheme, err := api.NewScheme()
+	apiClient, err := test.SetupClient()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	client := fake.NewClientBuilder().WithScheme(scheme).Build()
-	apiClient := &api.Client{WithWatch: client, Namespace: "default"}
 	ctx := context.Background()
 
 	cases := map[string]struct {
@@ -121,11 +122,6 @@ func TestApplication(t *testing.T) {
 }
 
 func TestApplicationWait(t *testing.T) {
-	scheme, err := api.NewScheme()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	cmd := applicationCmd{
 		Wait:        true,
 		WaitTimeout: time.Second * 5,
@@ -159,8 +155,10 @@ func TestApplicationWait(t *testing.T) {
 	release2 := *release
 	release2.Name = release2.Name + "-1"
 
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(build, &build2, release, &release2).Build()
-	apiClient := &api.Client{WithWatch: client, Namespace: namespace}
+	apiClient, err := test.SetupClient(build, &build2, release, &release2)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	ctx := context.Background()
 
@@ -236,6 +234,92 @@ func TestApplicationWait(t *testing.T) {
 	for err := range errors {
 		t.Fatal(err)
 	}
+}
+
+func TestApplicationBuildFail(t *testing.T) {
+	cmd := applicationCmd{
+		Wait:        true,
+		WaitTimeout: time.Second * 5,
+		Name:        "some-name",
+	}
+	namespace := "default"
+
+	build := &apps.Build{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "any-name",
+			Namespace: namespace,
+			Labels: map[string]string{
+				util.ApplicationNameLabel: cmd.Name,
+			},
+		},
+	}
+
+	client, err := test.SetupClient(build)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var buf bytes.Buffer
+	out, err := output.NewLogOutput(&buf, log.Mode("default"), &output.LogOutputOptions{
+		NoLabels: true, ColoredOutput: false, Timezone: time.Local,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// fill our logs so we have more than errorLogLines
+	logString := "does not compute!"
+	buildLog := []string{}
+	for i := 0; i < errorLogLines+30; i++ {
+		buildLog = append(buildLog, logString)
+	}
+	client.Log = &log.Client{Client: log.NewFake(t, time.Now(), buildLog...), StdOut: out}
+
+	ctx := context.Background()
+
+	// to test the wait we create a ticker that continously updates our
+	// resources in a goroutine to simulate a controller doing the same
+	ticker := time.NewTicker(100 * time.Millisecond)
+	done := make(chan bool)
+	errors := make(chan error, 1)
+
+	go func() {
+		for {
+			select {
+			case <-done:
+				close(errors)
+				return
+			case <-ticker.C:
+				app := &apps.Application{ObjectMeta: metav1.ObjectMeta{
+					Name:      cmd.Name,
+					Namespace: namespace,
+				}}
+
+				if err := setResourceCondition(ctx, client, app, runtimev1.ReconcileSuccess()); err != nil {
+					errors <- err
+				}
+
+				build.Status.AtProvider.BuildStatus = buildStatusError
+				if err := client.Status().Update(ctx, build); err != nil {
+					errors <- err
+				}
+			}
+		}
+	}()
+
+	if err := cmd.Run(ctx, client); err == nil {
+		t.Fatal("expected build error, got nil")
+	}
+
+	ticker.Stop()
+	done <- true
+
+	for err := range errors {
+		t.Fatal(err)
+	}
+
+	assert.Contains(t, buf.String(), logString)
+	assert.Equal(t, test.CountLines(buf.String()), errorLogLines)
 }
 
 func setResourceCondition(ctx context.Context, apiClient *api.Client, mg resource.Managed, condition runtimev1.Condition) error {

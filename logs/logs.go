@@ -24,12 +24,12 @@ type logsCmd struct {
 	out    output.LogOutput
 }
 
-func (cmd *logsCmd) Run(ctx context.Context, client *api.Client, labelKey, labelValue string) error {
+func (cmd *logsCmd) Run(ctx context.Context, client *api.Client, queryString string) error {
 	query := log.Query{
 		// we just query for labelKey=<labelValue>, namespace=<client-ns>. It's
 		// technically already scoped to a single namespace as the client is
 		// setting the org-id.
-		QueryString: fmt.Sprintf(`{%s="%s", namespace="%s"}`, labelKey, labelValue, client.Namespace),
+		QueryString: queryString,
 		Limit:       cmd.Lines,
 		Start:       time.Now().Add(-cmd.Since),
 		End:         time.Now(),
@@ -51,4 +51,8 @@ func (cmd *logsCmd) Run(ctx context.Context, client *api.Client, labelKey, label
 	}
 
 	return client.Log.QueryRange(ctx, out, query)
+}
+
+func queryString(labelKey, labelValue, namespace string) string {
+	return fmt.Sprintf(`{%s="%s", namespace="%s"}`, labelKey, labelValue, namespace)
 }
