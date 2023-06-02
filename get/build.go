@@ -24,7 +24,7 @@ import (
 
 type buildCmd struct {
 	Name            string `arg:"" help:"Name of the Build to get. If omitted all in the namespace will be listed." default:""`
-	ApplicationName string `help:"Name of the Application to get builds for. If omitted all in the namespace will be listed."`
+	ApplicationName string `short:"a" help:"Name of the Application to get builds for. If omitted all in the namespace will be listed."`
 	PullImage       bool   `help:"Pull the image of the build. Uses the local docker socket at the env DOCKER_HOST if set."`
 	out             io.Writer
 }
@@ -70,11 +70,13 @@ func printBuild(builds []apps.Build, get *Cmd, out io.Writer, header bool) error
 	w := tabwriter.NewWriter(out, 0, 0, 4, ' ', 0)
 
 	if header {
-		get.writeHeader(w, "NAME", "STATUS", "AGE")
+		get.writeHeader(w, "NAME", "APPLICATION", "STATUS", "AGE")
 	}
 
 	for _, build := range builds {
-		get.writeTabRow(w, build.Namespace, build.Name, string(build.Status.AtProvider.BuildStatus),
+		get.writeTabRow(w, build.Namespace, build.Name,
+			build.Labels[util.ApplicationNameLabel],
+			string(build.Status.AtProvider.BuildStatus),
 			duration.HumanDuration(time.Since(build.CreationTimestamp.Time)))
 	}
 
