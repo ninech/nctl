@@ -70,11 +70,13 @@ func printBuild(builds []apps.Build, get *Cmd, out io.Writer, header bool) error
 	w := tabwriter.NewWriter(out, 0, 0, 4, ' ', 0)
 
 	if header {
-		get.writeHeader(w, "NAME", "STATUS", "AGE")
+		get.writeHeader(w, "NAME", "APPLICATION", "STATUS", "AGE")
 	}
 
 	for _, build := range builds {
-		get.writeTabRow(w, build.Namespace, build.Name, string(build.Status.AtProvider.BuildStatus),
+		get.writeTabRow(w, build.Namespace, build.Name,
+			build.Labels[util.ApplicationNameLabel],
+			string(build.Status.AtProvider.BuildStatus),
 			duration.HumanDuration(time.Since(build.CreationTimestamp.Time)))
 	}
 
