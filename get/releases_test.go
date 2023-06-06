@@ -12,6 +12,7 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
@@ -20,30 +21,14 @@ import (
 )
 
 var (
-	// TODO: would be nice to get this from "github.com/ninech/apis/apps/v1alpha1"
-	AppMicro     apps.ApplicationSize = "micro"
-	AppMini      apps.ApplicationSize = "mini"
-	AppStandard1 apps.ApplicationSize = "standard-1"
-
-	StatusSuperseded apps.ReleaseProcessStatus = "superseded"
-	StatusAvailable  apps.ReleaseProcessStatus = "available"
-
 	defaultConfig = apps.Config{
-		Size:     &AppMicro,
+		Size:     &test.AppMicro,
 		Replicas: pointer.Int32(1),
 		Port:     pointer.Int32(8080),
 	}
 
-	defaultCreationTime = metav1.NewTime(mustParseTime(time.RFC3339, "2023-03-13T14:00:00Z"))
+	defaultCreationTime = metav1.NewTime(test.MustParseTime(time.RFC3339, "2023-03-13T14:00:00Z"))
 )
-
-func mustParseTime(format string, value string) time.Time {
-	t, err := time.Parse(format, value)
-	if err != nil {
-		panic(err)
-	}
-	return t
-}
 
 func TestReleases(t *testing.T) {
 	const namespace = "some-namespace"
@@ -66,17 +51,17 @@ func TestReleases(t *testing.T) {
 			},
 			releases: &apps.ReleaseList{
 				Items: []apps.Release{
-					newRelease(time.Second*10, 10, "a1", namespace, "app1", "pc", StatusAvailable),
+					newRelease(time.Second*10, 10, "a1", namespace, "app1", "pc", test.StatusAvailable),
 				},
 			},
 			otherAppReleases: &apps.ReleaseList{
 				Items: []apps.Release{
-					newRelease(time.Second*13, 10, "o-a1", namespace, "other-app1", "pc", StatusSuperseded),
-					newRelease(time.Second*10, 20, "o-b1", namespace, "other-app1", "pc", StatusSuperseded),
-					newRelease(time.Second*11, 30, "o-c1", namespace, "other-app1", "pc", StatusAvailable),
+					newRelease(time.Second*13, 10, "o-a1", namespace, "other-app1", "pc", test.StatusSuperseded),
+					newRelease(time.Second*10, 20, "o-b1", namespace, "other-app1", "pc", test.StatusSuperseded),
+					newRelease(time.Second*11, 30, "o-c1", namespace, "other-app1", "pc", test.StatusAvailable),
 
-					newRelease(time.Second*15, 10, "o-a2", namespace, "other-app2", "pc", StatusSuperseded),
-					newRelease(time.Second*10, 20, "o-b2", namespace, "other-app2", "pc", StatusAvailable),
+					newRelease(time.Second*15, 10, "o-a2", namespace, "other-app2", "pc", test.StatusSuperseded),
+					newRelease(time.Second*10, 20, "o-b2", namespace, "other-app2", "pc", test.StatusAvailable),
 				},
 			},
 		},
@@ -87,17 +72,17 @@ func TestReleases(t *testing.T) {
 			},
 			releases: &apps.ReleaseList{
 				Items: []apps.Release{
-					newRelease(time.Second*16, 10, "a2", namespace, "app2", "pc", StatusSuperseded),
-					newRelease(time.Second*12, 20, "b2", namespace, "app2", "pc", StatusSuperseded),
-					newRelease(time.Second*17, 30, "c2", namespace, "app2", "pc", StatusAvailable),
+					newRelease(time.Second*16, 10, "a2", namespace, "app2", "pc", test.StatusSuperseded),
+					newRelease(time.Second*12, 20, "b2", namespace, "app2", "pc", test.StatusSuperseded),
+					newRelease(time.Second*17, 30, "c2", namespace, "app2", "pc", test.StatusAvailable),
 				},
 			},
 			otherAppReleases: &apps.ReleaseList{
 				Items: []apps.Release{
-					newRelease(time.Second*10, 10, "o-a1", namespace, "other-app1", "pc", StatusAvailable),
+					newRelease(time.Second*10, 10, "o-a1", namespace, "other-app1", "pc", test.StatusAvailable),
 
-					newRelease(time.Second*11, 10, "o-a2", namespace, "other-app2", "pc", StatusSuperseded),
-					newRelease(time.Second*12, 20, "o-b2", namespace, "other-app2", "pc", StatusAvailable),
+					newRelease(time.Second*11, 10, "o-a2", namespace, "other-app2", "pc", test.StatusSuperseded),
+					newRelease(time.Second*12, 20, "o-b2", namespace, "other-app2", "pc", test.StatusAvailable),
 				},
 			},
 		},
@@ -111,10 +96,10 @@ func TestReleases(t *testing.T) {
 			},
 			otherAppReleases: &apps.ReleaseList{
 				Items: []apps.Release{
-					newRelease(time.Second*10, 10, "o-a1", namespace, "other-app1", "pc", StatusAvailable),
+					newRelease(time.Second*10, 10, "o-a1", namespace, "other-app1", "pc", test.StatusAvailable),
 
-					newRelease(time.Second*11, 10, "o-a2", namespace, "other-app2", "pc", StatusSuperseded),
-					newRelease(time.Second*12, 20, "o-b2", namespace, "other-app2", "pc", StatusAvailable),
+					newRelease(time.Second*11, 10, "o-a2", namespace, "other-app2", "pc", test.StatusSuperseded),
+					newRelease(time.Second*12, 20, "o-b2", namespace, "other-app2", "pc", test.StatusAvailable),
 				},
 			},
 		},
@@ -125,17 +110,17 @@ func TestReleases(t *testing.T) {
 			},
 			releases: &apps.ReleaseList{
 				Items: []apps.Release{
-					newRelease(time.Second*12, 10, "a3", namespace, "app3", "pc", StatusSuperseded),
-					newRelease(time.Second*11, 20, "b3", namespace, "app3", "pc", StatusSuperseded),
-					newRelease(time.Second*10, 30, "c3", namespace, "app3", "pc", StatusAvailable),
+					newRelease(time.Second*12, 10, "a3", namespace, "app3", "pc", test.StatusSuperseded),
+					newRelease(time.Second*11, 20, "b3", namespace, "app3", "pc", test.StatusSuperseded),
+					newRelease(time.Second*10, 30, "c3", namespace, "app3", "pc", test.StatusAvailable),
 
-					newRelease(time.Second*10, 10, "a4", namespace, "app4", "pc", StatusSuperseded),
-					newRelease(time.Second*10, 20, "b4", namespace, "app4", "pc", StatusAvailable),
+					newRelease(time.Second*10, 10, "a4", namespace, "app4", "pc", test.StatusSuperseded),
+					newRelease(time.Second*10, 20, "b4", namespace, "app4", "pc", test.StatusAvailable),
 
-					newRelease(time.Second*15, 10, "a5", namespace, "app5", "pc", StatusSuperseded),
-					newRelease(time.Second*10, 20, "b5", namespace, "app5", "pc", StatusSuperseded),
-					newRelease(time.Second*16, 30, "c5", namespace, "app5", "pc", StatusSuperseded),
-					newRelease(time.Second*11, 40, "d5", namespace, "app5", "pc", StatusAvailable),
+					newRelease(time.Second*15, 10, "a5", namespace, "app5", "pc", test.StatusSuperseded),
+					newRelease(time.Second*10, 20, "b5", namespace, "app5", "pc", test.StatusSuperseded),
+					newRelease(time.Second*16, 30, "c5", namespace, "app5", "pc", test.StatusSuperseded),
+					newRelease(time.Second*11, 40, "d5", namespace, "app5", "pc", test.StatusAvailable),
 				},
 			},
 			otherAppReleases: &apps.ReleaseList{
@@ -150,21 +135,21 @@ func TestReleases(t *testing.T) {
 			},
 			releases: &apps.ReleaseList{
 				Items: []apps.Release{
-					newRelease(time.Second*10, 10, "a4", namespace, "app4", "pc", StatusSuperseded),
+					newRelease(time.Second*10, 10, "a4", namespace, "app4", "pc", test.StatusSuperseded),
 				},
 			},
 			otherAppReleases: &apps.ReleaseList{
 				Items: []apps.Release{
-					newRelease(time.Second*12, 10, "a3", namespace, "app3", "pc", StatusSuperseded),
-					newRelease(time.Second*11, 20, "b3", namespace, "app3", "pc", StatusSuperseded),
-					newRelease(time.Second*10, 30, "c3", namespace, "app3", "pc", StatusAvailable),
+					newRelease(time.Second*12, 10, "a3", namespace, "app3", "pc", test.StatusSuperseded),
+					newRelease(time.Second*11, 20, "b3", namespace, "app3", "pc", test.StatusSuperseded),
+					newRelease(time.Second*10, 30, "c3", namespace, "app3", "pc", test.StatusAvailable),
 
-					newRelease(time.Second*10, 20, "b4", namespace, "app4", "pc", StatusAvailable),
+					newRelease(time.Second*10, 20, "b4", namespace, "app4", "pc", test.StatusAvailable),
 
-					newRelease(time.Second*15, 10, "a5", namespace, "app5", "pc", StatusSuperseded),
-					newRelease(time.Second*10, 20, "b5", namespace, "app5", "pc", StatusSuperseded),
-					newRelease(time.Second*16, 30, "c5", namespace, "app5", "pc", StatusSuperseded),
-					newRelease(time.Second*11, 40, "d5", namespace, "app5", "pc", StatusAvailable),
+					newRelease(time.Second*15, 10, "a5", namespace, "app5", "pc", test.StatusSuperseded),
+					newRelease(time.Second*10, 20, "b5", namespace, "app5", "pc", test.StatusSuperseded),
+					newRelease(time.Second*16, 30, "c5", namespace, "app5", "pc", test.StatusSuperseded),
+					newRelease(time.Second*11, 40, "d5", namespace, "app5", "pc", test.StatusAvailable),
 				},
 			},
 		},
@@ -176,21 +161,21 @@ func TestReleases(t *testing.T) {
 			},
 			releases: &apps.ReleaseList{
 				Items: []apps.Release{
-					newRelease(time.Second*10, 20, "b5", namespace, "app5", "pc", StatusSuperseded),
+					newRelease(time.Second*10, 20, "b5", namespace, "app5", "pc", test.StatusSuperseded),
 				},
 			},
 			otherAppReleases: &apps.ReleaseList{
 				Items: []apps.Release{
-					newRelease(time.Second*12, 10, "a3", namespace, "app3", "pc", StatusSuperseded),
-					newRelease(time.Second*11, 20, "b3", namespace, "app3", "pc", StatusSuperseded),
-					newRelease(time.Second*10, 30, "c3", namespace, "app3", "pc", StatusAvailable),
+					newRelease(time.Second*12, 10, "a3", namespace, "app3", "pc", test.StatusSuperseded),
+					newRelease(time.Second*11, 20, "b3", namespace, "app3", "pc", test.StatusSuperseded),
+					newRelease(time.Second*10, 30, "c3", namespace, "app3", "pc", test.StatusAvailable),
 
-					newRelease(time.Second*10, 10, "a4", namespace, "app4", "pc", StatusSuperseded),
-					newRelease(time.Second*10, 20, "b4", namespace, "app4", "pc", StatusAvailable),
+					newRelease(time.Second*10, 10, "a4", namespace, "app4", "pc", test.StatusSuperseded),
+					newRelease(time.Second*10, 20, "b4", namespace, "app4", "pc", test.StatusAvailable),
 
-					newRelease(time.Second*15, 10, "a5", namespace, "app5", "pc", StatusSuperseded),
-					newRelease(time.Second*16, 30, "c5", namespace, "app5", "pc", StatusSuperseded),
-					newRelease(time.Second*11, 40, "d5", namespace, "app5", "pc", StatusAvailable),
+					newRelease(time.Second*15, 10, "a5", namespace, "app5", "pc", test.StatusSuperseded),
+					newRelease(time.Second*16, 30, "c5", namespace, "app5", "pc", test.StatusSuperseded),
+					newRelease(time.Second*11, 40, "d5", namespace, "app5", "pc", test.StatusAvailable),
 				},
 			},
 		},

@@ -10,6 +10,7 @@ import (
 
 type Cmd struct {
 	Application applicationCmd `cmd:"" group:"deplo.io" name:"application" aliases:"app" help:"Update an existing deplo.io Application. (Beta - requires access)"`
+	Config      configCmd      `cmd:"" group:"deplo.io" name:"config"  help:"Update an existing deplo.io Project Configuration. (Beta - requires access)"`
 }
 
 type updater struct {
