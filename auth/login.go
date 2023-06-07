@@ -202,5 +202,5 @@ func login(ctx context.Context, newConfig *clientcmdapi.Config, kubeconfigPath s
 		format.PrintSuccessf("🚀", "logged into cluster %s", newConfig.CurrentContext)
 	}
 
-	return err
+	return nil
 }
