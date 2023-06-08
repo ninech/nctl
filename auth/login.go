@@ -9,6 +9,7 @@ import (
 
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
@@ -23,7 +24,8 @@ type LoginCmd struct {
 }
 
 const (
-	LoginCmdName = "auth login"
+	LoginCmdName      = "auth login"
+	nctlExtensionName = "nctl"
 )
 
 func (l *LoginCmd) Run(ctx context.Context, command string) error {
@@ -42,7 +44,7 @@ func (l *LoginCmd) Run(ctx context.Context, command string) error {
 		return err
 	}
 
-	opts := []apiConfigOption{}
+	opts := []apiConfigOption{withOrganization(l.Organization)}
 	if len(l.APIToken) != 0 {
 		l.ExecPlugin = false
 		opts = append(opts, useStaticToken(l.APIToken))
@@ -57,9 +59,10 @@ func (l *LoginCmd) Run(ctx context.Context, command string) error {
 }
 
 type apiConfig struct {
-	name   string
-	token  string
-	caCert []byte
+	name         string
+	token        string
+	caCert       []byte
+	organization string
 }
 
 type apiConfigOption func(*apiConfig)
@@ -82,6 +85,12 @@ func useStaticToken(token string) apiConfigOption {
 	}
 }
 
+func withOrganization(organization string) apiConfigOption {
+	return func(ac *apiConfig) {
+		ac.organization = organization
+	}
+}
+
 func newAPIConfig(apiURL, issuerURL *url.URL, command, clientID string, opts ...apiConfigOption) (*clientcmdapi.Config, error) {
 	cfg := &apiConfig{
 		name: apiURL.Host,
@@ -89,6 +98,11 @@ func newAPIConfig(apiURL, issuerURL *url.URL, command, clientID string, opts ...
 
 	for _, opt := range opts {
 		opt(cfg)
+	}
+
+	extension, err := newConfig(cfg.organization).toObject()
+	if err != nil {
+		return nil, err
 	}
 
 	clientConfig := &clientcmdapi.Config{
@@ -102,6 +116,9 @@ func newAPIConfig(apiURL, issuerURL *url.URL, command, clientID string, opts ...
 			cfg.name: {
 				Cluster:  cfg.name,
 				AuthInfo: cfg.name,
+				Extensions: map[string]runtime.Object{
+					nctlExtensionName: extension,
+				},
 			},
 		},
 		AuthInfos:      map[string]*clientcmdapi.AuthInfo{},
@@ -176,7 +193,7 @@ func login(ctx context.Context, newConfig *clientcmdapi.Config, kubeconfigPath s
 		kubeconfig = newConfig
 	}
 
-	mergeConfig(newConfig, kubeconfig)
+	mergeKubeConfig(newConfig, kubeconfig)
 
 	if loginConfig.switchCurrentContext {
 		kubeconfig.CurrentContext = newConfig.CurrentContext

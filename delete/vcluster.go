@@ -33,7 +33,7 @@ func (vc *vclusterCmd) Run(ctx context.Context, client *api.Client) error {
 	}
 
 	d := newDeleter(cluster, "vcluster", func(client *api.Client) error {
-		return auth.RemoveClusterFromConfig(client, auth.ContextName(cluster))
+		return auth.RemoveClusterFromKubeConfig(client, auth.ContextName(cluster))
 	})
 
 	if err := d.deleteResource(ctx, client, vc.WaitTimeout, vc.Wait, vc.Force); err != nil {
