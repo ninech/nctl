@@ -22,11 +22,12 @@ import (
 
 type Client struct {
 	runtimeclient.WithWatch
-	Config         *rest.Config
-	KubeconfigPath string
-	Namespace      string
-	Log            *log.Client
-	Token          string
+	Config            *rest.Config
+	KubeconfigPath    string
+	Namespace         string
+	Log               *log.Client
+	Token             string
+	KubeconfigContext string
 }
 
 type ClientOpt func(c *Client) error
@@ -37,7 +38,8 @@ type ClientOpt func(c *Client) error
 // * $HOME/.kube/config if exists
 func New(ctx context.Context, apiClusterContext, namespace string, opts ...ClientOpt) (*Client, error) {
 	client := &Client{
-		Namespace: namespace,
+		Namespace:         namespace,
+		KubeconfigContext: apiClusterContext,
 	}
 	if err := client.loadConfig(apiClusterContext); err != nil {
 		return nil, err
@@ -177,4 +179,8 @@ func loadConfigWithContext(apiServerURL string, loader clientcmd.ClientConfigLoa
 
 func ObjectName(obj runtimeclient.Object) types.NamespacedName {
 	return types.NamespacedName{Name: obj.GetName(), Namespace: obj.GetNamespace()}
+}
+
+func NamespacedName(name, namespace string) types.NamespacedName {
+	return types.NamespacedName{Name: name, Namespace: namespace}
 }

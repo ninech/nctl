@@ -25,7 +25,7 @@ type LoginCmd struct {
 
 const (
 	LoginCmdName      = "auth login"
-	nctlExtensionName = "nctl"
+	NctlExtensionName = "nctl"
 )
 
 func (l *LoginCmd) Run(ctx context.Context, command string) error {
@@ -100,7 +100,7 @@ func newAPIConfig(apiURL, issuerURL *url.URL, command, clientID string, opts ...
 		opt(cfg)
 	}
 
-	extension, err := newConfig(cfg.organization).toObject()
+	extension, err := NewConfig(cfg.organization).ToObject()
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ func newAPIConfig(apiURL, issuerURL *url.URL, command, clientID string, opts ...
 				Cluster:  cfg.name,
 				AuthInfo: cfg.name,
 				Extensions: map[string]runtime.Object{
-					nctlExtensionName: extension,
+					NctlExtensionName: extension,
 				},
 			},
 		},

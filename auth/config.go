@@ -2,7 +2,6 @@ package auth
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 
@@ -56,7 +55,7 @@ func groupVersion() string {
 	return fmt.Sprintf("%s/%s", extensionGroup, extensionVersion)
 }
 
-func newConfig(organization string) *Config {
+func NewConfig(organization string) *Config {
 	return &Config{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       extensionKind,
@@ -66,9 +65,9 @@ func newConfig(organization string) *Config {
 	}
 }
 
-// toObject wraps a Config in a runtime.Unknown object which implements
+// ToObject wraps a Config in a runtime.Unknown object which implements
 // runtime.Object.
-func (e *Config) toObject() (runtime.Object, error) {
+func (e *Config) ToObject() (runtime.Object, error) {
 	raw, err := json.Marshal(e)
 	if err != nil {
 		return nil, err
@@ -141,9 +140,9 @@ func readConfig(kubeconfigContent []byte, contextName string) (*Config, error) {
 	if !exists {
 		return nil, fmt.Errorf("could not find context %q in kubeconfig", contextName)
 	}
-	extension, exists := context.Extensions[nctlExtensionName]
+	extension, exists := context.Extensions[NctlExtensionName]
 	if !exists {
-		return nil, errors.New("could not find config extension in kubeconfig")
+		return nil, ErrConfigNotFound
 	}
 	cfg, err := parseConfig(extension)
 	if err != nil {

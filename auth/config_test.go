@@ -10,37 +10,75 @@ import (
 )
 
 func TestConfigParsing(t *testing.T) {
-	cfg := newConfig("evilcorp")
-	objectCfg, err := cfg.toObject()
+	contextName := "test"
+	cfg := NewConfig("evilcorp")
+	objectCfg, err := cfg.ToObject()
 	require.NoError(t, err)
-	kubeconfig := clientcmdapi.Config{
+	for name, testCase := range map[string]struct {
+		kubeconfig    clientcmdapi.Config
+		errorExpected bool
+	}{
+		"happy-path": {
+			kubeconfig: func() clientcmdapi.Config {
+				kubeCfg := testKubeconfig(contextName)
+				kubeCfg.Contexts[contextName].Extensions = map[string]runtime.Object{
+					NctlExtensionName: objectCfg,
+				}
+				return kubeCfg
+			}(),
+		},
+		"no-config-via-extension-set": {
+			kubeconfig: func() clientcmdapi.Config {
+				return testKubeconfig(contextName)
+			}(),
+			errorExpected: true,
+		},
+		"no-context-found": {
+			kubeconfig: func() clientcmdapi.Config {
+				kubeCfg := testKubeconfig(contextName)
+				delete(kubeCfg.Contexts, contextName)
+				return kubeCfg
+			}(),
+			errorExpected: true,
+		},
+	} {
+
+		testCase := testCase
+		t.Run(name, func(t *testing.T) {
+			content, err := clientcmd.Write(testCase.kubeconfig)
+			require.NoError(t, err)
+
+			parsedCfg, err := readConfig(content, contextName)
+			if testCase.errorExpected {
+				require.Error(t, err)
+				return
+			} else {
+				require.NoError(t, err)
+			}
+			require.Equal(t, parsedCfg.Organization, cfg.Organization)
+		})
+	}
+}
+
+func testKubeconfig(contextName string) clientcmdapi.Config {
+	return clientcmdapi.Config{
 		Clusters: map[string]*clientcmdapi.Cluster{
-			"test": {
+			contextName: {
 				Server: "not.so.important",
 			},
 		},
 		AuthInfos: map[string]*clientcmdapi.AuthInfo{
-			"test": {
+			contextName: {
 				Token: "blablubb",
 			},
 		},
 		Contexts: map[string]*clientcmdapi.Context{
-			"test": {
-				Cluster:   "test",
-				AuthInfo:  "test",
+			contextName: {
+				Cluster:   contextName,
+				AuthInfo:  contextName,
 				Namespace: "whatever",
-				Extensions: map[string]runtime.Object{
-					nctlExtensionName: objectCfg,
-				},
 			},
 		},
-		CurrentContext: "test",
+		CurrentContext: contextName,
 	}
-
-	content, err := clientcmd.Write(kubeconfig)
-	require.NoError(t, err)
-
-	parsedCfg, err := readConfig(content, "test")
-	require.NoError(t, err)
-	require.Equal(t, parsedCfg.Organization, cfg.Organization)
 }
