@@ -20,6 +20,7 @@ type Cmd struct {
 	Builds             buildCmd              `cmd:"" group:"deplo.io" name:"builds" aliases:"build" help:"Get deplo.io Builds. (Beta - requires access)"`
 	Releases           releasesCmd           `cmd:"" group:"deplo.io" name:"releases" aliases:"release" help:"Get deplo.io Releases. (Beta - requires access)"`
 	Configs            configsCmd            `cmd:"" group:"deplo.io" name:"configs" aliases:"config" help:"Get deplo.io Project Configuration. (Beta - requires access)"`
+	Projects           projectCmd            `cmd:"" group:"management.nine.ch" name:"projects" aliases:"proj" help:"Get Projects."`
 
 	opts []runtimeclient.ListOption
 }
