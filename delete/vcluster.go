@@ -32,9 +32,10 @@ func (vc *vclusterCmd) Run(ctx context.Context, client *api.Client) error {
 		return fmt.Errorf("supplied cluster %q is not a vcluster", auth.ContextName(cluster))
 	}
 
-	d := newDeleter(cluster, "vcluster", func(client *api.Client) error {
-		return auth.RemoveClusterFromKubeConfig(client, auth.ContextName(cluster))
-	})
+	d := newDeleter(cluster, "vcluster", cleanup(
+		func(client *api.Client) error {
+			return auth.RemoveClusterFromKubeConfig(client, auth.ContextName(cluster))
+		}))
 
 	if err := d.deleteResource(ctx, client, vc.WaitTimeout, vc.Wait, vc.Force); err != nil {
 		return fmt.Errorf("unable to delete vcluster: %w", err)

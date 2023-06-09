@@ -28,7 +28,7 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		},
 	}
 
-	d := newDeleter(a, apps.ApplicationKind, noCleanup)
+	d := newDeleter(a, apps.ApplicationKind)
 
 	if err := d.deleteResource(ctx, client, app.WaitTimeout, app.Wait, app.Force); err != nil {
 		return fmt.Errorf("error while deleting %s: %w", apps.ApplicationKind, err)
