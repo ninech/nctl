@@ -39,6 +39,8 @@ func (cmd *releasesCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 		return nil
 	}
 
+	orderReleaseList(releaseList)
+
 	switch get.Output {
 	case full:
 		return printReleases(releaseList.Items, get, true)
@@ -51,22 +53,21 @@ func (cmd *releasesCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 	return nil
 }
 
-// prepareReleasesOutput prepares Release collection for printing
-func prepareReleasesOutput(releases []apps.Release) map[string][]apps.Release {
-	orderedReleases := make(map[string][]apps.Release)
-
-	for _, release := range releases {
-		applicationName := release.ObjectMeta.Labels[util.ApplicationNameLabel]
-		orderedReleases[applicationName] = append(orderedReleases[applicationName], release)
+func orderReleaseList(releaseList *apps.ReleaseList) {
+	if len(releaseList.Items) <= 1 {
+		return
 	}
 
-	for _, v := range orderedReleases {
-		sort.Slice(v, func(i, j int) bool {
-			return v[i].CreationTimestampNano < v[j].CreationTimestampNano
-		})
-	}
+	sort.Slice(releaseList.Items, func(i, j int) bool {
+		applicationNameI := releaseList.Items[i].ObjectMeta.Labels[util.ApplicationNameLabel]
+		applicationNameJ := releaseList.Items[j].ObjectMeta.Labels[util.ApplicationNameLabel]
 
-	return orderedReleases
+		if applicationNameI != applicationNameJ {
+			return applicationNameI < applicationNameJ
+		}
+
+		return releaseList.Items[i].CreationTimestampNano < releaseList.Items[j].CreationTimestampNano
+	})
 }
 
 func printReleases(releases []apps.Release, get *Cmd, header bool) error {
@@ -85,35 +86,30 @@ func printReleases(releases []apps.Release, get *Cmd, header bool) error {
 		)
 	}
 
-	orderedReleases := prepareReleasesOutput(releases)
-
-	for _, orderedRelease := range orderedReleases {
-		for _, r := range orderedRelease {
-
-			// Potential nil pointers. While these fields should never be empty
-			// by the time a release is created, we should probably still check it.
-			size := ""
-			if r.Spec.ForProvider.Config.Size != nil {
-				size = string(*r.Spec.ForProvider.Config.Size)
-			}
-
-			replicas := ""
-			if r.Spec.ForProvider.Config.Replicas != nil {
-				replicas = strconv.Itoa(int(*r.Spec.ForProvider.Config.Replicas))
-			}
-
-			get.writeTabRow(
-				w,
-				r.ObjectMeta.Namespace,
-				r.ObjectMeta.Name,
-				r.Spec.ForProvider.Build.Name,
-				r.ObjectMeta.Labels[util.ApplicationNameLabel],
-				size,
-				replicas,
-				string(r.Status.AtProvider.ReleaseStatus),
-				duration.HumanDuration(time.Since(r.ObjectMeta.CreationTimestamp.Time)),
-			)
+	for _, r := range releases {
+		// Potential nil pointers. While these fields should never be empty
+		// by the time a release is created, we should probably still check it.
+		size := ""
+		if r.Spec.ForProvider.Config.Size != nil {
+			size = string(*r.Spec.ForProvider.Config.Size)
 		}
+
+		replicas := ""
+		if r.Spec.ForProvider.Config.Replicas != nil {
+			replicas = strconv.Itoa(int(*r.Spec.ForProvider.Config.Replicas))
+		}
+
+		get.writeTabRow(
+			w,
+			r.ObjectMeta.Namespace,
+			r.ObjectMeta.Name,
+			r.Spec.ForProvider.Build.Name,
+			r.ObjectMeta.Labels[util.ApplicationNameLabel],
+			size,
+			replicas,
+			string(r.Status.AtProvider.ReleaseStatus),
+			duration.HumanDuration(time.Since(r.ObjectMeta.CreationTimestamp.Time)),
+		)
 	}
 
 	return w.Flush()

@@ -228,21 +228,18 @@ func TestReleases(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			releaseOutputNames := make(map[string][]string)
-			for appName, releaseOutput := range prepareReleasesOutput(releaseList.Items) {
-				for _, r := range releaseOutput {
-					releaseOutputNames[appName] =
-						append(releaseOutputNames[appName], r.ObjectMeta.Name)
-				}
+			orderReleaseList(releaseList)
+			releaseNames := []string{}
+			for _, r := range releaseList.Items {
+				releaseNames = append(releaseNames, r.ObjectMeta.Name)
 			}
 
-			releaseNames := make(map[string][]string)
-			for _, release := range tc.releases.Items {
-				releaseNames[release.ObjectMeta.Labels[util.ApplicationNameLabel]] =
-					append(releaseNames[release.ObjectMeta.Labels[util.ApplicationNameLabel]], release.ObjectMeta.Name)
+			expectedReleaseNames := []string{}
+			for _, r := range tc.releases.Items {
+				expectedReleaseNames = append(expectedReleaseNames, r.ObjectMeta.Name)
 			}
 
-			assert.Equal(t, releaseNames, releaseOutputNames)
+			assert.Equal(t, expectedReleaseNames, releaseNames)
 
 			// At the time of writing this test, cmd.opts append is coupled with get.list().
 			// Now, when we use get.list() with the same listOpt we duplicate entries.
