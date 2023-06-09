@@ -77,15 +77,21 @@ func (cmd *Cmd) writeTabRow(w io.Writer, namespace string, row ...string) {
 		fmt.Fprintf(w, "%s\t", namespace)
 	}
 
+	format := "%s\t"
+	// if there is just one element to be printed, we do not need a tab
+	// separator
+	if len(row) == 1 {
+		format = "%s"
+	}
 	for _, r := range row {
-		fmt.Fprintf(w, "%s\t", r)
+		fmt.Fprintf(w, format, r)
 	}
 	fmt.Fprintf(w, "\n")
 }
 
-func printEmptyMessage(kind, namespace string) {
+func printEmptyMessage(out io.Writer, kind, namespace string) {
 	if namespace == "" {
-		fmt.Printf("no %s found\n", flect.Pluralize(kind))
+		fmt.Fprintf(defaultOut(out), "no %s found\n", flect.Pluralize(kind))
 		return
 	}
 

@@ -42,7 +42,7 @@ func (cmd *buildCmd) Run(ctx context.Context, client *api.Client, get *Cmd) erro
 	}
 
 	if len(buildList.Items) == 0 {
-		printEmptyMessage(apps.BuildKind, client.Namespace)
+		printEmptyMessage(cmd.out, apps.BuildKind, client.Namespace)
 		return nil
 	}
 
