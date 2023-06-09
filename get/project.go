@@ -2,7 +2,6 @@ package get
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"sort"
 	"text/tabwriter"
@@ -22,8 +21,7 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 	cfg, err := auth.ReadConfig(client.KubeconfigPath, client.KubeconfigContext)
 	if err != nil {
 		if auth.IsConfigNotFoundError(err) {
-			fmt.Println("necessary nctl config not found, please run 'nctl auth login' to re-login")
-			return err
+			return auth.ReloginNeeded(err)
 		}
 		return err
 	}

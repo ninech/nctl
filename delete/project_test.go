@@ -7,6 +7,7 @@ import (
 
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/auth"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -70,17 +71,26 @@ func TestProject(t *testing.T) {
 	}
 }
 
-func TestProjectDeleteNoExtensionConfig(t *testing.T) {
+func TestProjectsConfigErrors(t *testing.T) {
+	ctx := context.Background()
+	apiClient, err := test.SetupClient()
+	if err != nil {
+		t.Fatal(err)
+	}
 	cmd := projectCmd{
 		Force: true,
 		Wait:  false,
 		Name:  "test",
 	}
-	apiClient, err := test.SetupClient()
-	require.NoError(t, err)
-
-	ctx := context.Background()
+	// there is no kubeconfig so we expect to fail
 	require.Error(t, cmd.Run(ctx, apiClient))
+
+	// we create a kubeconfig which does not contain a nctl config
+	// extension
+	kubeconfig, err := test.CreateTestKubeconfig(apiClient, "")
+	require.NoError(t, err)
+	defer os.Remove(kubeconfig)
+	require.ErrorIs(t, cmd.Run(ctx, apiClient), auth.ErrConfigNotFound)
 }
 
 // errorCheck defaults the given errCheck function if it is nil. The returned

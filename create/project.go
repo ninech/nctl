@@ -18,25 +18,26 @@ type projectCmd struct {
 	WaitTimeout time.Duration `default:"10m" help:"Duration to wait for project getting ready. Only relevant if wait is set."`
 }
 
-func (app *projectCmd) Run(ctx context.Context, client *api.Client) error {
-	fmt.Println("Creating new project")
+func (proj *projectCmd) Run(ctx context.Context, client *api.Client) error {
 	cfg, err := auth.ReadConfig(client.KubeconfigPath, client.KubeconfigContext)
 	if err != nil {
 		if auth.IsConfigNotFoundError(err) {
-			fmt.Println("necessary nctl config not found, please run 'nctl auth login' to re-login")
-			return err
+			return auth.ReloginNeeded(err)
 		}
 		return err
 	}
-	c := newCreator(client, newProject(app.Name, cfg.Organization), strings.ToLower(management.ProjectKind))
-	ctx, cancel := context.WithTimeout(ctx, app.WaitTimeout)
+
+	p := newProject(proj.Name, cfg.Organization)
+	fmt.Printf("Creating new project %s for organization %s", p.Name, cfg.Organization)
+	c := newCreator(client, p, strings.ToLower(management.ProjectKind))
+	ctx, cancel := context.WithTimeout(ctx, proj.WaitTimeout)
 	defer cancel()
 
 	if err := c.createResource(ctx); err != nil {
 		return err
 	}
 
-	if !app.Wait {
+	if !proj.Wait {
 		return nil
 	}
 

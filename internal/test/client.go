@@ -28,19 +28,19 @@ func SetupClient(initObjs ...client.Object) (*api.Client, error) {
 // CreateTestKubeconfig creates a test kubeconfig which contains a nctl
 // extension config with the given organization
 func CreateTestKubeconfig(client *api.Client, organization string) (string, error) {
-	contextName := "test"
-	cfg := auth.NewConfig(organization)
-	cfgObject, err := cfg.ToObject()
-	if err != nil {
-		return "", err
+	var extensions map[string]runtime.Object
+	if organization != "" {
+		cfg := auth.NewConfig(organization)
+		cfgObject, err := cfg.ToObject()
+		if err != nil {
+			return "", err
+		}
+		extensions = map[string]runtime.Object{
+			auth.NctlExtensionName: cfgObject,
+		}
 	}
-	// create and open a temporary file
-	f, err := os.CreateTemp("", "kubeconfig-")
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
 
+	contextName := "test"
 	kubeconfig := clientcmdapi.Config{
 		Clusters: map[string]*clientcmdapi.Cluster{
 			contextName: {
@@ -54,16 +54,21 @@ func CreateTestKubeconfig(client *api.Client, organization string) (string, erro
 		},
 		Contexts: map[string]*clientcmdapi.Context{
 			contextName: {
-				Cluster:   contextName,
-				AuthInfo:  contextName,
-				Namespace: "default",
-				Extensions: map[string]runtime.Object{
-					auth.NctlExtensionName: cfgObject,
-				},
+				Cluster:    contextName,
+				AuthInfo:   contextName,
+				Namespace:  "default",
+				Extensions: extensions,
 			},
 		},
 		CurrentContext: contextName,
 	}
+
+	// create and open a temporary file
+	f, err := os.CreateTemp("", "kubeconfig-")
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
 
 	content, err := clientcmd.Write(kubeconfig)
 	if err != nil {
