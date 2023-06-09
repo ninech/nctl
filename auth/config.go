@@ -131,6 +131,20 @@ func RemoveClusterFromKubeConfig(client *api.Client, clusterContext string) erro
 	return clientcmd.WriteToFile(*kubeconfig, client.KubeconfigPath)
 }
 
+// SetContextProject sets the given project in the given context of the kubeconfig
+func SetContextProject(kubeconfigPath string, contextName string, project string) error {
+	kubeconfig, err := clientcmd.LoadFromFile(kubeconfigPath)
+	if err != nil {
+		return fmt.Errorf("kubeconfig not found: %w", err)
+	}
+	context, exists := kubeconfig.Contexts[contextName]
+	if !exists {
+		return fmt.Errorf("could not find cluster %q in kubeconfig", contextName)
+	}
+	context.Namespace = project
+	return clientcmd.WriteToFile(*kubeconfig, kubeconfigPath)
+}
+
 func readConfig(kubeconfigContent []byte, contextName string) (*Config, error) {
 	kubeconfig, err := clientcmd.Load(kubeconfigContent)
 	if err != nil {
