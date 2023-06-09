@@ -11,7 +11,6 @@ import (
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -29,7 +28,7 @@ func TestProject(t *testing.T) {
 		output        string
 	}{
 		"projects exist, full format": {
-			projects:     testProjects(organization, "dev", "staging", "prod"),
+			projects:     test.Projects(organization, "dev", "staging", "prod"),
 			outputFormat: full,
 			output: `NAME
 dev
@@ -38,7 +37,7 @@ staging
 `,
 		},
 		"projects exist, no header format": {
-			projects:     testProjects(organization, "dev", "staging", "prod"),
+			projects:     test.Projects(organization, "dev", "staging", "prod"),
 			outputFormat: noHeader,
 			output: `dev
 prod
@@ -46,7 +45,7 @@ staging
 `,
 		},
 		"projects exist and all namespaces set": {
-			projects:      testProjects(organization, "dev", "staging", "prod"),
+			projects:      test.Projects(organization, "dev", "staging", "prod"),
 			outputFormat:  full,
 			allNamespaces: true,
 			output: `NAME
@@ -66,7 +65,7 @@ staging
 			output:       "no Projects found\n",
 		},
 		"specific project requested": {
-			projects:     testProjects(organization, "dev", "staging"),
+			projects:     test.Projects(organization, "dev", "staging"),
 			name:         "dev",
 			outputFormat: full,
 			output: `NAME
@@ -74,13 +73,13 @@ dev
 `,
 		},
 		"specific project requested, but does not exist": {
-			projects:     testProjects(organization, "staging"),
+			projects:     test.Projects(organization, "staging"),
 			name:         "dev",
 			outputFormat: full,
 			output:       "no Projects found\n",
 		},
 		"specific project requested, yaml output": {
-			projects:     testProjects(organization, "dev", "staging"),
+			projects:     test.Projects(organization, "dev", "staging"),
 			name:         "dev",
 			outputFormat: yamlOut,
 			output:       "\x1b[96mapiVersion\x1b[0m:\x1b[92m management.nine.ch/v1alpha1\x1b[0m\n\x1b[92m\x1b[0m\x1b[96mkind\x1b[0m:\x1b[92m Project\x1b[0m\n\x1b[92m\x1b[0m\x1b[96mmetadata\x1b[0m:\x1b[96m\x1b[0m\n\x1b[96m  name\x1b[0m:\x1b[92m dev\x1b[0m\n\x1b[92m  \x1b[0m\x1b[96mnamespace\x1b[0m:\x1b[92m evilcorp\x1b[0m\n",
@@ -126,22 +125,4 @@ dev
 			assert.Equal(t, testCase.output, buf.String())
 		})
 	}
-}
-
-func testProjects(organization string, names ...string) []client.Object {
-	var projects []client.Object
-	for _, name := range names {
-		projects = append(projects, &management.Project{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      name,
-				Namespace: organization,
-			},
-			TypeMeta: metav1.TypeMeta{
-				Kind:       management.ProjectKind,
-				APIVersion: management.SchemeGroupVersion.String(),
-			},
-			Spec: management.ProjectSpec{},
-		})
-	}
-	return projects
 }
