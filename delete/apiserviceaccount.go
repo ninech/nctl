@@ -23,7 +23,7 @@ func (asa *apiServiceAccountCmd) Run(ctx context.Context, client *api.Client) er
 
 	sa := &iam.APIServiceAccount{ObjectMeta: metav1.ObjectMeta{
 		Name:      asa.Name,
-		Namespace: client.Namespace,
+		Namespace: client.Project,
 	}}
 
 	d := newDeleter(sa, iam.APIServiceAccountKind)

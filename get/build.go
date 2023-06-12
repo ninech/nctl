@@ -23,8 +23,8 @@ import (
 )
 
 type buildCmd struct {
-	Name            string `arg:"" help:"Name of the Build to get. If omitted all in the namespace will be listed." default:""`
-	ApplicationName string `short:"a" help:"Name of the Application to get builds for. If omitted all in the namespace will be listed."`
+	Name            string `arg:"" help:"Name of the Build to get. If omitted all in the project will be listed." default:""`
+	ApplicationName string `short:"a" help:"Name of the Application to get builds for. If omitted all in the project will be listed."`
 	PullImage       bool   `help:"Pull the image of the build. Uses the local docker socket at the env DOCKER_HOST if set."`
 	out             io.Writer
 }
@@ -42,7 +42,7 @@ func (cmd *buildCmd) Run(ctx context.Context, client *api.Client, get *Cmd) erro
 	}
 
 	if len(buildList.Items) == 0 {
-		printEmptyMessage(cmd.out, apps.BuildKind, client.Namespace)
+		printEmptyMessage(cmd.out, apps.BuildKind, client.Project)
 		return nil
 	}
 

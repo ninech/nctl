@@ -25,8 +25,8 @@ func TestApplication(t *testing.T) {
 	}
 
 	apiClient := &api.Client{
-		Namespace: "default",
-		Log:       &log.Client{Client: log.NewFake(t, expectedTime, lines...)},
+		Project: "default",
+		Log:     &log.Client{Client: log.NewFake(t, expectedTime, lines...)},
 	}
 	ctx := context.Background()
 

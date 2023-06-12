@@ -17,7 +17,7 @@ type apiServiceAccountCmd struct {
 }
 
 func (asa *apiServiceAccountCmd) Run(ctx context.Context, client *api.Client) error {
-	c := newCreator(client, asa.newAPIServiceAccount(client.Namespace), iam.APIServiceAccountKind)
+	c := newCreator(client, asa.newAPIServiceAccount(client.Project), iam.APIServiceAccountKind)
 	ctx, cancel := context.WithTimeout(ctx, asa.WaitTimeout)
 	defer cancel()
 
@@ -35,18 +35,18 @@ func (asa *apiServiceAccountCmd) Run(ctx context.Context, client *api.Client) er
 	})
 }
 
-func (asa *apiServiceAccountCmd) newAPIServiceAccount(namespace string) *iam.APIServiceAccount {
+func (asa *apiServiceAccountCmd) newAPIServiceAccount(project string) *iam.APIServiceAccount {
 	name := getName(asa.Name)
 	return &iam.APIServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: namespace,
+			Namespace: project,
 		},
 		Spec: iam.APIServiceAccountSpec{
 			ResourceSpec: runtimev1.ResourceSpec{
 				WriteConnectionSecretToReference: &runtimev1.SecretReference{
 					Name:      name,
-					Namespace: namespace,
+					Namespace: project,
 				},
 			},
 		},

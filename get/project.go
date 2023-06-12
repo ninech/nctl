@@ -28,8 +28,8 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 
 	// projects can only be created in the main organization project so we
 	// only need to search there
-	client.Namespace = cfg.Organization
-	get.AllNamespaces = false
+	client.Project = cfg.Organization
+	get.AllProjects = false
 
 	projectList := &management.ProjectList{}
 	if err := get.list(ctx, client, projectList, matchName(proj.Name)); err != nil {

@@ -15,14 +15,14 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	const namespace = "some-namespace"
+	const project = "some-project"
 
 	initialSize := test.AppMicro
 
 	existingConfig := &apps.ProjectConfig{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      namespace,
-			Namespace: namespace,
+			Name:      project,
+			Namespace: project,
 		},
 		Spec: apps.ProjectConfigSpec{
 			ForProvider: apps.ProjectConfigParameters{
@@ -38,13 +38,13 @@ func TestConfig(t *testing.T) {
 
 	cases := map[string]struct {
 		orig        *apps.ProjectConfig
-		namespace   string
+		project     string
 		cmd         configCmd
 		checkConfig func(t *testing.T, cmd configCmd, orig, updated *apps.ProjectConfig)
 	}{
 		"change port": {
-			orig:      existingConfig,
-			namespace: namespace,
+			orig:    existingConfig,
+			project: project,
 			cmd: configCmd{
 				Port: pointer.Int32(1234),
 			},
@@ -53,8 +53,8 @@ func TestConfig(t *testing.T) {
 			},
 		},
 		"port is unchanged when updating unrelated field": {
-			orig:      existingConfig,
-			namespace: namespace,
+			orig:    existingConfig,
+			project: project,
 			cmd: configCmd{
 				Size: pointer.String("newsize"),
 			},
@@ -64,8 +64,8 @@ func TestConfig(t *testing.T) {
 			},
 		},
 		"all fields update": {
-			orig:      existingConfig,
-			namespace: namespace,
+			orig:    existingConfig,
+			project: project,
 			cmd: configCmd{
 				Size:     pointer.String("newsize"),
 				Port:     pointer.Int32(1000),
@@ -89,7 +89,7 @@ func TestConfig(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			apiClient.Namespace = tc.namespace
+			apiClient.Project = tc.project
 
 			ctx := context.Background()
 

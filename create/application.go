@@ -54,7 +54,7 @@ const (
 
 func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	fmt.Println("Creating a new application")
-	newApp := app.newApplication(client.Namespace)
+	newApp := app.newApplication(client.Project)
 
 	auth := util.GitAuth{
 		Username:      app.Git.Username,
@@ -64,7 +64,7 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 
 	if auth.Enabled() {
 		// for git auth we create a separate secret and then reference it in the app.
-		secret := auth.Secret(newApp.Name, client.Namespace)
+		secret := auth.Secret(newApp.Name, client.Project)
 		if err := client.Create(ctx, secret); err != nil {
 			return fmt.Errorf("unable to create git auth secret: %w", err)
 		}
@@ -117,14 +117,14 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	return nil
 }
 
-func (app *applicationCmd) newApplication(namespace string) *apps.Application {
+func (app *applicationCmd) newApplication(project string) *apps.Application {
 	name := getName(app.Name)
 	size := apps.ApplicationSize(app.Size)
 
 	return &apps.Application{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: namespace,
+			Namespace: project,
 		},
 		Spec: apps.ApplicationSpec{
 			ForProvider: apps.ApplicationParameters{

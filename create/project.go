@@ -47,11 +47,11 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client) error {
 	})
 }
 
-func newProject(name, namespace string) *management.Project {
+func newProject(name, project string) *management.Project {
 	return &management.Project{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      getName(name),
-			Namespace: namespace,
+			Namespace: project,
 		},
 		TypeMeta: metav1.TypeMeta{
 			Kind:       management.ProjectKind,

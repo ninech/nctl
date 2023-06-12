@@ -44,7 +44,7 @@ func TestBuild(t *testing.T) {
 			return []string{o.GetName()}
 		}).
 		WithObjects(&build, &build2).Build()
-	apiClient := &api.Client{WithWatch: client, Namespace: "default"}
+	apiClient := &api.Client{WithWatch: client, Project: "default"}
 	ctx := context.Background()
 
 	buf := &bytes.Buffer{}

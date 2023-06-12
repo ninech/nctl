@@ -22,7 +22,7 @@ func TestProjectConfig(t *testing.T) {
 
 	cases := map[string]struct {
 		cmd         configCmd
-		namespace   string
+		project     string
 		checkConfig func(t *testing.T, cmd configCmd, cfg *apps.ProjectConfig)
 	}{
 		"all fields set": {
@@ -32,9 +32,9 @@ func TestProjectConfig(t *testing.T) {
 				Replicas: pointer.Int32(42),
 				Env:      &map[string]string{"key1": "val1"},
 			},
-			namespace: "namespace-1",
+			project: "namespace-1",
 			checkConfig: func(t *testing.T, cmd configCmd, cfg *apps.ProjectConfig) {
-				assert.Equal(t, apiClient.Namespace, cfg.Name)
+				assert.Equal(t, apiClient.Project, cfg.Name)
 				assert.Equal(t, apps.ApplicationSize(*cmd.Size), *cfg.Spec.ForProvider.Config.Size)
 				assert.Equal(t, *cmd.Port, *cfg.Spec.ForProvider.Config.Port)
 				assert.Equal(t, *cmd.Replicas, *cfg.Spec.ForProvider.Config.Replicas)
@@ -46,9 +46,9 @@ func TestProjectConfig(t *testing.T) {
 				Size:     pointer.String(string(test.AppMicro)),
 				Replicas: pointer.Int32(1),
 			},
-			namespace: "namespace-2",
+			project: "namespace-2",
 			checkConfig: func(t *testing.T, cmd configCmd, cfg *apps.ProjectConfig) {
-				assert.Equal(t, apiClient.Namespace, cfg.Name)
+				assert.Equal(t, apiClient.Project, cfg.Name)
 				assert.Equal(t, apps.ApplicationSize(*cmd.Size), *cfg.Spec.ForProvider.Config.Size)
 				assert.Nil(t, cfg.Spec.ForProvider.Config.Port)
 				assert.Equal(t, *cmd.Replicas, *cfg.Spec.ForProvider.Config.Replicas)
@@ -56,10 +56,10 @@ func TestProjectConfig(t *testing.T) {
 			},
 		},
 		"all fields not set": {
-			cmd:       configCmd{},
-			namespace: "namespace-3",
+			cmd:     configCmd{},
+			project: "namespace-3",
 			checkConfig: func(t *testing.T, cmd configCmd, cfg *apps.ProjectConfig) {
-				assert.Equal(t, apiClient.Namespace, cfg.Name)
+				assert.Equal(t, apiClient.Project, cfg.Name)
 				assert.Nil(t, cfg.Spec.ForProvider.Config.Size)
 				assert.Nil(t, cfg.Spec.ForProvider.Config.Port)
 				assert.Nil(t, cfg.Spec.ForProvider.Config.Replicas)
@@ -71,8 +71,8 @@ func TestProjectConfig(t *testing.T) {
 	for name, tc := range cases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			apiClient.Namespace = tc.namespace
-			cfg := tc.cmd.newProjectConfig(tc.namespace)
+			apiClient.Project = tc.project
+			cfg := tc.cmd.newProjectConfig(tc.project)
 
 			if err := tc.cmd.Run(ctx, apiClient); err != nil {
 				t.Fatal(err)

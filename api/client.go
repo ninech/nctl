@@ -24,7 +24,7 @@ type Client struct {
 	runtimeclient.WithWatch
 	Config            *rest.Config
 	KubeconfigPath    string
-	Namespace         string
+	Project           string
 	Log               *log.Client
 	Token             string
 	KubeconfigContext string
@@ -33,12 +33,12 @@ type Client struct {
 type ClientOpt func(c *Client) error
 
 // New returns a new Client by loading a kubeconfig with the supplied context
-// and namespace. The kubeconfig is discovered like this:
+// and project. The kubeconfig is discovered like this:
 // * KUBECONFIG environment variable pointing at a file
 // * $HOME/.kube/config if exists
-func New(ctx context.Context, apiClusterContext, namespace string, opts ...ClientOpt) (*Client, error) {
+func New(ctx context.Context, apiClusterContext, project string, opts ...ClientOpt) (*Client, error) {
 	client := &Client{
-		Namespace:         namespace,
+		Project:           project,
 		KubeconfigContext: apiClusterContext,
 	}
 	if err := client.loadConfig(apiClusterContext); err != nil {
@@ -80,7 +80,7 @@ func New(ctx context.Context, apiClusterContext, namespace string, opts ...Clien
 // LogClient sets up a log client connected to the provided address.
 func LogClient(address string) ClientOpt {
 	return func(c *Client) error {
-		logClient, err := log.NewClient(address, c.Token, c.Namespace)
+		logClient, err := log.NewClient(address, c.Token, c.Project)
 		if err != nil {
 			return fmt.Errorf("unable to create log client: %w", err)
 		}
@@ -108,12 +108,12 @@ func (c *Client) loadConfig(context string) error {
 		return err
 	}
 
-	cfg, namespace, err := loadConfigWithContext("", loadingRules, context)
+	cfg, project, err := loadConfigWithContext("", loadingRules, context)
 	if err != nil {
 		return err
 	}
-	if c.Namespace == "" {
-		c.Namespace = namespace
+	if c.Project == "" {
+		c.Project = project
 	}
 	c.Config = cfg
 	c.KubeconfigPath = loadingRules.GetDefaultFilename()
@@ -122,7 +122,7 @@ func (c *Client) loadConfig(context string) error {
 }
 
 func (c *Client) Name(name string) types.NamespacedName {
-	return types.NamespacedName{Name: name, Namespace: c.Namespace}
+	return types.NamespacedName{Name: name, Namespace: c.Project}
 }
 
 func (c *Client) GetConnectionSecret(ctx context.Context, mg resource.Managed) (*corev1.Secret, error) {
@@ -181,6 +181,6 @@ func ObjectName(obj runtimeclient.Object) types.NamespacedName {
 	return types.NamespacedName{Name: obj.GetName(), Namespace: obj.GetNamespace()}
 }
 
-func NamespacedName(name, namespace string) types.NamespacedName {
-	return types.NamespacedName{Name: name, Namespace: namespace}
+func NamespacedName(name, project string) types.NamespacedName {
+	return types.NamespacedName{Name: name, Namespace: project}
 }

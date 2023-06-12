@@ -63,7 +63,7 @@ type GitAuth struct {
 	SSHPrivateKey *string
 }
 
-func (git GitAuth) Secret(name, namespace string) *corev1.Secret {
+func (git GitAuth) Secret(name, project string) *corev1.Secret {
 	data := map[string][]byte{}
 
 	if git.SSHPrivateKey != nil {
@@ -76,7 +76,7 @@ func (git GitAuth) Secret(name, namespace string) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: namespace,
+			Namespace: project,
 		},
 		Data: data,
 	}

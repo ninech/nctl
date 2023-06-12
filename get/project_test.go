@@ -22,11 +22,11 @@ func TestProject(t *testing.T) {
 	organization := "evilcorp"
 
 	for name, testCase := range map[string]struct {
-		projects      []client.Object
-		name          string
-		outputFormat  output
-		allNamespaces bool
-		output        string
+		projects     []client.Object
+		name         string
+		outputFormat output
+		allProjects  bool
+		output       string
 	}{
 		"projects exist, full format": {
 			projects:     test.Projects(organization, "dev", "staging", "prod"),
@@ -45,10 +45,10 @@ prod
 staging
 `,
 		},
-		"projects exist and all namespaces set": {
-			projects:      test.Projects(organization, "dev", "staging", "prod"),
-			outputFormat:  full,
-			allNamespaces: true,
+		"projects exist and allProjects is set": {
+			projects:     test.Projects(organization, "dev", "staging", "prod"),
+			outputFormat: full,
+			allProjects:  true,
 			output: `NAME
 dev
 prod
@@ -90,8 +90,8 @@ dev
 			testCase := testCase
 
 			get := &Cmd{
-				Output:        testCase.outputFormat,
-				AllNamespaces: testCase.allNamespaces,
+				Output:      testCase.outputFormat,
+				AllProjects: testCase.allProjects,
 			}
 
 			scheme, err := api.NewScheme()
@@ -106,9 +106,9 @@ dev
 				}).
 				WithObjects(testCase.projects...).Build()
 
-			// we set the namespace in the client to show that it
-			// doesn't affect projects listing
-			apiClient := &api.Client{WithWatch: client, Namespace: "default"}
+			// we set the project in the client to show that setting it
+			// doesn't affect listing of projects
+			apiClient := &api.Client{WithWatch: client, Project: "default"}
 			kubeconfig, err := test.CreateTestKubeconfig(apiClient, organization)
 			require.NoError(t, err)
 			defer os.Remove(kubeconfig)

@@ -43,7 +43,7 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client) error {
 
 	// we need to overwrite the namespace as projects are always in the
 	// main organization namespace
-	client.Namespace = cfg.Organization
+	client.Project = cfg.Organization
 
 	if err := d.deleteResource(ctx, client, proj.WaitTimeout, proj.Wait, proj.Force); err != nil {
 		return fmt.Errorf("error while deleting %s: %w", management.ProjectKind, err)

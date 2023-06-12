@@ -55,7 +55,7 @@ func (l *LoginCmd) Run(ctx context.Context, command string) error {
 		return err
 	}
 
-	return login(ctx, cfg, loadingRules.GetDefaultFilename(), runExecPlugin(l.ExecPlugin), namespace(l.Organization))
+	return login(ctx, cfg, loadingRules.GetDefaultFilename(), runExecPlugin(l.ExecPlugin), project(l.Organization))
 }
 
 type apiConfig struct {
@@ -146,7 +146,7 @@ func newAPIConfig(apiURL, issuerURL *url.URL, command, clientID string, opts ...
 
 type loginConfig struct {
 	execPlugin           bool
-	namespace            string
+	project              string
 	switchCurrentContext bool
 }
 
@@ -159,10 +159,10 @@ func runExecPlugin(enabled bool) loginOption {
 	}
 }
 
-// namespace overrides the namespace in the new config
-func namespace(context string) loginOption {
+// project overrides the project in the new config
+func project(project string) loginOption {
 	return func(l *loginConfig) {
-		l.namespace = context
+		l.project = project
 	}
 }
 
@@ -180,8 +180,8 @@ func login(ctx context.Context, newConfig *clientcmdapi.Config, kubeconfigPath s
 		opt(loginConfig)
 	}
 
-	if loginConfig.namespace != "" && newConfig.Contexts[newConfig.CurrentContext] != nil {
-		newConfig.Contexts[newConfig.CurrentContext].Namespace = loginConfig.namespace
+	if loginConfig.project != "" && newConfig.Contexts[newConfig.CurrentContext] != nil {
+		newConfig.Contexts[newConfig.CurrentContext].Namespace = loginConfig.project
 	}
 
 	kubeconfig, err := clientcmd.LoadFromFile(kubeconfigPath)

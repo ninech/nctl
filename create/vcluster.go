@@ -26,7 +26,7 @@ type vclusterCmd struct {
 }
 
 func (vc *vclusterCmd) Run(ctx context.Context, client *api.Client) error {
-	cluster := vc.newCluster(client.Namespace)
+	cluster := vc.newCluster(client.Project)
 	c := newCreator(client, cluster, "vcluster")
 	ctx, cancel := context.WithTimeout(ctx, vc.WaitTimeout)
 	defer cancel()
@@ -59,18 +59,18 @@ func (vc *vclusterCmd) isAvailable(cluster *infrastructure.KubernetesCluster) bo
 	return isAvailable(cluster) && len(cluster.Status.AtProvider.APIEndpoint) != 0
 }
 
-func (vc *vclusterCmd) newCluster(namespace string) *infrastructure.KubernetesCluster {
+func (vc *vclusterCmd) newCluster(project string) *infrastructure.KubernetesCluster {
 	name := getName(vc.Name)
 	return &infrastructure.KubernetesCluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: namespace,
+			Namespace: project,
 		},
 		Spec: infrastructure.KubernetesClusterSpec{
 			ResourceSpec: runtimev1.ResourceSpec{
 				WriteConnectionSecretToReference: &runtimev1.SecretReference{
 					Name:      name,
-					Namespace: namespace,
+					Namespace: project,
 				},
 			},
 			ForProvider: infrastructure.KubernetesClusterParameters{

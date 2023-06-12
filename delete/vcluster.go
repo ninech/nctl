@@ -23,7 +23,7 @@ func (vc *vclusterCmd) Run(ctx context.Context, client *api.Client) error {
 	defer cancel()
 
 	cluster := &infrastructure.KubernetesCluster{}
-	clusterName := types.NamespacedName{Name: vc.Name, Namespace: client.Namespace}
+	clusterName := types.NamespacedName{Name: vc.Name, Namespace: client.Project}
 	if err := client.Get(ctx, clusterName, cluster); err != nil {
 		return fmt.Errorf("unable to get vcluster %q: %w", cluster.Name, err)
 	}

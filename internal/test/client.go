@@ -21,7 +21,7 @@ func SetupClient(initObjs ...client.Object) (*api.Client, error) {
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjs...).Build()
 
 	return &api.Client{
-		WithWatch: client, Namespace: "default",
+		WithWatch: client, Project: "default",
 	}, nil
 }
 

@@ -127,12 +127,12 @@ func TestApplicationWait(t *testing.T) {
 		WaitTimeout: time.Second * 5,
 		Name:        "some-name",
 	}
-	namespace := "default"
+	project := "default"
 
 	build := &apps.Build{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "any-name",
-			Namespace: namespace,
+			Namespace: project,
 			Labels: map[string]string{
 				util.ApplicationNameLabel: cmd.Name,
 			},
@@ -142,7 +142,7 @@ func TestApplicationWait(t *testing.T) {
 	release := &apps.Release{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "another-name",
-			Namespace: namespace,
+			Namespace: project,
 			Labels: map[string]string{
 				util.ApplicationNameLabel: cmd.Name,
 			},
@@ -176,7 +176,7 @@ func TestApplicationWait(t *testing.T) {
 				return
 			case <-ticker.C:
 				app := &apps.Application{}
-				if err := apiClient.Get(ctx, types.NamespacedName{Name: cmd.Name, Namespace: namespace}, app); err != nil {
+				if err := apiClient.Get(ctx, types.NamespacedName{Name: cmd.Name, Namespace: project}, app); err != nil {
 					errors <- err
 				}
 
@@ -242,12 +242,12 @@ func TestApplicationBuildFail(t *testing.T) {
 		WaitTimeout: time.Second * 5,
 		Name:        "some-name",
 	}
-	namespace := "default"
+	project := "default"
 
 	build := &apps.Build{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "any-name",
-			Namespace: namespace,
+			Namespace: project,
 			Labels: map[string]string{
 				util.ApplicationNameLabel: cmd.Name,
 			},
@@ -292,7 +292,7 @@ func TestApplicationBuildFail(t *testing.T) {
 			case <-ticker.C:
 				app := &apps.Application{ObjectMeta: metav1.ObjectMeta{
 					Name:      cmd.Name,
-					Namespace: namespace,
+					Namespace: project,
 				}}
 
 				if err := setResourceCondition(ctx, client, app, runtimev1.ReconcileSuccess()); err != nil {

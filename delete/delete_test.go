@@ -27,7 +27,7 @@ func TestDeleter(t *testing.T) {
 	}
 
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(asa).Build()
-	apiClient := &api.Client{WithWatch: client, Namespace: "default"}
+	apiClient := &api.Client{WithWatch: client, Project: "default"}
 	ctx := context.Background()
 	d := newDeleter(asa, iam.APIServiceAccountKind)
 

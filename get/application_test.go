@@ -40,7 +40,7 @@ func TestApplication(t *testing.T) {
 			return []string{o.GetName()}
 		}).
 		WithObjects(&app, &app2).Build()
-	apiClient := &api.Client{WithWatch: client, Namespace: "default"}
+	apiClient := &api.Client{WithWatch: client, Project: "default"}
 	ctx := context.Background()
 
 	buf := &bytes.Buffer{}

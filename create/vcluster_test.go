@@ -22,7 +22,7 @@ func TestVCluster(t *testing.T) {
 
 	cluster := cmd.newCluster("default")
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cluster).Build()
-	apiClient := &api.Client{WithWatch: client, Namespace: "default"}
+	apiClient := &api.Client{WithWatch: client, Project: "default"}
 	ctx := context.Background()
 
 	if err := cmd.Run(ctx, apiClient); err != nil {

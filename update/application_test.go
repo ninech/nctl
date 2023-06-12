@@ -162,7 +162,7 @@ func TestApplication(t *testing.T) {
 			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(
 				tc.orig, tc.gitAuth.Secret(tc.orig.Name, tc.orig.Namespace),
 			).Build()
-			apiClient := &api.Client{WithWatch: client, Namespace: "default"}
+			apiClient := &api.Client{WithWatch: client, Project: "default"}
 			ctx := context.Background()
 
 			if err := tc.cmd.Run(ctx, apiClient); err != nil {

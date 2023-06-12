@@ -62,7 +62,7 @@ func TestFile(t *testing.T) {
 	}
 
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()
-	apiClient := &api.Client{WithWatch: client, Namespace: "default"}
+	apiClient := &api.Client{WithWatch: client, Project: "default"}
 
 	ctx := context.Background()
 

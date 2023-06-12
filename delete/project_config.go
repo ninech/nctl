@@ -22,12 +22,12 @@ func (cmd *configCmd) Run(ctx context.Context, client *api.Client) error {
 
 	c := &apps.ProjectConfig{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      client.Namespace,
-			Namespace: client.Namespace,
+			Name:      client.Project,
+			Namespace: client.Project,
 		},
 	}
 
-	d := newDeleter(c, apps.ProjectConfigKind, noCleanup)
+	d := newDeleter(c, apps.ProjectConfigKind)
 
 	if err := d.deleteResource(ctx, client, cmd.WaitTimeout, cmd.Wait, cmd.Force); err != nil {
 		return fmt.Errorf("error while deleting %s: %w", apps.ProjectConfigKind, err)

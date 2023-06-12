@@ -36,7 +36,7 @@ func TestCreate(t *testing.T) {
 	}
 
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()
-	apiClient := &api.Client{WithWatch: client, Namespace: "default"}
+	apiClient := &api.Client{WithWatch: client, Project: "default"}
 	c := newCreator(apiClient, asa, "apiserviceaccount")
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)

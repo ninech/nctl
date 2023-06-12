@@ -24,7 +24,7 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	a := &apps.Application{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      app.Name,
-			Namespace: client.Namespace,
+			Namespace: client.Project,
 		},
 	}
 
