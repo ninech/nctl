@@ -27,9 +27,9 @@ func TestDeleter(t *testing.T) {
 	}
 
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(asa).Build()
-	apiClient := &api.Client{WithWatch: client, Namespace: "default"}
+	apiClient := &api.Client{WithWatch: client, Project: "default"}
 	ctx := context.Background()
-	d := newDeleter(asa, iam.APIServiceAccountKind, noCleanup)
+	d := newDeleter(asa, iam.APIServiceAccountKind)
 
 	if err := d.deleteResource(ctx, apiClient, 0, false, true); err != nil {
 		t.Fatalf("error while deleting %s: %s", apps.ApplicationKind, err)

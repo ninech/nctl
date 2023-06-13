@@ -17,8 +17,8 @@ import (
 )
 
 type releasesCmd struct {
-	Name            string `arg:"" help:"Name of the Release to get. If omitted all in the namespace will be listed." default:""`
-	ApplicationName string `help:"Name of the Application to get releases for. If omitted all in the namespace will be listed."`
+	Name            string `arg:"" help:"Name of the Release to get. If omitted all in the projects will be listed." default:""`
+	ApplicationName string `help:"Name of the Application to get releases for. If omitted all applications in the project will be listed."`
 	out             io.Writer
 }
 
@@ -35,7 +35,7 @@ func (cmd *releasesCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 	}
 
 	if len(releaseList.Items) == 0 {
-		printEmptyMessage(apps.ReleaseKind, client.Namespace)
+		printEmptyMessage(cmd.out, apps.ReleaseKind, client.Project)
 		return nil
 	}
 

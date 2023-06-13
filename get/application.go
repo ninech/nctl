@@ -13,7 +13,7 @@ import (
 )
 
 type applicationsCmd struct {
-	Name string `arg:"" help:"Name of the Application to get. If omitted all in the namespace will be listed." default:""`
+	Name string `arg:"" help:"Name of the Application to get. If omitted all in the project will be listed." default:""`
 	out  io.Writer
 }
 
@@ -25,7 +25,7 @@ func (cmd *applicationsCmd) Run(ctx context.Context, client *api.Client, get *Cm
 	}
 
 	if len(appList.Items) == 0 {
-		printEmptyMessage(apps.ApplicationKind, client.Namespace)
+		printEmptyMessage(cmd.out, apps.ApplicationKind, client.Project)
 		return nil
 	}
 

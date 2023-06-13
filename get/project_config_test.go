@@ -29,17 +29,17 @@ func TestConfigs(t *testing.T) {
 	cases := map[string]struct {
 		cmd          configsCmd
 		get          *Cmd
-		namespace    string
+		project      string
 		configs      *apps.ProjectConfigList
 		otherConfigs *apps.ProjectConfigList
 	}{
 		"get configs for all projects": {
 			cmd: configsCmd{},
 			get: &Cmd{
-				Output:        full,
-				AllNamespaces: true,
+				Output:      full,
+				AllProjects: true,
 			},
-			namespace: "ns-1",
+			project: "ns-1",
 			configs: &apps.ProjectConfigList{
 				Items: []apps.ProjectConfig{
 					*fakeProjectConfig(time.Second*10, "ns-1", "ns-1"),
@@ -64,7 +64,7 @@ func TestConfigs(t *testing.T) {
 			get: &Cmd{
 				Output: full,
 			},
-			namespace: "ns-2",
+			project: "ns-2",
 			configs: &apps.ProjectConfigList{
 				Items: []apps.ProjectConfig{
 					*fakeProjectConfig(time.Second*10, "ns-2", "ns-2"),
@@ -82,7 +82,7 @@ func TestConfigs(t *testing.T) {
 			get: &Cmd{
 				Output: full,
 			},
-			namespace: "ns-3",
+			project: "ns-3",
 			configs: &apps.ProjectConfigList{
 				Items: []apps.ProjectConfig{},
 			},
@@ -109,13 +109,13 @@ func TestConfigs(t *testing.T) {
 				}).
 				WithLists(tc.configs, tc.otherConfigs).
 				Build()
-			apiClient := &api.Client{WithWatch: client, Namespace: tc.namespace}
+			apiClient := &api.Client{WithWatch: client, Project: tc.project}
 
 			configList := &apps.ProjectConfigList{}
 
 			var opts []listOpt
-			if !tc.get.AllNamespaces {
-				opts = []listOpt{matchName(tc.namespace)}
+			if !tc.get.AllProjects {
+				opts = []listOpt{matchName(tc.project)}
 			}
 
 			if err := tc.get.list(ctx, apiClient, configList, opts...); err != nil {

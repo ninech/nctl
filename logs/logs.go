@@ -53,6 +53,6 @@ func (cmd *logsCmd) Run(ctx context.Context, client *api.Client, queryString str
 	return client.Log.QueryRange(ctx, out, query)
 }
 
-func queryString(labelKey, labelValue, namespace string) string {
-	return fmt.Sprintf(`{%s="%s", namespace="%s"}`, labelKey, labelValue, namespace)
+func queryString(labelKey, labelValue, project string) string {
+	return fmt.Sprintf(`{%s="%s", namespace="%s"}`, labelKey, labelValue, project)
 }

@@ -16,13 +16,16 @@ func TestAPIServiceAccount(t *testing.T) {
 	}
 
 	cmd := apiServiceAccountCmd{
+		Name:        "test",
 		Wait:        false,
 		WaitTimeout: time.Second,
 	}
 
 	asa := cmd.newAPIServiceAccount("default")
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(asa).Build()
-	apiClient := &api.Client{WithWatch: client, Namespace: "default"}
+	asa.Name = "test"
+
+	client := fake.NewClientBuilder().WithScheme(scheme).Build()
+	apiClient := &api.Client{WithWatch: client, Project: "default"}
 	ctx := context.Background()
 
 	if err := cmd.Run(ctx, apiClient); err != nil {

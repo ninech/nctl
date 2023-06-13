@@ -12,7 +12,7 @@ import (
 )
 
 type apiServiceAccountsCmd struct {
-	Name            string `arg:"" help:"Name of the API Service Account to get. If omitted all in the namespace will be listed." default:""`
+	Name            string `arg:"" help:"Name of the API Service Account to get. If omitted all in the project will be listed." default:""`
 	PrintToken      bool   `help:"Print the bearer token of the Account. Requires name to be set." default:"false"`
 	PrintKubeconfig bool   `help:"Print the kubeconfig of the Account. Requires name to be set." default:"false"`
 }
@@ -30,7 +30,7 @@ func (asa *apiServiceAccountsCmd) Run(ctx context.Context, client *api.Client, g
 	}
 
 	if len(asaList.Items) == 0 {
-		printEmptyMessage(iam.APIServiceAccountKind, client.Namespace)
+		printEmptyMessage(os.Stdout, iam.APIServiceAccountKind, client.Project)
 		return nil
 	}
 

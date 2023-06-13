@@ -43,7 +43,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	app := &apps.Application{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      *cmd.Name,
-			Namespace: client.Namespace,
+			Namespace: client.Project,
 		},
 	}
 
@@ -63,7 +63,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 			}
 
 			if auth.Enabled() {
-				secret := auth.Secret(app.Name, client.Namespace)
+				secret := auth.Secret(app.Name, client.Project)
 				if err := client.Get(ctx, client.Name(secret.Name), secret); err != nil {
 					return err
 				}

@@ -14,12 +14,12 @@ import (
 )
 
 type ClusterCmd struct {
-	Name       string `arg:"" help:"Name of the cluster to authenticate with. Also accepts 'name/namespace' format."`
+	Name       string `arg:"" help:"Name of the cluster to authenticate with. Also accepts 'name/project' format."`
 	ExecPlugin bool   `help:"Automatically run exec plugin after writing the kubeconfig."`
 }
 
 func (a *ClusterCmd) Run(ctx context.Context, client *api.Client) error {
-	name, err := clusterName(a.Name, client.Namespace)
+	name, err := clusterName(a.Name, client.Project)
 	if err != nil {
 		return err
 	}
@@ -69,18 +69,18 @@ func (a *ClusterCmd) Run(ctx context.Context, client *api.Client) error {
 	return nil
 }
 
-func clusterName(name, namespace string) (types.NamespacedName, error) {
+func clusterName(name, project string) (types.NamespacedName, error) {
 	parts := strings.Split(name, "/")
 	if len(parts) == 2 {
 		name = parts[0]
-		namespace = parts[1]
+		project = parts[1]
 	}
 
-	if namespace == "" {
-		return types.NamespacedName{}, fmt.Errorf("namespace cannot be empty")
+	if project == "" {
+		return types.NamespacedName{}, fmt.Errorf("project cannot be empty")
 	}
 
-	return types.NamespacedName{Name: name, Namespace: namespace}, nil
+	return types.NamespacedName{Name: name, Namespace: project}, nil
 }
 
 func ContextName(cluster *infrastructure.KubernetesCluster) string {

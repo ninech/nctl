@@ -19,7 +19,7 @@ type configCmd struct {
 }
 
 func (cmd *configCmd) Run(ctx context.Context, client *api.Client) error {
-	c := newCreator(client, cmd.newProjectConfig(client.Namespace), apps.ProjectConfigGroupKind)
+	c := newCreator(client, cmd.newProjectConfig(client.Project), apps.ProjectConfigGroupKind)
 
 	return c.createResource(ctx)
 }

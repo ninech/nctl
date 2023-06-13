@@ -23,7 +23,7 @@ import (
 )
 
 type flags struct {
-	Namespace     string           `help:"Limit commands to a namespace." short:"n"`
+	Project       string           `help:"Limit commands to a specific project." short:"p"`
 	APICluster    string           `help:"Context name of the API cluster." default:"nineapis.ch"`
 	LogAPIAddress string           `help:"Address of the deplo.io logging API server." default:"https://logs.deplo.io"`
 	Version       kong.VersionFlag `name:"version" help:"Print version information and quit."`
@@ -76,7 +76,7 @@ func main() {
 		return
 	}
 
-	client, err := api.New(ctx, nctl.APICluster, nctl.Namespace, api.LogClient(nctl.LogAPIAddress))
+	client, err := api.New(ctx, nctl.APICluster, nctl.Project, api.LogClient(nctl.LogAPIAddress))
 	if err != nil {
 		fmt.Println(err)
 		fmt.Printf("\nUnable to get API client, are you logged in?\n\nUse `%s %s` to login.\n", kongCtx.Model.Name, auth.LoginCmdName)

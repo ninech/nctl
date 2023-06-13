@@ -13,12 +13,12 @@ import (
 )
 
 func TestProjectConfig(t *testing.T) {
-	namespace := "some-namespace"
+	project := "some-project"
 
 	cfg := &apps.ProjectConfig{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      namespace,
-			Namespace: namespace,
+			Name:      project,
+			Namespace: project,
 		},
 		Spec: apps.ProjectConfigSpec{},
 	}
@@ -32,7 +32,7 @@ func TestProjectConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	apiClient.Namespace = namespace
+	apiClient.Project = project
 
 	ctx := context.Background()
 

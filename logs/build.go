@@ -12,11 +12,11 @@ type buildCmd struct {
 }
 
 func (cmd *buildCmd) Run(ctx context.Context, client *api.Client) error {
-	return cmd.logsCmd.Run(ctx, client, BuildQuery(cmd.Name, client.Namespace))
+	return cmd.logsCmd.Run(ctx, client, BuildQuery(cmd.Name, client.Project))
 }
 
 const buildLabel = "build"
 
-func BuildQuery(name, namespace string) string {
-	return queryString(buildLabel, name, namespace)
+func BuildQuery(name, project string) string {
+	return queryString(buildLabel, name, project)
 }

@@ -23,10 +23,10 @@ func (asa *apiServiceAccountCmd) Run(ctx context.Context, client *api.Client) er
 
 	sa := &iam.APIServiceAccount{ObjectMeta: metav1.ObjectMeta{
 		Name:      asa.Name,
-		Namespace: client.Namespace,
+		Namespace: client.Project,
 	}}
 
-	d := newDeleter(sa, iam.APIServiceAccountKind, noCleanup)
+	d := newDeleter(sa, iam.APIServiceAccountKind)
 
 	if err := d.deleteResource(ctx, client, asa.WaitTimeout, asa.Wait, asa.Force); err != nil {
 		return fmt.Errorf("error while deleting %s: %w", iam.APIServiceAccountKind, err)

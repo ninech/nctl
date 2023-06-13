@@ -23,8 +23,8 @@ func (cmd *configsCmd) Run(ctx context.Context, client *api.Client, get *Cmd) er
 
 	var opts []listOpt
 
-	if !get.AllNamespaces {
-		opts = []listOpt{matchName(client.Namespace)}
+	if !get.AllProjects {
+		opts = []listOpt{matchName(client.Project)}
 	}
 
 	if err := get.list(ctx, client, projectConfigList, opts...); err != nil {
@@ -32,7 +32,7 @@ func (cmd *configsCmd) Run(ctx context.Context, client *api.Client, get *Cmd) er
 	}
 
 	if len(projectConfigList.Items) == 0 {
-		printEmptyMessage(apps.ProjectConfigKind, client.Namespace)
+		printEmptyMessage(cmd.out, apps.ProjectConfigKind, client.Project)
 		return nil
 	}
 

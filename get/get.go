@@ -13,9 +13,10 @@ import (
 
 type Cmd struct {
 	Output             output                `help:"Configures list output. ${enum}" short:"o" enum:"full,no-header,contexts,yaml" default:"full"`
-	AllNamespaces      bool                  `help:"apply the get over all namespaces." short:"A"`
+	AllProjects        bool                  `help:"apply the get over all projects." short:"A"`
 	Clusters           clustersCmd           `cmd:"" group:"infrastructure.nine.ch" help:"Get Kubernetes Clusters."`
 	APIServiceAccounts apiServiceAccountsCmd `cmd:"" group:"iam.nine.ch" name:"apiserviceaccounts" aliases:"asa" help:"Get API Service Accounts."`
+	Projects           projectCmd            `cmd:"" group:"management.nine.ch" name:"projects" aliases:"proj" help:"Get Projects."`
 	Applications       applicationsCmd       `cmd:"" group:"deplo.io" name:"applications" aliases:"app,apps" help:"Get deplo.io Applications. (Beta - requires access)"`
 	Builds             buildCmd              `cmd:"" group:"deplo.io" name:"builds" aliases:"build" help:"Get deplo.io Builds. (Beta - requires access)"`
 	Releases           releasesCmd           `cmd:"" group:"deplo.io" name:"releases" aliases:"release" help:"Get deplo.io Releases. (Beta - requires access)"`
@@ -54,42 +55,48 @@ func (cmd *Cmd) list(ctx context.Context, client *api.Client, list runtimeclient
 		opt(cmd)
 	}
 
-	if !cmd.AllNamespaces {
-		cmd.opts = append(cmd.opts, runtimeclient.InNamespace(client.Namespace))
+	if !cmd.AllProjects {
+		cmd.opts = append(cmd.opts, runtimeclient.InNamespace(client.Project))
 	}
 
 	return client.List(ctx, list, cmd.opts...)
 }
 
-// writeHeader writes the header row, prepending the namespace row if
-// cmd.AllNamespaces is set.
+// writeHeader writes the header row, prepending the project row if
+// cmd.AllProjects is set.
 func (cmd *Cmd) writeHeader(w io.Writer, headings ...string) {
-	if cmd.AllNamespaces {
-		headings = append([]string{"NAMESPACE"}, headings...)
+	if cmd.AllProjects {
+		headings = append([]string{"PROJECT"}, headings...)
 	}
 	cmd.writeTabRow(w, "", headings...)
 }
 
-// writeTabRow writes a row to w, prepending the namespace if
-// cmd.AllNamespaces is set and the namespace is not empty.
-func (cmd *Cmd) writeTabRow(w io.Writer, namespace string, row ...string) {
-	if cmd.AllNamespaces && len(namespace) != 0 {
-		fmt.Fprintf(w, "%s\t", namespace)
+// writeTabRow writes a row to w, prepending the project if
+// cmd.AllProjects is set and the project is not empty.
+func (cmd *Cmd) writeTabRow(w io.Writer, project string, row ...string) {
+	if cmd.AllProjects && len(project) != 0 {
+		fmt.Fprintf(w, "%s\t", project)
 	}
 
+	format := "%s\t"
+	// if there is just one element to be printed, we do not need a tab
+	// separator
+	if len(row) == 1 {
+		format = "%s"
+	}
 	for _, r := range row {
-		fmt.Fprintf(w, "%s\t", r)
+		fmt.Fprintf(w, format, r)
 	}
 	fmt.Fprintf(w, "\n")
 }
 
-func printEmptyMessage(kind, namespace string) {
-	if namespace == "" {
-		fmt.Printf("no %s found\n", flect.Pluralize(kind))
+func printEmptyMessage(out io.Writer, kind, project string) {
+	if project == "" {
+		fmt.Fprintf(defaultOut(out), "no %s found\n", flect.Pluralize(kind))
 		return
 	}
 
-	fmt.Printf("no %s found in namespace %s\n", flect.Pluralize(kind), namespace)
+	fmt.Printf("no %s found in project %s\n", flect.Pluralize(kind), project)
 }
 
 func defaultOut(out io.Writer) io.Writer {

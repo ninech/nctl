@@ -98,6 +98,8 @@ func format(attr color.Attribute) string {
 type PrintOpts struct {
 	// Out will be used to print to if set instead of stdout.
 	Out io.Writer
+	// ExcludeAdditional allows to exclude more fields of the object
+	ExcludeAdditional [][]string
 }
 
 // PrettyPrintObjects prints the supplied objects in "pretty" colored yaml
@@ -120,7 +122,7 @@ func PrettyPrintObjects[T resource.Managed](objs []T, opts PrintOpts) error {
 // prettyPrintObject strips the supplied obj and prints it out similar to how
 // https://github.com/goccy/go-yaml#ycat does it.
 func prettyPrintObject(obj resource.Managed, opts PrintOpts) error {
-	strippedObj, err := stripObj(obj)
+	strippedObj, err := stripObj(obj, opts.ExcludeAdditional)
 	if err != nil {
 		return err
 	}
@@ -163,7 +165,7 @@ func prettyPrintObject(obj resource.Managed, opts PrintOpts) error {
 // stripObj removes some fields which simply add clutter to the yaml output.
 // The object should still be applyable afterwards as just defaults and
 // computed fields get removed.
-func stripObj(obj resource.Managed) (map[string]any, error) {
+func stripObj(obj resource.Managed, excludeAdditional [][]string) (map[string]any, error) {
 	strippedObj := obj.DeepCopyObject().(resource.Managed)
 	strippedObj.SetManagedFields(nil)
 	strippedObj.SetResourceVersion("")
@@ -191,6 +193,10 @@ func stripObj(obj resource.Managed) (map[string]any, error) {
 
 	unstructured.RemoveNestedField(unstructuredObj, "status", "conditions")
 	unstructured.RemoveNestedField(unstructuredObj, "metadata", "creationTimestamp")
+
+	for _, exclude := range excludeAdditional {
+		unstructured.RemoveNestedField(unstructuredObj, exclude...)
+	}
 
 	return unstructuredObj, nil
 }

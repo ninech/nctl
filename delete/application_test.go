@@ -32,7 +32,7 @@ func TestApplication(t *testing.T) {
 	}
 
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(app).Build()
-	apiClient := &api.Client{WithWatch: client, Namespace: "default"}
+	apiClient := &api.Client{WithWatch: client, Project: "default"}
 
 	ctx := context.Background()
 	if err := cmd.Run(ctx, apiClient); err != nil {

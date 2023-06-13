@@ -23,8 +23,8 @@ type configCmd struct {
 func (cmd *configCmd) Run(ctx context.Context, client *api.Client) error {
 	cfg := &apps.ProjectConfig{
 		ObjectMeta: v1.ObjectMeta{
-			Name:      client.Namespace,
-			Namespace: client.Namespace,
+			Name:      client.Project,
+			Namespace: client.Project,
 		},
 	}
 
