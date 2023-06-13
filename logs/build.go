@@ -7,16 +7,28 @@ import (
 )
 
 type buildCmd struct {
-	Name string `arg:"" help:"Name of the Build."`
+	Name            string `arg:"" default:"" help:"Name of the Build."`
+	ApplicationName string `short:"a" help:"Name of the application to get build logs for."`
 	logsCmd
 }
 
 func (cmd *buildCmd) Run(ctx context.Context, client *api.Client) error {
-	return cmd.logsCmd.Run(ctx, client, BuildQuery(cmd.Name, client.Project))
+	query := BuildQuery(cmd.Name, client.Project)
+	if len(cmd.ApplicationName) != 0 {
+		query = queryString(map[string]string{
+			appLabel:   cmd.ApplicationName,
+			phaseLabel: buildPhase,
+		}, client.Project)
+	}
+
+	return cmd.logsCmd.Run(ctx, client, query)
 }
 
-const buildLabel = "build"
+const (
+	buildLabel = "build"
+	buildPhase = "build"
+)
 
 func BuildQuery(name, project string) string {
-	return queryString(buildLabel, name, project)
+	return queryString(map[string]string{buildLabel: name, phaseLabel: buildPhase}, project)
 }

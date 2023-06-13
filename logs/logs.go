@@ -3,6 +3,8 @@ package logs
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/grafana/loki/pkg/logcli/output"
@@ -24,11 +26,12 @@ type logsCmd struct {
 	out    output.LogOutput
 }
 
+const (
+	phaseLabel = "phase"
+)
+
 func (cmd *logsCmd) Run(ctx context.Context, client *api.Client, queryString string) error {
 	query := log.Query{
-		// we just query for labelKey=<labelValue>, namespace=<client-ns>. It's
-		// technically already scoped to a single namespace as the client is
-		// setting the org-id.
 		QueryString: queryString,
 		Limit:       cmd.Lines,
 		Start:       time.Now().Add(-cmd.Since),
@@ -53,6 +56,17 @@ func (cmd *logsCmd) Run(ctx context.Context, client *api.Client, queryString str
 	return client.Log.QueryRange(ctx, out, query)
 }
 
-func queryString(labelKey, labelValue, project string) string {
-	return fmt.Sprintf(`{%s="%s", namespace="%s"}`, labelKey, labelValue, project)
+// queryString can take a set of labels (key, value) to query logs for. The
+// namespace label will always be included and takes on the value of the
+// project.
+func queryString(labels map[string]string, project string) string {
+	pairs := []string{}
+
+	labels["namespace"] = project
+	for k, v := range labels {
+		pairs = append(pairs, fmt.Sprintf(`%s="%s"`, k, v))
+	}
+	sort.Strings(pairs)
+
+	return "{" + strings.Join(pairs, ",") + "}"
 }

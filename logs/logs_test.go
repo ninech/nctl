@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestApplication(t *testing.T) {
+func TestRun(t *testing.T) {
 	expectedTime := time.Now()
 	lines := []string{}
 
@@ -103,4 +103,11 @@ func TestApplication(t *testing.T) {
 			buf.Reset()
 		})
 	}
+}
+
+func TestQueryString(t *testing.T) {
+	assert.Equal(t,
+		queryString(map[string]string{appLabel: "some-app", phaseLabel: "some-phase"}, "default"),
+		`{app="some-app",namespace="default",phase="some-phase"}`,
+	)
 }
