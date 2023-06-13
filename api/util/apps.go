@@ -1,6 +1,9 @@
 package util
 
 import (
+	"fmt"
+	"strings"
+
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,6 +42,19 @@ func EnvVarsFromMap(env map[string]string) apps.EnvVars {
 		vars = append(vars, apps.EnvVar{Name: k, Value: v})
 	}
 	return vars
+}
+
+func EnvVarToString(envs apps.EnvVars) string {
+	if envs == nil {
+		return "nil"
+	}
+
+	var keyValuePairs []string
+	for _, env := range envs {
+		keyValuePairs = append(keyValuePairs, fmt.Sprintf("%v=%v", env.Name, env.Value))
+	}
+
+	return strings.Join(keyValuePairs, ";")
 }
 
 type GitAuth struct {

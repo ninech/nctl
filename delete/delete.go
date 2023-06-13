@@ -17,6 +17,7 @@ type Cmd struct {
 	VCluster          vclusterCmd          `cmd:"" group:"infrastructure.nine.ch" name:"vcluster" help:"Delete a vcluster."`
 	APIServiceAccount apiServiceAccountCmd `cmd:"" group:"iam.nine.ch" name:"apiserviceaccount" aliases:"asa" help:"Delete an API Service Account."`
 	Application       applicationCmd       `cmd:"" group:"deplo.io" name:"application" aliases:"app" help:"Delete a deplo.io Application. (Beta - requires access)"`
+	Config            configCmd            `cmd:"" group:"deplo.io" name:"config" help:"Delete a deplo.io Project Configuration. (Beta - requires access)"`
 }
 
 // cleanupFunc is called after the resource has been deleted in order to do
