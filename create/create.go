@@ -11,7 +11,9 @@ import (
 	"github.com/lucasepe/codename"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
+	"github.com/theckman/yacspin"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/util/retry"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -44,12 +46,20 @@ type waitStage struct {
 	objectList  runtimeclient.ObjectList
 	listOpts    []runtimeclient.ListOption
 	onResult    resultFunc
+	spinner     *yacspin.Spinner
 }
 
 type message struct {
 	icon     string
 	text     string
 	disabled bool
+}
+
+var watchBackoff = wait.Backoff{
+	Steps:    15,
+	Duration: 10 * time.Millisecond,
+	Factor:   1.0,
+	Jitter:   0.1,
 }
 
 func (m *message) progress() string {
@@ -84,9 +94,21 @@ func (c *creator) createResource(ctx context.Context) error {
 func (c *creator) wait(ctx context.Context, stages ...waitStage) error {
 	for _, stage := range stages {
 		stage.setDefaults(c)
-		if err := retry.OnError(retry.DefaultRetry, isWatchError, func() error {
+
+		spinner, err := format.NewSpinner(
+			stage.waitMessage.progress(),
+			stage.waitMessage.progress(),
+		)
+		if err != nil {
+			return err
+		}
+		stage.spinner = spinner
+
+		if err := retry.OnError(watchBackoff, isWatchError, func() error {
 			return stage.wait(ctx, c.client)
 		}); err != nil {
+			_ = stage.spinner.StopFail()
+			_ = stage.spinner.Stop()
 			return err
 		}
 	}
@@ -135,41 +157,29 @@ func isWatchError(err error) bool {
 }
 
 func (w *waitStage) wait(ctx context.Context, client *api.Client) error {
-	spinner, err := format.NewSpinner(
-		w.waitMessage.progress(),
-		w.waitMessage.progress(),
-	)
-	if err != nil {
-		return err
-	}
-
-	_ = spinner.Start()
-	defer func() { _ = spinner.Stop() }()
+	_ = w.spinner.Start()
 
 	wa, err := client.Watch(ctx, w.objectList, w.listOpts...)
 	if err != nil {
-		_ = spinner.StopFail()
-		return fmt.Errorf("unable to watch %s: %w", w.kind, err)
+		return watchError{kind: w.kind}
 	}
 
 	for {
 		select {
 		case res := <-wa.ResultChan():
 			if res.Type == watch.Error || res.Type == "" {
-				spinner.StopFailMessage(format.ProgressMessagef("", "error watching %s", w.kind))
-				_ = spinner.StopFail()
 				return watchError{kind: w.kind}
 			}
 
 			done, err := w.onResult(res)
 			if err != nil {
-				_ = spinner.StopFail()
+				_ = w.spinner.StopFail()
 				return err
 			}
 
 			if done {
 				wa.Stop()
-				_ = spinner.Stop()
+				_ = w.spinner.Stop()
 				// print out the done message directly
 				w.doneMessage.printSuccess()
 
@@ -177,8 +187,8 @@ func (w *waitStage) wait(ctx context.Context, client *api.Client) error {
 			}
 		case <-ctx.Done():
 			msg := "timeout waiting for %s"
-			spinner.StopFailMessage(format.ProgressMessagef("", msg, w.kind))
-			_ = spinner.StopFail()
+			w.spinner.StopFailMessage(format.ProgressMessagef("", msg, w.kind))
+			_ = w.spinner.StopFail()
 
 			return fmt.Errorf(msg, w.kind)
 		}
