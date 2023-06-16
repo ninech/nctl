@@ -15,8 +15,11 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	return cmd.logsCmd.Run(ctx, client, ApplicationQuery(cmd.Name, client.Project))
 }
 
-const appLabel = "app"
+const (
+	appLabel     = "app"
+	runtimePhase = "runtime"
+)
 
 func ApplicationQuery(name, project string) string {
-	return queryString(appLabel, name, project)
+	return queryString(map[string]string{appLabel: name, phaseLabel: runtimePhase}, project)
 }
