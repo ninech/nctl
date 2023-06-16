@@ -14,7 +14,7 @@ type applicationCmd struct {
 	Name        string        `arg:"" help:"Name of the Application."`
 	Force       bool          `default:"false" help:"Do not ask for confirmation of deletion."`
 	Wait        bool          `default:"true" help:"Wait until Application is fully deleted."`
-	WaitTimeout time.Duration `default:"10s" help:"Duration to wait for the deletion. Only relevant if wait is set."`
+	WaitTimeout time.Duration `default:"1m" help:"Duration to wait for the deletion. Only relevant if wait is set."`
 }
 
 func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {

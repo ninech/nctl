@@ -24,7 +24,7 @@ import (
 type applicationCmd struct {
 	Name        string            `arg:"" default:"" help:"Name of the application. A random name is generated if omitted."`
 	Wait        bool              `default:"true" help:"Wait until application is fully created."`
-	WaitTimeout time.Duration     `default:"10m" help:"Duration to wait for application getting ready. Only relevant if wait is set."`
+	WaitTimeout time.Duration     `default:"15m" help:"Duration to wait for application getting ready. Only relevant if wait is set."`
 	Git         gitConfig         `embed:"" prefix:"git-"`
 	Size        string            `default:"micro" help:"Size of the app."`
 	Port        int32             `default:"8080" help:"Port the app is listening on."`
