@@ -45,7 +45,7 @@ func (cmd *configCmd) Run(ctx context.Context, client *api.Client) error {
 func (cmd *configCmd) applyUpdates(cfg *apps.ProjectConfig) {
 	if cmd.Size != nil {
 		newSize := apps.ApplicationSize(*cmd.Size)
-		cfg.Spec.ForProvider.Config.Size = &newSize
+		cfg.Spec.ForProvider.Config.Size = newSize
 	}
 	if cmd.Port != nil {
 		cfg.Spec.ForProvider.Config.Port = cmd.Port

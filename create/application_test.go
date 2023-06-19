@@ -53,7 +53,7 @@ func TestApplication(t *testing.T) {
 				assert.Equal(t, cmd.Git.SubPath, app.Spec.ForProvider.Git.SubPath)
 				assert.Equal(t, cmd.Git.Revision, app.Spec.ForProvider.Git.Revision)
 				assert.Equal(t, cmd.Hosts, app.Spec.ForProvider.Hosts)
-				assert.Equal(t, apps.ApplicationSize(cmd.Size), *app.Spec.ForProvider.Config.Size)
+				assert.Equal(t, apps.ApplicationSize(cmd.Size), app.Spec.ForProvider.Config.Size)
 				assert.Equal(t, int32(cmd.Port), *app.Spec.ForProvider.Config.Port)
 				assert.Equal(t, int32(cmd.Replicas), *app.Spec.ForProvider.Config.Replicas)
 				assert.Equal(t, util.EnvVarsFromMap(cmd.Env), app.Spec.ForProvider.Config.Env)

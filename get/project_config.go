@@ -66,10 +66,6 @@ func printProjectConfigs(configs []apps.ProjectConfig, get *Cmd, out io.Writer, 
 	for _, c := range configs {
 		// Potential nil pointers. While these fields should never be empty
 		// by the time a projectConfig is created, we should probably still check it.
-		size := ""
-		if c.Spec.ForProvider.Config.Size != nil {
-			size = string(*c.Spec.ForProvider.Config.Size)
-		}
 
 		replicas := ""
 		if c.Spec.ForProvider.Config.Replicas != nil {
@@ -85,7 +81,7 @@ func printProjectConfigs(configs []apps.ProjectConfig, get *Cmd, out io.Writer, 
 			w,
 			c.ObjectMeta.Namespace,
 			c.ObjectMeta.Name,
-			size,
+			string(c.Spec.ForProvider.Config.Size),
 			replicas,
 			port,
 			util.EnvVarToString(c.Spec.ForProvider.Config.Env),

@@ -35,7 +35,7 @@ func TestProjectConfig(t *testing.T) {
 			project: "namespace-1",
 			checkConfig: func(t *testing.T, cmd configCmd, cfg *apps.ProjectConfig) {
 				assert.Equal(t, apiClient.Project, cfg.Name)
-				assert.Equal(t, apps.ApplicationSize(*cmd.Size), *cfg.Spec.ForProvider.Config.Size)
+				assert.Equal(t, apps.ApplicationSize(*cmd.Size), cfg.Spec.ForProvider.Config.Size)
 				assert.Equal(t, *cmd.Port, *cfg.Spec.ForProvider.Config.Port)
 				assert.Equal(t, *cmd.Replicas, *cfg.Spec.ForProvider.Config.Replicas)
 				assert.Equal(t, util.EnvVarsFromMap(*cmd.Env), cfg.Spec.ForProvider.Config.Env)
@@ -49,7 +49,7 @@ func TestProjectConfig(t *testing.T) {
 			project: "namespace-2",
 			checkConfig: func(t *testing.T, cmd configCmd, cfg *apps.ProjectConfig) {
 				assert.Equal(t, apiClient.Project, cfg.Name)
-				assert.Equal(t, apps.ApplicationSize(*cmd.Size), *cfg.Spec.ForProvider.Config.Size)
+				assert.Equal(t, apps.ApplicationSize(*cmd.Size), cfg.Spec.ForProvider.Config.Size)
 				assert.Nil(t, cfg.Spec.ForProvider.Config.Port)
 				assert.Equal(t, *cmd.Replicas, *cfg.Spec.ForProvider.Config.Replicas)
 				assert.Nil(t, cfg.Spec.ForProvider.Config.Env)
@@ -60,7 +60,7 @@ func TestProjectConfig(t *testing.T) {
 			project: "namespace-3",
 			checkConfig: func(t *testing.T, cmd configCmd, cfg *apps.ProjectConfig) {
 				assert.Equal(t, apiClient.Project, cfg.Name)
-				assert.Nil(t, cfg.Spec.ForProvider.Config.Size)
+				assert.Equal(t, test.AppSizeNotSet, cfg.Spec.ForProvider.Config.Size)
 				assert.Nil(t, cfg.Spec.ForProvider.Config.Port)
 				assert.Nil(t, cfg.Spec.ForProvider.Config.Replicas)
 				assert.Nil(t, cfg.Spec.ForProvider.Config.Env)

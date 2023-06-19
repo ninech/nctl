@@ -22,7 +22,7 @@ import (
 
 var (
 	defaultConfig = apps.Config{
-		Size:     &test.AppMicro,
+		Size:     test.AppMicro,
 		Replicas: pointer.Int32(1),
 		Port:     pointer.Int32(8080),
 	}
