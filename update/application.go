@@ -63,7 +63,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 			}
 
 			if auth.Enabled() {
-				secret := auth.Secret(app.Name, client.Project)
+				secret := auth.Secret(app)
 				if err := client.Get(ctx, client.Name(secret.Name), secret); err != nil {
 					return err
 				}

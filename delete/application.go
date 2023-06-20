@@ -5,9 +5,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/util"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type applicationCmd struct {
@@ -27,11 +32,109 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 			Namespace: client.Project,
 		},
 	}
+	gitAuthSecrets, err := findGitAuthSecrets(ctx, client, a)
+	if err != nil {
+		return err
+	}
 
 	d := newDeleter(a, apps.ApplicationKind)
-
 	if err := d.deleteResource(ctx, client, app.WaitTimeout, app.Wait, app.Force); err != nil {
 		return fmt.Errorf("error while deleting %s: %w", apps.ApplicationKind, err)
+	}
+
+	var secretErrors error
+	for _, s := range gitAuthSecrets {
+		if err := deleteGitAuthSecret(ctx, client, s); err != nil {
+			secretErrors = multierror.Append(secretErrors, err)
+		}
+	}
+
+	return secretErrors
+}
+
+type manualCheckError string
+
+func (m manualCheckError) Error() string {
+	return string(m)
+}
+
+func checkManuallyError(err error) error {
+	return manualCheckError(fmt.Sprintf("%v. Please take care of deleting the secret manually", err))
+}
+
+func findGitAuthSecrets(ctx context.Context, client *api.Client, a *apps.Application) ([]corev1.Secret, error) {
+	// we always add the default secret which we create if git credentails
+	// have been given
+	gitAuthSecrets := []corev1.Secret{{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      util.GitAuthSecretName(a),
+			Namespace: a.Namespace,
+		},
+	}}
+	// we need to check if a different nctl created secret is referenced as well
+	if err := client.Get(ctx, api.ObjectName(a), a); err != nil {
+		return nil, fmt.Errorf("can not get application %s in project %s: %w",
+			a.Name,
+			a.Namespace,
+			err,
+		)
+	}
+	if a.Spec.ForProvider.Git.Auth != nil && a.Spec.ForProvider.Git.Auth.FromSecret != nil {
+		gitAuthSecrets = append(
+			gitAuthSecrets,
+			corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      a.Spec.ForProvider.Git.Auth.FromSecret.Name,
+					Namespace: a.Namespace,
+				},
+			},
+		)
+	}
+
+	return gitAuthSecrets, nil
+}
+
+// deleteGitAuthSecrets tries to delete the passed git auth secret. It checks
+// if the secret is referenced in any other application, before deleting it.
+// It will only delete secrets which have been created by nctl itself.
+func deleteGitAuthSecret(ctx context.Context, client *api.Client, secret corev1.Secret) error {
+	if err := client.Get(ctx, api.ObjectName(&secret), &secret); err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return checkManuallyError(fmt.Errorf("error when checking git auth secret %q for application", secret.Name))
+	}
+	managedBy, exists := secret.Annotations[util.ManagedByAnnotation]
+	if !exists || managedBy != util.NctlName {
+		// the secret was not created by nctl, so we will not delete it
+		return nil
+	}
+
+	appsList := &apps.ApplicationList{}
+	if err := client.List(ctx, appsList, runtimeclient.InNamespace(client.Project)); err != nil {
+		return checkManuallyError(
+			fmt.Errorf("error when checking for applications which might reference git authentication secret %q: %w",
+				secret.Name,
+				err,
+			),
+		)
+	}
+	for _, item := range appsList.Items {
+		if item.Spec.ForProvider.Git.Auth != nil &&
+			item.Spec.ForProvider.Git.Auth.FromSecret != nil &&
+			item.Spec.ForProvider.Git.Auth.FromSecret.Name == secret.Name {
+			fmt.Printf(
+				"will not delete git auth secret %q as it is still referenced in application %q",
+				secret.Name,
+				item.Name,
+			)
+			return nil
+		}
+	}
+	if err := client.Delete(ctx, &secret); err != nil {
+		return checkManuallyError(
+			fmt.Errorf("error when deleting git auth secret %q: %w", secret.Name, err),
+		)
 	}
 
 	return nil

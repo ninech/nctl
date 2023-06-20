@@ -11,6 +11,7 @@ import (
 	"github.com/alecthomas/kong"
 
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/apply"
 	"github.com/ninech/nctl/auth"
 	"github.com/ninech/nctl/create"
@@ -51,7 +52,7 @@ func main() {
 	nctl := &rootCommand{}
 	parser := kong.Must(
 		nctl,
-		kong.Name("nctl"),
+		kong.Name(util.NctlName),
 		kong.Description("Interact with Nine API resources. See https://docs.nineapis.ch for the full API docs."),
 		kong.UsageOnError(),
 		kong.Vars{"version": version},

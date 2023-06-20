@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/clientcmd"
@@ -154,7 +155,7 @@ func readConfig(kubeconfigContent []byte, contextName string) (*Config, error) {
 	if !exists {
 		return nil, fmt.Errorf("could not find context %q in kubeconfig", contextName)
 	}
-	extension, exists := context.Extensions[NctlExtensionName]
+	extension, exists := context.Extensions[util.NctlName]
 	if !exists {
 		return nil, ErrConfigNotFound
 	}

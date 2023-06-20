@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/auth"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/clientcmd"
@@ -36,7 +37,7 @@ func CreateTestKubeconfig(client *api.Client, organization string) (string, erro
 			return "", err
 		}
 		extensions = map[string]runtime.Object{
-			auth.NctlExtensionName: cfgObject,
+			util.NctlName: cfgObject,
 		}
 	}
 

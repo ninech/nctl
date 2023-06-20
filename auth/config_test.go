@@ -3,6 +3,7 @@ package auth
 import (
 	"testing"
 
+	"github.com/ninech/nctl/api/util"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/clientcmd"
@@ -22,7 +23,7 @@ func TestConfigParsing(t *testing.T) {
 			kubeconfig: func() clientcmdapi.Config {
 				kubeCfg := testKubeconfig(contextName)
 				kubeCfg.Contexts[contextName].Extensions = map[string]runtime.Object{
-					NctlExtensionName: objectCfg,
+					util.NctlName: objectCfg,
 				}
 				return kubeCfg
 			}(),

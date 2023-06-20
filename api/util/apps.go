@@ -11,6 +11,8 @@ import (
 
 const (
 	ApplicationNameLabel = "application.apps.nine.ch/name"
+	ManagedByAnnotation  = "app.kubernetes.io/managed-by"
+	NctlName             = "nctl"
 	PrivateKeySecretKey  = "privatekey"
 	UsernameSecretKey    = "username"
 	PasswordSecretKey    = "password"
@@ -63,7 +65,7 @@ type GitAuth struct {
 	SSHPrivateKey *string
 }
 
-func (git GitAuth) Secret(name, project string) *corev1.Secret {
+func (git GitAuth) Secret(app *apps.Application) *corev1.Secret {
 	data := map[string][]byte{}
 
 	if git.SSHPrivateKey != nil {
@@ -75,8 +77,11 @@ func (git GitAuth) Secret(name, project string) *corev1.Secret {
 
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: project,
+			Name:      GitAuthSecretName(app),
+			Namespace: app.Namespace,
+			Annotations: map[string]string{
+				ManagedByAnnotation: NctlName,
+			},
 		},
 		Data: data,
 	}
@@ -96,6 +101,10 @@ func (git GitAuth) UpdateSecret(secret *corev1.Secret) {
 	if git.Password != nil {
 		secret.Data[PasswordSecretKey] = []byte(*git.Password)
 	}
+	if secret.Annotations == nil {
+		secret.Annotations = make(map[string]string)
+	}
+	secret.Annotations[ManagedByAnnotation] = NctlName
 }
 
 func (git GitAuth) Enabled() bool {
@@ -106,4 +115,10 @@ func (git GitAuth) Enabled() bool {
 	}
 
 	return false
+}
+
+// GitAuthSecretName returns the name of the secret which contains the git
+// credentials for the given applications git source
+func GitAuthSecretName(app *apps.Application) string {
+	return app.Name
 }
