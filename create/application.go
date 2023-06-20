@@ -64,7 +64,7 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 
 	if auth.Enabled() {
 		// for git auth we create a separate secret and then reference it in the app.
-		secret := auth.Secret(newApp.Name, client.Project)
+		secret := auth.Secret(newApp)
 		if err := client.Create(ctx, secret); err != nil {
 			return fmt.Errorf("unable to create git auth secret: %w", err)
 		}

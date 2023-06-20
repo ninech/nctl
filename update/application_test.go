@@ -118,6 +118,7 @@ func TestApplication(t *testing.T) {
 			checkSecret: func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret) {
 				assert.Equal(t, *cmd.Git.Username, string(authSecret.Data[util.UsernameSecretKey]))
 				assert.Equal(t, *cmd.Git.Password, string(authSecret.Data[util.PasswordSecretKey]))
+				assert.Equal(t, authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
 			},
 		},
 		"git auth update ssh key": {
@@ -133,6 +134,7 @@ func TestApplication(t *testing.T) {
 			},
 			checkSecret: func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret) {
 				assert.Equal(t, *cmd.Git.SSHPrivateKey, string(authSecret.Data[util.PrivateKeySecretKey]))
+				assert.Equal(t, authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
 			},
 		},
 		"git auth is unchanged on normal field update": {
@@ -151,6 +153,7 @@ func TestApplication(t *testing.T) {
 			},
 			checkSecret: func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret) {
 				assert.Equal(t, "fakekey", string(authSecret.Data[util.PrivateKeySecretKey]))
+				assert.Equal(t, authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
 			},
 		},
 	}
@@ -160,7 +163,7 @@ func TestApplication(t *testing.T) {
 
 		t.Run(name, func(t *testing.T) {
 			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(
-				tc.orig, tc.gitAuth.Secret(tc.orig.Name, tc.orig.Namespace),
+				tc.orig, tc.gitAuth.Secret(tc.orig),
 			).Build()
 			apiClient := &api.Client{WithWatch: client, Project: "default"}
 			ctx := context.Background()

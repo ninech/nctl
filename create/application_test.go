@@ -72,13 +72,14 @@ func TestApplication(t *testing.T) {
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				auth := util.GitAuth{Username: cmd.Git.Username, Password: cmd.Git.Password}
-				authSecret := auth.Secret(app.Name, app.Namespace)
+				authSecret := auth.Secret(app)
 				if err := apiClient.Get(ctx, api.ObjectName(authSecret), authSecret); err != nil {
 					t.Fatal(err)
 				}
 
 				assert.Equal(t, *cmd.Git.Username, string(authSecret.Data[util.UsernameSecretKey]))
 				assert.Equal(t, *cmd.Git.Password, string(authSecret.Data[util.PasswordSecretKey]))
+				assert.Equal(t, authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
 			},
 		},
 		"with ssh key git auth": {
@@ -93,12 +94,13 @@ func TestApplication(t *testing.T) {
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				auth := util.GitAuth{SSHPrivateKey: cmd.Git.SSHPrivateKey}
-				authSecret := auth.Secret(app.Name, app.Namespace)
+				authSecret := auth.Secret(app)
 				if err := apiClient.Get(ctx, api.ObjectName(authSecret), authSecret); err != nil {
 					t.Fatal(err)
 				}
 
 				assert.Equal(t, *cmd.Git.SSHPrivateKey, string(authSecret.Data[util.PrivateKeySecretKey]))
+				assert.Equal(t, authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
 			},
 		},
 	}
