@@ -8,6 +8,7 @@ import (
 	"os/exec"
 
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/internal/format"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/clientcmd"
@@ -24,8 +25,7 @@ type LoginCmd struct {
 }
 
 const (
-	LoginCmdName      = "auth login"
-	NctlExtensionName = "nctl"
+	LoginCmdName = "auth login"
 )
 
 func (l *LoginCmd) Run(ctx context.Context, command string) error {
@@ -117,7 +117,7 @@ func newAPIConfig(apiURL, issuerURL *url.URL, command, clientID string, opts ...
 				Cluster:  cfg.name,
 				AuthInfo: cfg.name,
 				Extensions: map[string]runtime.Object{
-					NctlExtensionName: extension,
+					util.NctlName: extension,
 				},
 			},
 		},
