@@ -113,9 +113,29 @@ func pullImage(ctx context.Context, apiClient *api.Client, build *apps.Build) er
 		return err
 	}
 
+	if err := tagImage(ctx, cli, build); err != nil {
+		return fmt.Errorf("unable to tag image: %w", err)
+	}
+
 	format.PrintSuccessf("💾", "Pulled image %s", imageName(build.Spec.ForProvider.Image))
 
 	return nil
+}
+
+func tagImage(ctx context.Context, cli *client.Client, build *apps.Build) error {
+	// tag the pulled image with "latest" for ease of use
+	if err := cli.ImageTag(ctx,
+		ImageRef(build.Spec.ForProvider.Image),
+		imageWithTag(build.Spec.ForProvider.Image, "latest"),
+	); err != nil {
+		return err
+	}
+
+	// tag the pulled image with the build name to tell versions apart
+	return cli.ImageTag(ctx,
+		ImageRef(build.Spec.ForProvider.Image),
+		imageWithBuildTag(build),
+	)
 }
 
 func ImageRef(image meta.Image) string {
@@ -124,4 +144,12 @@ func ImageRef(image meta.Image) string {
 
 func imageName(image meta.Image) string {
 	return path.Join(image.Registry, image.Repository)
+}
+
+func imageWithBuildTag(build *apps.Build) string {
+	return imageWithTag(build.Spec.ForProvider.Image, build.Name)
+}
+
+func imageWithTag(image meta.Image, tag string) string {
+	return imageName(image) + ":" + tag
 }
