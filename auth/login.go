@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"os/exec"
 
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
@@ -130,11 +129,6 @@ func newAPIConfig(apiURL, issuerURL *url.URL, command, clientID string, opts ...
 			Token: cfg.token,
 		}
 		return clientConfig, nil
-	}
-
-	// we make sure our command is in the $PATH as the client-go credential plugin will need to find it.
-	if _, err := exec.LookPath(command); err != nil && command != "" {
-		return nil, fmt.Errorf("%s not found in $PATH, please add it first before logging in", command)
 	}
 
 	clientConfig.AuthInfos[cfg.name] = &clientcmdapi.AuthInfo{
