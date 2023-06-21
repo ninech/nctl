@@ -67,8 +67,12 @@ func main() {
 
 	// handle the login/oidc cmds separately as we should not try to get the
 	// API client if we're not logged in.
+	command, err := os.Executable()
+	if err != nil {
+		kongCtx.Fatalf("can not identify executable path of %s: %v", util.NctlName, err)
+	}
 	if strings.HasPrefix(kongCtx.Command(), auth.LoginCmdName) {
-		kongCtx.FatalIfErrorf(nctl.Auth.Login.Run(ctx, kongCtx.Model.Name))
+		kongCtx.FatalIfErrorf(nctl.Auth.Login.Run(ctx, command))
 		return
 	}
 
