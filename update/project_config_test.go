@@ -27,7 +27,7 @@ func TestConfig(t *testing.T) {
 		Spec: apps.ProjectConfigSpec{
 			ForProvider: apps.ProjectConfigParameters{
 				Config: apps.Config{
-					Size:     &initialSize,
+					Size:     initialSize,
 					Replicas: pointer.Int32(1),
 					Port:     pointer.Int32(1337),
 					Env:      util.EnvVarsFromMap(map[string]string{"foo": "bar"}),
@@ -60,7 +60,7 @@ func TestConfig(t *testing.T) {
 			},
 			checkConfig: func(t *testing.T, cmd configCmd, orig, updated *apps.ProjectConfig) {
 				assert.Equal(t, *orig.Spec.ForProvider.Config.Port, *updated.Spec.ForProvider.Config.Port)
-				assert.NotEqual(t, *orig.Spec.ForProvider.Config.Size, *updated.Spec.ForProvider.Config.Size)
+				assert.NotEqual(t, orig.Spec.ForProvider.Config.Size, updated.Spec.ForProvider.Config.Size)
 			},
 		},
 		"all fields update": {
@@ -73,7 +73,7 @@ func TestConfig(t *testing.T) {
 				Env:      &map[string]string{"zoo": "bar"},
 			},
 			checkConfig: func(t *testing.T, cmd configCmd, orig, updated *apps.ProjectConfig) {
-				assert.Equal(t, apps.ApplicationSize(*cmd.Size), *updated.Spec.ForProvider.Config.Size)
+				assert.Equal(t, apps.ApplicationSize(*cmd.Size), updated.Spec.ForProvider.Config.Size)
 				assert.Equal(t, *cmd.Port, *updated.Spec.ForProvider.Config.Port)
 				assert.Equal(t, *cmd.Replicas, *updated.Spec.ForProvider.Config.Replicas)
 				assert.Equal(t, util.EnvVarsFromMap(*cmd.Env), updated.Spec.ForProvider.Config.Env)

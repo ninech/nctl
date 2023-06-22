@@ -95,7 +95,7 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 	}
 	if cmd.Size != nil {
 		newSize := apps.ApplicationSize(*cmd.Size)
-		app.Spec.ForProvider.Config.Size = &newSize
+		app.Spec.ForProvider.Config.Size = newSize
 	}
 	if cmd.Port != nil {
 		app.Spec.ForProvider.Config.Port = cmd.Port

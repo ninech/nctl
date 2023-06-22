@@ -137,7 +137,7 @@ func (app *applicationCmd) newApplication(project string) *apps.Application {
 				},
 				Hosts: app.Hosts,
 				Config: apps.Config{
-					Size:     &size,
+					Size:     size,
 					Replicas: pointer.Int32(app.Replicas),
 					Port:     pointer.Int32(app.Port),
 					Env:      util.EnvVarsFromMap(app.Env),

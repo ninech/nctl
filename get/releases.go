@@ -89,10 +89,6 @@ func printReleases(releases []apps.Release, get *Cmd, header bool) error {
 	for _, r := range releases {
 		// Potential nil pointers. While these fields should never be empty
 		// by the time a release is created, we should probably still check it.
-		size := ""
-		if r.Spec.ForProvider.Config.Size != nil {
-			size = string(*r.Spec.ForProvider.Config.Size)
-		}
 
 		replicas := ""
 		if r.Spec.ForProvider.Config.Replicas != nil {
@@ -105,7 +101,7 @@ func printReleases(releases []apps.Release, get *Cmd, header bool) error {
 			r.ObjectMeta.Name,
 			r.Spec.ForProvider.Build.Name,
 			r.ObjectMeta.Labels[util.ApplicationNameLabel],
-			size,
+			string(r.Spec.ForProvider.Config.Size),
 			replicas,
 			string(r.Status.AtProvider.ReleaseStatus),
 			duration.HumanDuration(time.Since(r.ObjectMeta.CreationTimestamp.Time)),

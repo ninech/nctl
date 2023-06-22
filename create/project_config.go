@@ -25,10 +25,10 @@ func (cmd *configCmd) Run(ctx context.Context, client *api.Client) error {
 }
 
 func (cmd *configCmd) newProjectConfig(namespace string) *apps.ProjectConfig {
-	var size *apps.ApplicationSize
+	size := apps.ApplicationSize("")
 	if cmd.Size != nil {
 		applicationSize := apps.ApplicationSize(*cmd.Size)
-		size = &applicationSize
+		size = applicationSize
 	}
 
 	var port *int32
