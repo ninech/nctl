@@ -8,7 +8,6 @@ import (
 
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/auth"
 	"github.com/ninech/nctl/internal/format"
 )
 
@@ -18,45 +17,32 @@ type projectCmd struct {
 }
 
 func (proj *projectCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
-	cfg, err := auth.ReadConfig(client.KubeconfigPath, client.KubeconfigContext)
+	projectList, err := projects(ctx, client, proj.Name)
 	if err != nil {
-		if auth.IsConfigNotFoundError(err) {
-			return auth.ReloginNeeded(err)
-		}
 		return err
 	}
 
-	// projects can only be created in the main organization project so we
-	// only need to search there
-	client.Project = cfg.Organization
-	get.AllProjects = false
-
-	projectList := &management.ProjectList{}
-	if err := get.list(ctx, client, projectList, matchName(proj.Name)); err != nil {
-		return err
-	}
-
-	if len(projectList.Items) == 0 {
+	if len(projectList) == 0 {
 		printEmptyMessage(proj.out, management.ProjectKind, "")
 		return nil
 	}
 
 	// we sort alphabetically to have a deterministic output
 	sort.Slice(
-		projectList.Items,
+		projectList,
 		func(i, j int) bool {
-			return projectList.Items[i].Name < projectList.Items[j].Name
+			return projectList[i].Name < projectList[j].Name
 		},
 	)
 
 	switch get.Output {
 	case full:
-		return printProject(projectList.Items, get, defaultOut(proj.out), true)
+		return printProject(projectList, *get, defaultOut(proj.out), true)
 	case noHeader:
-		return printProject(projectList.Items, get, defaultOut(proj.out), false)
+		return printProject(projectList, *get, defaultOut(proj.out), false)
 	case yamlOut:
 		return format.PrettyPrintObjects(
-			projectList.GetItems(),
+			(&management.ProjectList{Items: projectList}).GetItems(),
 			format.PrintOpts{
 				Out:               proj.out,
 				ExcludeAdditional: projectYamlExcludes(),
@@ -67,10 +53,13 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 	return nil
 }
 
-func printProject(projects []management.Project, get *Cmd, out io.Writer, header bool) error {
+func printProject(projects []management.Project, get Cmd, out io.Writer, header bool) error {
 	w := tabwriter.NewWriter(out, 0, 0, 4, ' ', 0)
 
+	// we don't want to include the PROJECT header as it doesn't make sense
+	// for projects
 	if header {
+		get.AllProjects = false
 		get.writeHeader(w, "NAME")
 	}
 

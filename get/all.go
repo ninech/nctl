@@ -1,0 +1,163 @@
+package get
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"os"
+	"sort"
+	"strings"
+	"text/tabwriter"
+
+	management "github.com/ninech/apis/management/v1alpha1"
+	meta "github.com/ninech/apis/meta/v1alpha1"
+	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/format"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+type allCmd struct {
+	out                  io.Writer
+	stdErr               io.Writer
+	IncludeNineResources bool `help:"show resources which are owned by Nine" default:"false"`
+}
+
+func (cmd *allCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
+	projectName := client.Project
+	if get.AllProjects {
+		projectName = ""
+	}
+	projectList, err := projects(ctx, client, projectName)
+	if err != nil {
+		return err
+	}
+
+	items, warnings, err := getProjectContent(ctx, client, projectNames(projectList), cmd.IncludeNineResources)
+	if err != nil {
+		return err
+	}
+	// we now print all warnings to stderr
+	for _, w := range warnings {
+		fmt.Fprintf(defaultStdError(cmd.stdErr), "warning: %s\n", w)
+	}
+
+	if len(items) == 0 {
+		printEmptyMessage(cmd.out, "Resource", projectName)
+		return nil
+	}
+
+	switch get.Output {
+	case full:
+		return printItems(items, *get, defaultOut(cmd.out), true)
+	case noHeader:
+		return printItems(items, *get, defaultOut(cmd.out), false)
+	case yamlOut:
+		return format.PrettyPrintObjects(items, format.PrintOpts{Out: cmd.out})
+	}
+
+	return nil
+}
+
+func projectNames(projects []management.Project) []string {
+	result := make([]string, len(projects))
+	for i, proj := range projects {
+		result[i] = proj.Name
+	}
+
+	return result
+}
+
+func getProjectContent(ctx context.Context, client *api.Client, projNames []string, includeNineOwned bool) ([]*unstructured.Unstructured, []string, error) {
+	var warnings []string
+	var result []*unstructured.Unstructured
+	for _, project := range projNames {
+		for _, listType := range nineListTypes(client.Scheme()) {
+			u := &unstructured.UnstructuredList{}
+			u.SetGroupVersionKind(listType)
+			// if we get any errors during the listing of certain
+			// types we handle them as warnings to be able to
+			// return as many resources as we can
+			if err := client.List(ctx, u, runtimeclient.InNamespace(project)); err != nil {
+				warnings = append(warnings, err.Error())
+				continue
+			}
+			// we convert to a list of pointers so that we can
+			// directly call DeepCopyObject() on them and also
+			// filter nine owned resources if needed
+			for _, item := range u.Items {
+				item := item
+				if includeNineOwned {
+					result = append(result, &item)
+					continue
+				}
+				if value, exists := item.GetLabels()[meta.NineOwnedLabelKey]; exists && value == meta.NineOwnedLabelValue {
+					continue
+				}
+				result = append(result, &item)
+			}
+		}
+	}
+	// we sort the items of the project to always have the same stable
+	// output. We sort first by project, then by Kind and then by Name.
+	sort.Slice(
+		result,
+		func(i, j int) bool {
+			if result[i].GetNamespace() != result[j].GetNamespace() {
+				return result[i].GetNamespace() < result[j].GetNamespace()
+			}
+			if result[i].GetKind() != result[j].GetKind() {
+				return result[i].GetKind() < result[j].GetKind()
+			}
+			return result[i].GetName() < result[j].GetName()
+		},
+	)
+
+	return result, warnings, nil
+}
+
+func printItems(items []*unstructured.Unstructured, get Cmd, out io.Writer, header bool) error {
+	w := tabwriter.NewWriter(out, 0, 0, 4, ' ', 0)
+	// we always want to include the PROJECT (also in no header mode) as it
+	// clearly indicates from which project the displayed resources are
+	get.AllProjects = true
+
+	if header {
+		get.writeHeader(w, "NAME", "KIND", "GROUP")
+	}
+	for _, item := range items {
+		get.writeTabRow(w, item.GetNamespace(), item.GetName(), item.GroupVersionKind().Kind, item.GroupVersionKind().Group)
+	}
+
+	return w.Flush()
+}
+
+func nineListTypes(s *runtime.Scheme) []schema.GroupVersionKind {
+	var lists []schema.GroupVersionKind
+	for gvk := range s.AllKnownTypes() {
+		if !strings.HasSuffix(strings.ToLower(gvk.Kind), "list") {
+			continue
+		}
+		if strings.HasSuffix(strings.ToLower(gvk.Group), "nine.ch") {
+			lists = append(lists, gvk)
+		}
+	}
+	// we sort the items to have a predicatable order of types in the output
+	sort.Slice(
+		lists,
+		func(i, j int) bool {
+			return lists[i].Kind < lists[j].Kind
+		},
+	)
+
+	return lists
+}
+
+func defaultStdError(out io.Writer) io.Writer {
+	if out == nil {
+		return os.Stderr
+	}
+	return out
+}

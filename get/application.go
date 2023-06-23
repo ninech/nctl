@@ -75,7 +75,7 @@ func printApplication(apps []apps.Application, get *Cmd, out io.Writer, header b
 
 func printCredentials(creds []appCredentials, get *Cmd, out io.Writer) error {
 	if get.Output == yamlOut {
-		return format.PrettyPrintResource(creds, format.PrintOpts{Out: out})
+		return format.PrettyPrintObject(creds, format.PrintOpts{Out: out})
 	}
 	return printCredentialsTabRow(creds, get, out)
 }
