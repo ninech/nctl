@@ -24,10 +24,11 @@ import (
 )
 
 type flags struct {
-	Project       string           `help:"Limit commands to a specific project." short:"p"`
-	APICluster    string           `help:"Context name of the API cluster." default:"nineapis.ch"`
-	LogAPIAddress string           `help:"Address of the deplo.io logging API server." default:"https://logs.deplo.io"`
-	Version       kong.VersionFlag `name:"version" help:"Print version information and quit."`
+	Project        string           `help:"Limit commands to a specific project." short:"p"`
+	APICluster     string           `help:"Context name of the API cluster." default:"nineapis.ch" env:"NCTL_API_CLUSTER"`
+	LogAPIAddress  string           `help:"Address of the deplo.io logging API server." default:"https://logs.deplo.io" env:"NCTL_LOG_ADDR"`
+	LogAPIInsecure bool             `help:"Don't verify TLS connection to the logging API server." hidden:"" default:"false" env:"NCTL_LOG_INSECURE"`
+	Version        kong.VersionFlag `name:"version" help:"Print version information and quit."`
 }
 
 type rootCommand struct {
@@ -81,7 +82,7 @@ func main() {
 		return
 	}
 
-	client, err := api.New(ctx, nctl.APICluster, nctl.Project, api.LogClient(nctl.LogAPIAddress))
+	client, err := api.New(ctx, nctl.APICluster, nctl.Project, api.LogClient(nctl.LogAPIAddress, nctl.LogAPIInsecure))
 	if err != nil {
 		fmt.Println(err)
 		fmt.Printf("\nUnable to get API client, are you logged in?\n\nUse `%s %s` to login.\n", kongCtx.Model.Name, auth.LoginCmdName)

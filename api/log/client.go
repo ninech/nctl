@@ -15,6 +15,7 @@ import (
 	"github.com/grafana/loki/pkg/logproto"
 	"github.com/grafana/loki/pkg/logqlmodel"
 	"github.com/grafana/loki/pkg/util/unmarshal"
+	"github.com/prometheus/common/config"
 )
 
 type Client struct {
@@ -34,10 +35,15 @@ type Query struct {
 }
 
 // NewClient returns a new log API client.
-func NewClient(address, token, orgID string) (*Client, error) {
+func NewClient(address, token, orgID string, insecure bool) (*Client, error) {
 	out, err := StdOut("default")
 	if err != nil {
 		return nil, err
+	}
+
+	tls := config.TLSConfig{}
+	if insecure {
+		tls.InsecureSkipVerify = true
 	}
 
 	return &Client{
@@ -46,6 +52,7 @@ func NewClient(address, token, orgID string) (*Client, error) {
 			Address:     address,
 			BearerToken: token,
 			OrgID:       orgID,
+			TLSConfig:   tls,
 		},
 	}, nil
 }
