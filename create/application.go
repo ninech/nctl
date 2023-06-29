@@ -12,6 +12,7 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/log"
 	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/logs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -30,6 +31,7 @@ type applicationCmd struct {
 	Port        int32             `default:"8080" help:"Port the app is listening on."`
 	Replicas    int32             `default:"1" help:"Amount of replicas of the running app."`
 	Hosts       []string          `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
+	BasicAuth   bool              `default:"false" help:"Enable/Disable basic authentication for the application."`
 	Env         map[string]string `help:"Environment variables which are passed to the app at runtime."`
 }
 
@@ -77,10 +79,10 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	}
 
 	c := newCreator(client, newApp, strings.ToLower(apps.ApplicationKind))
-	ctx, cancel := context.WithTimeout(ctx, app.WaitTimeout)
+	appWaitCtx, cancel := context.WithTimeout(ctx, app.WaitTimeout)
 	defer cancel()
 
-	if err := c.createResource(ctx); err != nil {
+	if err := c.createResource(appWaitCtx); err != nil {
 		return err
 	}
 
@@ -89,18 +91,18 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	}
 
 	if err := c.wait(
-		ctx,
+		appWaitCtx,
 		waitForBuildStart(newApp),
 		waitForBuildFinish(newApp),
 		waitForRelease(newApp),
 	); err != nil {
 		if buildErr, ok := err.(buildError); ok {
-			if err := buildErr.printMessage(ctx, client); err != nil {
+			if err := buildErr.printMessage(appWaitCtx, client); err != nil {
 				return fmt.Errorf("%s: %w", buildErr, err)
 			}
 		}
 		if releaseErr, ok := err.(releaseError); ok {
-			if err := releaseErr.printMessage(ctx, client, newApp); err != nil {
+			if err := releaseErr.printMessage(appWaitCtx, client, newApp); err != nil {
 				return fmt.Errorf("%s: %w", releaseErr, err)
 			}
 		}
@@ -112,8 +114,26 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	}
 
 	fmt.Printf("\nYour application %q is now available at:\n  https://%s\n\n", newApp.Name, newApp.Status.AtProvider.CNAMETarget)
-
 	printUnverifiedHostsMessage(newApp)
+
+	if newApp.Status.AtProvider.BasicAuthSecret == nil {
+		return nil
+	}
+	basicAuth, err := util.NewBasicAuthFromSecret(
+		ctx,
+		newApp.Status.AtProvider.BasicAuthSecret.InNamespace(newApp),
+		client,
+	)
+	if err != nil {
+		return fmt.Errorf(
+			"could not gather basic auth credentials: %w\n"+
+				"Please use %q to gather credentials manually",
+			err,
+			format.Command().GetApplication(newApp.Name, "--credentials"),
+		)
+	}
+	printCredentials(basicAuth)
+
 	return nil
 }
 
@@ -137,10 +157,11 @@ func (app *applicationCmd) newApplication(project string) *apps.Application {
 				},
 				Hosts: app.Hosts,
 				Config: apps.Config{
-					Size:     size,
-					Replicas: pointer.Int32(app.Replicas),
-					Port:     pointer.Int32(app.Port),
-					Env:      util.EnvVarsFromMap(app.Env),
+					Size:            size,
+					Replicas:        pointer.Int32(app.Replicas),
+					Port:            pointer.Int32(app.Port),
+					Env:             util.EnvVarsFromMap(app.Env),
+					EnableBasicAuth: pointer.Bool(app.BasicAuth),
 				},
 			},
 		},
@@ -305,6 +326,15 @@ func printReleaseLogs(ctx context.Context, client *api.Client, release *apps.Rel
 	return client.Log.QueryRange(
 		ctx, client.Log.StdOut,
 		errorLogQuery(logs.ApplicationQuery(release.Labels[util.ApplicationNameLabel], release.Namespace)),
+	)
+}
+
+func printCredentials(basicAuth *util.BasicAuth) {
+	fmt.Printf("\nYou can login with the following credentials:\n"+
+		"  username: %s\n"+
+		"  password: %s\n",
+		basicAuth.Username,
+		basicAuth.Password,
 	)
 }
 

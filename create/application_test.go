@@ -10,11 +10,13 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/grafana/loki/pkg/logcli/output"
 	apps "github.com/ninech/apis/apps/v1alpha1"
+	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/log"
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
@@ -39,13 +41,14 @@ func TestApplication(t *testing.T) {
 					SubPath:  "/my/app",
 					Revision: "superbug",
 				},
-				Wait:     false,
-				Name:     "custom-name",
-				Size:     "mini",
-				Hosts:    []string{"custom.example.org", "custom2.example.org"},
-				Port:     1337,
-				Replicas: 42,
-				Env:      map[string]string{"hello": "world"},
+				Wait:      false,
+				Name:      "custom-name",
+				Size:      "mini",
+				Hosts:     []string{"custom.example.org", "custom2.example.org"},
+				Port:      1337,
+				Replicas:  42,
+				BasicAuth: false,
+				Env:       map[string]string{"hello": "world"},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				assert.Equal(t, cmd.Name, app.Name)
@@ -56,8 +59,22 @@ func TestApplication(t *testing.T) {
 				assert.Equal(t, apps.ApplicationSize(cmd.Size), app.Spec.ForProvider.Config.Size)
 				assert.Equal(t, int32(cmd.Port), *app.Spec.ForProvider.Config.Port)
 				assert.Equal(t, int32(cmd.Replicas), *app.Spec.ForProvider.Config.Replicas)
+				assert.Equal(t, cmd.BasicAuth, *app.Spec.ForProvider.Config.EnableBasicAuth)
 				assert.Equal(t, util.EnvVarsFromMap(cmd.Env), app.Spec.ForProvider.Config.Env)
 				assert.Nil(t, app.Spec.ForProvider.Git.Auth)
+			},
+		},
+		"with basic auth": {
+			cmd: applicationCmd{
+				Wait:      false,
+				Name:      "basic-auth",
+				Size:      "mini",
+				BasicAuth: true,
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				assert.Equal(t, cmd.Name, app.Name)
+				assert.Equal(t, apps.ApplicationSize(cmd.Size), app.Spec.ForProvider.Config.Size)
+				assert.Equal(t, cmd.BasicAuth, *app.Spec.ForProvider.Config.EnableBasicAuth)
 			},
 		},
 		"with user/pass git auth": {
@@ -128,6 +145,7 @@ func TestApplicationWait(t *testing.T) {
 		Wait:        true,
 		WaitTimeout: time.Second * 5,
 		Name:        "some-name",
+		BasicAuth:   true,
 	}
 	project := "default"
 
@@ -151,13 +169,28 @@ func TestApplicationWait(t *testing.T) {
 		},
 	}
 
+	// we are also creating a basic auth secret
+	basicAuth := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "some-name-basic-auth",
+			Namespace: project,
+			Labels: map[string]string{
+				util.ApplicationNameLabel: cmd.Name,
+			},
+		},
+		Data: map[string][]byte{
+			util.BasicAuthUsernameKey: []byte("some-name"),
+			util.BasicAuthPasswordKey: []byte("some-password"),
+		},
+	}
+
 	// throw in a second build/release to ensure it can handle it
 	build2 := *build
 	build2.Name = build2.Name + "-1"
 	release2 := *release
 	release2.Name = release2.Name + "-1"
 
-	apiClient, err := test.SetupClient(build, &build2, release, &release2)
+	apiClient, err := test.SetupClient(build, &build2, release, &release2, basicAuth)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -188,6 +221,7 @@ func TestApplicationWait(t *testing.T) {
 
 				app.Status.AtProvider.Hosts = []apps.VerificationStatus{{Name: "host.example.org"}}
 				app.Status.AtProvider.CNAMETarget = "some.target.example.org"
+				app.Status.AtProvider.BasicAuthSecret = &meta.LocalReference{Name: basicAuth.Name}
 				if err := apiClient.Status().Update(ctx, app); err != nil {
 					errors <- err
 				}
