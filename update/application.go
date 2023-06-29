@@ -14,13 +14,14 @@ import (
 // all fields need to be pointers so we can detect if they have been set by
 // the user.
 type applicationCmd struct {
-	Name     *string            `arg:"" help:"Name of the application."`
-	Git      *gitConfig         `embed:"" prefix:"git-"`
-	Size     *string            `help:"Size of the app."`
-	Port     *int32             `help:"Port the app is listening on."`
-	Replicas *int32             `help:"Amount of replicas of the running app."`
-	Hosts    *[]string          `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
-	Env      *map[string]string `help:"Environment variables which are passed to the app at runtime."`
+	Name      *string            `arg:"" help:"Name of the application."`
+	Git       *gitConfig         `embed:"" prefix:"git-"`
+	Size      *string            `help:"Size of the app."`
+	Port      *int32             `help:"Port the app is listening on."`
+	Replicas  *int32             `help:"Amount of replicas of the running app."`
+	Hosts     *[]string          `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
+	BasicAuth *bool              `help:"Enable/Disable basic authentication for the application."`
+	Env       *map[string]string `help:"Environment variables which are passed to the app at runtime."`
 }
 
 type gitConfig struct {
@@ -108,5 +109,8 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 	}
 	if cmd.Env != nil {
 		app.Spec.ForProvider.Config.Env = util.EnvVarsFromMap(*cmd.Env)
+	}
+	if cmd.BasicAuth != nil {
+		app.Spec.ForProvider.Config.EnableBasicAuth = cmd.BasicAuth
 	}
 }
