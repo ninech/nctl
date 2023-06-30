@@ -12,10 +12,11 @@ import (
 // all fields need to be pointers so we can detect if they have been set by
 // the user.
 type configCmd struct {
-	Size     *string            `help:"Size of the app."`
-	Port     *int32             `help:"Port the app is listening on."`
-	Replicas *int32             `help:"Amount of replicas of the running app."`
-	Env      *map[string]string `help:"Environment variables which are passed to the app at runtime."`
+	Size      string             `help:"Size of the app."`
+	Port      *int32             `help:"Port the app is listening on."`
+	Replicas  *int32             `help:"Amount of replicas of the running app."`
+	Env       *map[string]string `help:"Environment variables which are passed to the app at runtime."`
+	BasicAuth *bool              `help:"Enable/Disable basic authentication for applications."`
 }
 
 func (cmd *configCmd) Run(ctx context.Context, client *api.Client) error {
@@ -25,22 +26,7 @@ func (cmd *configCmd) Run(ctx context.Context, client *api.Client) error {
 }
 
 func (cmd *configCmd) newProjectConfig(namespace string) *apps.ProjectConfig {
-	size := apps.ApplicationSize("")
-	if cmd.Size != nil {
-		applicationSize := apps.ApplicationSize(*cmd.Size)
-		size = applicationSize
-	}
-
-	var port *int32
-	if cmd.Port != nil {
-		port = cmd.Port
-	}
-
-	var replicas *int32
-	if cmd.Replicas != nil {
-		replicas = cmd.Replicas
-	}
-	var env apps.EnvVars
+	env := apps.EnvVars{}
 	if cmd.Env != nil {
 		env = util.EnvVarsFromMap(*cmd.Env)
 	}
@@ -53,10 +39,11 @@ func (cmd *configCmd) newProjectConfig(namespace string) *apps.ProjectConfig {
 		Spec: apps.ProjectConfigSpec{
 			ForProvider: apps.ProjectConfigParameters{
 				Config: apps.Config{
-					Size:     size,
-					Replicas: replicas,
-					Port:     port,
-					Env:      env,
+					Size:            apps.ApplicationSize(cmd.Size),
+					Replicas:        cmd.Replicas,
+					Port:            cmd.Port,
+					Env:             env,
+					EnableBasicAuth: cmd.BasicAuth,
 				},
 			},
 		},
