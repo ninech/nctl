@@ -18,8 +18,8 @@ const (
 
 // BasicAuth contains credentials for basic authentication
 type BasicAuth struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username string `json:"username" yaml:"username"`
+	Password string `json:"password" yaml:"password"`
 }
 
 // NewBasicAuthFromSecret returns a basic auth resource filled with data from
