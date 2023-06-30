@@ -27,10 +27,11 @@ func TestConfig(t *testing.T) {
 		Spec: apps.ProjectConfigSpec{
 			ForProvider: apps.ProjectConfigParameters{
 				Config: apps.Config{
-					Size:     initialSize,
-					Replicas: pointer.Int32(1),
-					Port:     pointer.Int32(1337),
-					Env:      util.EnvVarsFromMap(map[string]string{"foo": "bar"}),
+					Size:            initialSize,
+					Replicas:        pointer.Int32(1),
+					Port:            pointer.Int32(1337),
+					Env:             util.EnvVarsFromMap(map[string]string{"foo": "bar"}),
+					EnableBasicAuth: pointer.Bool(false),
 				},
 			},
 		},
@@ -63,19 +64,31 @@ func TestConfig(t *testing.T) {
 				assert.NotEqual(t, orig.Spec.ForProvider.Config.Size, updated.Spec.ForProvider.Config.Size)
 			},
 		},
+		"update basic auth": {
+			orig:    existingConfig,
+			project: project,
+			cmd: configCmd{
+				BasicAuth: pointer.Bool(true),
+			},
+			checkConfig: func(t *testing.T, cmd configCmd, orig, updated *apps.ProjectConfig) {
+				assert.True(t, *updated.Spec.ForProvider.Config.EnableBasicAuth)
+			},
+		},
 		"all fields update": {
 			orig:    existingConfig,
 			project: project,
 			cmd: configCmd{
-				Size:     pointer.String("newsize"),
-				Port:     pointer.Int32(1000),
-				Replicas: pointer.Int32(2),
-				Env:      &map[string]string{"zoo": "bar"},
+				Size:      pointer.String("newsize"),
+				Port:      pointer.Int32(1000),
+				Replicas:  pointer.Int32(2),
+				Env:       &map[string]string{"zoo": "bar"},
+				BasicAuth: pointer.Bool(true),
 			},
 			checkConfig: func(t *testing.T, cmd configCmd, orig, updated *apps.ProjectConfig) {
 				assert.Equal(t, apps.ApplicationSize(*cmd.Size), updated.Spec.ForProvider.Config.Size)
 				assert.Equal(t, *cmd.Port, *updated.Spec.ForProvider.Config.Port)
 				assert.Equal(t, *cmd.Replicas, *updated.Spec.ForProvider.Config.Replicas)
+				assert.Equal(t, *cmd.BasicAuth, *updated.Spec.ForProvider.Config.EnableBasicAuth)
 				assert.Equal(t, util.EnvVarsFromMap(*cmd.Env), updated.Spec.ForProvider.Config.Env)
 			},
 		},
