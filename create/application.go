@@ -33,6 +33,7 @@ type applicationCmd struct {
 	Hosts       []string          `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
 	BasicAuth   bool              `default:"false" help:"Enable/Disable basic authentication for the application."`
 	Env         map[string]string `help:"Environment variables which are passed to the app at runtime."`
+	BuildEnv    map[string]string `help:"Environment variables which are passed to the app build process."`
 }
 
 type gitConfig struct {
@@ -163,6 +164,7 @@ func (app *applicationCmd) newApplication(project string) *apps.Application {
 					Env:             util.EnvVarsFromMap(app.Env),
 					EnableBasicAuth: pointer.Bool(app.BasicAuth),
 				},
+				BuildEnv: util.EnvVarsFromMap(app.BuildEnv),
 			},
 		},
 	}

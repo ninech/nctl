@@ -45,6 +45,7 @@ func TestApplication(t *testing.T) {
 					Env:             util.EnvVarsFromMap(map[string]string{"foo": "bar"}),
 					EnableBasicAuth: pointer.Bool(false),
 				},
+				BuildEnv: util.EnvVarsFromMap(map[string]string{"BP_ENVIRONMENT_VARIABLE": "some-value"}),
 			},
 		},
 	}
@@ -91,6 +92,7 @@ func TestApplication(t *testing.T) {
 				Replicas:  pointer.Int32(999),
 				Hosts:     &[]string{"one.example.org", "two.example.org"},
 				Env:       &map[string]string{"bar": "zoo"},
+				BuildEnv:  &map[string]string{"BP_GO_TARGETS": "./cmd/web-server"},
 				BasicAuth: pointer.Bool(true),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
@@ -103,6 +105,19 @@ func TestApplication(t *testing.T) {
 				assert.Equal(t, *cmd.BasicAuth, *updated.Spec.ForProvider.Config.EnableBasicAuth)
 				assert.Equal(t, *cmd.Hosts, updated.Spec.ForProvider.Hosts)
 				assert.Equal(t, util.EnvVarsFromMap(*cmd.Env), updated.Spec.ForProvider.Config.Env)
+				assert.Equal(t, util.EnvVarsFromMap(*cmd.BuildEnv), updated.Spec.ForProvider.BuildEnv)
+			},
+		},
+		"reset env variables": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				Name:     pointer.String(existingApp.Name),
+				Env:      &map[string]string{},
+				BuildEnv: &map[string]string{},
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				assert.Equal(t, util.EnvVarsFromMap(*cmd.Env), updated.Spec.ForProvider.Config.Env)
+				assert.Equal(t, util.EnvVarsFromMap(*cmd.BuildEnv), updated.Spec.ForProvider.BuildEnv)
 			},
 		},
 		"git auth update user/pass": {
@@ -206,11 +221,13 @@ func TestApplicationFlags(t *testing.T) {
 
 	assert.Nil(t, nilFlags.Hosts)
 	assert.Nil(t, nilFlags.Env)
+	assert.Nil(t, nilFlags.BuildEnv)
 
 	emptyFlags := &applicationCmd{}
-	_, err = kong.Must(emptyFlags).Parse([]string{`testname`, `--hosts=""`, `--env=`})
+	_, err = kong.Must(emptyFlags).Parse([]string{`testname`, `--hosts=""`, `--env=`, `--build-env=`})
 	require.NoError(t, err)
 
 	assert.NotNil(t, emptyFlags.Hosts)
 	assert.NotNil(t, emptyFlags.Env)
+	assert.NotNil(t, emptyFlags.BuildEnv)
 }
