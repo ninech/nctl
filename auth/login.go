@@ -23,10 +23,6 @@ type LoginCmd struct {
 	ExecPlugin   bool   `help:"Automatically run exec plugin after writing the kubeconfig." hidden:"" default:"true"`
 }
 
-const (
-	LoginCmdName = "auth login"
-)
-
 func (l *LoginCmd) Run(ctx context.Context, command string) error {
 	loadingRules, err := api.LoadingRules()
 	if err != nil {

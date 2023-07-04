@@ -17,6 +17,7 @@ import (
 	"github.com/ninech/nctl/create"
 	"github.com/ninech/nctl/delete"
 	"github.com/ninech/nctl/get"
+	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/logs"
 	"github.com/ninech/nctl/update"
 	"github.com/posener/complete"
@@ -72,7 +73,7 @@ func main() {
 	if err != nil {
 		kongCtx.Fatalf("can not identify executable path of %s: %v", util.NctlName, err)
 	}
-	if strings.HasPrefix(kongCtx.Command(), auth.LoginCmdName) {
+	if strings.HasPrefix(kongCtx.Command(), format.LoginCommand) {
 		kongCtx.FatalIfErrorf(nctl.Auth.Login.Run(ctx, command))
 		return
 	}
@@ -85,7 +86,7 @@ func main() {
 	client, err := api.New(ctx, nctl.APICluster, nctl.Project, api.LogClient(nctl.LogAPIAddress, nctl.LogAPIInsecure))
 	if err != nil {
 		fmt.Println(err)
-		fmt.Printf("\nUnable to get API client, are you logged in?\n\nUse `%s %s` to login.\n", kongCtx.Model.Name, auth.LoginCmdName)
+		fmt.Printf("\nUnable to get API client, are you logged in?\n\nUse `%s` to login.\n", format.Command().Login())
 		os.Exit(1)
 	}
 

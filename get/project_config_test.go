@@ -27,11 +27,12 @@ func TestConfigs(t *testing.T) {
 	ctx := context.Background()
 
 	cases := map[string]struct {
-		cmd          configsCmd
-		get          *Cmd
-		project      string
-		configs      *apps.ProjectConfigList
-		otherConfigs *apps.ProjectConfigList
+		cmd                configsCmd
+		get                *Cmd
+		project            string
+		configs            *apps.ProjectConfigList
+		otherConfigs       *apps.ProjectConfigList
+		expectExactMessage string
 	}{
 		"get configs for all projects": {
 			cmd: configsCmd{},
@@ -86,6 +87,7 @@ func TestConfigs(t *testing.T) {
 			configs: &apps.ProjectConfigList{
 				Items: []apps.ProjectConfig{},
 			},
+			expectExactMessage: "no ProjectConfigs found in project ns-3\n",
 			otherConfigs: &apps.ProjectConfigList{
 				Items: []apps.ProjectConfig{
 					*fakeProjectConfig(time.Second*10, "ns-1", "ns-1"),
@@ -156,7 +158,11 @@ func TestConfigs(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			assert.Equal(t, len(tc.configs.Items), test.CountLines(buf.String()))
+			if tc.expectExactMessage != "" {
+				assert.Equal(t, buf.String(), tc.expectExactMessage)
+			} else {
+				assert.Equal(t, len(tc.configs.Items), test.CountLines(buf.String()))
+			}
 			buf.Reset()
 		})
 	}

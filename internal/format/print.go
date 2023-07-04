@@ -107,7 +107,11 @@ type PrintOpts struct {
 // multiple objects are supplied, they will be divided with a yaml divider.
 func PrettyPrintObjects[T resource.Managed](objs []T, opts PrintOpts) error {
 	for i, obj := range objs {
-		if err := prettyPrintObject(obj, opts); err != nil {
+		strippedObj, err := stripObj(obj, opts.ExcludeAdditional)
+		if err != nil {
+			return err
+		}
+		if err := PrettyPrintResource(strippedObj, opts); err != nil {
 			return err
 		}
 		// if there's another object we print a yaml divider
@@ -119,15 +123,10 @@ func PrettyPrintObjects[T resource.Managed](objs []T, opts PrintOpts) error {
 	return nil
 }
 
-// prettyPrintObject strips the supplied obj and prints it out similar to how
+// PrettyPrintResource prints the resource similar to how
 // https://github.com/goccy/go-yaml#ycat does it.
-func prettyPrintObject(obj resource.Managed, opts PrintOpts) error {
-	strippedObj, err := stripObj(obj, opts.ExcludeAdditional)
-	if err != nil {
-		return err
-	}
-
-	b, err := yaml.Marshal(strippedObj)
+func PrettyPrintResource(obj interface{}, opts PrintOpts) error {
+	b, err := yaml.Marshal(obj)
 	if err != nil {
 		return err
 	}

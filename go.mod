@@ -17,7 +17,7 @@ require (
 	github.com/lucasepe/codename v0.2.0
 	github.com/moby/moby v24.0.1+incompatible
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
-	github.com/ninech/apis v0.0.0-20230619202935-615a1724c34e
+	github.com/ninech/apis v0.0.0-20230630090309-a9de5a5a3b7e
 	github.com/posener/complete v1.2.3
 	github.com/stretchr/testify v1.8.1
 	github.com/theckman/yacspin v0.13.12

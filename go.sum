@@ -1049,6 +1049,12 @@ github.com/ncw/swift v1.0.47/go.mod h1:23YIA4yWVnGwv2dQlN4bB7egfYX6YLn0Yo/S6zZO/
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/ninech/apis v0.0.0-20230619202935-615a1724c34e h1:FzmvXlZJeJPFuKcVY8pttkhgq2X1HWyeaqDEOK5Ahh8=
 github.com/ninech/apis v0.0.0-20230619202935-615a1724c34e/go.mod h1:/9HF0pE1ovvrfH4gUGzeYOVSSG3dgx4FosUBQsurzm0=
+github.com/ninech/apis v0.0.0-20230629122912-7629043cc602 h1:QBDcoMYaQ5KgGG5AAT7S0FQO11q+D3u1NjK/g9yMGUc=
+github.com/ninech/apis v0.0.0-20230629122912-7629043cc602/go.mod h1:/9HF0pE1ovvrfH4gUGzeYOVSSG3dgx4FosUBQsurzm0=
+github.com/ninech/apis v0.0.0-20230630084642-e2ad2b4624f7 h1:X701hJcxGubQPYdnMsS/kCxM+rBUsMZNJfByASkQBJY=
+github.com/ninech/apis v0.0.0-20230630084642-e2ad2b4624f7/go.mod h1:/9HF0pE1ovvrfH4gUGzeYOVSSG3dgx4FosUBQsurzm0=
+github.com/ninech/apis v0.0.0-20230630090309-a9de5a5a3b7e h1:d3DTFSLbMEIGj/FYPi4XZxzXJZ4duiizVf6GcSzbVkY=
+github.com/ninech/apis v0.0.0-20230630090309-a9de5a5a3b7e/go.mod h1:/9HF0pE1ovvrfH4gUGzeYOVSSG3dgx4FosUBQsurzm0=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=

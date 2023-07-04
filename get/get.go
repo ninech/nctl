@@ -75,19 +75,22 @@ func (cmd *Cmd) writeHeader(w io.Writer, headings ...string) {
 // cmd.AllProjects is set and the project is not empty.
 func (cmd *Cmd) writeTabRow(w io.Writer, project string, row ...string) {
 	if cmd.AllProjects && len(project) != 0 {
-		fmt.Fprintf(w, "%s\t", project)
+		row = append([]string{project}, row...)
 	}
 
-	format := "%s\t"
-	// if there is just one element to be printed, we do not need a tab
-	// separator
-	if len(row) == 1 {
-		format = "%s"
+	switch length := len(row); length {
+	case 0:
+		break
+	case 1:
+		fmt.Fprintf(w, "%s\n", row[0])
+	default:
+		fmt.Fprintf(w, "%s", row[0])
+		for _, r := range row[1:] {
+			fmt.Fprintf(w, "\t%s", r)
+		}
+		fmt.Fprint(w, "\n")
+		return
 	}
-	for _, r := range row {
-		fmt.Fprintf(w, format, r)
-	}
-	fmt.Fprintf(w, "\n")
 }
 
 func printEmptyMessage(out io.Writer, kind, project string) {
@@ -96,7 +99,7 @@ func printEmptyMessage(out io.Writer, kind, project string) {
 		return
 	}
 
-	fmt.Printf("no %s found in project %s\n", flect.Pluralize(kind), project)
+	fmt.Fprintf(defaultOut(out), "no %s found in project %s\n", flect.Pluralize(kind), project)
 }
 
 func defaultOut(out io.Writer) io.Writer {
