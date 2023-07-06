@@ -49,6 +49,7 @@ func TestApplication(t *testing.T) {
 				Replicas:  42,
 				BasicAuth: false,
 				Env:       map[string]string{"hello": "world"},
+				BuildEnv:  map[string]string{"BP_GO_TARGETS": "./cmd/web-server"},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				assert.Equal(t, cmd.Name, app.Name)
@@ -61,6 +62,7 @@ func TestApplication(t *testing.T) {
 				assert.Equal(t, int32(cmd.Replicas), *app.Spec.ForProvider.Config.Replicas)
 				assert.Equal(t, cmd.BasicAuth, *app.Spec.ForProvider.Config.EnableBasicAuth)
 				assert.Equal(t, util.EnvVarsFromMap(cmd.Env), app.Spec.ForProvider.Config.Env)
+				assert.Equal(t, util.EnvVarsFromMap(cmd.BuildEnv), app.Spec.ForProvider.BuildEnv)
 				assert.Nil(t, app.Spec.ForProvider.Git.Auth)
 			},
 		},
