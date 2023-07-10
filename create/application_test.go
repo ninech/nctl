@@ -3,6 +3,8 @@ package create
 import (
 	"bytes"
 	"context"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -16,12 +18,74 @@ import (
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
 )
 
+const (
+	// dummySSHRSAPrivateKey is a dummy private RSA SSH key with some
+	// whitespace around
+	dummySSHRSAPrivateKey = `
+
+-----BEGIN RSA PRIVATE KEY-----
+MIIEogIBAAKCAQEAgv9MjQEnssfXn8OCcVMZQUS0iP9Cpo643RkS2ENvNlnXFTgy
+mLX35RgkuHoAeQIlCFgYKA9bneJNRVDLcKQg3dElsMSdx6e2W879LChKrlhu904v
+XYv09Txm6+MHd69agQEU8STWXrw39Fpdk8a36MMAEe+4SzSSoh0b/2wuwRLZmapS
+gQF3HmqzxlfwupPUCbVtiWf6okJFO39TCI5vWD1bVUG5WqemVD+WY+AHjFrk41LM
++i+gwlnn392FUB+NrCYlx6dKXhGTr1IMX15l6JVtgDp3AvlvNGG6JrA/CLqoOf9f
+Hv8pMLqPquVnDVNB/t3U0m7x/ZV2MUetklX6KwIDAQABAoIBAFjRZoLYPKVgEBe3
+xLK3iBET12BnyjYJ4NewD3HoTvhH86fkgZG/F0QSmZsmxTlGtfsxV7eZqiGjdYbA
+4B8QeWRMUUTIGr5rPR6Eem29J92MAjjVnxHLOhwohxP6y25fy3paVGun8V0sOrgH
+qRjwDHPZ+ysuIQOEssMN/5SwMgcflXFgbLMjdNJxiP2TnJcjuEEHzDmXs7KAsch2
+8dE6Wj+0W3FH1HRPxnlLfqALGxB+7I8CngXaRExbHYpWyFr+ke4PAGcLuHZ7eyZ0
+86jqoo5ekyj0TTaflJVR851CQkRk9DWeFWEfQOeM5d17VWYqibHRs3r3jASMggus
+61rmYRECgYEA4/blEB9CG6VRY0WMFljZrPtkr0zh0s01q3yUY95xizUOZknVLsk5
+bOvf9Ovw5DL3YMMQ8a09MVGcUFIRq6KlNdoh87hYIipEii8lRB536r3yyNHGAGVo
+BGon+iOZc/ma4U7pBewooUZGF5RgSlrSlGTwusgZRADUi7ncavU81tkCgYEAkxuL
+Od6HaQkZP6OtUsf/pd+Y6xLjWm6Pf+xM6eu5PIyBsvWvcTBnit765Wy/VLDK1mzr
+vNgSueIi6k41MjBJdCf91R6U3WulEV7xj9uPBeQbDMFDPoZPqEeyOqlb07D++Bk9
+IJN6mVJWM/cOiQdJAhrXwqrk4vAsfeaiRKjx3qMCgYBPthE6pfNzv0bKM5NcbQ0Q
+U4dNVNDR6TePEyzADxQc3Rx/3+lPRsVxtLjG54mAAeJGT28pUq5HBIZn/4p2PZUP
+U4rzsc3/hFAbEYkyXIUJ7Als9w0JLmxEvunjqXcK+oiRqAoLLBy4592yeQuCdGeV
+xAX5CebrxG6NvRu5uq7fYQKBgDd6j8tHTTIjqE4D4H3zx0o7RWSCPxP/1kacS3V8
+3OMk6lUfqwa5BpOs/FpB5PZ/pj+v3EfgBU/tJNXQoOdIpqsT2friCapnylz+vYNP
+fmTuXfU1fbK63JfOUj0lWehAPCg8/HyooffowXHfnq+2+6W7kdtsr92WTnE85b2X
+KYCZAoGAZ8hdRurgNcmaBzQfRF/lYQVvlmBkCy00YmTeSrwLerWlFHsh7T8icBDT
+k2dECAM99MLPJKkOwI/E0v1pAncQunLkWDJpWwb3egr+3Az+LE2TBTaDkP4kLgOw
+sMVLxmbNrxvMSjJZlSiw3jYVOnXW2jZe+ceIN4LKRwW06ifnBpg=
+-----END RSA PRIVATE KEY-----
+
+`
+
+	// dummySSHED25519PrivateKey is a dummy SSH private key in ed25519 format with
+	// some whitespace around it
+	dummySSHED25519PrivateKey = `
+
+-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+QyNTUxOQAAACBSKbcOHZTe121IZz0EyMZMyvKPxRs8Rq1LTr+Uftr4zQAAAJDfP9T53z/U
++QAAAAtzc2gtZWQyNTUxOQAAACBSKbcOHZTe121IZz0EyMZMyvKPxRs8Rq1LTr+Uftr4zQ
+AAAEDlLk0cOZ375YeCqvnfoTYl0pbFEGDaAAF4BwHqn6WqG1Iptw4dlN7XbUhnPQTIxkzK
+8o/FGzxGrUtOv5R+2vjNAAAABm5vbmFtZQECAwQFBgc=
+-----END OPENSSH PRIVATE KEY-----
+
+`
+)
+
+func createTempKeyFile(content string) (string, error) {
+	file, err := os.CreateTemp("", "temp-private-ssh-key.*.pem")
+	if err != nil {
+		return "", err
+	}
+	_, err = file.WriteString(content)
+	if err != nil {
+		return "", err
+	}
+	return file.Name(), nil
+}
 func TestApplication(t *testing.T) {
 	apiClient, err := test.SetupClient()
 	if err != nil {
@@ -30,9 +94,22 @@ func TestApplication(t *testing.T) {
 
 	ctx := context.Background()
 
+	filenameRSAKey, err := createTempKeyFile(dummySSHRSAPrivateKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(filenameRSAKey)
+
+	filenameED25519Key, err := createTempKeyFile(dummySSHED25519PrivateKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(filenameED25519Key)
+
 	cases := map[string]struct {
-		cmd      applicationCmd
-		checkApp func(t *testing.T, cmd applicationCmd, app *apps.Application)
+		cmd           applicationCmd
+		checkApp      func(t *testing.T, cmd applicationCmd, app *apps.Application)
+		errorExpected bool
 	}{
 		"without git auth": {
 			cmd: applicationCmd{
@@ -105,7 +182,7 @@ func TestApplication(t *testing.T) {
 			cmd: applicationCmd{
 				Git: gitConfig{
 					URL:           "https://github.com/ninech/doesnotexist.git",
-					SSHPrivateKey: pointer.String("fakekey"),
+					SSHPrivateKey: pointer.String(dummySSHRSAPrivateKey),
 				},
 				Wait: false,
 				Name: "ssh-key-auth",
@@ -118,9 +195,84 @@ func TestApplication(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				assert.Equal(t, *cmd.Git.SSHPrivateKey, string(authSecret.Data[util.PrivateKeySecretKey]))
+				assert.Equal(t, strings.TrimSpace(*cmd.Git.SSHPrivateKey), string(authSecret.Data[util.PrivateKeySecretKey]))
 				assert.Equal(t, authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
 			},
+		},
+		"with ssh ed25519 key git auth": {
+			cmd: applicationCmd{
+				Git: gitConfig{
+					URL:           "https://github.com/ninech/doesnotexist.git",
+					SSHPrivateKey: pointer.String(dummySSHED25519PrivateKey),
+				},
+				Wait: false,
+				Name: "ssh-key-auth-ed25519",
+				Size: "mini",
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				auth := util.GitAuth{SSHPrivateKey: cmd.Git.SSHPrivateKey}
+				authSecret := auth.Secret(app)
+				if err := apiClient.Get(ctx, api.ObjectName(authSecret), authSecret); err != nil {
+					t.Fatal(err)
+				}
+
+				assert.Equal(t, strings.TrimSpace(*cmd.Git.SSHPrivateKey), string(authSecret.Data[util.PrivateKeySecretKey]))
+				assert.Equal(t, authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
+			},
+		},
+		"with ssh key git auth from file": {
+			cmd: applicationCmd{
+				Git: gitConfig{
+					URL:                   "https://github.com/ninech/doesnotexist.git",
+					SSHPrivateKeyFromFile: pointer.String(filenameRSAKey),
+				},
+				Wait: false,
+				Name: "ssh-key-auth-from-file",
+				Size: "mini",
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				auth := util.GitAuth{SSHPrivateKey: pointer.String("notused")}
+				authSecret := auth.Secret(app)
+				if err := apiClient.Get(ctx, api.ObjectName(authSecret), authSecret); err != nil {
+					t.Fatal(err)
+				}
+
+				assert.Equal(t, strings.TrimSpace(dummySSHRSAPrivateKey), string(authSecret.Data[util.PrivateKeySecretKey]))
+				assert.Equal(t, authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
+			},
+		},
+		"with ed25519 ssh key git auth from file": {
+			cmd: applicationCmd{
+				Git: gitConfig{
+					URL:                   "https://github.com/ninech/doesnotexist.git",
+					SSHPrivateKeyFromFile: pointer.String(filenameED25519Key),
+				},
+				Wait: false,
+				Name: "ssh-key-auth-from-file-ed25519",
+				Size: "mini",
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				auth := util.GitAuth{SSHPrivateKey: pointer.String("notused")}
+				authSecret := auth.Secret(app)
+				if err := apiClient.Get(ctx, api.ObjectName(authSecret), authSecret); err != nil {
+					t.Fatal(err)
+				}
+
+				assert.Equal(t, strings.TrimSpace(dummySSHED25519PrivateKey), string(authSecret.Data[util.PrivateKeySecretKey]))
+				assert.Equal(t, authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
+			},
+		},
+		"with non valid ssh key": {
+			cmd: applicationCmd{
+				Git: gitConfig{
+					URL:           "https://github.com/ninech/doesnotexist.git",
+					SSHPrivateKey: pointer.String("not valid"),
+				},
+				Wait: false,
+				Name: "ssh-key-auth-non-valid",
+				Size: "mini",
+			},
+			errorExpected: true,
 		},
 	}
 
@@ -129,13 +281,15 @@ func TestApplication(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			app := tc.cmd.newApplication("default")
 
-			if err := tc.cmd.Run(ctx, apiClient); err != nil {
-				t.Fatal(err)
+			err := tc.cmd.Run(ctx, apiClient)
+			if tc.errorExpected {
+				require.Error(t, err)
+				return
+			} else {
+				require.NoError(t, err)
 			}
 
-			if err := apiClient.Get(ctx, api.ObjectName(app), app); err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, apiClient.Get(ctx, api.ObjectName(app), app))
 
 			tc.checkApp(t, tc.cmd, app)
 		})
