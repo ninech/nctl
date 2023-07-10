@@ -15,9 +15,9 @@ import (
 )
 
 type applicationsCmd struct {
-	Name        string `arg:"" help:"Name of the Application to get. If omitted all in the project will be listed." default:""`
-	Credentials bool   `help:"Show the basic auth credentials of the application."`
-	out         io.Writer
+	Name                 string `arg:"" help:"Name of the Application to get. If omitted all in the project will be listed." default:""`
+	BasicAuthCredentials bool   `help:"Show the basic auth credentials of the application."`
+	out                  io.Writer
 }
 
 func (cmd *applicationsCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
@@ -32,7 +32,7 @@ func (cmd *applicationsCmd) Run(ctx context.Context, client *api.Client, get *Cm
 		return nil
 	}
 
-	if cmd.Credentials {
+	if cmd.BasicAuthCredentials {
 		creds, err := gatherCredentials(ctx, appList.Items, client)
 		if len(creds) == 0 {
 			fmt.Fprintf(defaultOut(cmd.out), "no application with basic auth enabled found\n")
