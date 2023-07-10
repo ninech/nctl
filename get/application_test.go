@@ -49,8 +49,8 @@ func TestApplication(t *testing.T) {
 
 	buf := &bytes.Buffer{}
 	cmd := applicationsCmd{
-		out:         buf,
-		Credentials: false,
+		out:                  buf,
+		BasicAuthCredentials: false,
 	}
 
 	if err := cmd.Run(ctx, apiClient, get); err != nil {
@@ -241,9 +241,9 @@ dev-second    dev-second    sample-second
 
 			buf := &bytes.Buffer{}
 			cmd := applicationsCmd{
-				out:         buf,
-				Name:        testCase.name,
-				Credentials: true,
+				out:                  buf,
+				Name:                 testCase.name,
+				BasicAuthCredentials: true,
 			}
 
 			err = cmd.Run(ctx, apiClient, get)
