@@ -2,7 +2,9 @@ package create
 
 import (
 	"context"
+	"encoding/pem"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -37,12 +39,27 @@ type applicationCmd struct {
 }
 
 type gitConfig struct {
-	URL           string  `required:"" help:"URL to the Git repository containing the application source. Both HTTPS and SSH formats are supported."`
-	SubPath       string  `help:"SubPath is a path in the git repo which contains the application code. If not given, the root directory of the git repo will be used."`
-	Revision      string  `default:"main" help:"Revision defines the revision of the source to deploy the application to. This can be a commit, tag or branch."`
-	Username      *string `help:"Username to use when authenticating to the git repository over HTTPS." env:"GIT_USERNAME"`
-	Password      *string `help:"Password to use when authenticating to the git repository over HTTPS. In case of GitHub or GitLab, this can also be an access token." env:"GIT_PASSWORD"`
-	SSHPrivateKey *string `help:"Private key in x509 format to connect to the git repository via SSH." env:"GIT_SSH_PRIVATE_KEY"`
+	URL                   string  `required:"" help:"URL to the Git repository containing the application source. Both HTTPS and SSH formats are supported."`
+	SubPath               string  `help:"SubPath is a path in the git repo which contains the application code. If not given, the root directory of the git repo will be used."`
+	Revision              string  `default:"main" help:"Revision defines the revision of the source to deploy the application to. This can be a commit, tag or branch."`
+	Username              *string `help:"Username to use when authenticating to the git repository over HTTPS." env:"GIT_USERNAME"`
+	Password              *string `help:"Password to use when authenticating to the git repository over HTTPS. In case of GitHub or GitLab, this can also be an access token." env:"GIT_PASSWORD"`
+	SSHPrivateKey         *string `help:"Private key in PEM format to connect to the git repository via SSH." env:"GIT_SSH_PRIVATE_KEY" xor:"SSH_KEY"`
+	SSHPrivateKeyFromFile *string `help:"Path to a file containing a private key in PEM format to connect to the git repository via SSH." env:"GIT_SSH_PRIVATE_KEY_FROM_FILE" xor:"SSH_KEY"`
+}
+
+func (g gitConfig) sshPrivateKey() (*string, error) {
+	if g.SSHPrivateKey != nil {
+		return validatePEM(*g.SSHPrivateKey)
+	}
+	if g.SSHPrivateKeyFromFile == nil {
+		return nil, nil
+	}
+	content, err := os.ReadFile(*g.SSHPrivateKeyFromFile)
+	if err != nil {
+		return nil, err
+	}
+	return validatePEM(string(content))
 }
 
 const (
@@ -59,10 +76,14 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	fmt.Println("Creating a new application")
 	newApp := app.newApplication(client.Project)
 
+	sshPrivateKey, err := app.Git.sshPrivateKey()
+	if err != nil {
+		return fmt.Errorf("error when reading SSH private key: %w", err)
+	}
 	auth := util.GitAuth{
 		Username:      app.Git.Username,
 		Password:      app.Git.Password,
-		SSHPrivateKey: app.Git.SSHPrivateKey,
+		SSHPrivateKey: sshPrivateKey,
 	}
 
 	if auth.Enabled() {
@@ -354,4 +375,14 @@ func errorLogQuery(queryString string) log.Query {
 		Direction:   logproto.BACKWARD,
 		Quiet:       true,
 	}
+}
+
+// validatePEM validates if the passed content is in valid PEM format
+func validatePEM(content string) (*string, error) {
+	content = strings.TrimSpace(content)
+	b, rest := pem.Decode([]byte(content))
+	if b == nil || len(rest) > 0 {
+		return nil, fmt.Errorf("no valid PEM formatted data found")
+	}
+	return &content, nil
 }
