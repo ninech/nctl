@@ -27,23 +27,23 @@ import (
 // note: when adding/changing fields here also make sure to carry it over to
 // update/application.go.
 type applicationCmd struct {
-	Name        string            `arg:"" default:"" help:"Name of the application. A random name is generated if omitted."`
-	Wait        bool              `default:"true" help:"Wait until application is fully created."`
-	WaitTimeout time.Duration     `default:"15m" help:"Duration to wait for application getting ready. Only relevant if wait is set."`
+	Name        string            `arg:"" default:"" help:"Name of the app. A random name is generated if omitted."`
+	Wait        bool              `default:"true" help:"Wait until the app is fully created."`
+	WaitTimeout time.Duration     `default:"15m" help:"Duration to wait for the app getting ready. Only relevant if wait is set."`
 	Git         gitConfig         `embed:"" prefix:"git-"`
-	Size        *string           `help:"Size of the app (defaults to \"${app_default_size}\")."`
-	Port        *int32            `help:"Port the app is listening on (defaults to ${app_default_port})."`
-	Replicas    *int32            `help:"Amount of replicas of the running app (defaults to ${app_default_replicas})."`
-	Hosts       []string          `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
-	BasicAuth   *bool             `help:"Enable/Disable basic authentication for the applicaton (defaults to ${app_default_basic_auth})."`
+	Size        *string           `help:"Size of the app (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
+	Port        *int32            `help:"Port the app is listening on (defaults to ${app_default_port})." placeholder:"${app_default_port}"`
+	Replicas    *int32            `help:"Amount of replicas of the running app (defaults to ${app_default_replicas})." placeholder:"${app_default_replicas}"`
+	Hosts       []string          `help:"Host names where the app can be accessed. If empty, the app will just be accessible on a generated host name on the deploio.app domain."`
+	BasicAuth   *bool             `help:"Enable/Disable basic authentication for the app (defaults to ${app_default_basic_auth})." placeholder:"${app_default_basic_auth}"`
 	Env         map[string]string `help:"Environment variables which are passed to the app at runtime."`
 	BuildEnv    map[string]string `help:"Environment variables which are passed to the app build process."`
 }
 
 type gitConfig struct {
-	URL                   string  `required:"" help:"URL to the Git repository containing the application source. Both HTTPS and SSH formats are supported."`
-	SubPath               string  `help:"SubPath is a path in the git repo which contains the application code. If not given, the root directory of the git repo will be used."`
-	Revision              string  `default:"main" help:"Revision defines the revision of the source to deploy the application to. This can be a commit, tag or branch."`
+	URL                   string  `required:"" help:"URL to the Git repository containing the app source. Both HTTPS and SSH formats are supported."`
+	SubPath               string  `help:"SubPath is a path in the git repo which contains the app code. If not given, the root directory of the git repo will be used."`
+	Revision              string  `default:"main" help:"Revision defines the revision of the source to deploy the app to. This can be a commit, tag or branch."`
 	Username              *string `help:"Username to use when authenticating to the git repository over HTTPS." env:"GIT_USERNAME"`
 	Password              *string `help:"Password to use when authenticating to the git repository over HTTPS. In case of GitHub or GitLab, this can also be an access token." env:"GIT_PASSWORD"`
 	SSHPrivateKey         *string `help:"Private key in PEM format to connect to the git repository via SSH." env:"GIT_SSH_PRIVATE_KEY" xor:"SSH_KEY"`

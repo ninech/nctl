@@ -24,6 +24,7 @@ require (
 	github.com/theckman/yacspin v0.13.12
 	github.com/willabides/kongplete v0.3.0
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
+	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.26.1
 	k8s.io/apimachinery v0.26.1
 	k8s.io/client-go v0.26.1

@@ -62,6 +62,7 @@ func main() {
 		kong.Name(util.NctlName),
 		kong.Description("Interact with Nine API resources. See https://docs.nineapis.ch for the full API docs."),
 		kong.UsageOnError(),
+		kong.PostBuild(format.InterpolateFlagPlaceholders(kongVars)),
 		kongVars,
 		kong.BindTo(ctx, (*context.Context)(nil)),
 	)
