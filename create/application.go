@@ -3,11 +3,14 @@ package create
 import (
 	"context"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/alecthomas/kong"
 	"github.com/grafana/loki/pkg/logproto"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
@@ -18,7 +21,6 @@ import (
 	"github.com/ninech/nctl/logs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/utils/pointer"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -29,11 +31,11 @@ type applicationCmd struct {
 	Wait        bool              `default:"true" help:"Wait until application is fully created."`
 	WaitTimeout time.Duration     `default:"15m" help:"Duration to wait for application getting ready. Only relevant if wait is set."`
 	Git         gitConfig         `embed:"" prefix:"git-"`
-	Size        string            `default:"micro" help:"Size of the app."`
-	Port        int32             `default:"8080" help:"Port the app is listening on."`
-	Replicas    int32             `default:"1" help:"Amount of replicas of the running app."`
+	Size        *string           `help:"Size of the app (defaults to \"${app_default_size}\")."`
+	Port        *int32            `help:"Port the app is listening on (defaults to ${app_default_port})."`
+	Replicas    *int32            `help:"Amount of replicas of the running app (defaults to ${app_default_replicas})."`
 	Hosts       []string          `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
-	BasicAuth   bool              `default:"false" help:"Enable/Disable basic authentication for the application."`
+	BasicAuth   *bool             `help:"Enable/Disable basic authentication for the applicaton (defaults to ${app_default_basic_auth})."`
 	Env         map[string]string `help:"Environment variables which are passed to the app at runtime."`
 	BuildEnv    map[string]string `help:"Environment variables which are passed to the app build process."`
 }
@@ -159,9 +161,25 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	return nil
 }
 
+func (app *applicationCmd) config() apps.Config {
+	config := apps.Config{
+		EnableBasicAuth: app.BasicAuth,
+		Env:             util.EnvVarsFromMap(app.Env),
+	}
+	if app.Size != nil {
+		config.Size = apps.ApplicationSize(*app.Size)
+	}
+	if app.Port != nil {
+		config.Port = app.Port
+	}
+	if app.Replicas != nil {
+		config.Replicas = app.Replicas
+	}
+	return config
+}
+
 func (app *applicationCmd) newApplication(project string) *apps.Application {
 	name := getName(app.Name)
-	size := apps.ApplicationSize(app.Size)
 
 	return &apps.Application{
 		ObjectMeta: metav1.ObjectMeta{
@@ -177,14 +195,8 @@ func (app *applicationCmd) newApplication(project string) *apps.Application {
 						Revision: app.Git.Revision,
 					},
 				},
-				Hosts: app.Hosts,
-				Config: apps.Config{
-					Size:            size,
-					Replicas:        pointer.Int32(app.Replicas),
-					Port:            pointer.Int32(app.Port),
-					Env:             util.EnvVarsFromMap(app.Env),
-					EnableBasicAuth: pointer.Bool(app.BasicAuth),
-				},
+				Hosts:    app.Hosts,
+				Config:   app.config(),
 				BuildEnv: util.EnvVarsFromMap(app.BuildEnv),
 			},
 		},
@@ -385,4 +397,24 @@ func validatePEM(content string) (*string, error) {
 		return nil, fmt.Errorf("no valid PEM formatted data found")
 	}
 	return &content, nil
+}
+
+// ApplicationKongVars returns all variables which are used in the application
+// create command
+func ApplicationKongVars() (kong.Vars, error) {
+	result := make(kong.Vars)
+	result["app_default_size"] = string(apps.DefaultConfig.Size)
+	if apps.DefaultConfig.Port == nil {
+		return nil, errors.New("no default application port found")
+	}
+	result["app_default_port"] = strconv.Itoa(int(*apps.DefaultConfig.Port))
+	if apps.DefaultConfig.Replicas == nil {
+		return nil, errors.New("no default application replicas found")
+	}
+	result["app_default_replicas"] = strconv.Itoa(int(*apps.DefaultConfig.Replicas))
+	if apps.DefaultConfig.EnableBasicAuth == nil {
+		return nil, errors.New("no default application basic authentication settings found")
+	}
+	result["app_default_basic_auth"] = strconv.FormatBool(*apps.DefaultConfig.EnableBasicAuth)
+	return result, nil
 }

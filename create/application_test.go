@@ -120,11 +120,11 @@ func TestApplication(t *testing.T) {
 				},
 				Wait:      false,
 				Name:      "custom-name",
-				Size:      "mini",
+				Size:      pointer.String("mini"),
 				Hosts:     []string{"custom.example.org", "custom2.example.org"},
-				Port:      1337,
-				Replicas:  42,
-				BasicAuth: false,
+				Port:      pointer.Int32(1337),
+				Replicas:  pointer.Int32(42),
+				BasicAuth: pointer.Bool(false),
 				Env:       map[string]string{"hello": "world"},
 				BuildEnv:  map[string]string{"BP_GO_TARGETS": "./cmd/web-server"},
 			},
@@ -134,10 +134,10 @@ func TestApplication(t *testing.T) {
 				assert.Equal(t, cmd.Git.SubPath, app.Spec.ForProvider.Git.SubPath)
 				assert.Equal(t, cmd.Git.Revision, app.Spec.ForProvider.Git.Revision)
 				assert.Equal(t, cmd.Hosts, app.Spec.ForProvider.Hosts)
-				assert.Equal(t, apps.ApplicationSize(cmd.Size), app.Spec.ForProvider.Config.Size)
-				assert.Equal(t, int32(cmd.Port), *app.Spec.ForProvider.Config.Port)
-				assert.Equal(t, int32(cmd.Replicas), *app.Spec.ForProvider.Config.Replicas)
-				assert.Equal(t, cmd.BasicAuth, *app.Spec.ForProvider.Config.EnableBasicAuth)
+				assert.Equal(t, apps.ApplicationSize(*cmd.Size), app.Spec.ForProvider.Config.Size)
+				assert.Equal(t, *cmd.Port, *app.Spec.ForProvider.Config.Port)
+				assert.Equal(t, *cmd.Replicas, *app.Spec.ForProvider.Config.Replicas)
+				assert.Equal(t, *cmd.BasicAuth, *app.Spec.ForProvider.Config.EnableBasicAuth)
 				assert.Equal(t, util.EnvVarsFromMap(cmd.Env), app.Spec.ForProvider.Config.Env)
 				assert.Equal(t, util.EnvVarsFromMap(cmd.BuildEnv), app.Spec.ForProvider.BuildEnv)
 				assert.Nil(t, app.Spec.ForProvider.Git.Auth)
@@ -147,13 +147,13 @@ func TestApplication(t *testing.T) {
 			cmd: applicationCmd{
 				Wait:      false,
 				Name:      "basic-auth",
-				Size:      "mini",
-				BasicAuth: true,
+				Size:      pointer.String("mini"),
+				BasicAuth: pointer.Bool(true),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				assert.Equal(t, cmd.Name, app.Name)
-				assert.Equal(t, apps.ApplicationSize(cmd.Size), app.Spec.ForProvider.Config.Size)
-				assert.Equal(t, cmd.BasicAuth, *app.Spec.ForProvider.Config.EnableBasicAuth)
+				assert.Equal(t, apps.ApplicationSize(*cmd.Size), app.Spec.ForProvider.Config.Size)
+				assert.Equal(t, *cmd.BasicAuth, *app.Spec.ForProvider.Config.EnableBasicAuth)
 			},
 		},
 		"with user/pass git auth": {
@@ -186,7 +186,7 @@ func TestApplication(t *testing.T) {
 				},
 				Wait: false,
 				Name: "ssh-key-auth",
-				Size: "mini",
+				Size: pointer.String("mini"),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				auth := util.GitAuth{SSHPrivateKey: cmd.Git.SSHPrivateKey}
@@ -207,7 +207,7 @@ func TestApplication(t *testing.T) {
 				},
 				Wait: false,
 				Name: "ssh-key-auth-ed25519",
-				Size: "mini",
+				Size: pointer.String("mini"),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				auth := util.GitAuth{SSHPrivateKey: cmd.Git.SSHPrivateKey}
@@ -228,7 +228,7 @@ func TestApplication(t *testing.T) {
 				},
 				Wait: false,
 				Name: "ssh-key-auth-from-file",
-				Size: "mini",
+				Size: pointer.String("mini"),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				auth := util.GitAuth{SSHPrivateKey: pointer.String("notused")}
@@ -249,7 +249,7 @@ func TestApplication(t *testing.T) {
 				},
 				Wait: false,
 				Name: "ssh-key-auth-from-file-ed25519",
-				Size: "mini",
+				Size: pointer.String("mini"),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				auth := util.GitAuth{SSHPrivateKey: pointer.String("notused")}
@@ -270,7 +270,7 @@ func TestApplication(t *testing.T) {
 				},
 				Wait: false,
 				Name: "ssh-key-auth-non-valid",
-				Size: "mini",
+				Size: pointer.String("mini"),
 			},
 			errorExpected: true,
 		},
@@ -301,7 +301,7 @@ func TestApplicationWait(t *testing.T) {
 		Wait:        true,
 		WaitTimeout: time.Second * 5,
 		Name:        "some-name",
-		BasicAuth:   true,
+		BasicAuth:   pointer.Bool(true),
 	}
 	project := "default"
 
