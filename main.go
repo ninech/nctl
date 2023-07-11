@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"os"
 	"os/signal"
@@ -51,13 +52,18 @@ func main() {
 	defer cancel()
 	setupSignalHandler(ctx, cancel)
 
+	kongVars, err := kongVariables()
+	if err != nil {
+		log.Fatal(err)
+	}
 	nctl := &rootCommand{}
 	parser := kong.Must(
 		nctl,
 		kong.Name(util.NctlName),
 		kong.Description("Interact with Nine API resources. See https://docs.nineapis.ch for the full API docs."),
 		kong.UsageOnError(),
-		kong.Vars{"version": version},
+		kong.PostBuild(format.InterpolateFlagPlaceholders(kongVars)),
+		kongVars,
 		kong.BindTo(ctx, (*context.Context)(nil)),
 	)
 
@@ -107,4 +113,30 @@ func setupSignalHandler(ctx context.Context, cancel context.CancelFunc) {
 		case <-ctx.Done():
 		}
 	}()
+}
+
+// kongVariables collects all variables which should be passed to kong. It
+// checks for variables which would overwrite already existing ones.
+func kongVariables() (kong.Vars, error) {
+	result := make(kong.Vars)
+	result["version"] = version
+	appCreateKongVars, err := create.ApplicationKongVars()
+	if err != nil {
+		return nil, fmt.Errorf("error on application create kong vars: %w", err)
+	}
+	if err := merge(result, appCreateKongVars); err != nil {
+		return nil, fmt.Errorf("error when merging application create kong variables: %w", err)
+	}
+	return result, nil
+}
+
+func merge(existing kong.Vars, with kong.Vars) error {
+	for k, v := range with {
+		_, exists := existing[k]
+		if exists {
+			return fmt.Errorf("variable %q is already in use", k)
+		}
+		existing[k] = v
+	}
+	return nil
 }
