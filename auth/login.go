@@ -15,20 +15,15 @@ import (
 )
 
 type LoginCmd struct {
-	Organization string `arg:"" help:"Name of the organization to login to."`
 	APIURL       string `help:"The URL of the Nine API" default:"https://nineapis.ch" env:"NCTL_API_URL" name:"api-url"`
-	APIToken     string `help:"Use a static API token instead of using an OIDC login." env:"NCTL_API_TOKEN"`
+	APIToken     string `help:"Use a static API token instead of using an OIDC login. You need to specify the --organization parameter as well." env:"NCTL_API_TOKEN"`
+	Organization string `help:"The name of your organization to use when providing an API token. This parameter is only used when providing a API token. This parameter needs to be set if you use --api-token." env:"NCTL_ORGANIZATION"`
 	IssuerURL    string `help:"Issuer URL is the OIDC issuer URL of the API." default:"https://auth.nine.ch/auth/realms/pub"`
 	ClientID     string `help:"Client ID is the OIDC client ID of the API." default:"nineapis.ch-f178254"`
 	ExecPlugin   bool   `help:"Automatically run exec plugin after writing the kubeconfig." hidden:"" default:"true"`
 }
 
-func (l *LoginCmd) Run(ctx context.Context, command string) error {
-	loadingRules, err := api.LoadingRules()
-	if err != nil {
-		return err
-	}
-
+func (l *LoginCmd) Run(ctx context.Context, command string, tk api.TokenGetter) error {
 	apiURL, err := url.Parse(l.APIURL)
 	if err != nil {
 		return err
@@ -39,18 +34,52 @@ func (l *LoginCmd) Run(ctx context.Context, command string) error {
 		return err
 	}
 
-	opts := []apiConfigOption{withOrganization(l.Organization)}
-	if len(l.APIToken) != 0 {
-		l.ExecPlugin = false
-		opts = append(opts, useStaticToken(l.APIToken))
-	}
-
-	cfg, err := newAPIConfig(apiURL, issuerURL, command, l.ClientID, opts...)
+	loadingRules, err := api.LoadingRules()
 	if err != nil {
 		return err
 	}
 
-	return login(ctx, cfg, loadingRules.GetDefaultFilename(), runExecPlugin(l.ExecPlugin), project(l.Organization))
+	if len(l.APIToken) != 0 {
+		if len(l.Organization) == 0 {
+			return fmt.Errorf("you need to set the --organization parameter explicitly if you use --api-token.\n")
+		}
+
+		l.ExecPlugin = false
+		cfg, err := newAPIConfig(apiURL, issuerURL, command, l.ClientID, useStaticToken(l.APIToken), withOrganization(l.Organization))
+		if err != nil {
+			return err
+		}
+
+		return login(ctx, cfg, loadingRules.GetDefaultFilename(), "", runExecPlugin(l.ExecPlugin), project(l.Organization))
+	}
+
+	token, err := tk.GetTokenString(ctx, l.IssuerURL, l.ClientID, l.ExecPlugin)
+	if err != nil {
+		return err
+	}
+
+	userInfo, err := api.GetUserInfoFromToken(token)
+	if err != nil {
+		return err
+	}
+
+	if len(userInfo.Orgs) == 0 {
+		return fmt.Errorf("error getting an organization for the account %q. Please contact support.", userInfo.User)
+	}
+
+	org := userInfo.Orgs[0]
+	if len(userInfo.Orgs) > 1 {
+		fmt.Printf("Multiple organizations found for the account %q.\n", userInfo.User)
+		fmt.Printf("Defaulting to %q\n", org)
+		printAvailableOrgsString(org, userInfo.Orgs)
+	}
+
+	cfg, err := newAPIConfig(apiURL, issuerURL, command, l.ClientID, withOrganization(org))
+	if err != nil {
+		return err
+	}
+
+	return login(ctx, cfg, loadingRules.GetDefaultFilename(), "", runExecPlugin(l.ExecPlugin), project(org))
 }
 
 type apiConfig struct {
@@ -164,7 +193,7 @@ func switchCurrentContext() loginOption {
 	}
 }
 
-func login(ctx context.Context, newConfig *clientcmdapi.Config, kubeconfigPath string, opts ...loginOption) error {
+func login(ctx context.Context, newConfig *clientcmdapi.Config, kubeconfigPath, toOrg string, opts ...loginOption) error {
 	loginConfig := &loginConfig{}
 	for _, opt := range opts {
 		opt(loginConfig)
@@ -193,6 +222,9 @@ func login(ctx context.Context, newConfig *clientcmdapi.Config, kubeconfigPath s
 		return err
 	}
 
+	if toOrg != "" {
+		format.PrintSuccessf("🏢", "switched to the organization %q", toOrg)
+	}
 	format.PrintSuccessf("📋", "added %s to kubeconfig", newConfig.CurrentContext)
 	if loginConfig.execPlugin {
 		authInfo := newConfig.AuthInfos[newConfig.CurrentContext]

@@ -97,8 +97,15 @@ func main() {
 	if err != nil {
 		kongCtx.Fatalf("can not identify executable path of %s: %v", util.NctlName, err)
 	}
+
 	if strings.HasPrefix(kongCtx.Command(), format.LoginCommand) {
-		kongCtx.FatalIfErrorf(nctl.Auth.Login.Run(ctx, command))
+		tk := &api.DefaultTokenGetter{}
+		kongCtx.FatalIfErrorf(nctl.Auth.Login.Run(ctx, command, tk))
+		return
+	}
+
+	if strings.HasPrefix(kongCtx.Command(), format.SetOrgCommand) {
+		kongCtx.FatalIfErrorf(nctl.Auth.SetOrg.Run(ctx, command))
 		return
 	}
 

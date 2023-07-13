@@ -9,6 +9,7 @@ require (
 	github.com/fatih/color v1.14.1
 	github.com/gobuffalo/flect v0.2.3
 	github.com/goccy/go-yaml v1.11.0
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/gorilla/websocket v1.5.0
 	github.com/grafana/dskit v0.0.0-20230201083518-528d8a7d52f2
 	github.com/grafana/loki v1.6.2-0.20230503110102-9f809eda70ba

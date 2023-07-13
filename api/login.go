@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang-jwt/jwt"
 	"github.com/int128/kubelogin/pkg/credentialplugin/writer"
 	"github.com/int128/kubelogin/pkg/infrastructure/browser"
 	"github.com/int128/kubelogin/pkg/infrastructure/clock"
@@ -36,6 +37,7 @@ const (
 	IssuerURLArg          = "--issuer-url="
 	ClientIDArg           = "--client-id="
 	UsePKCEArg            = "--use-pkce"
+	CustomersPrefix       = "/Customers/"
 )
 
 var (
@@ -78,6 +80,17 @@ func GetTokenFromExecConfig(ctx context.Context, execConfig *api.ExecConfig) (st
 		return "", fmt.Errorf("provided execConfig does not include expected args %s/%s", IssuerURLArg, ClientIDArg)
 	}
 
+	tk := DefaultTokenGetter{}
+	return tk.GetTokenString(ctx, issuerURL, clientID, usePKCE)
+}
+
+type TokenGetter interface {
+	GetTokenString(ctx context.Context, issuerURL, clientID string, usePKCE bool) (string, error)
+}
+
+type DefaultTokenGetter struct{}
+
+func (t *DefaultTokenGetter) GetTokenString(ctx context.Context, issuerURL, clientID string, usePKCE bool) (string, error) {
 	buf := &bytes.Buffer{}
 	if err := GetToken(ctx, issuerURL, clientID, usePKCE, buf); err != nil {
 		return "", err
@@ -158,4 +171,45 @@ func GetToken(ctx context.Context, issuerURL, clientID string, usePKCE bool, out
 	}
 
 	return nil
+}
+
+type UserInfo struct {
+	User string
+	Orgs []string
+}
+
+func GetUserInfoFromToken(tokenString string) (*UserInfo, error) {
+	type authClaims struct {
+		Email  string   `json:"email"`
+		Groups []string `json:"groups"`
+		Sub    string   `json:"sub"`
+		jwt.StandardClaims
+	}
+	token, _, err := new(jwt.Parser).ParseUnverified(tokenString, &authClaims{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse JWT token: %v", err)
+	}
+
+	claims, ok := token.Claims.(*authClaims)
+	if !ok {
+		return nil, fmt.Errorf("failed to parse JWT claims: %v", err)
+	}
+
+	var orgs []string
+	for _, grp := range claims.Groups {
+		if strings.HasPrefix(grp, CustomersPrefix) {
+			orgs = append(orgs, strings.TrimPrefix(grp, CustomersPrefix))
+		}
+	}
+
+	acc := claims.Email
+
+	if acc == "" {
+		acc = claims.Sub
+	}
+
+	return &UserInfo{
+		User: acc,
+		Orgs: orgs,
+	}, nil
 }
