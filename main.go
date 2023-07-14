@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -71,7 +72,24 @@ func main() {
 	kongplete.Complete(parser, kongplete.WithPredictor("file", complete.PredictFiles("*")))
 
 	kongCtx, err := parser.Parse(os.Args[1:])
-	parser.FatalIfErrorf(err)
+	if err != nil {
+		var parseErr *kong.ParseError
+		if errors.As(err, &parseErr) {
+			// do not error on missing command/argument.
+			// Print Usage + friendly message instead.
+			if parseErr.Context.Error == nil {
+				node := parseErr.Context.Selected()
+				if node == nil {
+					node = parseErr.Context.Model.Node
+				}
+				if format.MissingChildren(node) {
+					err = format.ExitIfErrorf(err, parseErr.Context.Command())
+				}
+			}
+		}
+
+		parser.FatalIfErrorf(err)
+	}
 
 	// handle the login/oidc cmds separately as we should not try to get the
 	// API client if we're not logged in.
