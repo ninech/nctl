@@ -1,9 +1,12 @@
 package format
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/alecthomas/kong"
 )
 
 const (
@@ -29,4 +32,60 @@ func (c command) GetApplication(extraFields ...string) string {
 		return fmt.Sprintf("%s %s", string(c), getApplicationCommand)
 	}
 	return fmt.Sprintf("%s %s %s", string(c), getApplicationCommand, strings.Join(extraFields, " "))
+}
+
+// MissingChildren detects missing commands/args.
+// Logic taken from github.com/alecthomas/kong/context.go
+func MissingChildren(node *kong.Node) bool {
+	for _, arg := range node.Positional {
+		if arg.Required && !arg.Set {
+			return true
+		}
+	}
+
+	for _, child := range node.Children {
+		if child.Hidden {
+			continue
+		}
+
+		if child.Argument != nil {
+			if !child.Argument.Required {
+				continue
+			}
+		}
+
+		return true
+	}
+
+	return false
+}
+
+// ExitIfErrorf prints Usage + friendly message on error (and exits).
+func ExitIfErrorf(err error, args ...interface{}) error {
+	if err == nil {
+		return nil
+	}
+
+	msg := err.Error()
+
+	var parseErr *kong.ParseError
+	if errors.As(err, &parseErr) {
+		if err := parseErr.Context.PrintUsage(false); err != nil {
+			return err
+		}
+	}
+
+	command := parseErr.Context.Model.Name
+	if len(args) > 0 {
+		commandArgs := fmt.Sprintf(args[0].(string), args[1:]...)
+		if len(commandArgs) > 0 {
+			command += " " + commandArgs
+		}
+	}
+
+	fmt.Printf("\n💡 Your command: %q: %s\n", command, msg)
+
+	parseErr.Context.Exit(1)
+
+	return nil
 }
