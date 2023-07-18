@@ -3,6 +3,7 @@ package update
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/alecthomas/kong"
 	apps "github.com/ninech/apis/apps/v1alpha1"
@@ -44,6 +45,16 @@ func TestApplication(t *testing.T) {
 					Port:            pointer.Int32(1337),
 					Env:             util.EnvVarsFromMap(map[string]string{"foo": "bar"}),
 					EnableBasicAuth: pointer.Bool(false),
+					DeployJob: &apps.DeployJob{
+						Job: apps.Job{
+							Command: "date",
+							Name:    "print-date",
+						},
+						FiniteJob: apps.FiniteJob{
+							Retries: pointer.Int32(2),
+							Timeout: &metav1.Duration{Duration: time.Minute},
+						},
+					},
 				},
 				BuildEnv: util.EnvVarsFromMap(map[string]string{"BP_ENVIRONMENT_VARIABLE": "some-value"}),
 			},
@@ -94,6 +105,10 @@ func TestApplication(t *testing.T) {
 				Env:       &map[string]string{"bar": "zoo"},
 				BuildEnv:  &map[string]string{"BP_GO_TARGETS": "./cmd/web-server"},
 				BasicAuth: pointer.Bool(true),
+				DeployJob: &deployJob{
+					Command: pointer.String("exit 0"), Name: pointer.String("exit"),
+					Retries: pointer.Int32(1), Timeout: pointer.Duration(time.Minute * 5),
+				},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				assert.Equal(t, *cmd.Git.URL, updated.Spec.ForProvider.Git.URL)
@@ -106,6 +121,10 @@ func TestApplication(t *testing.T) {
 				assert.Equal(t, *cmd.Hosts, updated.Spec.ForProvider.Hosts)
 				assert.Equal(t, util.EnvVarsFromMap(*cmd.Env), updated.Spec.ForProvider.Config.Env)
 				assert.Equal(t, util.EnvVarsFromMap(*cmd.BuildEnv), updated.Spec.ForProvider.BuildEnv)
+				assert.Equal(t, *cmd.DeployJob.Command, updated.Spec.ForProvider.Config.DeployJob.Command)
+				assert.Equal(t, *cmd.DeployJob.Name, updated.Spec.ForProvider.Config.DeployJob.Name)
+				assert.Equal(t, *cmd.DeployJob.Timeout, updated.Spec.ForProvider.Config.DeployJob.Timeout.Duration)
+				assert.Equal(t, *cmd.DeployJob.Retries, *updated.Spec.ForProvider.Config.DeployJob.Retries)
 			},
 		},
 		"reset env variables": {
@@ -172,6 +191,22 @@ func TestApplication(t *testing.T) {
 			checkSecret: func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret) {
 				assert.Equal(t, "fakekey", string(authSecret.Data[util.PrivateKeySecretKey]))
 				assert.Equal(t, authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
+			},
+		},
+		"disable deploy job": {
+			orig: existingApp,
+			gitAuth: util.GitAuth{
+				SSHPrivateKey: pointer.String("fakekey"),
+			},
+			cmd: applicationCmd{
+				Name: pointer.String(existingApp.Name),
+				Git: &gitConfig{
+					URL: pointer.String("https://newgit.example.org"),
+				},
+				DeployJob: &deployJob{Enabled: pointer.Bool(false)},
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				assert.Nil(t, updated.Spec.ForProvider.Config.DeployJob)
 			},
 		},
 	}

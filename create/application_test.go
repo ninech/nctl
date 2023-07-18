@@ -127,6 +127,7 @@ func TestApplication(t *testing.T) {
 				BasicAuth: pointer.Bool(false),
 				Env:       map[string]string{"hello": "world"},
 				BuildEnv:  map[string]string{"BP_GO_TARGETS": "./cmd/web-server"},
+				DeployJob: deployJob{Command: "date", Name: "print-date", Retries: 2, Timeout: time.Minute},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				assert.Equal(t, cmd.Name, app.Name)
@@ -140,6 +141,10 @@ func TestApplication(t *testing.T) {
 				assert.Equal(t, *cmd.BasicAuth, *app.Spec.ForProvider.Config.EnableBasicAuth)
 				assert.Equal(t, util.EnvVarsFromMap(cmd.Env), app.Spec.ForProvider.Config.Env)
 				assert.Equal(t, util.EnvVarsFromMap(cmd.BuildEnv), app.Spec.ForProvider.BuildEnv)
+				assert.Equal(t, cmd.DeployJob.Command, app.Spec.ForProvider.Config.DeployJob.Command)
+				assert.Equal(t, cmd.DeployJob.Name, app.Spec.ForProvider.Config.DeployJob.Name)
+				assert.Equal(t, cmd.DeployJob.Timeout, app.Spec.ForProvider.Config.DeployJob.Timeout.Duration)
+				assert.Equal(t, cmd.DeployJob.Retries, *app.Spec.ForProvider.Config.DeployJob.Retries)
 				assert.Nil(t, app.Spec.ForProvider.Git.Auth)
 			},
 		},
@@ -273,6 +278,34 @@ func TestApplication(t *testing.T) {
 				Size: pointer.String("mini"),
 			},
 			errorExpected: true,
+		},
+		"deploy job empty command": {
+			cmd: applicationCmd{
+				Git: gitConfig{
+					URL: "https://github.com/ninech/doesnotexist.git",
+				},
+				Wait:      false,
+				Name:      "deploy-job-empty-command",
+				Size:      pointer.String("mini"),
+				DeployJob: deployJob{Command: "", Name: "print-date", Retries: 2, Timeout: time.Minute},
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				assert.Nil(t, app.Spec.ForProvider.Config.DeployJob)
+			},
+		},
+		"deploy job empty name": {
+			cmd: applicationCmd{
+				Git: gitConfig{
+					URL: "https://github.com/ninech/doesnotexist.git",
+				},
+				Wait:      false,
+				Name:      "deploy-job-empty-name",
+				Size:      pointer.String("mini"),
+				DeployJob: deployJob{Command: "date", Name: "", Retries: 2, Timeout: time.Minute},
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				assert.Nil(t, app.Spec.ForProvider.Config.DeployJob)
+			},
 		},
 	}
 
