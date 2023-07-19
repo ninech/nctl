@@ -36,7 +36,7 @@ dnf install nctl
 
 ## Getting started
 
-* login to the API using `nctl auth login <cockpit account name>`
+* login to the API using `nctl auth login`
 * run `nctl --help` to get a list of all available commands
 
 ## Deplo.io Beta
