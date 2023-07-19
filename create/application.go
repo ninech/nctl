@@ -21,6 +21,7 @@ import (
 	"github.com/ninech/nctl/logs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/utils/pointer"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -38,6 +39,7 @@ type applicationCmd struct {
 	BasicAuth   *bool             `help:"Enable/Disable basic authentication for the app (defaults to ${app_default_basic_auth})." placeholder:"${app_default_basic_auth}"`
 	Env         map[string]string `help:"Environment variables which are passed to the app at runtime."`
 	BuildEnv    map[string]string `help:"Environment variables which are passed to the app build process."`
+	DeployJob   deployJob         `embed:"" prefix:"deploy-job-"`
 }
 
 type gitConfig struct {
@@ -48,6 +50,13 @@ type gitConfig struct {
 	Password              *string `help:"Password to use when authenticating to the git repository over HTTPS. In case of GitHub or GitLab, this can also be an access token." env:"GIT_PASSWORD"`
 	SSHPrivateKey         *string `help:"Private key in PEM format to connect to the git repository via SSH." env:"GIT_SSH_PRIVATE_KEY" xor:"SSH_KEY"`
 	SSHPrivateKeyFromFile *string `help:"Path to a file containing a private key in PEM format to connect to the git repository via SSH." env:"GIT_SSH_PRIVATE_KEY_FROM_FILE" xor:"SSH_KEY"`
+}
+
+type deployJob struct {
+	Command string        `help:"Command to execute before a new release gets deployed. No deploy job will be executed if this is not specified." placeholder:"\"rake db:prepare\""`
+	Name    string        `default:"release" help:"Name of the deploy job. The deployment will only continue if the job finished successfully."`
+	Retries int32         `default:"${app_default_deploy_job_retries}" help:"How many times the job will be restarted on failure. Default is ${app_default_deploy_job_retries} and maximum 5."`
+	Timeout time.Duration `default:"${app_default_deploy_job_timeout}" help:"Timeout of the job. Default is ${app_default_deploy_job_timeout}, minimum is 1 minute and maximum is 30 minutes."`
 }
 
 func (g gitConfig) sshPrivateKey() (*string, error) {
@@ -71,6 +80,7 @@ const (
 	buildStatusUnknown = "unknown"
 
 	releaseStatusAvailable      = "available"
+	releaseStatusFailure        = "failure"
 	releaseStatusReplicaFailure = "replicaFailure"
 )
 
@@ -162,9 +172,25 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 }
 
 func (app *applicationCmd) config() apps.Config {
+	var deployJob *apps.DeployJob
+
+	if len(app.DeployJob.Command) != 0 && len(app.DeployJob.Name) != 0 {
+		deployJob = &apps.DeployJob{
+			Job: apps.Job{
+				Name:    app.DeployJob.Name,
+				Command: app.DeployJob.Command,
+			},
+			FiniteJob: apps.FiniteJob{
+				Retries: pointer.Int32(app.DeployJob.Retries),
+				Timeout: &metav1.Duration{Duration: app.DeployJob.Timeout},
+			},
+		}
+	}
+
 	config := apps.Config{
 		EnableBasicAuth: app.BasicAuth,
 		Env:             util.EnvVarsFromMap(app.Env),
+		DeployJob:       deployJob,
 	}
 	if app.Size != nil {
 		config.Size = apps.ApplicationSize(*app.Size)
@@ -292,6 +318,14 @@ type releaseError struct {
 }
 
 func (r releaseError) Error() string {
+	if r.release.Status.AtProvider.DeployJobStatus.Status == "" {
+		switch r.release.Status.AtProvider.DeployJobStatus.Reason {
+		case apps.DeployJobProcessReasonBackoff:
+			return "deploy job has failed after all retries."
+		case apps.DeployJobProcessReasonTimeout:
+			return "deploy job of release timed out. Increase the timeout or ensure it finishes earlier."
+		}
+	}
 	return fmt.Sprintf("release failed with status %s", r.release.Status.AtProvider.ReleaseStatus)
 }
 
@@ -326,7 +360,7 @@ func waitForRelease(app *apps.Application) waitStage {
 			switch release.Status.AtProvider.ReleaseStatus {
 			case releaseStatusAvailable:
 				return true, nil
-			case releaseStatusReplicaFailure:
+			case releaseStatusFailure, releaseStatusReplicaFailure:
 				return false, releaseError{release: release}
 			}
 
@@ -416,5 +450,8 @@ func ApplicationKongVars() (kong.Vars, error) {
 		return nil, errors.New("no default application basic authentication settings found")
 	}
 	result["app_default_basic_auth"] = strconv.FormatBool(*apps.DefaultConfig.EnableBasicAuth)
+
+	result["app_default_deploy_job_timeout"] = "5m"
+	result["app_default_deploy_job_retries"] = "3"
 	return result, nil
 }

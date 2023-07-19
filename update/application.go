@@ -3,12 +3,13 @@ package update
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // all fields need to be pointers so we can detect if they have been set by
@@ -23,6 +24,7 @@ type applicationCmd struct {
 	BasicAuth *bool              `help:"Enable/Disable basic authentication for the application."`
 	Env       *map[string]string `help:"Environment variables which are passed to the app at runtime."`
 	BuildEnv  *map[string]string `help:"Environment variables which are passed to the app build process."`
+	DeployJob *deployJob         `embed:"" prefix:"deploy-job-"`
 }
 
 type gitConfig struct {
@@ -34,6 +36,14 @@ type gitConfig struct {
 	SSHPrivateKey *string `help:"Private key in x509 format to connect to the git repository via SSH." env:"GIT_SSH_PRIVATE_KEY"`
 }
 
+type deployJob struct {
+	Enabled *bool          `help:"Disables the deploy job if set to false." placeholder:"false"`
+	Command *string        `help:"Command to execute before a new release gets deployed. No deploy job will be executed if this is not specified." placeholder:"\"rake db:prepare\""`
+	Name    *string        `help:"Name of the deploy job. The deployment will only continue if the job finished successfully." placeholder:"release"`
+	Retries *int32         `help:"How many times the job will be restarted on failure." placeholder:"${app_default_deploy_job_retries}"`
+	Timeout *time.Duration `help:"Timeout of the job." placeholder:"${app_default_deploy_job_timeout}"`
+}
+
 func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	// as name is a required arg this should not actually happen when called
 	// through kong. But we still want to handle it in case this is called
@@ -43,7 +53,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	}
 
 	app := &apps.Application{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      *cmd.Name,
 			Namespace: client.Project,
 		},
@@ -117,4 +127,36 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 	if cmd.BasicAuth != nil {
 		app.Spec.ForProvider.Config.EnableBasicAuth = cmd.BasicAuth
 	}
+	if cmd.DeployJob != nil {
+		cmd.applyDeployJobUpdates(app)
+	}
+}
+
+func (cmd *applicationCmd) applyDeployJobUpdates(app *apps.Application) {
+	if cmd.DeployJob.Enabled != nil && !*cmd.DeployJob.Enabled {
+		// if enabled is explicitly set to false we set the DeployJob field to
+		// nil on the API, to completely remove the object.
+		app.Spec.ForProvider.Config.DeployJob = nil
+		return
+	}
+
+	if cmd.DeployJob.Name != nil && len(*cmd.DeployJob.Name) != 0 {
+		ensureDeployJob(app).Spec.ForProvider.Config.DeployJob.Name = *cmd.DeployJob.Name
+	}
+	if cmd.DeployJob.Command != nil && len(*cmd.DeployJob.Command) != 0 {
+		ensureDeployJob(app).Spec.ForProvider.Config.DeployJob.Command = *cmd.DeployJob.Command
+	}
+	if cmd.DeployJob.Retries != nil {
+		ensureDeployJob(app).Spec.ForProvider.Config.DeployJob.Retries = cmd.DeployJob.Retries
+	}
+	if cmd.DeployJob.Timeout != nil {
+		ensureDeployJob(app).Spec.ForProvider.Config.DeployJob.Timeout = &metav1.Duration{Duration: *cmd.DeployJob.Timeout}
+	}
+}
+
+func ensureDeployJob(app *apps.Application) *apps.Application {
+	if app.Spec.ForProvider.Config.DeployJob == nil {
+		app.Spec.ForProvider.Config.DeployJob = &apps.DeployJob{}
+	}
+	return app
 }
