@@ -18,7 +18,7 @@ import (
 
 type releasesCmd struct {
 	Name            string `arg:"" help:"Name of the Release to get. If omitted all in the projects will be listed." default:""`
-	ApplicationName string `help:"Name of the Application to get releases for. If omitted all applications in the project will be listed."`
+	ApplicationName string `short:"a" help:"Name of the Application to get releases for. If omitted all applications in the project will be listed."`
 	out             io.Writer
 }
 
