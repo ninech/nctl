@@ -117,6 +117,22 @@ func (git GitAuth) Enabled() bool {
 	return false
 }
 
+func (git GitAuth) Valid() error {
+	if git.SSHPrivateKey != nil {
+		if *git.SSHPrivateKey == "" {
+			return fmt.Errorf("the SSH private key cannot be empty")
+		}
+	}
+
+	if git.Username != nil && git.Password != nil {
+		if *git.Username == "" || *git.Password == "" {
+			return fmt.Errorf("the username/password cannot be empty")
+		}
+	}
+
+	return nil
+}
+
 // GitAuthSecretName returns the name of the secret which contains the git
 // credentials for the given applications git source
 func GitAuthSecretName(app *apps.Application) string {
