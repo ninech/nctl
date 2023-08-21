@@ -99,6 +99,9 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	}
 
 	if auth.Enabled() {
+		if err := auth.Valid(); err != nil {
+			return fmt.Errorf("the credentials are given but they are empty: %w", err)
+		}
 		// for git auth we create a separate secret and then reference it in the app.
 		secret := auth.Secret(newApp)
 		if err := client.Create(ctx, secret); err != nil {
@@ -423,8 +426,13 @@ func errorLogQuery(queryString string) log.Query {
 	}
 }
 
-// validatePEM validates if the passed content is in valid PEM format
+// validatePEM validates if the passed content is in valid PEM format, errors
+// out if the content is empty
 func validatePEM(content string) (*string, error) {
+	if content == "" {
+		return nil, fmt.Errorf("the SSH private key cannot be empty")
+	}
+
 	content = strings.TrimSpace(content)
 	b, rest := pem.Decode([]byte(content))
 	if b == nil || len(rest) > 0 {
