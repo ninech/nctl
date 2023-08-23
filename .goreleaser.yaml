@@ -65,7 +65,7 @@ brews:
 
 # .goreleaser.yaml
 aurs:
-  - name: nctl
+  - name: nctl-bin
     homepage: "https://github.com/ninech/nctl"
     description: "A CLI tool to interact with Nine API resources."
     maintainers:
