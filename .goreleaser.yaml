@@ -63,6 +63,25 @@ brews:
     # Default is false.
     skip_upload: false
 
+# .goreleaser.yaml
+aurs:
+  - name: nctl
+    homepage: "https://github.com/ninech/nctl"
+    description: "A CLI tool to interact with Nine API resources."
+    maintainers:
+      - 'nine'
+    contributors:
+      - 'nine'
+    license: "Apache 2.0"
+    private_key: '{{ .Env.AUR_KEY }}'
+    git_url: 'ssh://aur@aur.archlinux.org/nctl.git'
+    commit_author:
+      name: nine.ch Bot
+      email: ninech-bot@users.noreply.github.com
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    url_template: "https://github.com/ninech/nctl/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+
+
 nfpms:
   - id: packages
     license: Apache 2.0
