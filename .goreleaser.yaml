@@ -69,12 +69,12 @@ aurs:
     homepage: "https://github.com/ninech/nctl"
     description: "A CLI tool to interact with Nine API resources."
     maintainers:
-      - 'nine'
+      - "nine"
     contributors:
-      - 'nine'
+      - "nine"
     license: "Apache 2.0"
-    private_key: '{{ .Env.AUR_KEY }}'
-    git_url: 'ssh://aur@aur.archlinux.org/nctl.git'
+    private_key: "{{ .Env.AUR_KEY }}"
+    git_url: "ssh://aur@aur.archlinux.org/nctl.git"
     commit_author:
       name: nine.ch Bot
       email: ninech-bot@users.noreply.github.com
