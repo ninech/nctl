@@ -74,7 +74,7 @@ aurs:
       - "nine"
     license: "Apache 2.0"
     private_key: "{{ .Env.AUR_KEY }}"
-    git_url: "ssh://aur@aur.archlinux.org/nctl.git"
+    git_url: "ssh://aur@aur.archlinux.org/nctl-bin.git"
     commit_author:
       name: nine.ch Bot
       email: ninech-bot@users.noreply.github.com
