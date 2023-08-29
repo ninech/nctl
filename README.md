@@ -32,6 +32,11 @@ enabled=1
 gpgcheck=0
 EOF
 dnf install nctl
+
+# Arch
+# Install yay: https://github.com/Jguer/yay#binary
+yay --version
+yay -S nctl-bin
 ```
 
 ## Getting started
