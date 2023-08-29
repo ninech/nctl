@@ -80,7 +80,10 @@ aurs:
       email: ninech-bot@users.noreply.github.com
     commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
     url_template: "https://github.com/ninech/nctl/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
-
+    package: |-
+      install -Dm 0755 "${srcdir}"/nctl "${pkgdir}"/usr/bin/nctl
+      install -Dm 0644 "${srcdir}"/LICENSE "${pkgdir}"/usr/share/licenses/$pkgname/LICENSE
+      install -Dm 0644 "${srcdir}"/README.md "${pkgdir}"/usr/share/doc/$pkgname/README.md
 
 nfpms:
   - id: packages
