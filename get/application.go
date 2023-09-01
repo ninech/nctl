@@ -15,7 +15,7 @@ import (
 )
 
 type applicationsCmd struct {
-	Name                 string `arg:"" help:"Name of the Application to get. If omitted all in the project will be listed." default:""`
+	Name                 string `arg:"" predictor:"resource" help:"Name of the Application to get. If omitted all in the project will be listed." default:""`
 	BasicAuthCredentials bool   `help:"Show the basic auth credentials of the application."`
 	out                  io.Writer
 }

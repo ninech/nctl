@@ -13,7 +13,7 @@ import (
 )
 
 type projectCmd struct {
-	Name string `arg:"" help:"Name of the project to get. If omitted all projects will be listed." default:""`
+	Name string `arg:"" predictor:"resource" help:"Name of the project to get. If omitted all projects will be listed." default:""`
 	out  io.Writer
 }
 

@@ -21,6 +21,7 @@ import (
 	"github.com/ninech/nctl/get"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/logs"
+	"github.com/ninech/nctl/predictor"
 	"github.com/ninech/nctl/update"
 	"github.com/posener/complete"
 	"github.com/willabides/kongplete"
@@ -68,8 +69,19 @@ func main() {
 		kong.BindTo(ctx, (*context.Context)(nil)),
 	)
 
+	resourcePredictor := predictor.NewResource(func() string {
+		// for the resourcePredictor to use the correct APICluster, we need to
+		// call parse already. Note that this won't parse the flag for
+		// completion but it will work for the default and env.
+		_, _ = parser.Parse(os.Args[1:])
+		return nctl.APICluster
+	})
+
 	// completion handling
-	kongplete.Complete(parser, kongplete.WithPredictor("file", complete.PredictFiles("*")))
+	kongplete.Complete(parser,
+		kongplete.WithPredictor("file", complete.PredictFiles("*")),
+		kongplete.WithPredictor("resource", resourcePredictor),
+	)
 
 	kongCtx, err := parser.Parse(os.Args[1:])
 	if err != nil {

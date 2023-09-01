@@ -7,7 +7,7 @@ import (
 )
 
 type buildCmd struct {
-	Name            string `arg:"" default:"" help:"Name of the Build."`
+	Name            string `arg:"" predictor:"resource" default:"" help:"Name of the Build."`
 	ApplicationName string `short:"a" help:"Name of the application to get build logs for."`
 	logsCmd
 }

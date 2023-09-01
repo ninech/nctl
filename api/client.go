@@ -56,6 +56,11 @@ func New(ctx context.Context, apiClusterContext, project string, opts ...ClientO
 		return nil, err
 	}
 
+	// TODO: not sure what's going on but the client's exec config breaks
+	// during dynamic completion. This works around the exec config by just
+	// setting the bearer token. The GetTokenFromConfig already executes the
+	// plugin, so this is maybe not such a bad idea in general.
+	client.Config.BearerToken = token
 	mapper := apis.StaticRESTMapper(scheme)
 	mapper.Add(corev1.SchemeGroupVersion.WithKind("Secret"), meta.RESTScopeNamespace)
 

@@ -15,7 +15,7 @@ import (
 // all fields need to be pointers so we can detect if they have been set by
 // the user.
 type applicationCmd struct {
-	Name      *string            `arg:"" help:"Name of the application."`
+	Name      *string            `arg:"" predictor:"resource" help:"Name of the application."`
 	Git       *gitConfig         `embed:"" prefix:"git-"`
 	Size      *string            `help:"Size of the app."`
 	Port      *int32             `help:"Port the app is listening on."`
