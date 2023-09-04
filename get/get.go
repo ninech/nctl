@@ -7,7 +7,9 @@ import (
 	"os"
 
 	"github.com/gobuffalo/flect"
+	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/auth"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -21,6 +23,7 @@ type Cmd struct {
 	Builds             buildCmd              `cmd:"" group:"deplo.io" name:"builds" aliases:"build" help:"Get deplo.io Builds. (Beta - requires access)"`
 	Releases           releasesCmd           `cmd:"" group:"deplo.io" name:"releases" aliases:"release" help:"Get deplo.io Releases. (Beta - requires access)"`
 	Configs            configsCmd            `cmd:"" group:"deplo.io" name:"configs" aliases:"config" help:"Get deplo.io Project Configuration. (Beta - requires access)"`
+	All                allCmd                `cmd:"" name:"all" help:"Get project content"`
 
 	opts []runtimeclient.ListOption
 }
@@ -89,7 +92,6 @@ func (cmd *Cmd) writeTabRow(w io.Writer, project string, row ...string) {
 			fmt.Fprintf(w, "\t%s", r)
 		}
 		fmt.Fprint(w, "\n")
-		return
 	}
 }
 
@@ -107,4 +109,34 @@ func defaultOut(out io.Writer) io.Writer {
 		return os.Stdout
 	}
 	return out
+}
+
+// projects returns either all existing projects or only the specific project
+// identified by the "onlyName" parameter
+func projects(ctx context.Context, client *api.Client, onlyName string) ([]management.Project, error) {
+	cfg, err := auth.ReadConfig(client.KubeconfigPath, client.KubeconfigContext)
+	if err != nil {
+		if auth.IsConfigNotFoundError(err) {
+			return nil, auth.ReloginNeeded(err)
+		}
+		return nil, err
+	}
+	opts := []runtimeclient.ListOption{
+		runtimeclient.InNamespace(cfg.Organization),
+	}
+	if onlyName != "" {
+		opts = append(opts, runtimeclient.MatchingFields(
+			map[string]string{"metadata.name": onlyName},
+		))
+	}
+
+	projectList := &management.ProjectList{}
+	if err := client.List(
+		ctx,
+		projectList,
+		opts...,
+	); err != nil {
+		return nil, err
+	}
+	return projectList.Items, nil
 }

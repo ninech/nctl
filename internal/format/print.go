@@ -102,30 +102,61 @@ type PrintOpts struct {
 	ExcludeAdditional [][]string
 }
 
+func (p PrintOpts) defaultOut() io.Writer {
+	if p.Out == nil {
+		return os.Stdout
+	}
+	return p.Out
+}
+
 // PrettyPrintObjects prints the supplied objects in "pretty" colored yaml
 // with some metadata, status and other default fields stripped out. If
 // multiple objects are supplied, they will be divided with a yaml divider.
-func PrettyPrintObjects[T resource.Managed](objs []T, opts PrintOpts) error {
+func PrettyPrintObjects[T any](objs []T, opts PrintOpts) error {
 	for i, obj := range objs {
-		strippedObj, err := stripObj(obj, opts.ExcludeAdditional)
-		if err != nil {
-			return err
-		}
-		if err := PrettyPrintResource(strippedObj, opts); err != nil {
+		if err := PrettyPrintObject(obj, opts); err != nil {
 			return err
 		}
 		// if there's another object we print a yaml divider
 		if i != len(objs)-1 {
-			fmt.Println("---")
+			fmt.Fprintln(opts.defaultOut(), "---")
 		}
 	}
 
 	return nil
 }
 
-// PrettyPrintResource prints the resource similar to how
+// PrettyPrintObject prints the supplied object in "pretty" colored yaml
+// with some metadata, status and other default fields stripped out.
+func PrettyPrintObject(obj any, opts PrintOpts) error {
+	// we check if we can make a copy of the object as we might alter it.
+	// If we can't make a copy of the object we print it directly as
+	// altering it would change the source object
+	runtimeObject, is := obj.(runtime.Object)
+	if !is {
+		return printResource(obj, opts)
+	}
+	objCopy := runtimeObject.DeepCopyObject()
+
+	var toPrint interface{} = objCopy
+	if res, is := objCopy.(resource.Object); is {
+		var err error
+		toPrint, err = stripObj(res, opts.ExcludeAdditional)
+		if err != nil {
+			return err
+		}
+	}
+	// if we got an unstructured object passed we want to remove the
+	// 'object' key from the yaml
+	if u, is := toPrint.(*unstructured.Unstructured); is {
+		toPrint = u.Object
+	}
+	return printResource(toPrint, opts)
+}
+
+// printResource prints the resource similar to how
 // https://github.com/goccy/go-yaml#ycat does it.
-func PrettyPrintResource(obj interface{}, opts PrintOpts) error {
+func printResource(obj any, opts PrintOpts) error {
 	b, err := yaml.Marshal(obj)
 	if err != nil {
 		return err
@@ -164,40 +195,45 @@ func PrettyPrintResource(obj interface{}, opts PrintOpts) error {
 // stripObj removes some fields which simply add clutter to the yaml output.
 // The object should still be applyable afterwards as just defaults and
 // computed fields get removed.
-func stripObj(obj resource.Managed, excludeAdditional [][]string) (map[string]any, error) {
-	strippedObj := obj.DeepCopyObject().(resource.Managed)
-	strippedObj.SetManagedFields(nil)
-	strippedObj.SetResourceVersion("")
-	strippedObj.SetUID("")
-	strippedObj.SetGeneration(0)
-	strippedObj.SetProviderConfigReference(nil)
-	strippedObj.SetDeletionPolicy("")
-	strippedObj.SetFinalizers(nil)
+func stripObj(obj resource.Object, excludeAdditional [][]string) (resource.Object, error) {
+	obj.SetManagedFields(nil)
+	obj.SetResourceVersion("")
+	obj.SetUID("")
+	obj.SetGeneration(0)
+	obj.SetFinalizers(nil)
 
-	annotations := strippedObj.GetAnnotations()
+	annotations := obj.GetAnnotations()
 	for k := range annotations {
 		if strings.HasPrefix(k, "crossplane.io") ||
 			strings.HasPrefix(k, "kubectl.kubernetes.io") {
 			delete(annotations, k)
 		}
 	}
-	strippedObj.SetAnnotations(annotations)
+	obj.SetAnnotations(annotations)
+	if len(obj.GetAnnotations()) == 0 {
+		obj.SetAnnotations(nil)
+	}
 
 	// some fields cannot be removed with a Set, so we convert to unstructured
 	// to get rid of these.
-	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(strippedObj)
+	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
 	if err != nil {
 		return nil, err
 	}
 
 	unstructured.RemoveNestedField(unstructuredObj, "status", "conditions")
 	unstructured.RemoveNestedField(unstructuredObj, "metadata", "creationTimestamp")
+	unstructured.RemoveNestedField(unstructuredObj, "spec", "deletionPolicy")
+	unstructured.RemoveNestedField(unstructuredObj, "spec", "providerConfigRef")
 
 	for _, exclude := range excludeAdditional {
 		unstructured.RemoveNestedField(unstructuredObj, exclude...)
 	}
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObj, obj); err != nil {
+		return nil, err
+	}
 
-	return unstructuredObj, nil
+	return obj, nil
 }
 
 func printerProperty(p *printer.Property) printer.PrintFunc {
