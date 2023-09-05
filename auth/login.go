@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
@@ -20,7 +21,6 @@ type LoginCmd struct {
 	Organization string `help:"The name of your organization to use when providing an API token. This parameter is only used when providing a API token. This parameter needs to be set if you use --api-token." env:"NCTL_ORGANIZATION"`
 	IssuerURL    string `help:"Issuer URL is the OIDC issuer URL of the API." default:"https://auth.nine.ch/auth/realms/pub"`
 	ClientID     string `help:"Client ID is the OIDC client ID of the API." default:"nineapis.ch-f178254"`
-	ExecPlugin   bool   `help:"Automatically run exec plugin after writing the kubeconfig." hidden:"" default:"true"`
 }
 
 func (l *LoginCmd) Run(ctx context.Context, command string, tk api.TokenGetter) error {
@@ -41,19 +41,25 @@ func (l *LoginCmd) Run(ctx context.Context, command string, tk api.TokenGetter) 
 
 	if len(l.APIToken) != 0 {
 		if len(l.Organization) == 0 {
-			return fmt.Errorf("you need to set the --organization parameter explicitly if you use --api-token.\n")
+			return fmt.Errorf("you need to set the --organization parameter explicitly if you use --api-token")
 		}
 
-		l.ExecPlugin = false
+		userInfo, err := api.GetUserInfoFromToken(l.APIToken)
+		if err != nil {
+			return err
+		}
+
 		cfg, err := newAPIConfig(apiURL, issuerURL, command, l.ClientID, useStaticToken(l.APIToken), withOrganization(l.Organization))
 		if err != nil {
 			return err
 		}
 
-		return login(ctx, cfg, loadingRules.GetDefaultFilename(), "", runExecPlugin(l.ExecPlugin), project(l.Organization))
+		return login(ctx, cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(l.Organization))
 	}
 
-	token, err := tk.GetTokenString(ctx, l.IssuerURL, l.ClientID, l.ExecPlugin)
+	usePKCE := true
+
+	token, err := tk.GetTokenString(ctx, l.IssuerURL, l.ClientID, usePKCE)
 	if err != nil {
 		return err
 	}
@@ -64,7 +70,7 @@ func (l *LoginCmd) Run(ctx context.Context, command string, tk api.TokenGetter) 
 	}
 
 	if len(userInfo.Orgs) == 0 {
-		return fmt.Errorf("error getting an organization for the account %q. Please contact support.", userInfo.User)
+		return fmt.Errorf("error getting an organization for the account %q. Please contact support", userInfo.User)
 	}
 
 	org := userInfo.Orgs[0]
@@ -79,7 +85,7 @@ func (l *LoginCmd) Run(ctx context.Context, command string, tk api.TokenGetter) 
 		return err
 	}
 
-	return login(ctx, cfg, loadingRules.GetDefaultFilename(), "", runExecPlugin(l.ExecPlugin), project(org))
+	return login(ctx, cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(org))
 }
 
 type apiConfig struct {
@@ -164,19 +170,11 @@ func newAPIConfig(apiURL, issuerURL *url.URL, command, clientID string, opts ...
 }
 
 type loginConfig struct {
-	execPlugin           bool
 	project              string
 	switchCurrentContext bool
 }
 
 type loginOption func(*loginConfig)
-
-// runExecPlugin runs the exec plugin after building the new config
-func runExecPlugin(enabled bool) loginOption {
-	return func(l *loginConfig) {
-		l.execPlugin = enabled
-	}
-}
 
 // project overrides the project in the new config
 func project(project string) loginOption {
@@ -193,7 +191,7 @@ func switchCurrentContext() loginOption {
 	}
 }
 
-func login(ctx context.Context, newConfig *clientcmdapi.Config, kubeconfigPath, toOrg string, opts ...loginOption) error {
+func login(ctx context.Context, newConfig *clientcmdapi.Config, kubeconfigPath, userName string, toOrg string, opts ...loginOption) error {
 	loginConfig := &loginConfig{}
 	for _, opt := range opts {
 		opt(loginConfig)
@@ -226,20 +224,12 @@ func login(ctx context.Context, newConfig *clientcmdapi.Config, kubeconfigPath, 
 		format.PrintSuccessf("🏢", "switched to the organization %q", toOrg)
 	}
 	format.PrintSuccessf("📋", "added %s to kubeconfig", newConfig.CurrentContext)
-	if loginConfig.execPlugin {
-		authInfo := newConfig.AuthInfos[newConfig.CurrentContext]
-		if authInfo == nil || authInfo.Exec == nil {
-			return fmt.Errorf("no Exec found in authInfo")
-		}
 
-		// we discard the returned token as we just want to trigger the auth
-		// flow and populate the cache.
-		if _, err := api.GetTokenFromExecConfig(ctx, authInfo.Exec); err != nil {
-			return err
-		}
-
-		format.PrintSuccessf("🚀", "logged into cluster %s", newConfig.CurrentContext)
+	loginMessage := fmt.Sprintf("logged into cluster %s", newConfig.CurrentContext)
+	if strings.TrimSpace(userName) != "" {
+		loginMessage = fmt.Sprintf("logged into cluster %s as %s", newConfig.CurrentContext, userName)
 	}
+	format.PrintSuccessf("🚀", loginMessage)
 
 	return nil
 }
