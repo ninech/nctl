@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	defaultTokenCachePath = ".kube/cache/oidc-login"
+	DefaultTokenCachePath = ".kube/cache/oidc-login"
 	IssuerURLArg          = "--issuer-url="
 	ClientIDArg           = "--client-id="
 	UsePKCEArg            = "--use-pkce"
@@ -117,7 +117,7 @@ func GetToken(ctx context.Context, issuerURL, clientID string, usePKCE bool, out
 			ClientID:  clientID,
 			UsePKCE:   usePKCE,
 		},
-		TokenCacheDir: path.Join(homedir.HomeDir(), defaultTokenCachePath),
+		TokenCacheDir: path.Join(homedir.HomeDir(), DefaultTokenCachePath),
 		GrantOptionSet: authentication.GrantOptionSet{
 			AuthCodeBrowserOption: &authcode.BrowserOption{
 				BindAddress:           defaultBindAddresses,
@@ -165,7 +165,6 @@ func GetToken(ctx context.Context, issuerURL, clientID string, usePKCE bool, out
 			Logger: logger,
 		},
 	}
-
 	if err := getToken.Do(ctx, in); err != nil {
 		return fmt.Errorf("error getting OIDC token: %w", err)
 	}

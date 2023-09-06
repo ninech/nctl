@@ -11,6 +11,7 @@ import (
 
 const (
 	LoginCommand          = "auth login"
+	LogoutCommand         = "auth logout"
 	SetOrgCommand         = "auth set-org"
 	getApplicationCommand = "get application"
 )
