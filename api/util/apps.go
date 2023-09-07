@@ -16,6 +16,7 @@ const (
 	PrivateKeySecretKey  = "privatekey"
 	UsernameSecretKey    = "username"
 	PasswordSecretKey    = "password"
+	dnsNotSetText        = "<not set yet>"
 )
 
 func UnverifiedAppHosts(app *apps.Application) []string {
@@ -137,4 +138,32 @@ func (git GitAuth) Valid() error {
 // credentials for the given applications git source
 func GitAuthSecretName(app *apps.Application) string {
 	return app.Name
+}
+
+type DNSDetail struct {
+	Application string `yaml:"application"`
+	Project     string `yaml:"project"`
+	TXTRecord   string `yaml:"txtRecord"`
+	CNAMETarget string `yaml:"cnameTarget"`
+}
+
+// GatherDNSDetails retrieves the DNS details of all given applications
+func GatherDNSDetails(items []apps.Application) []DNSDetail {
+	result := make([]DNSDetail, len(items))
+	for i := range items {
+		data := DNSDetail{
+			Application: items[i].Name,
+			Project:     items[i].Namespace,
+			TXTRecord:   items[i].Status.AtProvider.TXTRecordContent,
+			CNAMETarget: items[i].Status.AtProvider.CNAMETarget,
+		}
+		if data.TXTRecord == "" {
+			data.TXTRecord = dnsNotSetText
+		}
+		if data.CNAMETarget == "" {
+			data.CNAMETarget = dnsNotSetText
+		}
+		result[i] = data
+	}
+	return result
 }
