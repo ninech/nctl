@@ -2,7 +2,9 @@ package logs
 
 import (
 	"context"
+	"time"
 
+	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
 )
 
@@ -13,6 +15,14 @@ type buildCmd struct {
 }
 
 func (cmd *buildCmd) Run(ctx context.Context, client *api.Client) error {
+	var build *apps.Build
+	if cmd.Name != "" {
+		if err := client.Get(ctx, api.NamespacedName(cmd.Name, client.Project), build); err != nil {
+			return err
+		}
+		cmd.Since = time.Since(build.CreationTimestamp.Time)
+	}
+
 	query := BuildQuery(cmd.Name, client.Project)
 	if len(cmd.ApplicationName) != 0 {
 		query = queryString(map[string]string{

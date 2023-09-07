@@ -20,8 +20,8 @@ type Cmd struct {
 
 type logsCmd struct {
 	Follow bool          `help:"Follow the logs by live tailing." short:"f"`
-	Lines  int           `help:"Amount of lines to output" default:"10" short:"l"`
-	Since  time.Duration `help:"Duration how long to look back for logs" short:"s" default:"10m"`
+	Lines  int           `help:"Amount of lines to output" default:"20" short:"l"`
+	Since  time.Duration `help:"Duration how long to look back for logs" short:"s" default:"60m"`
 	Output string        `help:"Configures the log output format. ${enum}" short:"o" enum:"default,json" default:"default"`
 	out    output.LogOutput
 }
