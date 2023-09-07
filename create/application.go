@@ -376,14 +376,22 @@ func printUnverifiedHostsMessage(app *apps.Application) {
 	unverifiedHosts := util.UnverifiedAppHosts(app)
 
 	if len(unverifiedHosts) != 0 {
+		dnsDetails := util.GatherDNSDetails([]apps.Application{*app})
 		fmt.Println("You configured the following hosts:")
 
 		for _, name := range unverifiedHosts {
 			fmt.Printf("  %s\n", name)
 		}
 
-		fmt.Printf("\nTo make your app available on them, make sure they have a CNAME record targeting %q.\n",
-			app.Status.AtProvider.CNAMETarget)
+		fmt.Print("\nYour DNS details are:\n")
+		fmt.Printf("  TXT record:\t%s\n", dnsDetails[0].TXTRecord)
+		fmt.Printf("  CNAME target:\t%s\n", dnsDetails[0].CNAMETarget)
+
+		fmt.Printf("\nTo make your app available on your custom hosts, please use \n"+
+			"the DNS details and visit %s\n"+
+			"for further instructions.\n",
+			util.DNSSetupURL,
+		)
 	}
 }
 

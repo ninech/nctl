@@ -17,6 +17,9 @@ const (
 	UsernameSecretKey    = "username"
 	PasswordSecretKey    = "password"
 	dnsNotSetText        = "<not set yet>"
+	// DNSSetupURL redirects to the proper deplo.io docs entry about
+	// how to setup custom hosts
+	DNSSetupURL = "https://docs.nine.ch/a/myshbw3EY1"
 )
 
 func UnverifiedAppHosts(app *apps.Application) []string {
@@ -26,7 +29,23 @@ func UnverifiedAppHosts(app *apps.Application) []string {
 			unverifiedHosts = append(unverifiedHosts, host.Name)
 		}
 	}
-	return unverifiedHosts
+	// we need to remove duplicate hosts as we might have multiple DNS
+	// error messages per host (different DNS record types)
+	return uniqueStrings(unverifiedHosts)
+}
+
+func uniqueStrings(source []string) []string {
+	unique := make(map[string]bool, len(source))
+	us := make([]string, len(unique))
+	for _, elem := range source {
+		if !unique[elem] {
+			us = append(us, elem)
+			unique[elem] = true
+		}
+	}
+
+	return us
+
 }
 
 func VerifiedAppHosts(app *apps.Application) []string {

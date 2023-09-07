@@ -157,5 +157,10 @@ func printDNSDetailsTabRow(items []util.DNSDetail, get *Cmd, out io.Writer) erro
 		get.writeTabRow(w, item.Project, item.Application, item.TXTRecord, item.CNAMETarget)
 	}
 
-	return w.Flush()
+	if err := w.Flush(); err != nil {
+		return err
+	}
+	fmt.Fprintf(out, "\nVisit %s to see instructions on how to setup custom hosts\n", util.DNSSetupURL)
+
+	return nil
 }

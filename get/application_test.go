@@ -283,6 +283,8 @@ func TestApplicationDNS(t *testing.T) {
 			project:      "dev",
 			output: `NAME             TXT RECORD       CNAME TARGET
 no-txt-record    <not set yet>    <not set yet>
+
+Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup custom hosts
 `,
 		},
 		"DNS set - one application - full format": {
@@ -298,6 +300,8 @@ no-txt-record    <not set yet>    <not set yet>
 			project:      "dev",
 			output: `NAME      TXT RECORD                                      CNAME TARGET
 sample    deploio-site-verification=sample-dev-3ksdk23    sample.3ksdk23.deploio.app
+
+Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup custom hosts
 `,
 		},
 		"DNS set - one application - no header format": {
@@ -312,6 +316,8 @@ sample    deploio-site-verification=sample-dev-3ksdk23    sample.3ksdk23.deploio
 			outputFormat: noHeader,
 			project:      "dev",
 			output: `sample    deploio-site-verification=sample-dev-3ksdk23    sample.3ksdk23.deploio.app
+
+Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup custom hosts
 `,
 		},
 		"multiple applications in multiple projects - full format": {
@@ -333,6 +339,8 @@ sample    deploio-site-verification=sample-dev-3ksdk23    sample.3ksdk23.deploio
 			output: `PROJECT    NAME      TXT RECORD                                      CNAME TARGET
 dev        sample    deploio-site-verification=sample-dev-3ksdk23    sample.3ksdk23.deploio.app
 test       test      deploio-site-verification=test-test-4ksdk23     test.4ksdk23.deploio.app
+
+Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup custom hosts
 `,
 		},
 		"multiple applications in one project - yaml format": {
