@@ -164,7 +164,7 @@ dev     dev         sample
 			},
 			project:      "dev",
 			outputFormat: yamlOut,
-			output:       "-\x1b[96m application\x1b[0m:\x1b[92m dev\x1b[0m\n\x1b[92m  \x1b[0m\x1b[96mproject\x1b[0m:\x1b[92m dev\x1b[0m\n\x1b[92m  \x1b[0m\x1b[96mbasicauth\x1b[0m:\x1b[96m\x1b[0m\n\x1b[96m    username\x1b[0m:\x1b[92m dev\x1b[0m\n\x1b[92m    \x1b[0m\x1b[96mpassword\x1b[0m:\x1b[92m sample\x1b[0m\n",
+			output:       "application: dev\nproject: dev\nbasicauth:\n  username: dev\n  password: sample\n",
 		},
 		"multiple apps with basic auth configured and all apps in the project requested": {
 			resources: []client.Object{
@@ -216,7 +216,7 @@ dev-second    dev-second    sample-second
 				),
 			},
 			outputFormat: yamlOut,
-			output:       "-\x1b[96m application\x1b[0m:\x1b[92m dev\x1b[0m\n\x1b[92m  \x1b[0m\x1b[96mproject\x1b[0m:\x1b[92m dev\x1b[0m\n\x1b[92m  \x1b[0m\x1b[96mbasicauth\x1b[0m:\x1b[96m\x1b[0m\n\x1b[96m    username\x1b[0m:\x1b[92m dev\x1b[0m\n\x1b[92m    \x1b[0m\x1b[96mpassword\x1b[0m:\x1b[92m sample\x1b[0m\n\x1b[92m\x1b[0m-\x1b[96m application\x1b[0m:\x1b[92m prod\x1b[0m\n\x1b[92m  \x1b[0m\x1b[96mproject\x1b[0m:\x1b[92m prod\x1b[0m\n\x1b[92m  \x1b[0m\x1b[96mbasicauth\x1b[0m:\x1b[96m\x1b[0m\n\x1b[96m    username\x1b[0m:\x1b[92m prod\x1b[0m\n\x1b[92m    \x1b[0m\x1b[96mpassword\x1b[0m:\x1b[92m secret\x1b[0m\n",
+			output:       "application: dev\nproject: dev\nbasicauth:\n  username: dev\n  password: sample\n---\napplication: prod\nproject: prod\nbasicauth:\n  username: prod\n  password: secret\n",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -257,8 +257,153 @@ dev-second    dev-second    sample-second
 	}
 }
 
-func newBasicAuthApplication(name, project, secret string) *apps.Application {
-	app := &apps.Application{
+func TestApplicationDNS(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	for name, testCase := range map[string]struct {
+		apps          []client.Object
+		name          string
+		outputFormat  output
+		project       string
+		output        string
+		errorExpected bool
+	}{
+		"no DNS set yet - full format": {
+			apps: []client.Object{
+				newApplicationWithDNS(
+					"no-txt-record",
+					"dev",
+					txtRecordContent(""),
+					"",
+				),
+			},
+			outputFormat: full,
+			project:      "dev",
+			output: `NAME             TXT RECORD       CNAME TARGET
+no-txt-record    <not set yet>    <not set yet>
+
+Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup custom hosts
+`,
+		},
+		"DNS set - one application - full format": {
+			apps: []client.Object{
+				newApplicationWithDNS(
+					"sample",
+					"dev",
+					txtRecordContent("sample-dev-3ksdk23"),
+					"sample.3ksdk23.deploio.app",
+				),
+			},
+			outputFormat: full,
+			project:      "dev",
+			output: `NAME      TXT RECORD                                      CNAME TARGET
+sample    deploio-site-verification=sample-dev-3ksdk23    sample.3ksdk23.deploio.app
+
+Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup custom hosts
+`,
+		},
+		"DNS set - one application - no header format": {
+			apps: []client.Object{
+				newApplicationWithDNS(
+					"sample",
+					"dev",
+					txtRecordContent("sample-dev-3ksdk23"),
+					"sample.3ksdk23.deploio.app",
+				),
+			},
+			outputFormat: noHeader,
+			project:      "dev",
+			output: `sample    deploio-site-verification=sample-dev-3ksdk23    sample.3ksdk23.deploio.app
+
+Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup custom hosts
+`,
+		},
+		"multiple applications in multiple projects - full format": {
+			apps: []client.Object{
+				newApplicationWithDNS(
+					"sample",
+					"dev",
+					txtRecordContent("sample-dev-3ksdk23"),
+					"sample.3ksdk23.deploio.app",
+				),
+				newApplicationWithDNS(
+					"test",
+					"test",
+					txtRecordContent("test-test-4ksdk23"),
+					"test.4ksdk23.deploio.app",
+				),
+			},
+			outputFormat: full,
+			output: `PROJECT    NAME      TXT RECORD                                      CNAME TARGET
+dev        sample    deploio-site-verification=sample-dev-3ksdk23    sample.3ksdk23.deploio.app
+test       test      deploio-site-verification=test-test-4ksdk23     test.4ksdk23.deploio.app
+
+Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup custom hosts
+`,
+		},
+		"multiple applications in one project - yaml format": {
+			apps: []client.Object{
+				newApplicationWithDNS(
+					"sample",
+					"dev",
+					txtRecordContent("sample-dev-3ksdk23"),
+					"sample.3ksdk23.deploio.app",
+				),
+				newApplicationWithDNS(
+					"test",
+					"dev",
+					txtRecordContent("test-dev-4ksdk23"),
+					"test.4ksdk23.deploio.app",
+				),
+			},
+			project:      "dev",
+			outputFormat: yamlOut,
+			output:       "application: sample\nproject: dev\ntxtRecord: deploio-site-verification=sample-dev-3ksdk23\ncnameTarget: sample.3ksdk23.deploio.app\n---\napplication: test\nproject: dev\ntxtRecord: deploio-site-verification=test-dev-4ksdk23\ncnameTarget: test.4ksdk23.deploio.app\n",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			testCase := testCase
+			get := &Cmd{
+				Output:      testCase.outputFormat,
+				AllProjects: testCase.project == "",
+			}
+			scheme, err := api.NewScheme()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			client := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithIndex(&apps.Application{}, "metadata.name", func(o client.Object) []string {
+					return []string{o.GetName()}
+				}).
+				WithObjects(testCase.apps...).
+				Build()
+			apiClient := &api.Client{WithWatch: client, Project: testCase.project}
+
+			buf := &bytes.Buffer{}
+			cmd := applicationsCmd{
+				out:                  buf,
+				Name:                 testCase.name,
+				BasicAuthCredentials: false,
+				DNS:                  true,
+			}
+
+			err = cmd.Run(ctx, apiClient, get)
+			if testCase.errorExpected {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, testCase.output, buf.String())
+		})
+	}
+}
+
+func newApplication(name, project string) *apps.Application {
+	return &apps.Application{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: project,
@@ -278,10 +423,28 @@ func newBasicAuthApplication(name, project, secret string) *apps.Application {
 			},
 		},
 	}
+}
+
+func newBasicAuthApplication(name, project, secret string) *apps.Application {
+	app := newApplication(name, project)
 	if secret != "" {
 		app.Status.AtProvider.BasicAuthSecret = &meta.LocalReference{Name: secret}
 	}
 	return app
+}
+
+func newApplicationWithDNS(name, project, txtRecord, cnameRecord string) *apps.Application {
+	app := newApplication(name, project)
+	app.Status.AtProvider.TXTRecordContent = txtRecord
+	app.Status.AtProvider.CNAMETarget = cnameRecord
+	return app
+}
+
+func txtRecordContent(value string) string {
+	if value == "" {
+		return ""
+	}
+	return "deploio-site-verification=" + value
 }
 
 func newBasicAuthSecret(name, project string, basicAuth util.BasicAuth) *corev1.Secret {

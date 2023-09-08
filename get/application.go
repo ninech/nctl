@@ -17,6 +17,7 @@ import (
 type applicationsCmd struct {
 	Name                 string `arg:"" help:"Name of the Application to get. If omitted all in the project will be listed." default:""`
 	BasicAuthCredentials bool   `help:"Show the basic auth credentials of the application."`
+	DNS                  bool   `help:"Show the DNS details for custom hosts."`
 	out                  io.Writer
 }
 
@@ -42,6 +43,10 @@ func (cmd *applicationsCmd) Run(ctx context.Context, client *api.Client, get *Cm
 			err = multierror.Append(err, printErr)
 		}
 		return err
+	}
+
+	if cmd.DNS {
+		return printDNSDetails(util.GatherDNSDetails(appList.Items), get, defaultOut(cmd.out))
 	}
 
 	switch get.Output {
@@ -75,7 +80,7 @@ func printApplication(apps []apps.Application, get *Cmd, out io.Writer, header b
 
 func printCredentials(creds []appCredentials, get *Cmd, out io.Writer) error {
 	if get.Output == yamlOut {
-		return format.PrettyPrintObject(creds, format.PrintOpts{Out: out})
+		return format.PrettyPrintObjects(creds, format.PrintOpts{Out: out})
 	}
 	return printCredentialsTabRow(creds, get, out)
 }
@@ -132,4 +137,30 @@ func join(list []string) string {
 		return "none"
 	}
 	return strings.Join(list, ",")
+}
+
+func printDNSDetails(items []util.DNSDetail, get *Cmd, out io.Writer) error {
+	if get.Output == yamlOut {
+		return format.PrettyPrintObjects(items, format.PrintOpts{Out: out})
+	}
+	return printDNSDetailsTabRow(items, get, out)
+}
+
+func printDNSDetailsTabRow(items []util.DNSDetail, get *Cmd, out io.Writer) error {
+	w := tabwriter.NewWriter(out, 0, 0, 4, ' ', 0)
+
+	if get.Output == full {
+		get.writeHeader(w, "NAME", "TXT RECORD", "CNAME TARGET")
+	}
+
+	for _, item := range items {
+		get.writeTabRow(w, item.Project, item.Application, item.TXTRecord, item.CNAMETarget)
+	}
+
+	if err := w.Flush(); err != nil {
+		return err
+	}
+	fmt.Fprintf(out, "\nVisit %s to see instructions on how to setup custom hosts\n", util.DNSSetupURL)
+
+	return nil
 }

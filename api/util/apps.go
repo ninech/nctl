@@ -16,6 +16,10 @@ const (
 	PrivateKeySecretKey  = "privatekey"
 	UsernameSecretKey    = "username"
 	PasswordSecretKey    = "password"
+	dnsNotSetText        = "<not set yet>"
+	// DNSSetupURL redirects to the proper deplo.io docs entry about
+	// how to setup custom hosts
+	DNSSetupURL = "https://docs.nine.ch/a/myshbw3EY1"
 )
 
 func UnverifiedAppHosts(app *apps.Application) []string {
@@ -25,7 +29,23 @@ func UnverifiedAppHosts(app *apps.Application) []string {
 			unverifiedHosts = append(unverifiedHosts, host.Name)
 		}
 	}
-	return unverifiedHosts
+	// we need to remove duplicate hosts as we might have multiple DNS
+	// error messages per host (different DNS record types)
+	return uniqueStrings(unverifiedHosts)
+}
+
+func uniqueStrings(source []string) []string {
+	unique := make(map[string]bool, len(source))
+	us := make([]string, len(unique))
+	for _, elem := range source {
+		if !unique[elem] {
+			us = append(us, elem)
+			unique[elem] = true
+		}
+	}
+
+	return us
+
 }
 
 func VerifiedAppHosts(app *apps.Application) []string {
@@ -137,4 +157,32 @@ func (git GitAuth) Valid() error {
 // credentials for the given applications git source
 func GitAuthSecretName(app *apps.Application) string {
 	return app.Name
+}
+
+type DNSDetail struct {
+	Application string `yaml:"application"`
+	Project     string `yaml:"project"`
+	TXTRecord   string `yaml:"txtRecord"`
+	CNAMETarget string `yaml:"cnameTarget"`
+}
+
+// GatherDNSDetails retrieves the DNS details of all given applications
+func GatherDNSDetails(items []apps.Application) []DNSDetail {
+	result := make([]DNSDetail, len(items))
+	for i := range items {
+		data := DNSDetail{
+			Application: items[i].Name,
+			Project:     items[i].Namespace,
+			TXTRecord:   items[i].Status.AtProvider.TXTRecordContent,
+			CNAMETarget: items[i].Status.AtProvider.CNAMETarget,
+		}
+		if data.TXTRecord == "" {
+			data.TXTRecord = dnsNotSetText
+		}
+		if data.CNAMETarget == "" {
+			data.CNAMETarget = dnsNotSetText
+		}
+		result[i] = data
+	}
+	return result
 }

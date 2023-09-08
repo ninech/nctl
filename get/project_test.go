@@ -83,7 +83,7 @@ dev
 			projects:     test.Projects(organization, "dev", "staging"),
 			name:         "dev",
 			outputFormat: yamlOut,
-			output:       "\x1b[96mkind\x1b[0m:\x1b[92m Project\x1b[0m\n\x1b[92m\x1b[0m\x1b[96mapiVersion\x1b[0m:\x1b[92m management.nine.ch/v1alpha1\x1b[0m\n\x1b[92m\x1b[0m\x1b[96mmetadata\x1b[0m:\x1b[96m\x1b[0m\n\x1b[96m  name\x1b[0m:\x1b[92m dev\x1b[0m\n\x1b[92m  \x1b[0m\x1b[96mnamespace\x1b[0m:\x1b[92m evilcorp\x1b[0m\n\x1b[92m\x1b[0m\x1b[96mspec\x1b[0m: {}\n",
+			output:       "kind: Project\napiVersion: management.nine.ch/v1alpha1\nmetadata:\n  name: dev\n  namespace: evilcorp\nspec: {}\n",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {

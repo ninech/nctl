@@ -19,7 +19,7 @@ require (
 	github.com/lucasepe/codename v0.2.0
 	github.com/moby/moby v24.0.1+incompatible
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
-	github.com/ninech/apis v0.0.0-20230817192736-20a81d2ab110
+	github.com/ninech/apis v0.0.0-20230905134643-5501080a23f9
 	github.com/posener/complete v1.2.3
 	github.com/prometheus/common v0.39.0
 	github.com/stretchr/testify v1.8.1
@@ -119,7 +119,7 @@ require (
 	github.com/julienschmidt/httprouter v1.3.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.17 // indirect
+	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/miekg/dns v1.1.50 // indirect
