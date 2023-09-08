@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -39,8 +38,10 @@ func TestLoginCmd(t *testing.T) {
 
 	apiHost := "api.example.org"
 	tk := &fakeTokenGetter{}
-	// we run without the execPlugin, that would be something for an e2e test
-	cmd := &LoginCmd{ExecPlugin: false, APIURL: "https://" + apiHost, IssuerURL: "https://auth.example.org"}
+	cmd := &LoginCmd{
+		APIURL:    "https://" + apiHost,
+		IssuerURL: "https://auth.example.org",
+	}
 	if err := cmd.Run(context.Background(), "", tk); err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +70,7 @@ func TestLoginStaticToken(t *testing.T) {
 	os.Setenv(clientcmd.RecommendedConfigPathEnvVar, kubeconfig.Name())
 
 	apiHost := "api.example.org"
-	token := "faketoken"
+	token := FakeJWTToken
 
 	cmd := &LoginCmd{APIURL: "https://" + apiHost, APIToken: token, Organization: "test"}
 	tk := &fakeTokenGetter{}
@@ -88,7 +89,6 @@ func TestLoginStaticToken(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fmt.Printf("%s", b)
 	checkConfig(t, kc, 1, "")
 
 	if token != kc.AuthInfos[apiHost].Token {
@@ -111,8 +111,10 @@ func TestLoginCmdWithoutExistingKubeconfig(t *testing.T) {
 	os.Setenv(clientcmd.RecommendedConfigPathEnvVar, kubeconfig)
 
 	apiHost := "api.example.org"
-	// we run without the execPlugin, that would be something for an e2e test
-	cmd := &LoginCmd{ExecPlugin: false, APIURL: "https://" + apiHost, IssuerURL: "https://auth.example.org"}
+	cmd := &LoginCmd{
+		APIURL:    "https://" + apiHost,
+		IssuerURL: "https://auth.example.org",
+	}
 	tk := &fakeTokenGetter{}
 	if err := cmd.Run(context.Background(), "", tk); err != nil {
 		t.Fatal(err)

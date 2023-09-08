@@ -67,7 +67,30 @@ func (a *ClusterCmd) Run(ctx context.Context, client *api.Client) error {
 		return fmt.Errorf("unable to create kubeconfig: %w", err)
 	}
 
-	if err := login(ctx, cfg, client.KubeconfigPath, "", runExecPlugin(a.ExecPlugin), switchCurrentContext()); err != nil {
+	userInfo := &api.UserInfo{}
+
+	if a.ExecPlugin {
+		authInfo, ok := cfg.AuthInfos[cfg.CurrentContext]
+		if !ok {
+			return fmt.Errorf("authInfo not found")
+		}
+
+		if authInfo == nil || authInfo.Exec == nil {
+			return fmt.Errorf("no Exec found in authInfo")
+		}
+
+		token, err := api.GetTokenFromExecConfig(ctx, authInfo.Exec)
+		if err != nil {
+			return err
+		}
+
+		userInfo, err = api.GetUserInfoFromToken(token)
+		if err != nil {
+			return err
+		}
+	}
+
+	if err := login(ctx, cfg, client.KubeconfigPath, userInfo.User, "", switchCurrentContext()); err != nil {
 		return fmt.Errorf("error logging in to cluster %s: %w", name, err)
 	}
 
