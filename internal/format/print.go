@@ -12,6 +12,7 @@ import (
 	"github.com/goccy/go-yaml"
 	"github.com/goccy/go-yaml/lexer"
 	"github.com/goccy/go-yaml/printer"
+	"github.com/mattn/go-isatty"
 	"github.com/theckman/yacspin"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -162,34 +163,48 @@ func printResource(obj any, opts PrintOpts) error {
 		return err
 	}
 
-	p := printer.Printer{
-		LineNumber: false,
-		Bool: printerProperty(&printer.Property{
-			Prefix: format(color.FgHiMagenta),
-			Suffix: format(color.Reset),
-		}),
-		MapKey: printerProperty(&printer.Property{
-			Prefix: format(color.FgHiCyan),
-			Suffix: format(color.Reset),
-		}),
-		Number: printerProperty(&printer.Property{
-			Prefix: format(color.FgHiMagenta),
-			Suffix: format(color.Reset),
-		}),
-		String: printerProperty(&printer.Property{
-			Prefix: format(color.FgHiGreen),
-			Suffix: format(color.Reset),
-		}),
-	}
-
-	output := []byte(p.PrintTokens(lexer.Tokenize(string(b))) + "\n")
-
 	if opts.Out == nil {
 		opts.Out = os.Stdout
 	}
+	p, err := getPrinter(opts.Out)
+	if err != nil {
+		return err
+	}
 
+	output := []byte(p.PrintTokens(lexer.Tokenize(string(b))) + "\n")
 	_, err = opts.Out.Write(output)
 	return err
+}
+
+// getPrinter returns a printer for printing tokens. It will have color output
+// if the given io.Writer is a terminal.
+func getPrinter(out io.Writer) (printer.Printer, error) {
+	p := printer.Printer{
+		LineNumber: false,
+	}
+	f, isFile := out.(*os.File)
+	if !isFile {
+		return p, nil
+	}
+	if isatty.IsTerminal(f.Fd()) || isatty.IsCygwinTerminal(f.Fd()) {
+		p.Bool = printerProperty(&printer.Property{
+			Prefix: format(color.FgHiMagenta),
+			Suffix: format(color.Reset),
+		})
+		p.MapKey = printerProperty(&printer.Property{
+			Prefix: format(color.FgHiCyan),
+			Suffix: format(color.Reset),
+		})
+		p.Number = printerProperty(&printer.Property{
+			Prefix: format(color.FgHiMagenta),
+			Suffix: format(color.Reset),
+		})
+		p.String = printerProperty(&printer.Property{
+			Prefix: format(color.FgHiGreen),
+			Suffix: format(color.Reset),
+		})
+	}
+	return p, nil
 }
 
 // stripObj removes some fields which simply add clutter to the yaml output.

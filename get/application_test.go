@@ -164,7 +164,7 @@ dev     dev         sample
 			},
 			project:      "dev",
 			outputFormat: yamlOut,
-			output:       "\x1b[96mapplication\x1b[0m:\x1b[92m dev\x1b[0m\n\x1b[92m\x1b[0m\x1b[96mproject\x1b[0m:\x1b[92m dev\x1b[0m\n\x1b[92m\x1b[0m\x1b[96mbasicauth\x1b[0m:\x1b[96m\x1b[0m\n\x1b[96m  username\x1b[0m:\x1b[92m dev\x1b[0m\n\x1b[92m  \x1b[0m\x1b[96mpassword\x1b[0m:\x1b[92m sample\x1b[0m\n",
+			output:       "application: dev\nproject: dev\nbasicauth:\n  username: dev\n  password: sample\n",
 		},
 		"multiple apps with basic auth configured and all apps in the project requested": {
 			resources: []client.Object{
@@ -216,7 +216,7 @@ dev-second    dev-second    sample-second
 				),
 			},
 			outputFormat: yamlOut,
-			output:       "\x1b[96mapplication\x1b[0m:\x1b[92m dev\x1b[0m\n\x1b[92m\x1b[0m\x1b[96mproject\x1b[0m:\x1b[92m dev\x1b[0m\n\x1b[92m\x1b[0m\x1b[96mbasicauth\x1b[0m:\x1b[96m\x1b[0m\n\x1b[96m  username\x1b[0m:\x1b[92m dev\x1b[0m\n\x1b[92m  \x1b[0m\x1b[96mpassword\x1b[0m:\x1b[92m sample\x1b[0m\n---\n\x1b[96mapplication\x1b[0m:\x1b[92m prod\x1b[0m\n\x1b[92m\x1b[0m\x1b[96mproject\x1b[0m:\x1b[92m prod\x1b[0m\n\x1b[92m\x1b[0m\x1b[96mbasicauth\x1b[0m:\x1b[96m\x1b[0m\n\x1b[96m  username\x1b[0m:\x1b[92m prod\x1b[0m\n\x1b[92m  \x1b[0m\x1b[96mpassword\x1b[0m:\x1b[92m secret\x1b[0m\n",
+			output:       "application: dev\nproject: dev\nbasicauth:\n  username: dev\n  password: sample\n---\napplication: prod\nproject: prod\nbasicauth:\n  username: prod\n  password: secret\n",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -360,7 +360,7 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 			},
 			project:      "dev",
 			outputFormat: yamlOut,
-			output:       "\x1b[96mapplication\x1b[0m:\x1b[92m sample\x1b[0m\n\x1b[92m\x1b[0m\x1b[96mproject\x1b[0m:\x1b[92m dev\x1b[0m\n\x1b[92m\x1b[0m\x1b[96mtxtRecord\x1b[0m:\x1b[92m deploio-site-verification=sample-dev-3ksdk23\x1b[0m\n\x1b[92m\x1b[0m\x1b[96mcnameTarget\x1b[0m:\x1b[92m sample.3ksdk23.deploio.app\x1b[0m\n---\n\x1b[96mapplication\x1b[0m:\x1b[92m test\x1b[0m\n\x1b[92m\x1b[0m\x1b[96mproject\x1b[0m:\x1b[92m dev\x1b[0m\n\x1b[92m\x1b[0m\x1b[96mtxtRecord\x1b[0m:\x1b[92m deploio-site-verification=test-dev-4ksdk23\x1b[0m\n\x1b[92m\x1b[0m\x1b[96mcnameTarget\x1b[0m:\x1b[92m test.4ksdk23.deploio.app\x1b[0m\n",
+			output:       "application: sample\nproject: dev\ntxtRecord: deploio-site-verification=sample-dev-3ksdk23\ncnameTarget: sample.3ksdk23.deploio.app\n---\napplication: test\nproject: dev\ntxtRecord: deploio-site-verification=test-dev-4ksdk23\ncnameTarget: test.4ksdk23.deploio.app\n",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
