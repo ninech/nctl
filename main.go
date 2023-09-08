@@ -104,6 +104,12 @@ func main() {
 		return
 	}
 
+	if strings.HasPrefix(kongCtx.Command(), format.LogoutCommand) {
+		tk := &api.DefaultTokenGetter{}
+		kongCtx.FatalIfErrorf(nctl.Auth.Logout.Run(ctx, command, tk))
+		return
+	}
+
 	if strings.HasPrefix(kongCtx.Command(), format.SetOrgCommand) {
 		kongCtx.FatalIfErrorf(nctl.Auth.SetOrg.Run(ctx, command))
 		return

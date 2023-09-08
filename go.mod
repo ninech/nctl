@@ -7,6 +7,7 @@ require (
 	github.com/crossplane/crossplane-runtime v0.15.1
 	github.com/docker/docker v20.10.23+incompatible
 	github.com/fatih/color v1.14.1
+	github.com/go-resty/resty/v2 v2.1.1-0.20191201195748-d7b97669fe48
 	github.com/gobuffalo/flect v0.2.3
 	github.com/goccy/go-yaml v1.11.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
