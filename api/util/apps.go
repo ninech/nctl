@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
@@ -64,6 +65,33 @@ func EnvVarsFromMap(env map[string]string) apps.EnvVars {
 		vars = append(vars, apps.EnvVar{Name: k, Value: v})
 	}
 	return vars
+}
+
+func UpdateEnvVars(oldEnvs []apps.EnvVar, newEnvs map[string]string, toDelete []string) apps.EnvVars {
+	envMap := map[string]apps.EnvVar{}
+	for _, v := range oldEnvs {
+		envMap[v.Name] = v
+	}
+
+	new := EnvVarsFromMap(newEnvs)
+	for _, v := range new {
+		envMap[v.Name] = v
+	}
+
+	for _, v := range toDelete {
+		delete(envMap, v)
+	}
+
+	envs := []apps.EnvVar{}
+	for _, v := range envMap {
+		envs = append(envs, v)
+	}
+
+	sort.Slice(envs, func(i, j int) bool {
+		return envs[i].Name < envs[j].Name
+	})
+
+	return envs
 }
 
 func EnvVarToString(envs apps.EnvVars) string {

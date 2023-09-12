@@ -119,8 +119,8 @@ func TestApplication(t *testing.T) {
 				assert.Equal(t, *cmd.Replicas, *updated.Spec.ForProvider.Config.Replicas)
 				assert.Equal(t, *cmd.BasicAuth, *updated.Spec.ForProvider.Config.EnableBasicAuth)
 				assert.Equal(t, *cmd.Hosts, updated.Spec.ForProvider.Hosts)
-				assert.Equal(t, util.EnvVarsFromMap(*cmd.Env), updated.Spec.ForProvider.Config.Env)
-				assert.Equal(t, util.EnvVarsFromMap(*cmd.BuildEnv), updated.Spec.ForProvider.BuildEnv)
+				assert.Equal(t, util.UpdateEnvVars(existingApp.Spec.ForProvider.Config.Env, *cmd.Env, nil), updated.Spec.ForProvider.Config.Env)
+				assert.Equal(t, util.UpdateEnvVars(existingApp.Spec.ForProvider.BuildEnv, *cmd.BuildEnv, nil), updated.Spec.ForProvider.BuildEnv)
 				assert.Equal(t, *cmd.DeployJob.Command, updated.Spec.ForProvider.Config.DeployJob.Command)
 				assert.Equal(t, *cmd.DeployJob.Name, updated.Spec.ForProvider.Config.DeployJob.Name)
 				assert.Equal(t, *cmd.DeployJob.Timeout, updated.Spec.ForProvider.Config.DeployJob.Timeout.Duration)
@@ -130,13 +130,13 @@ func TestApplication(t *testing.T) {
 		"reset env variables": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				Name:     pointer.String(existingApp.Name),
-				Env:      &map[string]string{},
-				BuildEnv: &map[string]string{},
+				Name:           pointer.String(existingApp.Name),
+				DeleteEnv:      &[]string{"foo"},
+				DeleteBuildEnv: &[]string{"BP_ENVIRONMENT_VARIABLE"},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
-				assert.Equal(t, util.EnvVarsFromMap(*cmd.Env), updated.Spec.ForProvider.Config.Env)
-				assert.Equal(t, util.EnvVarsFromMap(*cmd.BuildEnv), updated.Spec.ForProvider.BuildEnv)
+				assert.Equal(t, apps.EnvVars{}, updated.Spec.ForProvider.Config.Env)
+				assert.Equal(t, apps.EnvVars{}, updated.Spec.ForProvider.BuildEnv)
 			},
 		},
 		"git auth update user/pass": {

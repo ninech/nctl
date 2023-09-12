@@ -15,16 +15,18 @@ import (
 // all fields need to be pointers so we can detect if they have been set by
 // the user.
 type applicationCmd struct {
-	Name      *string            `arg:"" help:"Name of the application."`
-	Git       *gitConfig         `embed:"" prefix:"git-"`
-	Size      *string            `help:"Size of the app."`
-	Port      *int32             `help:"Port the app is listening on."`
-	Replicas  *int32             `help:"Amount of replicas of the running app."`
-	Hosts     *[]string          `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
-	BasicAuth *bool              `help:"Enable/Disable basic authentication for the application."`
-	Env       *map[string]string `help:"Environment variables which are passed to the app at runtime."`
-	BuildEnv  *map[string]string `help:"Environment variables which are passed to the app build process."`
-	DeployJob *deployJob         `embed:"" prefix:"deploy-job-"`
+	Name           *string            `arg:"" help:"Name of the application."`
+	Git            *gitConfig         `embed:"" prefix:"git-"`
+	Size           *string            `help:"Size of the app."`
+	Port           *int32             `help:"Port the app is listening on."`
+	Replicas       *int32             `help:"Amount of replicas of the running app."`
+	Hosts          *[]string          `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
+	BasicAuth      *bool              `help:"Enable/Disable basic authentication for the application."`
+	Env            *map[string]string `help:"Environment variables which are passed to the app at runtime."`
+	DeleteEnv      *[]string          `help:"Runtime environment variables names which are to be deleted."`
+	BuildEnv       *map[string]string `help:"Environment variables names which are passed to the app build process."`
+	DeleteBuildEnv *[]string          `help:"Build environment variables which are to be deleted."`
+	DeployJob      *deployJob         `embed:"" prefix:"deploy-job-"`
 }
 
 type gitConfig struct {
@@ -118,18 +120,32 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 	if cmd.Hosts != nil {
 		app.Spec.ForProvider.Hosts = *cmd.Hosts
 	}
-	if cmd.Env != nil {
-		app.Spec.ForProvider.Config.Env = util.EnvVarsFromMap(*cmd.Env)
-	}
-	if cmd.BuildEnv != nil {
-		app.Spec.ForProvider.BuildEnv = util.EnvVarsFromMap(*cmd.BuildEnv)
-	}
 	if cmd.BasicAuth != nil {
 		app.Spec.ForProvider.Config.EnableBasicAuth = cmd.BasicAuth
 	}
 	if cmd.DeployJob != nil {
 		cmd.applyDeployJobUpdates(app)
 	}
+
+	var env map[string]string
+	if cmd.Env != nil {
+		env = *cmd.Env
+	}
+	var delEnv []string
+	if cmd.DeleteEnv != nil {
+		delEnv = *cmd.DeleteEnv
+	}
+	app.Spec.ForProvider.Config.Env = util.UpdateEnvVars(app.Spec.ForProvider.Config.Env, env, delEnv)
+
+	var buildEnv map[string]string
+	if cmd.Env != nil {
+		buildEnv = *cmd.BuildEnv
+	}
+	var buildDelEnv []string
+	if cmd.DeleteEnv != nil {
+		buildDelEnv = *cmd.DeleteBuildEnv
+	}
+	app.Spec.ForProvider.BuildEnv = util.UpdateEnvVars(app.Spec.ForProvider.BuildEnv, buildEnv, buildDelEnv)
 }
 
 func (cmd *applicationCmd) applyDeployJobUpdates(app *apps.Application) {
