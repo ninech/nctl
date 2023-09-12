@@ -107,6 +107,16 @@ func EnvVarToString(envs apps.EnvVars) string {
 	return strings.Join(keyValuePairs, ";")
 }
 
+func EnvVarByName(envVars apps.EnvVars, name string) *apps.EnvVar {
+	for _, e := range envVars {
+		if e.Name == name {
+			return &e
+		}
+	}
+
+	return nil
+}
+
 type GitAuth struct {
 	Username      *string
 	Password      *string

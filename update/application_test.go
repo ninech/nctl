@@ -125,6 +125,8 @@ func TestApplication(t *testing.T) {
 				assert.Equal(t, *cmd.DeployJob.Name, updated.Spec.ForProvider.Config.DeployJob.Name)
 				assert.Equal(t, *cmd.DeployJob.Timeout, updated.Spec.ForProvider.Config.DeployJob.Timeout.Duration)
 				assert.Equal(t, *cmd.DeployJob.Retries, *updated.Spec.ForProvider.Config.DeployJob.Retries)
+				// RetryBuild should be not set by default:
+				assert.Nil(t, util.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
 			},
 		},
 		"reset env variables": {
@@ -207,6 +209,26 @@ func TestApplication(t *testing.T) {
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				assert.Nil(t, updated.Spec.ForProvider.Config.DeployJob)
+			},
+		},
+		"retry build": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				Name:       pointer.String(existingApp.Name),
+				RetryBuild: pointer.Bool(true),
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				assert.NotNil(t, util.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
+			},
+		},
+		"do not retry build": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				Name:       pointer.String(existingApp.Name),
+				RetryBuild: pointer.Bool(false),
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				assert.Nil(t, util.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
 			},
 		},
 	}
