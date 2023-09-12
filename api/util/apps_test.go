@@ -23,8 +23,8 @@ func TestEnvUpdate(t *testing.T) {
 			Value: "val1",
 		},
 	}
-	up := &map[string]string{"old2": "val2"}
-	del := &[]string{"old3"}
+	up := map[string]string{"old2": "val2"}
+	del := []string{"old3"}
 	new := UpdateEnvVars(old, up, del)
 	expected := apps.EnvVars{
 		{

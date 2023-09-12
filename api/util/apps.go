@@ -67,23 +67,19 @@ func EnvVarsFromMap(env map[string]string) apps.EnvVars {
 	return vars
 }
 
-func UpdateEnvVars(oldEnvs []apps.EnvVar, newEnvs *map[string]string, toDelete *[]string) apps.EnvVars {
+func UpdateEnvVars(oldEnvs []apps.EnvVar, newEnvs map[string]string, toDelete []string) apps.EnvVars {
 	envMap := map[string]apps.EnvVar{}
 	for _, v := range oldEnvs {
 		envMap[v.Name] = v
 	}
 
-	if newEnvs != nil {
-		new := EnvVarsFromMap(*newEnvs)
-		for _, v := range new {
-			envMap[v.Name] = v
-		}
+	new := EnvVarsFromMap(newEnvs)
+	for _, v := range new {
+		envMap[v.Name] = v
 	}
 
-	if toDelete != nil {
-		for _, v := range *toDelete {
-			delete(envMap, v)
-		}
+	for _, v := range toDelete {
+		delete(envMap, v)
 	}
 
 	envs := []apps.EnvVar{}

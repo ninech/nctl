@@ -127,10 +127,25 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 		cmd.applyDeployJobUpdates(app)
 	}
 
-	// we do the nil checks inside the function, so we can execute the update
-	// function only once
-	app.Spec.ForProvider.Config.Env = util.UpdateEnvVars(app.Spec.ForProvider.Config.Env, cmd.Env, cmd.DeleteEnv)
-	app.Spec.ForProvider.BuildEnv = util.UpdateEnvVars(app.Spec.ForProvider.BuildEnv, cmd.BuildEnv, cmd.DeleteBuildEnv)
+	var env map[string]string
+	if cmd.Env != nil {
+		env = *cmd.Env
+	}
+	var delEnv []string
+	if cmd.DeleteEnv != nil {
+		delEnv = *cmd.DeleteEnv
+	}
+	app.Spec.ForProvider.Config.Env = util.UpdateEnvVars(app.Spec.ForProvider.Config.Env, env, delEnv)
+
+	var buildEnv map[string]string
+	if cmd.Env != nil {
+		buildEnv = *cmd.BuildEnv
+	}
+	var buildDelEnv []string
+	if cmd.DeleteEnv != nil {
+		buildDelEnv = *cmd.DeleteBuildEnv
+	}
+	app.Spec.ForProvider.BuildEnv = util.UpdateEnvVars(app.Spec.ForProvider.BuildEnv, buildEnv, buildDelEnv)
 }
 
 func (cmd *applicationCmd) applyDeployJobUpdates(app *apps.Application) {
