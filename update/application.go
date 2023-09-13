@@ -12,6 +12,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// BuildTrigger is used to request a retry-build for the application.
+const BuildTrigger = "BUILD_TRIGGER"
+
 // all fields need to be pointers so we can detect if they have been set by
 // the user.
 type applicationCmd struct {
@@ -27,6 +30,7 @@ type applicationCmd struct {
 	BuildEnv       *map[string]string `help:"Environment variables names which are passed to the app build process."`
 	DeleteBuildEnv *[]string          `help:"Build environment variables which are to be deleted."`
 	DeployJob      *deployJob         `embed:"" prefix:"deploy-job-"`
+	RetryBuild     *bool              `help:"Retries build for the application if set to true." placeholder:"false"`
 }
 
 type gitConfig struct {
@@ -137,10 +141,15 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 	}
 	app.Spec.ForProvider.Config.Env = util.UpdateEnvVars(app.Spec.ForProvider.Config.Env, env, delEnv)
 
-	var buildEnv map[string]string
-	if cmd.Env != nil {
+	buildEnv := make(map[string]string)
+	if cmd.BuildEnv != nil {
 		buildEnv = *cmd.BuildEnv
 	}
+
+	if cmd.RetryBuild != nil && *cmd.RetryBuild {
+		buildEnv[BuildTrigger] = time.Now().UTC().Format(time.RFC3339)
+	}
+
 	var buildDelEnv []string
 	if cmd.DeleteEnv != nil {
 		buildDelEnv = *cmd.DeleteBuildEnv
