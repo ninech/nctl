@@ -23,9 +23,8 @@ func TestWhoAmICmd_Run(t *testing.T) {
 	defer os.Remove(kubeconfig)
 
 	s := &auth.WhoAmICmd{
-		IssuerURL:  "https://auth.nine.ch/auth/realms/pub",
-		ClientID:   "nineapis.ch-f178254",
-		ExecPlugin: true,
+		IssuerURL: "https://auth.nine.ch/auth/realms/pub",
+		ClientID:  "nineapis.ch-f178254",
 	}
 
 	err = s.Run(context.Background(), apiClient)
