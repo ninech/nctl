@@ -110,11 +110,6 @@ func main() {
 		return
 	}
 
-	if strings.HasPrefix(kongCtx.Command(), format.SetOrgCommand) {
-		kongCtx.FatalIfErrorf(nctl.Auth.SetOrg.Run(ctx, command))
-		return
-	}
-
 	if strings.HasPrefix(kongCtx.Command(), auth.OIDCCmdName) {
 		kongCtx.FatalIfErrorf(nctl.Auth.OIDC.Run(ctx, os.Stdout))
 		return

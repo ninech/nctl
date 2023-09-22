@@ -141,9 +141,46 @@ func SetContextProject(kubeconfigPath string, contextName string, project string
 	}
 	context, exists := kubeconfig.Contexts[contextName]
 	if !exists {
-		return fmt.Errorf("could not find cluster %q in kubeconfig", contextName)
+		return fmt.Errorf("could not find context %q in kubeconfig", contextName)
 	}
 	context.Namespace = project
+	return clientcmd.WriteToFile(*kubeconfig, kubeconfigPath)
+}
+
+// SetContextOrganization sets the given organization in the given context of the kubeconfig
+func SetContextOrganization(kubeconfigPath string, contextName string, organization string) error {
+	kubeconfig, err := clientcmd.LoadFromFile(kubeconfigPath)
+	if err != nil {
+		return fmt.Errorf("kubeconfig not found: %w", err)
+	}
+	context, exists := kubeconfig.Contexts[contextName]
+	if !exists {
+		return fmt.Errorf("could not find context %q in kubeconfig", contextName)
+	}
+	extension, exists := context.Extensions[util.NctlName]
+	if !exists {
+		return ErrConfigNotFound
+	}
+
+	cfg, err := parseConfig(extension)
+	if err != nil {
+		return err
+	}
+
+	if cfg.Organization == organization {
+		return nil
+	}
+
+	cfg.Organization = organization
+	cfgObject, err := cfg.ToObject()
+	if err != nil {
+		return err
+	}
+	context.Extensions[util.NctlName] = cfgObject
+
+	// change project to default for the the given organization:
+	context.Namespace = organization
+
 	return clientcmd.WriteToFile(*kubeconfig, kubeconfigPath)
 }
 

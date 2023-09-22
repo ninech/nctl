@@ -8,10 +8,9 @@ import (
 )
 
 type WhoAmICmd struct {
-	APIURL     string `help:"The URL of the Nine API" default:"https://nineapis.ch" env:"NCTL_API_URL" name:"api-url"`
-	IssuerURL  string `help:"Issuer URL is the OIDC issuer URL of the API." default:"https://auth.nine.ch/auth/realms/pub"`
-	ClientID   string `help:"Client ID is the OIDC client ID of the API." default:"nineapis.ch-f178254"`
-	ExecPlugin bool   `help:"Automatically run exec plugin after writing the kubeconfig." hidden:"" default:"true"`
+	APIURL    string `help:"The URL of the Nine API" default:"https://nineapis.ch" env:"NCTL_API_URL" name:"api-url"`
+	IssuerURL string `help:"Issuer URL is the OIDC issuer URL of the API." default:"https://auth.nine.ch/auth/realms/pub"`
+	ClientID  string `help:"Client ID is the OIDC client ID of the API." default:"nineapis.ch-f178254"`
 }
 
 func (s *WhoAmICmd) Run(ctx context.Context, client *api.Client) error {
@@ -38,13 +37,13 @@ func printUserInfo(userInfo *api.UserInfo, cfg *Config) {
 
 	fmt.Printf("Your current organization: %q\n", cfg.Organization)
 
-	if len(userInfo.Orgs) > 1 {
+	if len(userInfo.Orgs) > 0 {
 		printAvailableOrgsString(cfg.Organization, userInfo.Orgs)
 	}
 }
 
 func printAvailableOrgsString(currentorg string, orgs []string) {
-	fmt.Print("\nActive\tOrganization\n")
+	fmt.Println("\nAvailable Organizations:")
 
 	for _, org := range orgs {
 		activeMarker := ""
