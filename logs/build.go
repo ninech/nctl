@@ -15,7 +15,7 @@ type buildCmd struct {
 }
 
 func (cmd *buildCmd) Run(ctx context.Context, client *api.Client) error {
-	var build *apps.Build
+	build := &apps.Build{}
 	if cmd.Name != "" {
 		if err := client.Get(ctx, api.NamespacedName(cmd.Name, client.Project), build); err != nil {
 			return err
