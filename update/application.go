@@ -9,6 +9,7 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -83,6 +84,15 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 			if auth.Enabled() {
 				secret := auth.Secret(app)
 				if err := client.Get(ctx, client.Name(secret.Name), secret); err != nil {
+					if errors.IsNotFound(err) {
+						auth.UpdateSecret(secret)
+						if err := client.Create(ctx, secret); err != nil {
+							return err
+						}
+
+						return nil
+					}
+
 					return err
 				}
 

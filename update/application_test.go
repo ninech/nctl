@@ -14,6 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -63,7 +64,7 @@ func TestApplication(t *testing.T) {
 
 	cases := map[string]struct {
 		orig        *apps.Application
-		gitAuth     util.GitAuth
+		gitAuth     *util.GitAuth
 		cmd         applicationCmd
 		checkApp    func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application)
 		checkSecret func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret)
@@ -143,7 +144,7 @@ func TestApplication(t *testing.T) {
 		},
 		"git auth update user/pass": {
 			orig: existingApp,
-			gitAuth: util.GitAuth{
+			gitAuth: &util.GitAuth{
 				Username: pointer.String("some-user"),
 				Password: pointer.String("some-password"),
 			},
@@ -162,7 +163,7 @@ func TestApplication(t *testing.T) {
 		},
 		"git auth update ssh key": {
 			orig: existingApp,
-			gitAuth: util.GitAuth{
+			gitAuth: &util.GitAuth{
 				SSHPrivateKey: pointer.String("fakekey"),
 			},
 			cmd: applicationCmd{
@@ -176,9 +177,25 @@ func TestApplication(t *testing.T) {
 				assert.Equal(t, authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
 			},
 		},
+		"git auth update creates a secret": {
+			orig:    existingApp,
+			gitAuth: nil,
+			cmd: applicationCmd{
+				Name: pointer.String(existingApp.Name),
+				Git: &gitConfig{
+					Username: pointer.String("new-user"),
+					Password: pointer.String("new-pass"),
+				},
+			},
+			checkSecret: func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret) {
+				assert.Equal(t, *cmd.Git.Username, string(authSecret.Data[util.UsernameSecretKey]))
+				assert.Equal(t, *cmd.Git.Password, string(authSecret.Data[util.PasswordSecretKey]))
+				assert.Equal(t, authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
+			},
+		},
 		"git auth is unchanged on normal field update": {
 			orig: existingApp,
-			gitAuth: util.GitAuth{
+			gitAuth: &util.GitAuth{
 				SSHPrivateKey: pointer.String("fakekey"),
 			},
 			cmd: applicationCmd{
@@ -197,7 +214,7 @@ func TestApplication(t *testing.T) {
 		},
 		"disable deploy job": {
 			orig: existingApp,
-			gitAuth: util.GitAuth{
+			gitAuth: &util.GitAuth{
 				SSHPrivateKey: pointer.String("fakekey"),
 			},
 			cmd: applicationCmd{
@@ -237,9 +254,11 @@ func TestApplication(t *testing.T) {
 		tc := tc
 
 		t.Run(name, func(t *testing.T) {
-			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(
-				tc.orig, tc.gitAuth.Secret(tc.orig),
-			).Build()
+			objects := []client.Object{tc.orig}
+			if tc.gitAuth != nil {
+				objects = append(objects, tc.gitAuth.Secret(tc.orig))
+			}
+			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(objects...).Build()
 			apiClient := &api.Client{WithWatch: client, Project: "default"}
 			ctx := context.Background()
 
