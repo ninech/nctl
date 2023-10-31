@@ -130,16 +130,26 @@ func TestApplication(t *testing.T) {
 				assert.Nil(t, util.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
 			},
 		},
-		"reset env variables": {
+		"reset env variable": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				Name:      pointer.String(existingApp.Name),
+				DeleteEnv: &[]string{"foo"},
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				assert.Empty(t, updated.Spec.ForProvider.Config.Env)
+				assert.NotEmpty(t, updated.Spec.ForProvider.BuildEnv)
+			},
+		},
+		"reset build env variable": {
 			orig: existingApp,
 			cmd: applicationCmd{
 				Name:           pointer.String(existingApp.Name),
-				DeleteEnv:      &[]string{"foo"},
 				DeleteBuildEnv: &[]string{"BP_ENVIRONMENT_VARIABLE"},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
-				assert.Equal(t, apps.EnvVars{}, updated.Spec.ForProvider.Config.Env)
-				assert.Equal(t, apps.EnvVars{}, updated.Spec.ForProvider.BuildEnv)
+				assert.Empty(t, updated.Spec.ForProvider.BuildEnv)
+				assert.NotEmpty(t, updated.Spec.ForProvider.Config.Env)
 			},
 		},
 		"git auth update user/pass": {

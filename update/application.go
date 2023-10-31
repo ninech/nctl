@@ -161,7 +161,7 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 	}
 
 	var buildDelEnv []string
-	if cmd.DeleteEnv != nil {
+	if cmd.DeleteBuildEnv != nil {
 		buildDelEnv = *cmd.DeleteBuildEnv
 	}
 	app.Spec.ForProvider.BuildEnv = util.UpdateEnvVars(app.Spec.ForProvider.BuildEnv, buildEnv, buildDelEnv)
