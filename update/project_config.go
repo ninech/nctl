@@ -19,6 +19,7 @@ type configCmd struct {
 	Replicas  *int32             `help:"Amount of replicas of the running app."`
 	Env       *map[string]string `help:"Environment variables which are passed to the app at runtime."`
 	BasicAuth *bool              `help:"Enable/Disable basic authentication for applications."`
+	DeployJob *deployJob         `embed:"" prefix:"deploy-job-"`
 }
 
 func (cmd *configCmd) Run(ctx context.Context, client *api.Client) error {
@@ -58,5 +59,8 @@ func (cmd *configCmd) applyUpdates(cfg *apps.ProjectConfig) {
 	}
 	if cmd.BasicAuth != nil {
 		cfg.Spec.ForProvider.Config.EnableBasicAuth = cmd.BasicAuth
+	}
+	if cmd.DeployJob != nil {
+		cmd.DeployJob.applyUpdates(&cfg.Spec.ForProvider.Config)
 	}
 }

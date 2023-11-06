@@ -3,6 +3,7 @@ package update
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/alecthomas/kong"
 	apps "github.com/ninech/apis/apps/v1alpha1"
@@ -83,6 +84,10 @@ func TestConfig(t *testing.T) {
 				Replicas:  pointer.Int32(2),
 				Env:       &map[string]string{"zoo": "bar"},
 				BasicAuth: pointer.Bool(true),
+				DeployJob: &deployJob{
+					Command: pointer.String("exit 0"), Name: pointer.String("exit"),
+					Retries: pointer.Int32(1), Timeout: pointer.Duration(time.Minute * 5),
+				},
 			},
 			checkConfig: func(t *testing.T, cmd configCmd, orig, updated *apps.ProjectConfig) {
 				assert.Equal(t, apps.ApplicationSize(*cmd.Size), updated.Spec.ForProvider.Config.Size)
@@ -90,6 +95,10 @@ func TestConfig(t *testing.T) {
 				assert.Equal(t, *cmd.Replicas, *updated.Spec.ForProvider.Config.Replicas)
 				assert.Equal(t, *cmd.BasicAuth, *updated.Spec.ForProvider.Config.EnableBasicAuth)
 				assert.Equal(t, util.EnvVarsFromMap(*cmd.Env), updated.Spec.ForProvider.Config.Env)
+				assert.Equal(t, *cmd.DeployJob.Command, updated.Spec.ForProvider.Config.DeployJob.Command)
+				assert.Equal(t, *cmd.DeployJob.Name, updated.Spec.ForProvider.Config.DeployJob.Name)
+				assert.Equal(t, *cmd.DeployJob.Timeout, updated.Spec.ForProvider.Config.DeployJob.Timeout.Duration)
+				assert.Equal(t, *cmd.DeployJob.Retries, *updated.Spec.ForProvider.Config.DeployJob.Retries)
 			},
 		},
 	}
