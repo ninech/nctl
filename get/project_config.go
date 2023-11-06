@@ -59,6 +59,8 @@ func printProjectConfigs(configs []apps.ProjectConfig, get *Cmd, out io.Writer, 
 			"REPLICAS",
 			"PORT",
 			"ENVIRONMENT_VARIABLES",
+			"BASIC_AUTH",
+			"DEPLOY_JOB",
 			"AGE",
 		)
 	}
@@ -77,6 +79,16 @@ func printProjectConfigs(configs []apps.ProjectConfig, get *Cmd, out io.Writer, 
 			port = strconv.Itoa(int(*c.Spec.ForProvider.Config.Port))
 		}
 
+		basicAuth := false
+		if c.Spec.ForProvider.Config.EnableBasicAuth != nil {
+			basicAuth = *c.Spec.ForProvider.Config.EnableBasicAuth
+		}
+
+		deployJobName := util.NoneText
+		if c.Spec.ForProvider.Config.DeployJob != nil {
+			deployJobName = c.Spec.ForProvider.Config.DeployJob.Name
+		}
+
 		get.writeTabRow(
 			w,
 			c.ObjectMeta.Namespace,
@@ -85,6 +97,8 @@ func printProjectConfigs(configs []apps.ProjectConfig, get *Cmd, out io.Writer, 
 			replicas,
 			port,
 			util.EnvVarToString(c.Spec.ForProvider.Config.Env),
+			strconv.FormatBool(basicAuth),
+			deployJobName,
 			duration.HumanDuration(time.Since(c.ObjectMeta.CreationTimestamp.Time)),
 		)
 	}
