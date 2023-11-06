@@ -7,6 +7,7 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 )
 
 // all fields need to be pointers so we can detect if they have been set by
@@ -17,6 +18,7 @@ type configCmd struct {
 	Replicas  *int32             `help:"Amount of replicas of the running app."`
 	Env       *map[string]string `help:"Environment variables which are passed to the app at runtime."`
 	BasicAuth *bool              `help:"Enable/Disable basic authentication for applications."`
+	DeployJob deployJob          `embed:"" prefix:"deploy-job-"`
 }
 
 func (cmd *configCmd) Run(ctx context.Context, client *api.Client) error {
@@ -29,6 +31,20 @@ func (cmd *configCmd) newProjectConfig(namespace string) *apps.ProjectConfig {
 	env := apps.EnvVars{}
 	if cmd.Env != nil {
 		env = util.EnvVarsFromMap(*cmd.Env)
+	}
+
+	var deployJob *apps.DeployJob
+	if len(cmd.DeployJob.Command) != 0 && len(cmd.DeployJob.Name) != 0 {
+		deployJob = &apps.DeployJob{
+			Job: apps.Job{
+				Name:    cmd.DeployJob.Name,
+				Command: cmd.DeployJob.Command,
+			},
+			FiniteJob: apps.FiniteJob{
+				Retries: pointer.Int32(cmd.DeployJob.Retries),
+				Timeout: &metav1.Duration{Duration: cmd.DeployJob.Timeout},
+			},
+		}
 	}
 
 	return &apps.ProjectConfig{
@@ -44,6 +60,7 @@ func (cmd *configCmd) newProjectConfig(namespace string) *apps.ProjectConfig {
 					Port:            cmd.Port,
 					Env:             env,
 					EnableBasicAuth: cmd.BasicAuth,
+					DeployJob:       deployJob,
 				},
 			},
 		},

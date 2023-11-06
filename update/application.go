@@ -138,7 +138,7 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 		app.Spec.ForProvider.Config.EnableBasicAuth = cmd.BasicAuth
 	}
 	if cmd.DeployJob != nil {
-		cmd.applyDeployJobUpdates(app)
+		cmd.DeployJob.applyUpdates(&app.Spec.ForProvider.Config)
 	}
 
 	var env map[string]string
@@ -167,31 +167,31 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 	app.Spec.ForProvider.BuildEnv = util.UpdateEnvVars(app.Spec.ForProvider.BuildEnv, buildEnv, buildDelEnv)
 }
 
-func (cmd *applicationCmd) applyDeployJobUpdates(app *apps.Application) {
-	if cmd.DeployJob.Enabled != nil && !*cmd.DeployJob.Enabled {
+func (job deployJob) applyUpdates(cfg *apps.Config) {
+	if job.Enabled != nil && !*job.Enabled {
 		// if enabled is explicitly set to false we set the DeployJob field to
 		// nil on the API, to completely remove the object.
-		app.Spec.ForProvider.Config.DeployJob = nil
+		cfg.DeployJob = nil
 		return
 	}
 
-	if cmd.DeployJob.Name != nil && len(*cmd.DeployJob.Name) != 0 {
-		ensureDeployJob(app).Spec.ForProvider.Config.DeployJob.Name = *cmd.DeployJob.Name
+	if job.Name != nil && len(*job.Name) != 0 {
+		ensureDeployJob(cfg).DeployJob.Name = *job.Name
 	}
-	if cmd.DeployJob.Command != nil && len(*cmd.DeployJob.Command) != 0 {
-		ensureDeployJob(app).Spec.ForProvider.Config.DeployJob.Command = *cmd.DeployJob.Command
+	if job.Command != nil && len(*job.Command) != 0 {
+		ensureDeployJob(cfg).DeployJob.Command = *job.Command
 	}
-	if cmd.DeployJob.Retries != nil {
-		ensureDeployJob(app).Spec.ForProvider.Config.DeployJob.Retries = cmd.DeployJob.Retries
+	if job.Retries != nil {
+		ensureDeployJob(cfg).DeployJob.Retries = job.Retries
 	}
-	if cmd.DeployJob.Timeout != nil {
-		ensureDeployJob(app).Spec.ForProvider.Config.DeployJob.Timeout = &metav1.Duration{Duration: *cmd.DeployJob.Timeout}
+	if job.Timeout != nil {
+		ensureDeployJob(cfg).DeployJob.Timeout = &metav1.Duration{Duration: *job.Timeout}
 	}
 }
 
-func ensureDeployJob(app *apps.Application) *apps.Application {
-	if app.Spec.ForProvider.Config.DeployJob == nil {
-		app.Spec.ForProvider.Config.DeployJob = &apps.DeployJob{}
+func ensureDeployJob(cfg *apps.Config) *apps.Config {
+	if cfg.DeployJob == nil {
+		cfg.DeployJob = &apps.DeployJob{}
 	}
-	return app
+	return cfg
 }

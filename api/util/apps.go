@@ -21,6 +21,7 @@ const (
 	// DNSSetupURL redirects to the proper deplo.io docs entry about
 	// how to setup custom hosts
 	DNSSetupURL = "https://docs.nine.ch/a/myshbw3EY1"
+	NoneText    = "<none>"
 )
 
 func UnverifiedAppHosts(app *apps.Application) []string {
@@ -96,7 +97,11 @@ func UpdateEnvVars(oldEnvs []apps.EnvVar, newEnvs map[string]string, toDelete []
 
 func EnvVarToString(envs apps.EnvVars) string {
 	if envs == nil {
-		return "nil"
+		return NoneText
+	}
+
+	if len(envs) == 0 {
+		return NoneText
 	}
 
 	var keyValuePairs []string
