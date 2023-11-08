@@ -385,7 +385,7 @@ func printUnverifiedHostsMessage(app *apps.Application) {
 
 		fmt.Print("\nYour DNS details are:\n")
 		fmt.Printf("  TXT record:\t%s\n", dnsDetails[0].TXTRecord)
-		fmt.Printf("  CNAME target:\t%s\n", dnsDetails[0].CNAMETarget)
+		fmt.Printf("  DNS TARGET:\t%s\n", dnsDetails[0].CNAMETarget)
 
 		fmt.Printf("\nTo make your app available on your custom hosts, please use \n"+
 			"the DNS details and visit %s\n"+

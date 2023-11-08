@@ -150,7 +150,7 @@ func printDNSDetailsTabRow(items []util.DNSDetail, get *Cmd, out io.Writer) erro
 	w := tabwriter.NewWriter(out, 0, 0, 4, ' ', 0)
 
 	if get.Output == full {
-		get.writeHeader(w, "NAME", "TXT RECORD", "CNAME TARGET")
+		get.writeHeader(w, "NAME", "TXT RECORD", "DNS TARGET")
 	}
 
 	for _, item := range items {
