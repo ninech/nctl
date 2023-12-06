@@ -120,6 +120,13 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	defer cancel()
 
 	if err := c.createResource(appWaitCtx); err != nil {
+		if auth.Enabled() {
+			secret := auth.Secret(newApp)
+			if gitErr := client.Delete(ctx, secret); err != nil {
+				return errors.Join(err, fmt.Errorf("unable to delete git auth secret, please contact support: %w", gitErr))
+			}
+		}
+
 		return err
 	}
 

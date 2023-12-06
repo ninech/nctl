@@ -1,13 +1,12 @@
 module github.com/ninech/nctl
 
-go 1.20
+go 1.21
 
 require (
 	github.com/alecthomas/kong v0.7.0
 	github.com/crossplane/crossplane-runtime v0.15.1
 	github.com/docker/docker v20.10.23+incompatible
 	github.com/fatih/color v1.14.1
-	github.com/go-resty/resty/v2 v2.1.1-0.20191201195748-d7b97669fe48
 	github.com/gobuffalo/flect v0.2.3
 	github.com/goccy/go-yaml v1.11.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
@@ -17,6 +16,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/int128/kubelogin v1.25.3
 	github.com/lucasepe/codename v0.2.0
+	github.com/mattn/go-isatty v0.0.19
 	github.com/moby/moby v24.0.1+incompatible
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
 	github.com/ninech/apis v0.0.0-20230905134643-5501080a23f9
@@ -119,7 +119,6 @@ require (
 	github.com/julienschmidt/httprouter v1.3.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/miekg/dns v1.1.50 // indirect
