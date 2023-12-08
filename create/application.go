@@ -19,6 +19,7 @@ import (
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/logs"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/utils/pointer"
@@ -102,10 +103,26 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		if err := auth.Valid(); err != nil {
 			return fmt.Errorf("the credentials are given but they are empty: %w", err)
 		}
-		// for git auth we create a separate secret and then reference it in the app.
+
 		secret := auth.Secret(newApp)
+		// for git auth we create a separate secret and then reference it in the app.
 		if err := client.Create(ctx, secret); err != nil {
-			return fmt.Errorf("unable to create git auth secret: %w", err)
+			if kerrors.IsAlreadyExists(err) {
+				// only update the secret if it is managed by nctl in the first place
+				if v, exists := newApp.Annotations[util.ManagedByAnnotation]; exists && v == util.NctlName {
+					fmt.Println("updating git auth credentials")
+					if err := client.Get(ctx, client.Name(secret.Name), secret); err != nil {
+						return err
+					}
+
+					auth.UpdateSecret(secret)
+					if err := client.Update(ctx, secret); err != nil {
+						return err
+					}
+				}
+			} else {
+				return fmt.Errorf("unable to create git auth secret: %w", err)
+			}
 		}
 
 		newApp.Spec.ForProvider.Git.Auth = &apps.GitAuth{
@@ -120,6 +137,13 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	defer cancel()
 
 	if err := c.createResource(appWaitCtx); err != nil {
+		if auth.Enabled() {
+			secret := auth.Secret(newApp)
+			if gitErr := client.Delete(ctx, secret); err != nil {
+				return errors.Join(err, fmt.Errorf("unable to delete git auth secret: %w", gitErr))
+			}
+		}
+
 		return err
 	}
 
