@@ -16,6 +16,8 @@ import (
 	"github.com/grafana/loki/pkg/logqlmodel"
 	"github.com/grafana/loki/pkg/util/unmarshal"
 	"github.com/prometheus/common/config"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 )
 
 type Client struct {
@@ -87,6 +89,38 @@ func (c *Client) QueryRange(ctx context.Context, out output.LogOutput, q Query) 
 	}
 
 	return printResult(resp.Data.Result, out)
+}
+
+// QueryRangeWithRetry queries logs within a specific time range with a retry
+// in case of an error or not finding any logs.
+func (c *Client) QueryRangeWithRetry(ctx context.Context, out output.LogOutput, q Query) error {
+	return retry.OnError(
+		wait.Backoff{
+			Steps:    5,
+			Duration: 200 * time.Millisecond,
+			Factor:   2.0,
+			Jitter:   0.1,
+			Cap:      10 * time.Second,
+		},
+		func(err error) bool {
+			// retry regardless of the error
+			return true
+		},
+		func() error {
+			resp, err := c.Client.QueryRange(q.QueryString, q.Limit, q.Start, q.End, q.Direction, q.Step, q.Interval, q.Quiet)
+			if err != nil {
+				return err
+			}
+
+			switch streams := resp.Data.Result.(type) {
+			case loghttp.Streams:
+				if len(streams) == 0 {
+					return fmt.Errorf("received no log streams")
+				}
+			}
+
+			return printResult(resp.Data.Result, out)
+		})
 }
 
 func printResult(value loghttp.ResultValue, out output.LogOutput) error {

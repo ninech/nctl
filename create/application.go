@@ -420,14 +420,14 @@ func printUnverifiedHostsMessage(app *apps.Application) {
 }
 
 func printBuildLogs(ctx context.Context, client *api.Client, build *apps.Build) error {
-	return client.Log.QueryRange(
+	return client.Log.QueryRangeWithRetry(
 		ctx, client.Log.StdOut,
 		errorLogQuery(logs.BuildQuery(build.Name, build.Namespace)),
 	)
 }
 
 func printReleaseLogs(ctx context.Context, client *api.Client, release *apps.Release) error {
-	return client.Log.QueryRange(
+	return client.Log.QueryRangeWithRetry(
 		ctx, client.Log.StdOut,
 		errorLogQuery(logs.ApplicationQuery(release.Labels[util.ApplicationNameLabel], release.Namespace)),
 	)
