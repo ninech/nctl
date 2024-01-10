@@ -64,7 +64,7 @@ func TestCreate(t *testing.T) {
 				}
 
 				asa.SetConditions(runtimev1.Available())
-				if err := apiClient.Status().Update(ctx, asa); err != nil {
+				if err := apiClient.Update(ctx, asa); err != nil {
 					errChan <- err
 				}
 			}

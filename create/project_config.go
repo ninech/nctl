@@ -7,7 +7,7 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // all fields need to be pointers so we can detect if they have been set by
@@ -41,7 +41,7 @@ func (cmd *configCmd) newProjectConfig(namespace string) *apps.ProjectConfig {
 				Command: cmd.DeployJob.Command,
 			},
 			FiniteJob: apps.FiniteJob{
-				Retries: pointer.Int32(cmd.DeployJob.Retries),
+				Retries: ptr.To(cmd.DeployJob.Retries),
 				Timeout: &metav1.Duration{Duration: cmd.DeployJob.Timeout},
 			},
 		}

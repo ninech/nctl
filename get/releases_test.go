@@ -15,7 +15,7 @@ import (
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -23,8 +23,8 @@ import (
 var (
 	defaultConfig = apps.Config{
 		Size:     test.AppMicro,
-		Replicas: pointer.Int32(1),
-		Port:     pointer.Int32(8080),
+		Replicas: ptr.To(int32(1)),
+		Port:     ptr.To(int32(8080)),
 	}
 
 	defaultCreationTime = metav1.NewTime(test.MustParseTime(time.RFC3339, "2023-03-13T14:00:00Z"))

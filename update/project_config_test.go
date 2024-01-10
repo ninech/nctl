@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestConfig(t *testing.T) {
@@ -29,10 +29,10 @@ func TestConfig(t *testing.T) {
 			ForProvider: apps.ProjectConfigParameters{
 				Config: apps.Config{
 					Size:            initialSize,
-					Replicas:        pointer.Int32(1),
-					Port:            pointer.Int32(1337),
+					Replicas:        ptr.To(int32(1)),
+					Port:            ptr.To(int32(1337)),
 					Env:             util.EnvVarsFromMap(map[string]string{"foo": "bar"}),
-					EnableBasicAuth: pointer.Bool(false),
+					EnableBasicAuth: ptr.To(false),
 				},
 			},
 		},
@@ -48,7 +48,7 @@ func TestConfig(t *testing.T) {
 			orig:    existingConfig,
 			project: project,
 			cmd: configCmd{
-				Port: pointer.Int32(1234),
+				Port: ptr.To(int32(1234)),
 			},
 			checkConfig: func(t *testing.T, cmd configCmd, orig, updated *apps.ProjectConfig) {
 				assert.Equal(t, *cmd.Port, *updated.Spec.ForProvider.Config.Port)
@@ -58,7 +58,7 @@ func TestConfig(t *testing.T) {
 			orig:    existingConfig,
 			project: project,
 			cmd: configCmd{
-				Size: pointer.String("newsize"),
+				Size: ptr.To("newsize"),
 			},
 			checkConfig: func(t *testing.T, cmd configCmd, orig, updated *apps.ProjectConfig) {
 				assert.Equal(t, *orig.Spec.ForProvider.Config.Port, *updated.Spec.ForProvider.Config.Port)
@@ -69,7 +69,7 @@ func TestConfig(t *testing.T) {
 			orig:    existingConfig,
 			project: project,
 			cmd: configCmd{
-				BasicAuth: pointer.Bool(true),
+				BasicAuth: ptr.To(true),
 			},
 			checkConfig: func(t *testing.T, cmd configCmd, orig, updated *apps.ProjectConfig) {
 				assert.True(t, *updated.Spec.ForProvider.Config.EnableBasicAuth)
@@ -79,14 +79,14 @@ func TestConfig(t *testing.T) {
 			orig:    existingConfig,
 			project: project,
 			cmd: configCmd{
-				Size:      pointer.String("newsize"),
-				Port:      pointer.Int32(1000),
-				Replicas:  pointer.Int32(2),
+				Size:      ptr.To("newsize"),
+				Port:      ptr.To(int32(1000)),
+				Replicas:  ptr.To(int32(2)),
 				Env:       &map[string]string{"zoo": "bar"},
-				BasicAuth: pointer.Bool(true),
+				BasicAuth: ptr.To(true),
 				DeployJob: &deployJob{
-					Command: pointer.String("exit 0"), Name: pointer.String("exit"),
-					Retries: pointer.Int32(1), Timeout: pointer.Duration(time.Minute * 5),
+					Command: ptr.To("exit 0"), Name: ptr.To("exit"),
+					Retries: ptr.To(int32(1)), Timeout: ptr.To(time.Minute * 5),
 				},
 			},
 			checkConfig: func(t *testing.T, cmd configCmd, orig, updated *apps.ProjectConfig) {

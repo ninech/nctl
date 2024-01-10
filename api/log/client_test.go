@@ -35,7 +35,7 @@ func TestClient(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s %s\n", expectedTime.Local().Format(time.RFC3339), expectedLine), buf.String())
 	buf.Reset()
 
-	if err := c.TailQuery(ctx, 0, out, Query{Limit: 10}); err != nil {
+	if err := c.TailQuery(ctx, 0, out, Query{QueryString: "{app=\"test\"}", Limit: 10}); err != nil {
 		t.Fatal(err)
 	}
 	assert.Equal(t, fmt.Sprintf("%s %s\n", expectedTime.Local().Format(time.RFC3339), expectedLine), buf.String())

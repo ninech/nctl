@@ -13,7 +13,7 @@ import (
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -182,8 +182,8 @@ func fakeProjectConfig(
 			ForProvider: apps.ProjectConfigParameters{
 				Config: apps.Config{
 					Size:     test.AppMicro,
-					Replicas: pointer.Int32(1),
-					Port:     pointer.Int32(9000),
+					Replicas: ptr.To(int32(1)),
+					Port:     ptr.To(int32(9000)),
 					Env:      util.EnvVarsFromMap(map[string]string{"key1": "val1"}),
 				},
 			},

@@ -83,7 +83,7 @@ dev
 			projects:     test.Projects(organization, "dev", "staging"),
 			name:         "dev",
 			outputFormat: yamlOut,
-			output:       "kind: Project\napiVersion: management.nine.ch/v1alpha1\nmetadata:\n  name: dev\n  namespace: evilcorp\nspec: {}\n",
+			output:       "kind: Project\napiVersion: management.nine.ch/v1alpha1\nmetadata:\n  name: dev\n  namespace: evilcorp\nspec:\n  isNonProduction: false\n",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {

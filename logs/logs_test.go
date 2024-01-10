@@ -52,15 +52,15 @@ func TestRun(t *testing.T) {
 			cmd: logsCmd{
 				Output: "default",
 				Follow: true,
+				Lines:  50,
 			},
-			// note: the fake follow client does not support limiting log
-			// lines so we just expect them all to be returned
-			expectedLines: len(lines),
+			expectedLines: 50,
 		},
 		"follow json": {
 			cmd: logsCmd{
 				Output: "json",
 				Follow: true,
+				Lines:  len(lines),
 			},
 			expectedLines: len(lines),
 		},

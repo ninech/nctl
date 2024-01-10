@@ -10,7 +10,7 @@ import (
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestProjectConfig(t *testing.T) {
@@ -29,10 +29,10 @@ func TestProjectConfig(t *testing.T) {
 		"all fields set": {
 			cmd: configCmd{
 				Size:      string(test.AppMini),
-				Port:      pointer.Int32(1337),
-				Replicas:  pointer.Int32(42),
+				Port:      ptr.To(int32(1337)),
+				Replicas:  ptr.To(int32(42)),
 				Env:       &map[string]string{"key1": "val1"},
-				BasicAuth: pointer.Bool(true),
+				BasicAuth: ptr.To(true),
 				DeployJob: deployJob{
 					Command: "exit 0", Name: "exit",
 					Retries: 1, Timeout: time.Minute * 5,
@@ -55,7 +55,7 @@ func TestProjectConfig(t *testing.T) {
 		"some fields not set": {
 			cmd: configCmd{
 				Size:     string(test.AppMicro),
-				Replicas: pointer.Int32(1),
+				Replicas: ptr.To(int32(1)),
 			},
 			project: "namespace-2",
 			checkConfig: func(t *testing.T, cmd configCmd, cfg *apps.ProjectConfig) {

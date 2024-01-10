@@ -1,6 +1,7 @@
 package log
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -9,10 +10,12 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/grafana/loki/pkg/logcli/volume"
 	"github.com/grafana/loki/pkg/loghttp"
 	legacy "github.com/grafana/loki/pkg/loghttp/legacy"
 	"github.com/grafana/loki/pkg/logproto"
 	"github.com/grafana/loki/pkg/util"
+	"github.com/grafana/loki/pkg/util/httpreq"
 	"github.com/grafana/loki/pkg/util/marshal"
 )
 
@@ -32,6 +35,11 @@ func NewFake(t *testing.T, expectedTime time.Time, expectedLines ...string) *fak
 func lokiTailHandler(t *testing.T, timestamp time.Time, lines []string) http.HandlerFunc {
 	upgrader := websocket.Upgrader{}
 	return func(w http.ResponseWriter, r *http.Request) {
+		if err := r.ParseForm(); err != nil {
+			t.Error(err)
+			return
+		}
+
 		req, err := loghttp.ParseTailQuery(r)
 		if err != nil {
 			t.Error(err)
@@ -64,7 +72,8 @@ func lokiTailHandler(t *testing.T, timestamp time.Time, lines []string) http.Han
 			},
 		}
 
-		if err := marshal.WriteTailResponseJSON(resp, c); err != nil {
+		connWriter := marshal.NewWebsocketJSONWriter(c)
+		if err := marshal.WriteTailResponseJSON(resp, connWriter, httpreq.ExtractEncodingFlags(r)); err != nil {
 			t.Error(err)
 			return
 		}
@@ -125,21 +134,33 @@ func (f fake) LiveTailQueryConn(queryStr string, delayFor time.Duration, limit i
 }
 
 func (f fake) ListLabelNames(quiet bool, start, end time.Time) (*loghttp.LabelResponse, error) {
-	return nil, nil
+	return nil, errors.New("not implemented")
 }
 
 func (f fake) ListLabelValues(name string, quiet bool, start, end time.Time) (*loghttp.LabelResponse, error) {
-	return nil, nil
+	return nil, errors.New("not implemented")
 }
 
 func (f fake) Series(matchers []string, start, end time.Time, quiet bool) (*loghttp.SeriesResponse, error) {
-	return nil, nil
+	return nil, errors.New("not implemented")
 }
 
 func (f fake) Query(queryStr string, limit int, time time.Time, direction logproto.Direction, quiet bool) (*loghttp.QueryResponse, error) {
-	return nil, nil
+	return nil, errors.New("not implemented")
 }
 
 func (f fake) GetOrgID() string {
 	return "fake"
+}
+
+func (f fake) GetStats(queryStr string, start, end time.Time, quiet bool) (*logproto.IndexStatsResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (f fake) GetVolume(query *volume.Query) (*loghttp.QueryResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (f fake) GetVolumeRange(query *volume.Query) (*loghttp.QueryResponse, error) {
+	return nil, errors.New("not implemented")
 }

@@ -22,7 +22,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -208,7 +208,7 @@ func (app *applicationCmd) config() apps.Config {
 				Command: app.DeployJob.Command,
 			},
 			FiniteJob: apps.FiniteJob{
-				Retries: pointer.Int32(app.DeployJob.Retries),
+				Retries: ptr.To(app.DeployJob.Retries),
 				Timeout: &metav1.Duration{Duration: app.DeployJob.Timeout},
 			},
 		}
