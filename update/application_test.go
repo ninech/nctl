@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -42,17 +42,17 @@ func TestApplication(t *testing.T) {
 				Hosts: []string{"one.example.org"},
 				Config: apps.Config{
 					Size:            initialSize,
-					Replicas:        pointer.Int32(1),
-					Port:            pointer.Int32(1337),
+					Replicas:        ptr.To(int32(1)),
+					Port:            ptr.To(int32(1337)),
 					Env:             util.EnvVarsFromMap(map[string]string{"foo": "bar"}),
-					EnableBasicAuth: pointer.Bool(false),
+					EnableBasicAuth: ptr.To(false),
 					DeployJob: &apps.DeployJob{
 						Job: apps.Job{
 							Command: "date",
 							Name:    "print-date",
 						},
 						FiniteJob: apps.FiniteJob{
-							Retries: pointer.Int32(2),
+							Retries: ptr.To(int32(2)),
 							Timeout: &metav1.Duration{Duration: time.Minute},
 						},
 					},
@@ -72,8 +72,8 @@ func TestApplication(t *testing.T) {
 		"change port": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				Name: pointer.String(existingApp.Name),
-				Port: pointer.Int32(1234),
+				Name: ptr.To(existingApp.Name),
+				Port: ptr.To(int32(1234)),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				assert.Equal(t, *cmd.Port, *updated.Spec.ForProvider.Config.Port)
@@ -82,8 +82,8 @@ func TestApplication(t *testing.T) {
 		"port is unchanged when updating unrelated field": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				Name: pointer.String(existingApp.Name),
-				Size: pointer.String("newsize"),
+				Name: ptr.To(existingApp.Name),
+				Size: ptr.To("newsize"),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				assert.Equal(t, *orig.Spec.ForProvider.Config.Port, *updated.Spec.ForProvider.Config.Port)
@@ -93,22 +93,22 @@ func TestApplication(t *testing.T) {
 		"all field updates": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				Name: pointer.String(existingApp.Name),
+				Name: ptr.To(existingApp.Name),
 				Git: &gitConfig{
-					URL:      pointer.String("https://newgit.example.org"),
-					SubPath:  pointer.String("new/path"),
-					Revision: pointer.String("some-change"),
+					URL:      ptr.To("https://newgit.example.org"),
+					SubPath:  ptr.To("new/path"),
+					Revision: ptr.To("some-change"),
 				},
-				Size:      pointer.String("newsize"),
-				Port:      pointer.Int32(1234),
-				Replicas:  pointer.Int32(999),
+				Size:      ptr.To("newsize"),
+				Port:      ptr.To(int32(1234)),
+				Replicas:  ptr.To(int32(999)),
 				Hosts:     &[]string{"one.example.org", "two.example.org"},
 				Env:       &map[string]string{"bar": "zoo"},
 				BuildEnv:  &map[string]string{"BP_GO_TARGETS": "./cmd/web-server"},
-				BasicAuth: pointer.Bool(true),
+				BasicAuth: ptr.To(true),
 				DeployJob: &deployJob{
-					Command: pointer.String("exit 0"), Name: pointer.String("exit"),
-					Retries: pointer.Int32(1), Timeout: pointer.Duration(time.Minute * 5),
+					Command: ptr.To("exit 0"), Name: ptr.To("exit"),
+					Retries: ptr.To(int32(1)), Timeout: ptr.To(time.Minute * 5),
 				},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
@@ -133,7 +133,7 @@ func TestApplication(t *testing.T) {
 		"reset env variable": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				Name:      pointer.String(existingApp.Name),
+				Name:      ptr.To(existingApp.Name),
 				DeleteEnv: &[]string{"foo"},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
@@ -144,7 +144,7 @@ func TestApplication(t *testing.T) {
 		"reset build env variable": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				Name:           pointer.String(existingApp.Name),
+				Name:           ptr.To(existingApp.Name),
 				DeleteBuildEnv: &[]string{"BP_ENVIRONMENT_VARIABLE"},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
@@ -155,14 +155,14 @@ func TestApplication(t *testing.T) {
 		"git auth update user/pass": {
 			orig: existingApp,
 			gitAuth: &util.GitAuth{
-				Username: pointer.String("some-user"),
-				Password: pointer.String("some-password"),
+				Username: ptr.To("some-user"),
+				Password: ptr.To("some-password"),
 			},
 			cmd: applicationCmd{
-				Name: pointer.String(existingApp.Name),
+				Name: ptr.To(existingApp.Name),
 				Git: &gitConfig{
-					Username: pointer.String("new-user"),
-					Password: pointer.String("new-pass"),
+					Username: ptr.To("new-user"),
+					Password: ptr.To("new-pass"),
 				},
 			},
 			checkSecret: func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret) {
@@ -174,12 +174,12 @@ func TestApplication(t *testing.T) {
 		"git auth update ssh key": {
 			orig: existingApp,
 			gitAuth: &util.GitAuth{
-				SSHPrivateKey: pointer.String("fakekey"),
+				SSHPrivateKey: ptr.To("fakekey"),
 			},
 			cmd: applicationCmd{
-				Name: pointer.String(existingApp.Name),
+				Name: ptr.To(existingApp.Name),
 				Git: &gitConfig{
-					SSHPrivateKey: pointer.String("newfakekey"),
+					SSHPrivateKey: ptr.To("newfakekey"),
 				},
 			},
 			checkSecret: func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret) {
@@ -191,10 +191,10 @@ func TestApplication(t *testing.T) {
 			orig:    existingApp,
 			gitAuth: nil,
 			cmd: applicationCmd{
-				Name: pointer.String(existingApp.Name),
+				Name: ptr.To(existingApp.Name),
 				Git: &gitConfig{
-					Username: pointer.String("new-user"),
-					Password: pointer.String("new-pass"),
+					Username: ptr.To("new-user"),
+					Password: ptr.To("new-pass"),
 				},
 			},
 			checkSecret: func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret) {
@@ -206,12 +206,12 @@ func TestApplication(t *testing.T) {
 		"git auth is unchanged on normal field update": {
 			orig: existingApp,
 			gitAuth: &util.GitAuth{
-				SSHPrivateKey: pointer.String("fakekey"),
+				SSHPrivateKey: ptr.To("fakekey"),
 			},
 			cmd: applicationCmd{
-				Name: pointer.String(existingApp.Name),
+				Name: ptr.To(existingApp.Name),
 				Git: &gitConfig{
-					URL: pointer.String("https://newgit.example.org"),
+					URL: ptr.To("https://newgit.example.org"),
 				},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
@@ -225,14 +225,14 @@ func TestApplication(t *testing.T) {
 		"disable deploy job": {
 			orig: existingApp,
 			gitAuth: &util.GitAuth{
-				SSHPrivateKey: pointer.String("fakekey"),
+				SSHPrivateKey: ptr.To("fakekey"),
 			},
 			cmd: applicationCmd{
-				Name: pointer.String(existingApp.Name),
+				Name: ptr.To(existingApp.Name),
 				Git: &gitConfig{
-					URL: pointer.String("https://newgit.example.org"),
+					URL: ptr.To("https://newgit.example.org"),
 				},
-				DeployJob: &deployJob{Enabled: pointer.Bool(false)},
+				DeployJob: &deployJob{Enabled: ptr.To(false)},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				assert.Nil(t, updated.Spec.ForProvider.Config.DeployJob)
@@ -241,8 +241,8 @@ func TestApplication(t *testing.T) {
 		"retry build": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				Name:       pointer.String(existingApp.Name),
-				RetryBuild: pointer.Bool(true),
+				Name:       ptr.To(existingApp.Name),
+				RetryBuild: ptr.To(true),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				assert.NotNil(t, util.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
@@ -251,8 +251,8 @@ func TestApplication(t *testing.T) {
 		"do not retry build": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				Name:       pointer.String(existingApp.Name),
-				RetryBuild: pointer.Bool(false),
+				Name:       ptr.To(existingApp.Name),
+				RetryBuild: ptr.To(false),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				assert.Nil(t, util.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))

@@ -22,7 +22,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -120,11 +120,11 @@ func TestApplication(t *testing.T) {
 				},
 				Wait:      false,
 				Name:      "custom-name",
-				Size:      pointer.String("mini"),
+				Size:      ptr.To("mini"),
 				Hosts:     []string{"custom.example.org", "custom2.example.org"},
-				Port:      pointer.Int32(1337),
-				Replicas:  pointer.Int32(42),
-				BasicAuth: pointer.Bool(false),
+				Port:      ptr.To(int32(1337)),
+				Replicas:  ptr.To(int32(42)),
+				BasicAuth: ptr.To(false),
 				Env:       map[string]string{"hello": "world"},
 				BuildEnv:  map[string]string{"BP_GO_TARGETS": "./cmd/web-server"},
 				DeployJob: deployJob{Command: "date", Name: "print-date", Retries: 2, Timeout: time.Minute},
@@ -152,8 +152,8 @@ func TestApplication(t *testing.T) {
 			cmd: applicationCmd{
 				Wait:      false,
 				Name:      "basic-auth",
-				Size:      pointer.String("mini"),
-				BasicAuth: pointer.Bool(true),
+				Size:      ptr.To("mini"),
+				BasicAuth: ptr.To(true),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				assert.Equal(t, cmd.Name, app.Name)
@@ -165,8 +165,8 @@ func TestApplication(t *testing.T) {
 			cmd: applicationCmd{
 				Git: gitConfig{
 					URL:      "https://github.com/ninech/doesnotexist.git",
-					Username: pointer.String("deploy"),
-					Password: pointer.String("hunter2"),
+					Username: ptr.To("deploy"),
+					Password: ptr.To("hunter2"),
 				},
 				Wait: false,
 				Name: "user-pass-auth",
@@ -187,11 +187,11 @@ func TestApplication(t *testing.T) {
 			cmd: applicationCmd{
 				Git: gitConfig{
 					URL:           "https://github.com/ninech/doesnotexist.git",
-					SSHPrivateKey: pointer.String(dummySSHRSAPrivateKey),
+					SSHPrivateKey: ptr.To(dummySSHRSAPrivateKey),
 				},
 				Wait: false,
 				Name: "ssh-key-auth",
-				Size: pointer.String("mini"),
+				Size: ptr.To("mini"),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				auth := util.GitAuth{SSHPrivateKey: cmd.Git.SSHPrivateKey}
@@ -208,11 +208,11 @@ func TestApplication(t *testing.T) {
 			cmd: applicationCmd{
 				Git: gitConfig{
 					URL:           "https://github.com/ninech/doesnotexist.git",
-					SSHPrivateKey: pointer.String(dummySSHED25519PrivateKey),
+					SSHPrivateKey: ptr.To(dummySSHED25519PrivateKey),
 				},
 				Wait: false,
 				Name: "ssh-key-auth-ed25519",
-				Size: pointer.String("mini"),
+				Size: ptr.To("mini"),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				auth := util.GitAuth{SSHPrivateKey: cmd.Git.SSHPrivateKey}
@@ -229,14 +229,14 @@ func TestApplication(t *testing.T) {
 			cmd: applicationCmd{
 				Git: gitConfig{
 					URL:                   "https://github.com/ninech/doesnotexist.git",
-					SSHPrivateKeyFromFile: pointer.String(filenameRSAKey),
+					SSHPrivateKeyFromFile: ptr.To(filenameRSAKey),
 				},
 				Wait: false,
 				Name: "ssh-key-auth-from-file",
-				Size: pointer.String("mini"),
+				Size: ptr.To("mini"),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
-				auth := util.GitAuth{SSHPrivateKey: pointer.String("notused")}
+				auth := util.GitAuth{SSHPrivateKey: ptr.To("notused")}
 				authSecret := auth.Secret(app)
 				if err := apiClient.Get(ctx, api.ObjectName(authSecret), authSecret); err != nil {
 					t.Fatal(err)
@@ -250,14 +250,14 @@ func TestApplication(t *testing.T) {
 			cmd: applicationCmd{
 				Git: gitConfig{
 					URL:                   "https://github.com/ninech/doesnotexist.git",
-					SSHPrivateKeyFromFile: pointer.String(filenameED25519Key),
+					SSHPrivateKeyFromFile: ptr.To(filenameED25519Key),
 				},
 				Wait: false,
 				Name: "ssh-key-auth-from-file-ed25519",
-				Size: pointer.String("mini"),
+				Size: ptr.To("mini"),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
-				auth := util.GitAuth{SSHPrivateKey: pointer.String("notused")}
+				auth := util.GitAuth{SSHPrivateKey: ptr.To("notused")}
 				authSecret := auth.Secret(app)
 				if err := apiClient.Get(ctx, api.ObjectName(authSecret), authSecret); err != nil {
 					t.Fatal(err)
@@ -271,11 +271,11 @@ func TestApplication(t *testing.T) {
 			cmd: applicationCmd{
 				Git: gitConfig{
 					URL:           "https://github.com/ninech/doesnotexist.git",
-					SSHPrivateKey: pointer.String("not valid"),
+					SSHPrivateKey: ptr.To("not valid"),
 				},
 				Wait: false,
 				Name: "ssh-key-auth-non-valid",
-				Size: pointer.String("mini"),
+				Size: ptr.To("mini"),
 			},
 			errorExpected: true,
 		},
@@ -286,7 +286,7 @@ func TestApplication(t *testing.T) {
 				},
 				Wait:      false,
 				Name:      "deploy-job-empty-command",
-				Size:      pointer.String("mini"),
+				Size:      ptr.To("mini"),
 				DeployJob: deployJob{Command: "", Name: "print-date", Retries: 2, Timeout: time.Minute},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
@@ -300,7 +300,7 @@ func TestApplication(t *testing.T) {
 				},
 				Wait:      false,
 				Name:      "deploy-job-empty-name",
-				Size:      pointer.String("mini"),
+				Size:      ptr.To("mini"),
 				DeployJob: deployJob{Command: "date", Name: "", Retries: 2, Timeout: time.Minute},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
@@ -334,7 +334,7 @@ func TestApplicationWait(t *testing.T) {
 		Wait:        true,
 		WaitTimeout: time.Second * 5,
 		Name:        "some-name",
-		BasicAuth:   pointer.Bool(true),
+		BasicAuth:   ptr.To(true),
 	}
 	project := "default"
 
