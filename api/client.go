@@ -11,7 +11,6 @@ import (
 	"github.com/ninech/apis"
 	"github.com/ninech/nctl/api/log"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
@@ -56,12 +55,8 @@ func New(ctx context.Context, apiClusterContext, project string, opts ...ClientO
 		return nil, err
 	}
 
-	mapper := apis.StaticRESTMapper(scheme)
-	mapper.Add(corev1.SchemeGroupVersion.WithKind("Secret"), meta.RESTScopeNamespace)
-
 	c, err := runtimeclient.NewWithWatch(client.Config, runtimeclient.Options{
 		Scheme: scheme,
-		Mapper: mapper,
 	})
 	if err != nil {
 		return nil, err

@@ -411,7 +411,7 @@ func TestApplicationWait(t *testing.T) {
 				app.Status.AtProvider.Hosts = []apps.VerificationStatus{{Name: "host.example.org"}}
 				app.Status.AtProvider.CNAMETarget = "some.target.example.org"
 				app.Status.AtProvider.BasicAuthSecret = &meta.LocalReference{Name: basicAuth.Name}
-				if err := apiClient.Status().Update(ctx, app); err != nil {
+				if err := apiClient.Update(ctx, app); err != nil {
 					errors <- err
 				}
 
@@ -428,12 +428,12 @@ func TestApplicationWait(t *testing.T) {
 				}
 
 				build.Status.AtProvider.BuildStatus = buildStatusRunning
-				if err := apiClient.Status().Update(ctx, build); err != nil {
+				if err := apiClient.Update(ctx, build); err != nil {
 					errors <- err
 				}
 
 				build.Status.AtProvider.BuildStatus = buildStatusSuccess
-				if err := apiClient.Status().Update(ctx, build); err != nil {
+				if err := apiClient.Update(ctx, build); err != nil {
 					errors <- err
 				}
 
@@ -442,7 +442,7 @@ func TestApplicationWait(t *testing.T) {
 				}
 
 				release.Status.AtProvider.ReleaseStatus = releaseStatusAvailable
-				if err := apiClient.Status().Update(ctx, release); err != nil {
+				if err := apiClient.Update(ctx, release); err != nil {
 					errors <- err
 				}
 			}
@@ -525,7 +525,7 @@ func TestApplicationBuildFail(t *testing.T) {
 				}
 
 				build.Status.AtProvider.BuildStatus = buildStatusError
-				if err := client.Status().Update(ctx, build); err != nil {
+				if err := client.Update(ctx, build); err != nil {
 					errors <- err
 				}
 			}
@@ -553,5 +553,5 @@ func setResourceCondition(ctx context.Context, apiClient *api.Client, mg resourc
 	}
 
 	mg.SetConditions(condition)
-	return apiClient.Status().Update(ctx, mg)
+	return apiClient.Update(ctx, mg)
 }
