@@ -40,13 +40,16 @@ type creator struct {
 }
 
 type waitStage struct {
-	kind        string
-	waitMessage *message
-	doneMessage *message
-	objectList  runtimeclient.ObjectList
-	listOpts    []runtimeclient.ListOption
-	onResult    resultFunc
-	spinner     *yacspin.Spinner
+	kind           string
+	waitMessage    *message
+	doneMessage    *message
+	objectList     runtimeclient.ObjectList
+	listOpts       []runtimeclient.ListOption
+	onResult       resultFunc
+	spinner        *yacspin.Spinner
+	disableSpinner bool
+	// beforeWait is a hook that is called just before the wait is being run.
+	beforeWait func()
 }
 
 type message struct {
@@ -104,6 +107,10 @@ func (c *creator) wait(ctx context.Context, stages ...waitStage) error {
 		}
 		stage.spinner = spinner
 
+		if stage.beforeWait != nil {
+			stage.beforeWait()
+		}
+
 		if err := retry.OnError(watchBackoff, isWatchError, func() error {
 			return stage.wait(ctx, c.client)
 		}); err != nil {
@@ -157,10 +164,20 @@ func isWatchError(err error) bool {
 }
 
 func (w *waitStage) wait(ctx context.Context, client *api.Client) error {
-	_ = w.spinner.Start()
 
+	if !w.disableSpinner {
+		_ = w.spinner.Start()
+	}
+
+	return w.watch(ctx, client)
+}
+
+func (w *waitStage) watch(ctx context.Context, client *api.Client) error {
 	wa, err := client.Watch(ctx, w.objectList, w.listOpts...)
 	if err != nil {
+		if err == context.Canceled {
+			return err
+		}
 		return watchError{kind: w.kind}
 	}
 

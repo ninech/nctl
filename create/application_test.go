@@ -384,6 +384,13 @@ func TestApplicationWait(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	out, err := log.StdOut("default")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	apiClient.Log = &log.Client{Client: log.NewFake(t, time.Now(), "one", "two"), StdOut: out}
+
 	ctx := context.Background()
 
 	// to test the wait we create a ticker that continously updates our
