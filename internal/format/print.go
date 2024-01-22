@@ -240,6 +240,7 @@ func stripObj(obj resource.Object, excludeAdditional [][]string) (resource.Objec
 	unstructured.RemoveNestedField(unstructuredObj, "metadata", "creationTimestamp")
 	unstructured.RemoveNestedField(unstructuredObj, "spec", "deletionPolicy")
 	unstructured.RemoveNestedField(unstructuredObj, "spec", "providerConfigRef")
+	unstructured.RemoveNestedField(unstructuredObj, "spec", "managementPolicies")
 
 	for _, exclude := range excludeAdditional {
 		unstructured.RemoveNestedField(unstructuredObj, exclude...)
