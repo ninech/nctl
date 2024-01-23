@@ -42,3 +42,7 @@ const (
 func BuildQuery(name, project string) string {
 	return queryString(map[string]string{buildLabel: name, phaseLabel: buildPhase}, project)
 }
+
+func BuildsOfAppQuery(name, project string) string {
+	return queryString(map[string]string{appLabel: name, phaseLabel: buildPhase}, project)
+}

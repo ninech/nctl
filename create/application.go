@@ -11,13 +11,16 @@ import (
 	"time"
 
 	"github.com/alecthomas/kong"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/grafana/loki/pkg/logproto"
+	"github.com/mattn/go-isatty"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/log"
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/internal/format"
+	"github.com/ninech/nctl/internal/logbox"
 	"github.com/ninech/nctl/logs"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -154,7 +157,7 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	if err := c.wait(
 		appWaitCtx,
 		waitForBuildStart(newApp),
-		waitForBuildFinish(newApp),
+		waitForBuildFinish(appWaitCtx, cancel, newApp, client.Log),
 		waitForRelease(newApp),
 	); err != nil {
 		if buildErr, ok := err.(buildError); ok {
@@ -305,20 +308,63 @@ func waitForBuildStart(app *apps.Application) waitStage {
 	}
 }
 
-func waitForBuildFinish(app *apps.Application) waitStage {
+func waitForBuildFinish(ctx context.Context, cancel context.CancelFunc, app *apps.Application, logClient *log.Client) waitStage {
+	msg := message{icon: "📦", text: "building application"}
+	interrupt := make(chan bool, 1)
+	lb := logbox.New(15, msg.progress(), interrupt)
+	opts := []tea.ProgramOption{tea.WithoutSignalHandler()}
+
+	// disable input if we are not in a terminal
+	if !isatty.IsTerminal(os.Stdout.Fd()) {
+		opts = append(opts, tea.WithInput(nil))
+	}
+
+	p := tea.NewProgram(lb, opts...)
+
 	return waitStage{
-		kind:       strings.ToLower(apps.BuildKind),
-		objectList: &apps.BuildList{},
+		disableSpinner: true,
+		kind:           strings.ToLower(apps.BuildKind),
+		objectList:     &apps.BuildList{},
 		listOpts: []runtimeclient.ListOption{
 			runtimeclient.InNamespace(app.GetNamespace()),
 			runtimeclient.MatchingLabels{util.ApplicationNameLabel: app.GetName()},
 		},
-		waitMessage: &message{
-			text: "building application",
-			icon: "📦",
-		},
+		waitMessage: nil,
 		doneMessage: &message{
 			disabled: true,
+		},
+		beforeWait: func() {
+			// setup the log tailing and send it to the logbox. Run in the
+			// background until the context is cancelled.
+			go func() {
+				if err := logClient.TailQuery(
+					ctx, 0, &logbox.Output{Program: p},
+					log.Query{
+						QueryString: logs.BuildsOfAppQuery(app.Name, app.Namespace),
+						Limit:       10,
+						Start:       time.Now(),
+						End:         time.Now(),
+						Direction:   logproto.BACKWARD,
+						Quiet:       true,
+					},
+				); err != nil {
+					fmt.Fprintf(os.Stderr, "error tailing the build log: %s", err)
+				}
+			}()
+
+			go func() {
+				if _, err := p.Run(); err != nil {
+					fmt.Fprintf(os.Stderr, "error running tea program: %s", err)
+					return
+				}
+				p.Wait()
+				if <-interrupt {
+					// as the tea program intercepts ctrl+c/d while it's
+					// running, we need to cancel the context when we get an
+					// interrupt signal.
+					cancel()
+				}
+			}()
 		},
 		onResult: func(e watch.Event) (bool, error) {
 			build, ok := e.Object.(*apps.Build)
@@ -328,10 +374,15 @@ func waitForBuildFinish(app *apps.Application) waitStage {
 
 			switch build.Status.AtProvider.BuildStatus {
 			case buildStatusSuccess:
+				p.Send(logbox.Msg{Done: true})
+				p.Quit()
+				p.Wait()
 				return true, nil
 			case buildStatusError:
 				fallthrough
 			case buildStatusUnknown:
+				p.Quit()
+				p.Wait()
 				return false, buildError{build: build}
 			}
 
