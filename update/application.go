@@ -3,12 +3,14 @@ package update
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/api/validation"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -19,28 +21,46 @@ const BuildTrigger = "BUILD_TRIGGER"
 // all fields need to be pointers so we can detect if they have been set by
 // the user.
 type applicationCmd struct {
-	Name           *string            `arg:"" help:"Name of the application."`
-	Git            *gitConfig         `embed:"" prefix:"git-"`
-	Size           *string            `help:"Size of the app."`
-	Port           *int32             `help:"Port the app is listening on."`
-	Replicas       *int32             `help:"Amount of replicas of the running app."`
-	Hosts          *[]string          `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
-	BasicAuth      *bool              `help:"Enable/Disable basic authentication for the application."`
-	Env            *map[string]string `help:"Environment variables which are passed to the app at runtime."`
-	DeleteEnv      *[]string          `help:"Runtime environment variables names which are to be deleted."`
-	BuildEnv       *map[string]string `help:"Environment variables names which are passed to the app build process."`
-	DeleteBuildEnv *[]string          `help:"Build environment variables which are to be deleted."`
-	DeployJob      *deployJob         `embed:"" prefix:"deploy-job-"`
-	RetryBuild     *bool              `help:"Retries build for the application if set to true." placeholder:"false"`
+	Name                     *string            `arg:"" help:"Name of the application."`
+	Git                      *gitConfig         `embed:"" prefix:"git-"`
+	Size                     *string            `help:"Size of the app."`
+	Port                     *int32             `help:"Port the app is listening on."`
+	Replicas                 *int32             `help:"Amount of replicas of the running app."`
+	Hosts                    *[]string          `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
+	BasicAuth                *bool              `help:"Enable/Disable basic authentication for the application."`
+	Env                      *map[string]string `help:"Environment variables which are passed to the app at runtime."`
+	DeleteEnv                *[]string          `help:"Runtime environment variables names which are to be deleted."`
+	BuildEnv                 *map[string]string `help:"Environment variables names which are passed to the app build process."`
+	DeleteBuildEnv           *[]string          `help:"Build environment variables which are to be deleted."`
+	DeployJob                *deployJob         `embed:"" prefix:"deploy-job-"`
+	RetryBuild               *bool              `help:"Retries build for the application if set to true." placeholder:"false"`
+	GitInformationServiceURL string             `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
+	SkipRepoAccessCheck      bool               `help:"Skip the git repository access check" default:"false"`
+	Debug                    bool               `help:"Enable debug messages" default:"false"`
 }
 
 type gitConfig struct {
-	URL           *string `help:"URL to the Git repository containing the application source. Both HTTPS and SSH formats are supported."`
-	SubPath       *string `help:"SubPath is a path in the git repo which contains the application code. If not given, the root directory of the git repo will be used."`
-	Revision      *string `help:"Revision defines the revision of the source to deploy the application to. This can be a commit, tag or branch."`
-	Username      *string `help:"Username to use when authenticating to the git repository over HTTPS." env:"GIT_USERNAME"`
-	Password      *string `help:"Password to use when authenticating to the git repository over HTTPS. In case of GitHub or GitLab, this can also be an access token." env:"GIT_PASSWORD"`
-	SSHPrivateKey *string `help:"Private key in x509 format to connect to the git repository via SSH." env:"GIT_SSH_PRIVATE_KEY"`
+	URL                   *string `help:"URL to the Git repository containing the application source. Both HTTPS and SSH formats are supported."`
+	SubPath               *string `help:"SubPath is a path in the git repo which contains the application code. If not given, the root directory of the git repo will be used."`
+	Revision              *string `help:"Revision defines the revision of the source to deploy the application to. This can be a commit, tag or branch."`
+	Username              *string `help:"Username to use when authenticating to the git repository over HTTPS." env:"GIT_USERNAME"`
+	Password              *string `help:"Password to use when authenticating to the git repository over HTTPS. In case of GitHub or GitLab, this can also be an access token." env:"GIT_PASSWORD"`
+	SSHPrivateKey         *string `help:"Private key in x509 format to connect to the git repository via SSH." env:"GIT_SSH_PRIVATE_KEY"`
+	SSHPrivateKeyFromFile *string `help:"Path to a file containing a private key in PEM format to connect to the git repository via SSH." env:"GIT_SSH_PRIVATE_KEY_FROM_FILE" xor:"SSH_KEY"`
+}
+
+func (g gitConfig) sshPrivateKey() (*string, error) {
+	if g.SSHPrivateKey != nil {
+		return util.ValidatePEM(*g.SSHPrivateKey)
+	}
+	if g.SSHPrivateKeyFromFile == nil {
+		return nil, nil
+	}
+	content, err := os.ReadFile(*g.SSHPrivateKeyFromFile)
+	if err != nil {
+		return nil, err
+	}
+	return util.ValidatePEM(string(content))
 }
 
 type deployJob struct {
@@ -71,35 +91,52 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		if !ok {
 			return fmt.Errorf("resource is of type %T, expected %T", current, apps.Application{})
 		}
-
 		cmd.applyUpdates(app)
 
-		if cmd.Git != nil {
-			auth := util.GitAuth{
-				Username:      cmd.Git.Username,
-				Password:      cmd.Git.Password,
-				SSHPrivateKey: cmd.Git.SSHPrivateKey,
+		// if there was no change in the git config, we don't have
+		// anything to do anymore
+		if cmd.Git == nil {
+			return nil
+		}
+
+		sshPrivateKey, err := cmd.Git.sshPrivateKey()
+		if err != nil {
+			return fmt.Errorf("error when reading SSH private key: %w", err)
+		}
+		auth := util.GitAuth{
+			Username:      cmd.Git.Username,
+			Password:      cmd.Git.Password,
+			SSHPrivateKey: sshPrivateKey,
+		}
+		if !cmd.SkipRepoAccessCheck {
+			validator := &validation.RepositoryValidator{
+				GitInformationServiceURL: cmd.GitInformationServiceURL,
+				Token:                    client.Token,
+				Debug:                    cmd.Debug,
 			}
+			if err := validator.Validate(ctx, &app.Spec.ForProvider.Git, auth); err != nil {
+				return err
+			}
+		}
 
-			if auth.Enabled() {
-				secret := auth.Secret(app)
-				if err := client.Get(ctx, client.Name(secret.Name), secret); err != nil {
-					if errors.IsNotFound(err) {
-						auth.UpdateSecret(secret)
-						if err := client.Create(ctx, secret); err != nil {
-							return err
-						}
-
-						return nil
+		if auth.Enabled() {
+			secret := auth.Secret(app)
+			if err := client.Get(ctx, client.Name(secret.Name), secret); err != nil {
+				if errors.IsNotFound(err) {
+					auth.UpdateSecret(secret)
+					if err := client.Create(ctx, secret); err != nil {
+						return err
 					}
 
-					return err
+					return nil
 				}
 
-				auth.UpdateSecret(secret)
-				if err := client.Update(ctx, secret); err != nil {
-					return err
-				}
+				return err
+			}
+
+			auth.UpdateSecret(secret)
+			if err := client.Update(ctx, secret); err != nil {
+				return err
 			}
 		}
 

@@ -25,56 +25,6 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-const (
-	// dummySSHRSAPrivateKey is a dummy private RSA SSH key with some
-	// whitespace around
-	dummySSHRSAPrivateKey = `
-
------BEGIN RSA PRIVATE KEY-----
-MIIEogIBAAKCAQEAgv9MjQEnssfXn8OCcVMZQUS0iP9Cpo643RkS2ENvNlnXFTgy
-mLX35RgkuHoAeQIlCFgYKA9bneJNRVDLcKQg3dElsMSdx6e2W879LChKrlhu904v
-XYv09Txm6+MHd69agQEU8STWXrw39Fpdk8a36MMAEe+4SzSSoh0b/2wuwRLZmapS
-gQF3HmqzxlfwupPUCbVtiWf6okJFO39TCI5vWD1bVUG5WqemVD+WY+AHjFrk41LM
-+i+gwlnn392FUB+NrCYlx6dKXhGTr1IMX15l6JVtgDp3AvlvNGG6JrA/CLqoOf9f
-Hv8pMLqPquVnDVNB/t3U0m7x/ZV2MUetklX6KwIDAQABAoIBAFjRZoLYPKVgEBe3
-xLK3iBET12BnyjYJ4NewD3HoTvhH86fkgZG/F0QSmZsmxTlGtfsxV7eZqiGjdYbA
-4B8QeWRMUUTIGr5rPR6Eem29J92MAjjVnxHLOhwohxP6y25fy3paVGun8V0sOrgH
-qRjwDHPZ+ysuIQOEssMN/5SwMgcflXFgbLMjdNJxiP2TnJcjuEEHzDmXs7KAsch2
-8dE6Wj+0W3FH1HRPxnlLfqALGxB+7I8CngXaRExbHYpWyFr+ke4PAGcLuHZ7eyZ0
-86jqoo5ekyj0TTaflJVR851CQkRk9DWeFWEfQOeM5d17VWYqibHRs3r3jASMggus
-61rmYRECgYEA4/blEB9CG6VRY0WMFljZrPtkr0zh0s01q3yUY95xizUOZknVLsk5
-bOvf9Ovw5DL3YMMQ8a09MVGcUFIRq6KlNdoh87hYIipEii8lRB536r3yyNHGAGVo
-BGon+iOZc/ma4U7pBewooUZGF5RgSlrSlGTwusgZRADUi7ncavU81tkCgYEAkxuL
-Od6HaQkZP6OtUsf/pd+Y6xLjWm6Pf+xM6eu5PIyBsvWvcTBnit765Wy/VLDK1mzr
-vNgSueIi6k41MjBJdCf91R6U3WulEV7xj9uPBeQbDMFDPoZPqEeyOqlb07D++Bk9
-IJN6mVJWM/cOiQdJAhrXwqrk4vAsfeaiRKjx3qMCgYBPthE6pfNzv0bKM5NcbQ0Q
-U4dNVNDR6TePEyzADxQc3Rx/3+lPRsVxtLjG54mAAeJGT28pUq5HBIZn/4p2PZUP
-U4rzsc3/hFAbEYkyXIUJ7Als9w0JLmxEvunjqXcK+oiRqAoLLBy4592yeQuCdGeV
-xAX5CebrxG6NvRu5uq7fYQKBgDd6j8tHTTIjqE4D4H3zx0o7RWSCPxP/1kacS3V8
-3OMk6lUfqwa5BpOs/FpB5PZ/pj+v3EfgBU/tJNXQoOdIpqsT2friCapnylz+vYNP
-fmTuXfU1fbK63JfOUj0lWehAPCg8/HyooffowXHfnq+2+6W7kdtsr92WTnE85b2X
-KYCZAoGAZ8hdRurgNcmaBzQfRF/lYQVvlmBkCy00YmTeSrwLerWlFHsh7T8icBDT
-k2dECAM99MLPJKkOwI/E0v1pAncQunLkWDJpWwb3egr+3Az+LE2TBTaDkP4kLgOw
-sMVLxmbNrxvMSjJZlSiw3jYVOnXW2jZe+ceIN4LKRwW06ifnBpg=
------END RSA PRIVATE KEY-----
-
-`
-
-	// dummySSHED25519PrivateKey is a dummy SSH private key in ed25519 format with
-	// some whitespace around it
-	dummySSHED25519PrivateKey = `
-
------BEGIN OPENSSH PRIVATE KEY-----
-b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
-QyNTUxOQAAACBSKbcOHZTe121IZz0EyMZMyvKPxRs8Rq1LTr+Uftr4zQAAAJDfP9T53z/U
-+QAAAAtzc2gtZWQyNTUxOQAAACBSKbcOHZTe121IZz0EyMZMyvKPxRs8Rq1LTr+Uftr4zQ
-AAAEDlLk0cOZ375YeCqvnfoTYl0pbFEGDaAAF4BwHqn6WqG1Iptw4dlN7XbUhnPQTIxkzK
-8o/FGzxGrUtOv5R+2vjNAAAABm5vbmFtZQECAwQFBgc=
------END OPENSSH PRIVATE KEY-----
-
-`
-)
-
 func createTempKeyFile(content string) (string, error) {
 	file, err := os.CreateTemp("", "temp-private-ssh-key.*.pem")
 	if err != nil {
@@ -94,22 +44,35 @@ func TestApplication(t *testing.T) {
 
 	ctx := context.Background()
 
-	filenameRSAKey, err := createTempKeyFile(dummySSHRSAPrivateKey)
+	dummyRSAKey, err := test.GenerateRSAPrivateKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+	filenameRSAKey, err := createTempKeyFile("   " + dummyRSAKey + "     ")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.Remove(filenameRSAKey)
 
-	filenameED25519Key, err := createTempKeyFile(dummySSHED25519PrivateKey)
+	dummyED25519Key, err := test.GenerateED25519PrivateKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+	filenameED25519Key, err := createTempKeyFile(dummyED25519Key)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.Remove(filenameED25519Key)
 
+	gitInfoService := test.NewGitInformationService()
+	gitInfoService.Start()
+	defer gitInfoService.Close()
+
 	cases := map[string]struct {
-		cmd           applicationCmd
-		checkApp      func(t *testing.T, cmd applicationCmd, app *apps.Application)
-		errorExpected bool
+		cmd                           applicationCmd
+		checkApp                      func(t *testing.T, cmd applicationCmd, app *apps.Application)
+		gitInformationServiceResponse test.GitInformationServiceResponse
+		errorExpected                 bool
 	}{
 		"without git auth": {
 			cmd: applicationCmd{
@@ -118,16 +81,17 @@ func TestApplication(t *testing.T) {
 					SubPath:  "/my/app",
 					Revision: "superbug",
 				},
-				Wait:      false,
-				Name:      "custom-name",
-				Size:      ptr.To("mini"),
-				Hosts:     []string{"custom.example.org", "custom2.example.org"},
-				Port:      ptr.To(int32(1337)),
-				Replicas:  ptr.To(int32(42)),
-				BasicAuth: ptr.To(false),
-				Env:       map[string]string{"hello": "world"},
-				BuildEnv:  map[string]string{"BP_GO_TARGETS": "./cmd/web-server"},
-				DeployJob: deployJob{Command: "date", Name: "print-date", Retries: 2, Timeout: time.Minute},
+				Wait:                false,
+				Name:                "custom-name",
+				Size:                ptr.To("mini"),
+				Hosts:               []string{"custom.example.org", "custom2.example.org"},
+				Port:                ptr.To(int32(1337)),
+				Replicas:            ptr.To(int32(42)),
+				BasicAuth:           ptr.To(false),
+				Env:                 map[string]string{"hello": "world"},
+				BuildEnv:            map[string]string{"BP_GO_TARGETS": "./cmd/web-server"},
+				DeployJob:           deployJob{Command: "date", Name: "print-date", Retries: 2, Timeout: time.Minute},
+				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				assert.Equal(t, cmd.Name, app.Name)
@@ -150,10 +114,11 @@ func TestApplication(t *testing.T) {
 		},
 		"with basic auth": {
 			cmd: applicationCmd{
-				Wait:      false,
-				Name:      "basic-auth",
-				Size:      ptr.To("mini"),
-				BasicAuth: ptr.To(true),
+				Wait:                false,
+				Name:                "basic-auth",
+				Size:                ptr.To("mini"),
+				BasicAuth:           ptr.To(true),
+				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				assert.Equal(t, cmd.Name, app.Name)
@@ -168,8 +133,9 @@ func TestApplication(t *testing.T) {
 					Username: ptr.To("deploy"),
 					Password: ptr.To("hunter2"),
 				},
-				Wait: false,
-				Name: "user-pass-auth",
+				Wait:                false,
+				Name:                "user-pass-auth",
+				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				auth := util.GitAuth{Username: cmd.Git.Username, Password: cmd.Git.Password}
@@ -187,11 +153,12 @@ func TestApplication(t *testing.T) {
 			cmd: applicationCmd{
 				Git: gitConfig{
 					URL:           "https://github.com/ninech/doesnotexist.git",
-					SSHPrivateKey: ptr.To(dummySSHRSAPrivateKey),
+					SSHPrivateKey: &dummyRSAKey,
 				},
-				Wait: false,
-				Name: "ssh-key-auth",
-				Size: ptr.To("mini"),
+				Wait:                false,
+				Name:                "ssh-key-auth",
+				Size:                ptr.To("mini"),
+				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				auth := util.GitAuth{SSHPrivateKey: cmd.Git.SSHPrivateKey}
@@ -208,11 +175,12 @@ func TestApplication(t *testing.T) {
 			cmd: applicationCmd{
 				Git: gitConfig{
 					URL:           "https://github.com/ninech/doesnotexist.git",
-					SSHPrivateKey: ptr.To(dummySSHED25519PrivateKey),
+					SSHPrivateKey: &dummyED25519Key,
 				},
-				Wait: false,
-				Name: "ssh-key-auth-ed25519",
-				Size: ptr.To("mini"),
+				Wait:                false,
+				Name:                "ssh-key-auth-ed25519",
+				Size:                ptr.To("mini"),
+				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				auth := util.GitAuth{SSHPrivateKey: cmd.Git.SSHPrivateKey}
@@ -231,9 +199,10 @@ func TestApplication(t *testing.T) {
 					URL:                   "https://github.com/ninech/doesnotexist.git",
 					SSHPrivateKeyFromFile: ptr.To(filenameRSAKey),
 				},
-				Wait: false,
-				Name: "ssh-key-auth-from-file",
-				Size: ptr.To("mini"),
+				Wait:                false,
+				Name:                "ssh-key-auth-from-file",
+				Size:                ptr.To("mini"),
+				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				auth := util.GitAuth{SSHPrivateKey: ptr.To("notused")}
@@ -242,7 +211,7 @@ func TestApplication(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				assert.Equal(t, strings.TrimSpace(dummySSHRSAPrivateKey), string(authSecret.Data[util.PrivateKeySecretKey]))
+				assert.Equal(t, dummyRSAKey, string(authSecret.Data[util.PrivateKeySecretKey]))
 				assert.Equal(t, authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
 			},
 		},
@@ -252,9 +221,10 @@ func TestApplication(t *testing.T) {
 					URL:                   "https://github.com/ninech/doesnotexist.git",
 					SSHPrivateKeyFromFile: ptr.To(filenameED25519Key),
 				},
-				Wait: false,
-				Name: "ssh-key-auth-from-file-ed25519",
-				Size: ptr.To("mini"),
+				Wait:                false,
+				Name:                "ssh-key-auth-from-file-ed25519",
+				Size:                ptr.To("mini"),
+				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				auth := util.GitAuth{SSHPrivateKey: ptr.To("notused")}
@@ -263,7 +233,7 @@ func TestApplication(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				assert.Equal(t, strings.TrimSpace(dummySSHED25519PrivateKey), string(authSecret.Data[util.PrivateKeySecretKey]))
+				assert.Equal(t, strings.TrimSpace(dummyED25519Key), string(authSecret.Data[util.PrivateKeySecretKey]))
 				assert.Equal(t, authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
 			},
 		},
@@ -273,9 +243,10 @@ func TestApplication(t *testing.T) {
 					URL:           "https://github.com/ninech/doesnotexist.git",
 					SSHPrivateKey: ptr.To("not valid"),
 				},
-				Wait: false,
-				Name: "ssh-key-auth-non-valid",
-				Size: ptr.To("mini"),
+				Wait:                false,
+				Name:                "ssh-key-auth-non-valid",
+				Size:                ptr.To("mini"),
+				SkipRepoAccessCheck: true,
 			},
 			errorExpected: true,
 		},
@@ -284,10 +255,11 @@ func TestApplication(t *testing.T) {
 				Git: gitConfig{
 					URL: "https://github.com/ninech/doesnotexist.git",
 				},
-				Wait:      false,
-				Name:      "deploy-job-empty-command",
-				Size:      ptr.To("mini"),
-				DeployJob: deployJob{Command: "", Name: "print-date", Retries: 2, Timeout: time.Minute},
+				Wait:                false,
+				Name:                "deploy-job-empty-command",
+				Size:                ptr.To("mini"),
+				DeployJob:           deployJob{Command: "", Name: "print-date", Retries: 2, Timeout: time.Minute},
+				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				assert.Nil(t, app.Spec.ForProvider.Config.DeployJob)
@@ -298,13 +270,132 @@ func TestApplication(t *testing.T) {
 				Git: gitConfig{
 					URL: "https://github.com/ninech/doesnotexist.git",
 				},
-				Wait:      false,
-				Name:      "deploy-job-empty-name",
-				Size:      ptr.To("mini"),
-				DeployJob: deployJob{Command: "date", Name: "", Retries: 2, Timeout: time.Minute},
+				Wait:                false,
+				Name:                "deploy-job-empty-name",
+				Size:                ptr.To("mini"),
+				DeployJob:           deployJob{Command: "date", Name: "", Retries: 2, Timeout: time.Minute},
+				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				assert.Nil(t, app.Spec.ForProvider.Config.DeployJob)
+			},
+		},
+		"git-information-service happy path": {
+			cmd: applicationCmd{
+				Git: gitConfig{
+					URL:      "https://github.com/ninech/doesnotexist.git",
+					SubPath:  "/my/app",
+					Revision: "superbug",
+				},
+				Wait: false,
+				Name: "git-information-happy-path",
+				Size: ptr.To("mini"),
+			},
+			gitInformationServiceResponse: test.GitInformationServiceResponse{
+				Code: 200,
+				Content: apps.GitExploreResponse{
+					RepositoryInfo: &apps.RepositoryInfo{
+						URL:      "https://github.com/ninech/doesnotexist.git",
+						Branches: []string{"main"},
+						Tags:     []string{"superbug"},
+					},
+				},
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				assert.Equal(t, cmd.Name, app.Name)
+				assert.Equal(t, cmd.Git.URL, app.Spec.ForProvider.Git.URL)
+				assert.Equal(t, cmd.Git.SubPath, app.Spec.ForProvider.Git.SubPath)
+				assert.Equal(t, cmd.Git.Revision, app.Spec.ForProvider.Git.Revision)
+				assert.Equal(t, apps.ApplicationSize(*cmd.Size), app.Spec.ForProvider.Config.Size)
+				assert.Nil(t, app.Spec.ForProvider.Git.Auth)
+			},
+		},
+		"git-information-service received errors": {
+			cmd: applicationCmd{
+				Git: gitConfig{
+					URL:      "https://github.com/ninech/doesnotexist.git",
+					SubPath:  "/my/app",
+					Revision: "superbug",
+				},
+				Wait: false,
+				Name: "git-information-errors",
+				Size: ptr.To("mini"),
+			},
+			gitInformationServiceResponse: test.GitInformationServiceResponse{
+				Code: 200,
+				Content: apps.GitExploreResponse{
+					Error: "repository does not exist",
+				},
+			},
+			errorExpected: true,
+		},
+		"git-information-service revision unknown": {
+			cmd: applicationCmd{
+				Git: gitConfig{
+					URL:      "https://github.com/ninech/doesnotexist.git",
+					SubPath:  "/my/app",
+					Revision: "notexistent",
+				},
+				Wait: false,
+				Name: "git-information-unknown-revision",
+				Size: ptr.To("mini"),
+			},
+			gitInformationServiceResponse: test.GitInformationServiceResponse{
+				Code: 200,
+				Content: apps.GitExploreResponse{
+					RepositoryInfo: &apps.RepositoryInfo{
+						URL:      "https://github.com/ninech/doesnotexist.git",
+						Branches: []string{"main"},
+						Tags:     []string{"v1.0"},
+					},
+				},
+			},
+			errorExpected: true,
+		},
+		"git-information-service has issues": {
+			cmd: applicationCmd{
+				Git: gitConfig{
+					URL:      "https://github.com/ninech/doesnotexist.git",
+					SubPath:  "/my/app",
+					Revision: "notexistent",
+				},
+				Wait: false,
+				Name: "git-information-unknown-revision",
+				Size: ptr.To("mini"),
+			},
+			gitInformationServiceResponse: test.GitInformationServiceResponse{
+				Code: 501,
+				Raw:  ptr.To("maintenance mode - we will be back soon"),
+			},
+			errorExpected: true,
+		},
+		"git URL without proper scheme should be updated to HTTPS on success": {
+			cmd: applicationCmd{
+				Git: gitConfig{
+					URL:      "github.com/ninech/doesnotexist.git",
+					SubPath:  "/my/app",
+					Revision: "main",
+				},
+				Wait: false,
+				Name: "git-information-update-url-to-https",
+				Size: ptr.To("mini"),
+			},
+			gitInformationServiceResponse: test.GitInformationServiceResponse{
+				Code: 200,
+				Content: apps.GitExploreResponse{
+					RepositoryInfo: &apps.RepositoryInfo{
+						URL:      "https://github.com/ninech/doesnotexist.git",
+						Branches: []string{"main"},
+					},
+				},
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				assert.Equal(t, cmd.Name, app.Name)
+				assert.Equal(t, "https://github.com/ninech/doesnotexist.git", app.Spec.ForProvider.Git.URL)
+				assert.Equal(t, cmd.Git.SubPath, app.Spec.ForProvider.Git.SubPath)
+				assert.Equal(t, cmd.Git.Revision, app.Spec.ForProvider.Git.Revision)
+				assert.Equal(t, apps.ApplicationSize(*cmd.Size), app.Spec.ForProvider.Config.Size)
+				assert.Nil(t, app.Spec.ForProvider.Git.Auth)
 			},
 		},
 	}
@@ -312,6 +403,10 @@ func TestApplication(t *testing.T) {
 	for name, tc := range cases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
+			if tc.cmd.GitInformationServiceURL == "" {
+				tc.cmd.GitInformationServiceURL = gitInfoService.URL()
+			}
+			gitInfoService.SetResponse(tc.gitInformationServiceResponse)
 			app := tc.cmd.newApplication("default")
 
 			err := tc.cmd.Run(ctx, apiClient)
@@ -331,10 +426,11 @@ func TestApplication(t *testing.T) {
 
 func TestApplicationWait(t *testing.T) {
 	cmd := applicationCmd{
-		Wait:        true,
-		WaitTimeout: time.Second * 5,
-		Name:        "some-name",
-		BasicAuth:   ptr.To(true),
+		Wait:                true,
+		WaitTimeout:         time.Second * 5,
+		Name:                "some-name",
+		BasicAuth:           ptr.To(true),
+		SkipRepoAccessCheck: true,
 	}
 	project := "default"
 
@@ -470,9 +566,10 @@ func TestApplicationWait(t *testing.T) {
 
 func TestApplicationBuildFail(t *testing.T) {
 	cmd := applicationCmd{
-		Wait:        true,
-		WaitTimeout: time.Second * 5,
-		Name:        "some-name",
+		Wait:                true,
+		WaitTimeout:         time.Second * 5,
+		Name:                "some-name",
+		SkipRepoAccessCheck: true,
 	}
 	project := "default"
 
