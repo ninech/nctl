@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/pem"
 	"fmt"
 	"sort"
 	"strings"
@@ -128,6 +129,14 @@ type GitAuth struct {
 	SSHPrivateKey *string
 }
 
+func (git GitAuth) HasPrivateKey() bool {
+	return git.SSHPrivateKey != nil
+}
+
+func (git GitAuth) HasBasicAuth() bool {
+	return git.Username != nil && git.Password != nil
+}
+
 func (git GitAuth) Secret(app *apps.Application) *corev1.Secret {
 	data := map[string][]byte{}
 
@@ -170,16 +179,12 @@ func (git GitAuth) UpdateSecret(secret *corev1.Secret) {
 	secret.Annotations[ManagedByAnnotation] = NctlName
 }
 
+// Enabled returns true if any kind of credentials are set in the GitAuth
 func (git GitAuth) Enabled() bool {
-	if git.Username != nil ||
-		git.Password != nil ||
-		git.SSHPrivateKey != nil {
-		return true
-	}
-
-	return false
+	return git.HasBasicAuth() || git.HasPrivateKey()
 }
 
+// Valid validates the credentials in the GitAuth
 func (git GitAuth) Valid() error {
 	if git.SSHPrivateKey != nil {
 		if *git.SSHPrivateKey == "" {
@@ -228,4 +233,19 @@ func GatherDNSDetails(items []apps.Application) []DNSDetail {
 		result[i] = data
 	}
 	return result
+}
+
+// ValidatePEM validates if the passed content is in valid PEM format, errors
+// out if the content is empty
+func ValidatePEM(content string) (*string, error) {
+	if content == "" {
+		return nil, fmt.Errorf("the SSH private key cannot be empty")
+	}
+
+	content = strings.TrimSpace(content)
+	b, rest := pem.Decode([]byte(content))
+	if b == nil || len(rest) > 0 {
+		return nil, fmt.Errorf("no valid PEM formatted data found")
+	}
+	return &content, nil
 }

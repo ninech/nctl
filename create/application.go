@@ -2,7 +2,6 @@ package create
 
 import (
 	"context"
-	"encoding/pem"
 	"errors"
 	"fmt"
 	"os"
@@ -19,6 +18,7 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/log"
 	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/api/validation"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/logbox"
 	"github.com/ninech/nctl/logs"
@@ -32,18 +32,21 @@ import (
 // note: when adding/changing fields here also make sure to carry it over to
 // update/application.go.
 type applicationCmd struct {
-	Name        string            `arg:"" default:"" help:"Name of the app. A random name is generated if omitted."`
-	Wait        bool              `default:"true" help:"Wait until the app is fully created."`
-	WaitTimeout time.Duration     `default:"15m" help:"Duration to wait for the app getting ready. Only relevant if wait is set."`
-	Git         gitConfig         `embed:"" prefix:"git-"`
-	Size        *string           `help:"Size of the app (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
-	Port        *int32            `help:"Port the app is listening on (defaults to ${app_default_port})." placeholder:"${app_default_port}"`
-	Replicas    *int32            `help:"Amount of replicas of the running app (defaults to ${app_default_replicas})." placeholder:"${app_default_replicas}"`
-	Hosts       []string          `help:"Host names where the app can be accessed. If empty, the app will just be accessible on a generated host name on the deploio.app domain."`
-	BasicAuth   *bool             `help:"Enable/Disable basic authentication for the app (defaults to ${app_default_basic_auth})." placeholder:"${app_default_basic_auth}"`
-	Env         map[string]string `help:"Environment variables which are passed to the app at runtime."`
-	BuildEnv    map[string]string `help:"Environment variables which are passed to the app build process."`
-	DeployJob   deployJob         `embed:"" prefix:"deploy-job-"`
+	Name                     string            `arg:"" default:"" help:"Name of the app. A random name is generated if omitted."`
+	Wait                     bool              `default:"true" help:"Wait until the app is fully created."`
+	WaitTimeout              time.Duration     `default:"15m" help:"Duration to wait for the app getting ready. Only relevant if wait is set."`
+	Git                      gitConfig         `embed:"" prefix:"git-"`
+	Size                     *string           `help:"Size of the app (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
+	Port                     *int32            `help:"Port the app is listening on (defaults to ${app_default_port})." placeholder:"${app_default_port}"`
+	Replicas                 *int32            `help:"Amount of replicas of the running app (defaults to ${app_default_replicas})." placeholder:"${app_default_replicas}"`
+	Hosts                    []string          `help:"Host names where the app can be accessed. If empty, the app will just be accessible on a generated host name on the deploio.app domain."`
+	BasicAuth                *bool             `help:"Enable/Disable basic authentication for the app (defaults to ${app_default_basic_auth})." placeholder:"${app_default_basic_auth}"`
+	Env                      map[string]string `help:"Environment variables which are passed to the app at runtime."`
+	BuildEnv                 map[string]string `help:"Environment variables which are passed to the app build process."`
+	DeployJob                deployJob         `embed:"" prefix:"deploy-job-"`
+	GitInformationServiceURL string            `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
+	SkipRepoAccessCheck      bool              `help:"Skip the git repository access check" default:"false"`
+	Debug                    bool              `help:"Enable debug messages" default:"false"`
 }
 
 type gitConfig struct {
@@ -65,7 +68,7 @@ type deployJob struct {
 
 func (g gitConfig) sshPrivateKey() (*string, error) {
 	if g.SSHPrivateKey != nil {
-		return validatePEM(*g.SSHPrivateKey)
+		return util.ValidatePEM(*g.SSHPrivateKey)
 	}
 	if g.SSHPrivateKeyFromFile == nil {
 		return nil, nil
@@ -74,7 +77,7 @@ func (g gitConfig) sshPrivateKey() (*string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return validatePEM(string(content))
+	return util.ValidatePEM(string(content))
 }
 
 const (
@@ -89,7 +92,7 @@ const (
 )
 
 func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
-	fmt.Println("Creating a new application")
+	fmt.Println("Creating new application")
 	newApp := app.newApplication(client.Project)
 
 	sshPrivateKey, err := app.Git.sshPrivateKey()
@@ -100,6 +103,17 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		Username:      app.Git.Username,
 		Password:      app.Git.Password,
 		SSHPrivateKey: sshPrivateKey,
+	}
+
+	if !app.SkipRepoAccessCheck {
+		validator := &validation.RepositoryValidator{
+			GitInformationServiceURL: app.GitInformationServiceURL,
+			Token:                    client.Token,
+			Debug:                    app.Debug,
+		}
+		if err := validator.Validate(ctx, &newApp.Spec.ForProvider.Git, auth); err != nil {
+			return err
+		}
 	}
 
 	if auth.Enabled() {
@@ -507,21 +521,6 @@ func errorLogQuery(queryString string) log.Query {
 		Direction:   logproto.BACKWARD,
 		Quiet:       true,
 	}
-}
-
-// validatePEM validates if the passed content is in valid PEM format, errors
-// out if the content is empty
-func validatePEM(content string) (*string, error) {
-	if content == "" {
-		return nil, fmt.Errorf("the SSH private key cannot be empty")
-	}
-
-	content = strings.TrimSpace(content)
-	b, rest := pem.Decode([]byte(content))
-	if b == nil || len(rest) > 0 {
-		return nil, fmt.Errorf("no valid PEM formatted data found")
-	}
-	return &content, nil
 }
 
 // ApplicationKongVars returns all variables which are used in the application

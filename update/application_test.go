@@ -2,6 +2,7 @@ package update
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -25,6 +27,16 @@ func TestApplication(t *testing.T) {
 	}
 
 	initialSize := apps.ApplicationSize("micro")
+
+	dummyRSAKey, err := test.GenerateRSAPrivateKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gitInfoService := test.NewGitInformationService()
+	gitInfoService.Start()
+	defer gitInfoService.Close()
+
 	existingApp := &apps.Application{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "some-name",
@@ -63,11 +75,13 @@ func TestApplication(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		orig        *apps.Application
-		gitAuth     *util.GitAuth
-		cmd         applicationCmd
-		checkApp    func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application)
-		checkSecret func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret)
+		orig                          *apps.Application
+		gitAuth                       *util.GitAuth
+		cmd                           applicationCmd
+		checkApp                      func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application)
+		checkSecret                   func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret)
+		gitInformationServiceResponse test.GitInformationServiceResponse
+		errorExpected                 bool
 	}{
 		"change port": {
 			orig: existingApp,
@@ -110,6 +124,7 @@ func TestApplication(t *testing.T) {
 					Command: ptr.To("exit 0"), Name: ptr.To("exit"),
 					Retries: ptr.To(int32(1)), Timeout: ptr.To(time.Minute * 5),
 				},
+				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				assert.Equal(t, *cmd.Git.URL, updated.Spec.ForProvider.Git.URL)
@@ -141,6 +156,18 @@ func TestApplication(t *testing.T) {
 				assert.NotEmpty(t, updated.Spec.ForProvider.BuildEnv)
 			},
 		},
+		"change multiple env variables at once": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				Name: ptr.To(existingApp.Name),
+				Env:  &map[string]string{"bar1": "zoo", "bar2": "foo"},
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				assert.Contains(t, updated.Spec.ForProvider.Config.Env, apps.EnvVar{Name: "bar1", Value: "zoo"})
+				assert.Contains(t, updated.Spec.ForProvider.Config.Env, apps.EnvVar{Name: "bar2", Value: "foo"})
+				assert.Contains(t, updated.Spec.ForProvider.Config.Env, apps.EnvVar{Name: "foo", Value: "bar"})
+			},
+		},
 		"reset build env variable": {
 			orig: existingApp,
 			cmd: applicationCmd{
@@ -165,6 +192,15 @@ func TestApplication(t *testing.T) {
 					Password: ptr.To("new-pass"),
 				},
 			},
+			gitInformationServiceResponse: test.GitInformationServiceResponse{
+				Code: 200,
+				Content: apps.GitExploreResponse{
+					RepositoryInfo: &apps.RepositoryInfo{
+						URL:      existingApp.Spec.ForProvider.Git.URL,
+						Branches: []string{existingApp.Spec.ForProvider.Git.Revision},
+					},
+				},
+			},
 			checkSecret: func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret) {
 				assert.Equal(t, *cmd.Git.Username, string(authSecret.Data[util.UsernameSecretKey]))
 				assert.Equal(t, *cmd.Git.Password, string(authSecret.Data[util.PasswordSecretKey]))
@@ -179,11 +215,20 @@ func TestApplication(t *testing.T) {
 			cmd: applicationCmd{
 				Name: ptr.To(existingApp.Name),
 				Git: &gitConfig{
-					SSHPrivateKey: ptr.To("newfakekey"),
+					SSHPrivateKey: &dummyRSAKey,
+				},
+			},
+			gitInformationServiceResponse: test.GitInformationServiceResponse{
+				Code: 200,
+				Content: apps.GitExploreResponse{
+					RepositoryInfo: &apps.RepositoryInfo{
+						URL:      existingApp.Spec.ForProvider.Git.URL,
+						Branches: []string{existingApp.Spec.ForProvider.Git.Revision},
+					},
 				},
 			},
 			checkSecret: func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret) {
-				assert.Equal(t, *cmd.Git.SSHPrivateKey, string(authSecret.Data[util.PrivateKeySecretKey]))
+				assert.Equal(t, strings.TrimSpace(*cmd.Git.SSHPrivateKey), string(authSecret.Data[util.PrivateKeySecretKey]))
 				assert.Equal(t, authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
 			},
 		},
@@ -195,6 +240,15 @@ func TestApplication(t *testing.T) {
 				Git: &gitConfig{
 					Username: ptr.To("new-user"),
 					Password: ptr.To("new-pass"),
+				},
+			},
+			gitInformationServiceResponse: test.GitInformationServiceResponse{
+				Code: 200,
+				Content: apps.GitExploreResponse{
+					RepositoryInfo: &apps.RepositoryInfo{
+						URL:      existingApp.Spec.ForProvider.Git.URL,
+						Branches: []string{existingApp.Spec.ForProvider.Git.Revision},
+					},
 				},
 			},
 			checkSecret: func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret) {
@@ -212,6 +266,15 @@ func TestApplication(t *testing.T) {
 				Name: ptr.To(existingApp.Name),
 				Git: &gitConfig{
 					URL: ptr.To("https://newgit.example.org"),
+				},
+			},
+			gitInformationServiceResponse: test.GitInformationServiceResponse{
+				Code: 200,
+				Content: apps.GitExploreResponse{
+					RepositoryInfo: &apps.RepositoryInfo{
+						URL:      "https://newgit.example.org",
+						Branches: []string{existingApp.Spec.ForProvider.Git.Revision},
+					},
 				},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
@@ -233,6 +296,15 @@ func TestApplication(t *testing.T) {
 					URL: ptr.To("https://newgit.example.org"),
 				},
 				DeployJob: &deployJob{Enabled: ptr.To(false)},
+			},
+			gitInformationServiceResponse: test.GitInformationServiceResponse{
+				Code: 200,
+				Content: apps.GitExploreResponse{
+					RepositoryInfo: &apps.RepositoryInfo{
+						URL:      "https://newgit.example.org",
+						Branches: []string{existingApp.Spec.ForProvider.Git.Revision},
+					},
+				},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				assert.Nil(t, updated.Spec.ForProvider.Config.DeployJob)
@@ -258,12 +330,95 @@ func TestApplication(t *testing.T) {
 				assert.Nil(t, util.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
 			},
 		},
+		"disabling the git repo check works": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				Name: ptr.To(existingApp.Name),
+				Git: &gitConfig{
+					URL: ptr.To("https://newgit.example.org"),
+				},
+				SkipRepoAccessCheck: true,
+			},
+			gitInformationServiceResponse: test.GitInformationServiceResponse{
+				Code: 200,
+				Content: apps.GitExploreResponse{
+					Error: "repository can not be accessed",
+				},
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				assert.Equal(t, *cmd.Git.URL, updated.Spec.ForProvider.Git.URL)
+			},
+		},
+		"an error on the git repo check will lead to an error shown to the user": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				Name: ptr.To(existingApp.Name),
+				Git: &gitConfig{
+					URL: ptr.To("https://newgit.example.org"),
+				},
+			},
+			gitInformationServiceResponse: test.GitInformationServiceResponse{
+				Code: 200,
+				Content: apps.GitExploreResponse{
+					Error: "repository can not be accessed",
+				},
+			},
+			errorExpected: true,
+		},
+		"specifying a non existing branch/tag will be detected": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				Name: ptr.To(existingApp.Name),
+				Git: &gitConfig{
+					URL:      ptr.To("https://newgit.example.org"),
+					Revision: ptr.To("not-existent"),
+				},
+			},
+			gitInformationServiceResponse: test.GitInformationServiceResponse{
+				Code: 200,
+				Content: apps.GitExploreResponse{
+					RepositoryInfo: &apps.RepositoryInfo{
+						URL:      "https://newgit.example.org",
+						Branches: []string{"main"},
+					},
+				},
+			},
+			errorExpected: true,
+		},
+		"defaulting to HTTPS when not specifying a scheme in a git URL works": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				Name: ptr.To(existingApp.Name),
+				Git: &gitConfig{
+					URL:      ptr.To("github.com/ninech/new-repo"),
+					Revision: ptr.To("main"),
+				},
+			},
+			gitInformationServiceResponse: test.GitInformationServiceResponse{
+				Code: 200,
+				Content: apps.GitExploreResponse{
+					RepositoryInfo: &apps.RepositoryInfo{
+						URL:      "https://github.com/ninech/new-repo",
+						Branches: []string{"main"},
+					},
+				},
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				assert.Equal(t, "https://github.com/ninech/new-repo", updated.Spec.ForProvider.Git.URL)
+				assert.Equal(t, "main", updated.Spec.ForProvider.Git.Revision)
+			},
+		},
 	}
 
 	for name, tc := range cases {
 		tc := tc
 
 		t.Run(name, func(t *testing.T) {
+			if tc.cmd.GitInformationServiceURL == "" {
+				tc.cmd.GitInformationServiceURL = gitInfoService.URL()
+			}
+			gitInfoService.SetResponse(tc.gitInformationServiceResponse)
+
 			objects := []client.Object{tc.orig}
 			if tc.gitAuth != nil {
 				objects = append(objects, tc.gitAuth.Secret(tc.orig))
@@ -273,7 +428,11 @@ func TestApplication(t *testing.T) {
 			ctx := context.Background()
 
 			if err := tc.cmd.Run(ctx, apiClient); err != nil {
-				t.Fatal(err)
+				if tc.errorExpected {
+					require.Error(t, err)
+				} else {
+					require.NoError(t, err)
+				}
 			}
 
 			updated := &apps.Application{}
