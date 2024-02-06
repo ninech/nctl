@@ -23,6 +23,7 @@ func TestProject(t *testing.T) {
 
 	for name, testCase := range map[string]struct {
 		projects     []client.Object
+		displayNames []string
 		name         string
 		outputFormat output
 		allProjects  bool
@@ -30,29 +31,30 @@ func TestProject(t *testing.T) {
 	}{
 		"projects exist, full format": {
 			projects:     test.Projects(organization, "dev", "staging", "prod"),
+			displayNames: []string{"Development", "", "Production"},
 			outputFormat: full,
-			output: `NAME
-dev
-prod
-staging
+			output: `NAME       DISPLAY NAME
+dev        Development
+prod       Production
+staging    <none>
 `,
 		},
 		"projects exist, no header format": {
 			projects:     test.Projects(organization, "dev", "staging", "prod"),
 			outputFormat: noHeader,
-			output: `dev
-prod
-staging
+			output: `dev        <none>
+prod       <none>
+staging    <none>
 `,
 		},
 		"projects exist and allProjects is set": {
 			projects:     test.Projects(organization, "dev", "staging", "prod"),
 			outputFormat: full,
 			allProjects:  true,
-			output: `NAME
-dev
-prod
-staging
+			output: `NAME       DISPLAY NAME
+dev        <none>
+prod       <none>
+staging    <none>
 `,
 		},
 		"no projects exist": {
@@ -69,8 +71,8 @@ staging
 			projects:     test.Projects(organization, "dev", "staging"),
 			name:         "dev",
 			outputFormat: full,
-			output: `NAME
-dev
+			output: `NAME    DISPLAY NAME
+dev     <none>
 `,
 		},
 		"specific project requested, but does not exist": {
@@ -97,6 +99,14 @@ dev
 			scheme, err := api.NewScheme()
 			if err != nil {
 				t.Fatal(err)
+			}
+
+			projects := testCase.projects
+			for i, proj := range projects {
+				if len(projects) != len(testCase.displayNames) {
+					break
+				}
+				proj.(*management.Project).Spec.DisplayName = testCase.displayNames[i]
 			}
 
 			client := fake.NewClientBuilder().

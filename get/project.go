@@ -8,6 +8,7 @@ import (
 
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/internal/format"
 )
 
@@ -60,11 +61,15 @@ func printProject(projects []management.Project, get Cmd, out io.Writer, header 
 	// for projects
 	if header {
 		get.AllProjects = false
-		get.writeHeader(w, "NAME")
+		get.writeHeader(w, "NAME", "DISPLAY NAME")
 	}
 
 	for _, proj := range projects {
-		get.writeTabRow(w, "", proj.Name)
+		displayName := proj.Spec.DisplayName
+		if len(displayName) == 0 {
+			displayName = util.NoneText
+		}
+		get.writeTabRow(w, "", proj.Name, displayName)
 	}
 
 	return w.Flush()
