@@ -14,6 +14,7 @@ import (
 
 type projectCmd struct {
 	Name        string        `arg:"" default:"" help:"Name of the project. A random name is generated if omitted."`
+	DisplayName string        `default:"" help:"Display Name of the project."`
 	Wait        bool          `default:"true" help:"Wait until the project was fully created."`
 	WaitTimeout time.Duration `default:"10m" help:"Duration to wait for project getting ready. Only relevant if wait is set."`
 }
@@ -27,7 +28,7 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client) error {
 		return err
 	}
 
-	p := newProject(proj.Name, cfg.Organization)
+	p := newProject(proj.Name, cfg.Organization, proj.DisplayName)
 	fmt.Printf("Creating new project %s for organization %s\n", p.Name, cfg.Organization)
 	c := newCreator(client, p, strings.ToLower(management.ProjectKind))
 	ctx, cancel := context.WithTimeout(ctx, proj.WaitTimeout)
@@ -47,7 +48,7 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client) error {
 	})
 }
 
-func newProject(name, project string) *management.Project {
+func newProject(name, project, displayName string) *management.Project {
 	return &management.Project{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      getName(name),
@@ -57,6 +58,8 @@ func newProject(name, project string) *management.Project {
 			Kind:       management.ProjectKind,
 			APIVersion: management.SchemeGroupVersion.String(),
 		},
-		Spec: management.ProjectSpec{},
+		Spec: management.ProjectSpec{
+			DisplayName: displayName,
+		},
 	}
 }

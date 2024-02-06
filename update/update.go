@@ -11,6 +11,7 @@ import (
 type Cmd struct {
 	Application applicationCmd `cmd:"" group:"deplo.io" name:"application" aliases:"app" help:"Update an existing deplo.io Application. (Beta - requires access)"`
 	Config      configCmd      `cmd:"" group:"deplo.io" name:"config"  help:"Update an existing deplo.io Project Configuration. (Beta - requires access)"`
+	Project     projectCmd     `cmd:"" group:"management.nine.ch" name:"project"  help:"Update an existing Project"`
 }
 
 type updater struct {
@@ -27,7 +28,7 @@ func newUpdater(client *api.Client, mg resource.Managed, kind string, f updateFu
 }
 
 func (u *updater) Update(ctx context.Context) error {
-	if err := u.client.Get(ctx, u.client.Name(u.mg.GetName()), u.mg); err != nil {
+	if err := u.client.Get(ctx, api.ObjectName(u.mg), u.mg); err != nil {
 		return err
 	}
 

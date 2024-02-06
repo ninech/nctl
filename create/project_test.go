@@ -26,6 +26,7 @@ func TestProjects(t *testing.T) {
 
 	cmd := projectCmd{
 		Name:        projectName,
+		DisplayName: "Some Display Name",
 		Wait:        false,
 		WaitTimeout: time.Second,
 	}
