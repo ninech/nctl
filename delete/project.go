@@ -15,7 +15,7 @@ type projectCmd struct {
 	Name        string        `arg:"" help:"Name of the Project."`
 	Force       bool          `default:"false" help:"Do not ask for confirmation of deletion."`
 	Wait        bool          `default:"true" help:"Wait until Project is fully deleted"`
-	WaitTimeout time.Duration `default:"60s" help:"Duration to wait for the deletion. Only relevant if wait is set."`
+	WaitTimeout time.Duration `default:"5m" help:"Duration to wait for the deletion. Only relevant if wait is set."`
 }
 
 func (proj *projectCmd) Run(ctx context.Context, client *api.Client) error {
