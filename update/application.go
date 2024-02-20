@@ -140,6 +140,15 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 			}
 		}
 
+		if app.Spec.ForProvider.Config.DeployJob != nil {
+			configValidator := &validation.ConfigValidator{
+				Config: app.Spec.ForProvider.Config,
+			}
+			if err := configValidator.Validate(); err != nil {
+				return fmt.Errorf("error when validating application config: %w", err)
+			}
+		}
+
 		return nil
 	})
 
