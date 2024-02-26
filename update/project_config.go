@@ -14,12 +14,12 @@ import (
 // all fields need to be pointers so we can detect if they have been set by
 // the user.
 type configCmd struct {
-	Size      *string            `help:"Size of the app."`
-	Port      *int32             `help:"Port the app is listening on."`
-	Replicas  *int32             `help:"Amount of replicas of the running app."`
-	Env       *map[string]string `help:"Environment variables which are passed to the app at runtime."`
-	BasicAuth *bool              `help:"Enable/Disable basic authentication for applications."`
-	DeployJob *deployJob         `embed:"" prefix:"deploy-job-"`
+	Size      *string           `help:"Size of the app."`
+	Port      *int32            `help:"Port the app is listening on."`
+	Replicas  *int32            `help:"Amount of replicas of the running app."`
+	Env       map[string]string `help:"Environment variables which are passed to the app at runtime."`
+	BasicAuth *bool             `help:"Enable/Disable basic authentication for applications."`
+	DeployJob *deployJob        `embed:"" prefix:"deploy-job-"`
 }
 
 func (cmd *configCmd) Run(ctx context.Context, client *api.Client) error {
@@ -55,7 +55,7 @@ func (cmd *configCmd) applyUpdates(cfg *apps.ProjectConfig) {
 		cfg.Spec.ForProvider.Config.Replicas = cmd.Replicas
 	}
 	if cmd.Env != nil {
-		cfg.Spec.ForProvider.Config.Env = util.EnvVarsFromMap(*cmd.Env)
+		cfg.Spec.ForProvider.Config.Env = util.EnvVarsFromMap(cmd.Env)
 	}
 	if cmd.BasicAuth != nil {
 		cfg.Spec.ForProvider.Config.EnableBasicAuth = cmd.BasicAuth
