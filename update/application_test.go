@@ -117,8 +117,8 @@ func TestApplication(t *testing.T) {
 				Port:      ptr.To(int32(1234)),
 				Replicas:  ptr.To(int32(999)),
 				Hosts:     &[]string{"one.example.org", "two.example.org"},
-				Env:       &map[string]string{"bar": "zoo"},
-				BuildEnv:  &map[string]string{"BP_GO_TARGETS": "./cmd/web-server"},
+				Env:       map[string]string{"bar": "zoo"},
+				BuildEnv:  map[string]string{"BP_GO_TARGETS": "./cmd/web-server"},
 				BasicAuth: ptr.To(true),
 				DeployJob: &deployJob{
 					Command: ptr.To("exit 0"), Name: ptr.To("exit"),
@@ -135,8 +135,8 @@ func TestApplication(t *testing.T) {
 				assert.Equal(t, *cmd.Replicas, *updated.Spec.ForProvider.Config.Replicas)
 				assert.Equal(t, *cmd.BasicAuth, *updated.Spec.ForProvider.Config.EnableBasicAuth)
 				assert.Equal(t, *cmd.Hosts, updated.Spec.ForProvider.Hosts)
-				assert.Equal(t, util.UpdateEnvVars(existingApp.Spec.ForProvider.Config.Env, *cmd.Env, nil), updated.Spec.ForProvider.Config.Env)
-				assert.Equal(t, util.UpdateEnvVars(existingApp.Spec.ForProvider.BuildEnv, *cmd.BuildEnv, nil), updated.Spec.ForProvider.BuildEnv)
+				assert.Equal(t, util.UpdateEnvVars(existingApp.Spec.ForProvider.Config.Env, cmd.Env, nil), updated.Spec.ForProvider.Config.Env)
+				assert.Equal(t, util.UpdateEnvVars(existingApp.Spec.ForProvider.BuildEnv, cmd.BuildEnv, nil), updated.Spec.ForProvider.BuildEnv)
 				assert.Equal(t, *cmd.DeployJob.Command, updated.Spec.ForProvider.Config.DeployJob.Command)
 				assert.Equal(t, *cmd.DeployJob.Name, updated.Spec.ForProvider.Config.DeployJob.Name)
 				assert.Equal(t, *cmd.DeployJob.Timeout, updated.Spec.ForProvider.Config.DeployJob.Timeout.Duration)
@@ -160,7 +160,7 @@ func TestApplication(t *testing.T) {
 			orig: existingApp,
 			cmd: applicationCmd{
 				Name: ptr.To(existingApp.Name),
-				Env:  &map[string]string{"bar1": "zoo", "bar2": "foo"},
+				Env:  map[string]string{"bar1": "zoo", "bar2": "foo"},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				assert.Contains(t, updated.Spec.ForProvider.Config.Env, apps.EnvVar{Name: "bar1", Value: "zoo"})

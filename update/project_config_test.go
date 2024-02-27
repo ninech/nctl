@@ -82,7 +82,7 @@ func TestConfig(t *testing.T) {
 				Size:      ptr.To("newsize"),
 				Port:      ptr.To(int32(1000)),
 				Replicas:  ptr.To(int32(2)),
-				Env:       &map[string]string{"zoo": "bar"},
+				Env:       map[string]string{"zoo": "bar"},
 				BasicAuth: ptr.To(true),
 				DeployJob: &deployJob{
 					Command: ptr.To("exit 0"), Name: ptr.To("exit"),
@@ -94,7 +94,7 @@ func TestConfig(t *testing.T) {
 				assert.Equal(t, *cmd.Port, *updated.Spec.ForProvider.Config.Port)
 				assert.Equal(t, *cmd.Replicas, *updated.Spec.ForProvider.Config.Replicas)
 				assert.Equal(t, *cmd.BasicAuth, *updated.Spec.ForProvider.Config.EnableBasicAuth)
-				assert.Equal(t, util.EnvVarsFromMap(*cmd.Env), updated.Spec.ForProvider.Config.Env)
+				assert.Equal(t, util.EnvVarsFromMap(cmd.Env), updated.Spec.ForProvider.Config.Env)
 				assert.Equal(t, *cmd.DeployJob.Command, updated.Spec.ForProvider.Config.DeployJob.Command)
 				assert.Equal(t, *cmd.DeployJob.Name, updated.Spec.ForProvider.Config.DeployJob.Name)
 				assert.Equal(t, *cmd.DeployJob.Timeout, updated.Spec.ForProvider.Config.DeployJob.Timeout.Duration)

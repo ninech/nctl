@@ -21,22 +21,22 @@ const BuildTrigger = "BUILD_TRIGGER"
 // all fields need to be pointers so we can detect if they have been set by
 // the user.
 type applicationCmd struct {
-	Name                     *string            `arg:"" help:"Name of the application."`
-	Git                      *gitConfig         `embed:"" prefix:"git-"`
-	Size                     *string            `help:"Size of the app."`
-	Port                     *int32             `help:"Port the app is listening on."`
-	Replicas                 *int32             `help:"Amount of replicas of the running app."`
-	Hosts                    *[]string          `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
-	BasicAuth                *bool              `help:"Enable/Disable basic authentication for the application."`
-	Env                      *map[string]string `help:"Environment variables which are passed to the app at runtime."`
-	DeleteEnv                *[]string          `help:"Runtime environment variables names which are to be deleted."`
-	BuildEnv                 *map[string]string `help:"Environment variables names which are passed to the app build process."`
-	DeleteBuildEnv           *[]string          `help:"Build environment variables which are to be deleted."`
-	DeployJob                *deployJob         `embed:"" prefix:"deploy-job-"`
-	RetryBuild               *bool              `help:"Retries build for the application if set to true." placeholder:"false"`
-	GitInformationServiceURL string             `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
-	SkipRepoAccessCheck      bool               `help:"Skip the git repository access check" default:"false"`
-	Debug                    bool               `help:"Enable debug messages" default:"false"`
+	Name                     *string           `arg:"" help:"Name of the application."`
+	Git                      *gitConfig        `embed:"" prefix:"git-"`
+	Size                     *string           `help:"Size of the app."`
+	Port                     *int32            `help:"Port the app is listening on."`
+	Replicas                 *int32            `help:"Amount of replicas of the running app."`
+	Hosts                    *[]string         `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
+	BasicAuth                *bool             `help:"Enable/Disable basic authentication for the application."`
+	Env                      map[string]string `help:"Environment variables which are passed to the app at runtime."`
+	DeleteEnv                *[]string         `help:"Runtime environment variables names which are to be deleted."`
+	BuildEnv                 map[string]string `help:"Environment variables names which are passed to the app build process."`
+	DeleteBuildEnv           *[]string         `help:"Build environment variables which are to be deleted."`
+	DeployJob                *deployJob        `embed:"" prefix:"deploy-job-"`
+	RetryBuild               *bool             `help:"Retries build for the application if set to true." placeholder:"false"`
+	GitInformationServiceURL string            `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
+	SkipRepoAccessCheck      bool              `help:"Skip the git repository access check" default:"false"`
+	Debug                    bool              `help:"Enable debug messages" default:"false"`
 }
 
 type gitConfig struct {
@@ -178,19 +178,15 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 		cmd.DeployJob.applyUpdates(&app.Spec.ForProvider.Config)
 	}
 
-	var env map[string]string
-	if cmd.Env != nil {
-		env = *cmd.Env
-	}
 	var delEnv []string
 	if cmd.DeleteEnv != nil {
 		delEnv = *cmd.DeleteEnv
 	}
-	app.Spec.ForProvider.Config.Env = util.UpdateEnvVars(app.Spec.ForProvider.Config.Env, env, delEnv)
+	app.Spec.ForProvider.Config.Env = util.UpdateEnvVars(app.Spec.ForProvider.Config.Env, cmd.Env, delEnv)
 
 	buildEnv := make(map[string]string)
 	if cmd.BuildEnv != nil {
-		buildEnv = *cmd.BuildEnv
+		buildEnv = cmd.BuildEnv
 	}
 
 	if cmd.RetryBuild != nil && *cmd.RetryBuild {
