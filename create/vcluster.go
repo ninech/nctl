@@ -16,7 +16,7 @@ import (
 type vclusterCmd struct {
 	Name              string        `arg:"" default:"" help:"Name of the vcluster. A random name is generated if omitted."`
 	Location          string        `default:"nine-es34" help:"Location where the vcluster is created."`
-	KubernetesVersion string        `default:"1.24" help:"Kubernetes version to use."`
+	KubernetesVersion string        `default:"" help:"Kubernetes version to use. API default will be used if not specified."`
 	MinNodes          int           `default:"1" help:"Minimum amount of nodes."`
 	MaxNodes          int           `default:"1" help:"Maximum amount of nodes."`
 	MachineType       string        `default:"nine-standard-1" help:"Machine type to use for the nodes."`
