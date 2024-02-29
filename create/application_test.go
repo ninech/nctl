@@ -298,6 +298,10 @@ func TestApplication(t *testing.T) {
 						URL:      "https://github.com/ninech/doesnotexist.git",
 						Branches: []string{"main"},
 						Tags:     []string{"superbug"},
+						RevisionResponse: &apps.RevisionResponse{
+							RevisionRequested: "superbug",
+							Found:             true,
+						},
 					},
 				},
 			},
@@ -347,6 +351,10 @@ func TestApplication(t *testing.T) {
 						URL:      "https://github.com/ninech/doesnotexist.git",
 						Branches: []string{"main"},
 						Tags:     []string{"v1.0"},
+						RevisionResponse: &apps.RevisionResponse{
+							RevisionRequested: "notexistent",
+							Found:             false,
+						},
 					},
 				},
 			},
@@ -386,6 +394,10 @@ func TestApplication(t *testing.T) {
 					RepositoryInfo: &apps.RepositoryInfo{
 						URL:      "https://github.com/ninech/doesnotexist.git",
 						Branches: []string{"main"},
+						RevisionResponse: &apps.RevisionResponse{
+							RevisionRequested: "main",
+							Found:             true,
+						},
 					},
 				},
 			},

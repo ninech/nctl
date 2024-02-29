@@ -114,7 +114,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 				Token:                    client.Token,
 				Debug:                    cmd.Debug,
 			}
-			if err := validator.Validate(ctx, &app.Spec.ForProvider.Git, auth); err != nil {
+			if err := validator.Validate(ctx, &app.Spec.ForProvider.Git.GitTarget, auth); err != nil {
 				return err
 			}
 		}

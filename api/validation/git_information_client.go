@@ -78,9 +78,10 @@ func (g *GitInformationClient) SetRetryBackoffs(backoff wait.Backoff) {
 	g.retryBackoff = backoff
 }
 
-func (g *GitInformationClient) repositoryInformation(ctx context.Context, url string, auth util.GitAuth) (*apps.GitExploreResponse, error) {
+func (g *GitInformationClient) repositoryInformation(ctx context.Context, git apps.GitTarget, auth util.GitAuth) (*apps.GitExploreResponse, error) {
 	req := apps.GitExploreRequest{
-		Repository: url,
+		Repository: git.URL,
+		Revision:   git.Revision,
 	}
 	if auth.Enabled() {
 		req.Auth = &apps.Auth{}
@@ -97,8 +98,10 @@ func (g *GitInformationClient) repositoryInformation(ctx context.Context, url st
 	return g.sendRequest(ctx, req)
 }
 
-// RepositoryInformation returns information about a given git repository. It retries on client connection issues.
-func (g *GitInformationClient) RepositoryInformation(ctx context.Context, url string, auth util.GitAuth) (*apps.GitExploreResponse, error) {
+// RepositoryInformation returns information about a given git repository and
+// optionally checks if a given revision can be found in the repo. It retries
+// on client connection issues.
+func (g *GitInformationClient) RepositoryInformation(ctx context.Context, git apps.GitTarget, auth util.GitAuth) (*apps.GitExploreResponse, error) {
 	var repoInfo *apps.GitExploreResponse
 	err := retry.OnError(
 		g.retryBackoff,
@@ -111,7 +114,7 @@ func (g *GitInformationClient) RepositoryInformation(ctx context.Context, url st
 		},
 		func() error {
 			var err error
-			repoInfo, err = g.repositoryInformation(ctx, url, auth)
+			repoInfo, err = g.repositoryInformation(ctx, git, auth)
 			return err
 		})
 	return repoInfo, err
@@ -151,32 +154,6 @@ func (g *GitInformationClient) sendRequest(ctx context.Context, req apps.GitExpl
 		)
 	}
 	return exploreResponse, nil
-}
-
-// containsTag returns true of the given tag exists in the git explore response
-func containsTag(tag string, response *apps.GitExploreResponse) bool {
-	if response.RepositoryInfo == nil {
-		return false
-	}
-	for _, item := range response.RepositoryInfo.Tags {
-		if item == tag {
-			return true
-		}
-	}
-	return false
-}
-
-// containsBranch returns true of the given branch exists in the git explore response
-func containsBranch(branch string, response *apps.GitExploreResponse) bool {
-	if response.RepositoryInfo == nil {
-		return false
-	}
-	for _, item := range response.RepositoryInfo.Branches {
-		if item == branch {
-			return true
-		}
-	}
-	return false
 }
 
 // RetryLogFunc returns a retry log function depending on the given showErrors
