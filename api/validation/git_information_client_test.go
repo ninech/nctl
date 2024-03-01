@@ -26,7 +26,7 @@ func TestRepositoryInformation(t *testing.T) {
 	require.NoError(t, err)
 
 	for name, testCase := range map[string]struct {
-		url              string
+		git              apps.GitTarget
 		token            string
 		auth             util.GitAuth
 		verifyRequest    func(t *testing.T) func(p test.GitInfoServiceParsed, err error)
@@ -37,7 +37,10 @@ func TestRepositoryInformation(t *testing.T) {
 		errorExpected    bool
 	}{
 		"validate request": {
-			url:   "https://github.com/ninech/deploio-examples",
+			git: apps.GitTarget{
+				URL:      "https://github.com/ninech/deploio-examples",
+				Revision: "main",
+			},
 			token: "fake",
 			auth: util.GitAuth{
 				Username:      ptr.To("fake"),
@@ -51,6 +54,10 @@ func TestRepositoryInformation(t *testing.T) {
 						URL:      "https://github.com/ninech/deploio-examples",
 						Branches: []string{"main"},
 						Tags:     []string{"v1.0"},
+						RevisionResponse: &apps.RevisionResponse{
+							RevisionRequested: "main",
+							Found:             true,
+						},
 					},
 				},
 			},
@@ -59,6 +66,10 @@ func TestRepositoryInformation(t *testing.T) {
 					URL:      "https://github.com/ninech/deploio-examples",
 					Branches: []string{"main"},
 					Tags:     []string{"v1.0"},
+					RevisionResponse: &apps.RevisionResponse{
+						RevisionRequested: "main",
+						Found:             true,
+					},
 				},
 			},
 			verifyRequest: func(t *testing.T) func(p test.GitInfoServiceParsed, err error) {
@@ -77,7 +88,10 @@ func TestRepositoryInformation(t *testing.T) {
 			},
 		},
 		"we retry on server errors": {
-			url:             "https://github.com/ninech/deploio-examples",
+			git: apps.GitTarget{
+				URL:      "https://github.com/ninech/deploio-examples",
+				Revision: "main",
+			},
 			token:           "fake",
 			expectedRetries: 2,
 			backoff: &wait.Backoff{
@@ -109,7 +123,7 @@ func TestRepositoryInformation(t *testing.T) {
 				c.SetRetryBackoffs(*testCase.backoff)
 			}
 
-			response, err := c.RepositoryInformation(ctx, testCase.url, testCase.auth)
+			response, err := c.RepositoryInformation(ctx, testCase.git, testCase.auth)
 			if testCase.errorExpected {
 				require.Error(t, err)
 			} else {

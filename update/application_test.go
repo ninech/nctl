@@ -198,6 +198,10 @@ func TestApplication(t *testing.T) {
 					RepositoryInfo: &apps.RepositoryInfo{
 						URL:      existingApp.Spec.ForProvider.Git.URL,
 						Branches: []string{existingApp.Spec.ForProvider.Git.Revision},
+						RevisionResponse: &apps.RevisionResponse{
+							RevisionRequested: existingApp.Spec.ForProvider.Git.Revision,
+							Found:             true,
+						},
 					},
 				},
 			},
@@ -224,6 +228,10 @@ func TestApplication(t *testing.T) {
 					RepositoryInfo: &apps.RepositoryInfo{
 						URL:      existingApp.Spec.ForProvider.Git.URL,
 						Branches: []string{existingApp.Spec.ForProvider.Git.Revision},
+						RevisionResponse: &apps.RevisionResponse{
+							RevisionRequested: existingApp.Spec.ForProvider.Git.Revision,
+							Found:             true,
+						},
 					},
 				},
 			},
@@ -248,6 +256,10 @@ func TestApplication(t *testing.T) {
 					RepositoryInfo: &apps.RepositoryInfo{
 						URL:      existingApp.Spec.ForProvider.Git.URL,
 						Branches: []string{existingApp.Spec.ForProvider.Git.Revision},
+						RevisionResponse: &apps.RevisionResponse{
+							RevisionRequested: existingApp.Spec.ForProvider.Git.Revision,
+							Found:             true,
+						},
 					},
 				},
 			},
@@ -274,6 +286,10 @@ func TestApplication(t *testing.T) {
 					RepositoryInfo: &apps.RepositoryInfo{
 						URL:      "https://newgit.example.org",
 						Branches: []string{existingApp.Spec.ForProvider.Git.Revision},
+						RevisionResponse: &apps.RevisionResponse{
+							RevisionRequested: existingApp.Spec.ForProvider.Git.Revision,
+							Found:             true,
+						},
 					},
 				},
 			},
@@ -303,6 +319,10 @@ func TestApplication(t *testing.T) {
 					RepositoryInfo: &apps.RepositoryInfo{
 						URL:      "https://newgit.example.org",
 						Branches: []string{existingApp.Spec.ForProvider.Git.Revision},
+						RevisionResponse: &apps.RevisionResponse{
+							RevisionRequested: existingApp.Spec.ForProvider.Git.Revision,
+							Found:             true,
+						},
 					},
 				},
 			},
@@ -380,6 +400,10 @@ func TestApplication(t *testing.T) {
 					RepositoryInfo: &apps.RepositoryInfo{
 						URL:      "https://newgit.example.org",
 						Branches: []string{"main"},
+						RevisionResponse: &apps.RevisionResponse{
+							RevisionRequested: "not-existent",
+							Found:             false,
+						},
 					},
 				},
 			},
@@ -400,6 +424,10 @@ func TestApplication(t *testing.T) {
 					RepositoryInfo: &apps.RepositoryInfo{
 						URL:      "https://github.com/ninech/new-repo",
 						Branches: []string{"main"},
+						RevisionResponse: &apps.RevisionResponse{
+							RevisionRequested: "main",
+							Found:             true,
+						},
 					},
 				},
 			},

@@ -21,7 +21,7 @@ type RepositoryValidator struct {
 }
 
 // Validate validates the repository access and shows a visual spinner while doing so
-func (v *RepositoryValidator) Validate(ctx context.Context, git *apps.ApplicationGitConfig, auth util.GitAuth) error {
+func (v *RepositoryValidator) Validate(ctx context.Context, git *apps.GitTarget, auth util.GitAuth) error {
 	gitInfoClient, err := NewGitInformationClient(v.GitInformationServiceURL, v.Token)
 	if err != nil {
 		return err
@@ -45,8 +45,11 @@ func (v *RepositoryValidator) Validate(ctx context.Context, git *apps.Applicatio
 }
 
 // testRepositoryAccess tests if the given git repository can be accessed.
-func testRepositoryAccess(ctx context.Context, client *GitInformationClient, git *apps.ApplicationGitConfig, auth util.GitAuth) error {
-	repoInfo, err := client.RepositoryInformation(ctx, git.URL, auth)
+func testRepositoryAccess(ctx context.Context, client *GitInformationClient, git *apps.GitTarget, auth util.GitAuth) error {
+	if git == nil {
+		return errors.New("git target must be given")
+	}
+	repoInfo, err := client.RepositoryInformation(ctx, *git, auth)
 	if err != nil {
 		// we are not returning a detailed error here as it might be
 		// too technical. The full error can still be seen by using
@@ -62,8 +65,8 @@ func testRepositoryAccess(ctx context.Context, client *GitInformationClient, git
 	if repoInfo.Error != "" {
 		return errors.New(repoInfo.Error)
 	}
-	if !(containsBranch(git.Revision, repoInfo) ||
-		containsTag(git.Revision, repoInfo)) {
+	if repoInfo.RepositoryInfo.RevisionResponse != nil &&
+		!repoInfo.RepositoryInfo.RevisionResponse.Found {
 		return fmt.Errorf(
 			"can not find specified git revision (%q) in repository",
 			git.Revision,
