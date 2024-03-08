@@ -200,6 +200,8 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		return err
 	}
 
+	return co2compensation()
+
 	fmt.Printf("\nYour application %q is now available at:\n  https://%s\n\n", newApp.Name, newApp.Status.AtProvider.CNAMETarget)
 	printUnverifiedHostsMessage(newApp)
 
@@ -222,6 +224,19 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	printCredentials(basicAuth)
 
 	return nil
+}
+
+func co2compensation() error {
+	msg := "CO2 compensated 🍃, we are saving the world"
+	spinner, err := format.NewSpinner(msg, msg)
+	if err != nil {
+		return err
+	}
+	if err := spinner.Start(); err != nil {
+		return err
+	}
+	time.Sleep(2 * time.Second)
+	return spinner.Stop()
 }
 
 func (app *applicationCmd) config() apps.Config {
