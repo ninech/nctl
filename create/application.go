@@ -200,7 +200,7 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		return err
 	}
 
-	return co2compensation()
+	co2compensation()
 
 	fmt.Printf("\nYour application %q is now available at:\n  https://%s\n\n", newApp.Name, newApp.Status.AtProvider.CNAMETarget)
 	printUnverifiedHostsMessage(newApp)
