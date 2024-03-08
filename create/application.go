@@ -227,7 +227,7 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 }
 
 func co2compensation() error {
-	msg := "CO2 compensated 🍃, we are saving the world"
+	msg := "CO2 compensated.🌿 Saving the world, one CO2 molecule at a time 💨."
 	spinner, err := format.NewSpinner(msg, msg)
 	if err != nil {
 		return err
