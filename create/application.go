@@ -165,7 +165,7 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	if err := c.createResource(appWaitCtx); err != nil {
 		if auth.Enabled() {
 			secret := auth.Secret(newApp)
-			if gitErr := client.Delete(ctx, secret); err != nil {
+			if gitErr := client.Delete(ctx, secret); gitErr != nil {
 				return errors.Join(err, fmt.Errorf("unable to delete git auth secret: %w", gitErr))
 			}
 		}
@@ -189,7 +189,7 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 			}
 		}
 		if releaseErr, ok := err.(releaseError); ok {
-			if err := releaseErr.printMessage(appWaitCtx, client, newApp); err != nil {
+			if err := releaseErr.printMessage(appWaitCtx, client); err != nil {
 				return fmt.Errorf("%s: %w", releaseErr, err)
 			}
 		}
@@ -201,7 +201,9 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	}
 
 	msg := "co2 compensating the app 🌳"
-	spinnerMessage(msg, 2*time.Second)
+	if err := spinnerMessage(msg, 2*time.Second); err != nil {
+		return err
+	}
 
 	fmt.Printf("\nYour application %q is now available at:\n  https://%s\n\n", newApp.Name, newApp.Status.AtProvider.CNAMETarget)
 	printUnverifiedHostsMessage(newApp)
@@ -445,7 +447,7 @@ func (r releaseError) Error() string {
 	return fmt.Sprintf("release failed with status %s", r.release.Status.AtProvider.ReleaseStatus)
 }
 
-func (r releaseError) printMessage(ctx context.Context, client *api.Client, app *apps.Application) error {
+func (r releaseError) printMessage(ctx context.Context, client *api.Client) error {
 	fmt.Printf("\nYour release has failed with status %q. Here are the last %v lines of the log:\n\n",
 		r.release.Status.AtProvider.ReleaseStatus, errorLogLines)
 	return printReleaseLogs(ctx, client, r.release)
