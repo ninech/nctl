@@ -200,8 +200,7 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		return err
 	}
 
-	msg := "co2 compensating the app 🌳"
-	if err := spinnerMessage(msg, 2*time.Second); err != nil {
+	if err := spinnerMessage("co2 compensating the app 🌳", 2*time.Second); err != nil {
 		return err
 	}
 
