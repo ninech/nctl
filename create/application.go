@@ -165,7 +165,7 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	if err := c.createResource(appWaitCtx); err != nil {
 		if auth.Enabled() {
 			secret := auth.Secret(newApp)
-			if gitErr := client.Delete(ctx, secret); err != nil {
+			if gitErr := client.Delete(ctx, secret); gitErr != nil {
 				return errors.Join(err, fmt.Errorf("unable to delete git auth secret: %w", gitErr))
 			}
 		}
@@ -189,7 +189,7 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 			}
 		}
 		if releaseErr, ok := err.(releaseError); ok {
-			if err := releaseErr.printMessage(appWaitCtx, client, newApp); err != nil {
+			if err := releaseErr.printMessage(appWaitCtx, client); err != nil {
 				return fmt.Errorf("%s: %w", releaseErr, err)
 			}
 		}
@@ -197,6 +197,10 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	}
 
 	if err := client.Get(ctx, api.ObjectName(newApp), newApp); err != nil {
+		return err
+	}
+
+	if err := spinnerMessage("co2 compensating the app 🌳", 2*time.Second); err != nil {
 		return err
 	}
 
@@ -222,6 +226,18 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	printCredentials(basicAuth)
 
 	return nil
+}
+
+func spinnerMessage(msg string, sleepTime time.Duration) error {
+	spinner, err := format.NewSpinner(msg, msg)
+	if err != nil {
+		return err
+	}
+	if err := spinner.Start(); err != nil {
+		return err
+	}
+	time.Sleep(sleepTime)
+	return spinner.Stop()
 }
 
 func (app *applicationCmd) config() apps.Config {
@@ -430,7 +446,7 @@ func (r releaseError) Error() string {
 	return fmt.Sprintf("release failed with status %s", r.release.Status.AtProvider.ReleaseStatus)
 }
 
-func (r releaseError) printMessage(ctx context.Context, client *api.Client, app *apps.Application) error {
+func (r releaseError) printMessage(ctx context.Context, client *api.Client) error {
 	fmt.Printf("\nYour release has failed with status %q. Here are the last %v lines of the log:\n\n",
 		r.release.Status.AtProvider.ReleaseStatus, errorLogLines)
 	return printReleaseLogs(ctx, client, r.release)
