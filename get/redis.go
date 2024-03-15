@@ -32,10 +32,8 @@ func (cmd *redisCmd) Run(ctx context.Context, client *api.Client, get *Cmd) erro
 		return nil
 	}
 
-	if len(cmd.Name) != 0 {
-		if cmd.PrintToken {
-			return cmd.printPassword(ctx, client, &redisList.Items[0])
-		}
+	if cmd.Name != "" && cmd.PrintToken {
+		return cmd.printPassword(ctx, client, &redisList.Items[0])
 	}
 
 	switch get.Output {
