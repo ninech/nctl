@@ -22,7 +22,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20
 	github.com/moby/moby v26.0.0+incompatible
 	github.com/moby/term v0.5.0
-	github.com/ninech/apis v0.0.0-20240313141623-515632d02b59
+	github.com/ninech/apis v0.0.0-20240315085159-41718b2b1ce0
 	github.com/posener/complete v1.2.3
 	github.com/prometheus/common v0.52.2
 	github.com/stretchr/testify v1.9.0
