@@ -66,7 +66,7 @@ func (cmd *redisCmd) newRedis(namespace string) (*storage.Redis, error) {
 		Spec: storage.RedisSpec{
 			ResourceSpec: runtimev1.ResourceSpec{
 				WriteConnectionSecretToReference: &runtimev1.SecretReference{
-					Name:      name, // TODO: Use prefixed secret
+					Name:      "redis-" + name,
 					Namespace: namespace,
 				},
 			},
