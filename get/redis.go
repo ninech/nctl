@@ -63,7 +63,7 @@ func (cmd *redisCmd) printRedisInstances(list []storage.Redis, get *Cmd, header 
 }
 
 func (cmd *redisCmd) printPassword(ctx context.Context, client *api.Client, redis *storage.Redis) error {
-	pw, err := getConnectionSecret(ctx, client, "default", redis)
+	pw, err := getConnectionSecret(ctx, client, storage.RedisUser, redis)
 	if err != nil {
 		return err
 	}
