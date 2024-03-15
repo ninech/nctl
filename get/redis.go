@@ -3,7 +3,7 @@ package get
 import (
 	"context"
 	"fmt"
-	"os"
+	"io"
 	"text/tabwriter"
 
 	storage "github.com/ninech/apis/storage/v1alpha1"
@@ -14,9 +14,13 @@ import (
 type redisCmd struct {
 	Name       string `arg:"" help:"Name of the Redis Instance to get. If omitted all in the project will be listed." default:""`
 	PrintToken bool   `help:"Print the bearer token of the Account. Requires name to be set." default:"false"`
+
+	out io.Writer
 }
 
 func (cmd *redisCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
+	cmd.out = defaultOut(cmd.out)
+
 	redisList := &storage.RedisList{}
 
 	if err := get.list(ctx, client, redisList, matchName(cmd.Name)); err != nil {
@@ -24,21 +28,21 @@ func (cmd *redisCmd) Run(ctx context.Context, client *api.Client, get *Cmd) erro
 	}
 
 	if len(redisList.Items) == 0 {
-		printEmptyMessage(os.Stdout, storage.RedisKind, client.Project)
+		printEmptyMessage(cmd.out, storage.RedisKind, client.Project)
 		return nil
 	}
 
 	if len(cmd.Name) != 0 {
 		if cmd.PrintToken {
-			return cmd.printToken(ctx, client, &redisList.Items[0])
+			return cmd.printPassword(ctx, client, &redisList.Items[0])
 		}
 	}
 
 	switch get.Output {
 	case full:
-		return printRedisInstances(redisList.Items, get, true)
+		return cmd.printRedisInstances(redisList.Items, get, true)
 	case noHeader:
-		return printRedisInstances(redisList.Items, get, false)
+		return cmd.printRedisInstances(redisList.Items, get, false)
 	case yamlOut:
 		return format.PrettyPrintObjects(redisList.GetItems(), format.PrintOpts{})
 	}
@@ -46,8 +50,8 @@ func (cmd *redisCmd) Run(ctx context.Context, client *api.Client, get *Cmd) erro
 	return nil
 }
 
-func printRedisInstances(list []storage.Redis, get *Cmd, header bool) error {
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
+func (cmd *redisCmd) printRedisInstances(list []storage.Redis, get *Cmd, header bool) error {
+	w := tabwriter.NewWriter(cmd.out, 0, 0, 4, ' ', 0)
 
 	if header {
 		get.writeHeader(w, "NAME", "FQDN", "TLS", "MEMORY SIZE")
@@ -60,12 +64,12 @@ func printRedisInstances(list []storage.Redis, get *Cmd, header bool) error {
 	return w.Flush()
 }
 
-func (cmd *redisCmd) printToken(ctx context.Context, client *api.Client, redis *storage.Redis) error {
-	token, err := getConnectionSecret(ctx, client, "token", redis)
+func (cmd *redisCmd) printPassword(ctx context.Context, client *api.Client, redis *storage.Redis) error {
+	pw, err := getConnectionSecret(ctx, client, "default", redis)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("%s\n", token)
+	fmt.Sprintln(cmd.out, pw)
 	return nil
 }
