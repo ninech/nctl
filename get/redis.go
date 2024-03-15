@@ -68,6 +68,6 @@ func (cmd *redisCmd) printPassword(ctx context.Context, client *api.Client, redi
 		return err
 	}
 
-	fmt.Sprintln(cmd.out, pw)
+	fmt.Fprintln(cmd.out, pw)
 	return nil
 }
