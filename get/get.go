@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/gobuffalo/flect"
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
@@ -142,3 +143,19 @@ func projects(ctx context.Context, client *api.Client, onlyName string) ([]manag
 	}
 	return projectList.Items, nil
 }
+
+
+func getConnectionSecret(ctx context.Context, client *api.Client, key string, mg resource.Managed) (string, error) {
+	secret, err := client.GetConnectionSecret(ctx, mg)
+	if err != nil {
+		return "", fmt.Errorf("unable to get connection secret: %w", err)
+	}
+
+	content, ok := secret.Data[key]
+	if !ok {
+		return "", fmt.Errorf("secret %s has no key %s", mg.GetName(), key)
+	}
+
+	return string(content), nil
+}
+
