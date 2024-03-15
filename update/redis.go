@@ -12,8 +12,8 @@ import (
 
 type redisCmd struct {
 	Name            string                        `arg:"" default:"" help:"Name of the Redis instance to update."`
-	MemorySize      *storage.RedisMemorySize      `default:"" help:"MemorySize configures Redis to use a specified amount of memory for the data set."`
-	MaxMemoryPolicy *storage.RedisMaxMemoryPolicy `default:"" help:"MaxMemoryPolicy specifies the exact behavior Redis follows when the maxmemory limit is reached."`
+	MemorySize      *storage.RedisMemorySize      `default:"0" help:"MemorySize configures Redis to use a specified amount of memory for the data set."`
+	MaxMemoryPolicy *storage.RedisMaxMemoryPolicy `help:"MaxMemoryPolicy specifies the exact behavior Redis follows when the maxmemory limit is reached."`
 	AllowedCIDRs    *[]storage.IPv4CIDR           `default:"" help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance."`
 }
 

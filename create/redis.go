@@ -16,7 +16,7 @@ type redisCmd struct {
 	Name            string                       `arg:"" default:"" help:"Name of the Redis instance. A random name is generated if omitted."`
 	Location        string                       `default:"nine-es34" help:"Location where the Redis instance is created."`
 	RedisVersion    storage.RedisVersion         `help:"Version specifies the Redis version."`
-	MemorySize      *storage.RedisMemorySize     `help:"MemorySize configures Redis to use a specified amount of memory for the data set."`
+	MemorySize      *storage.RedisMemorySize     `default:"0" help:"MemorySize configures Redis to use a specified amount of memory for the data set."`
 	MaxMemoryPolicy storage.RedisMaxMemoryPolicy `help:"MaxMemoryPolicy specifies the exact behavior Redis follows when the maxmemory limit is reached."`
 	AllowedCIDRs    []storage.IPv4CIDR           `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance."`
 	Wait            bool                         `default:"true" help:"Wait until Redis is created."`
@@ -45,7 +45,8 @@ func (cmd *redisCmd) Run(ctx context.Context, client *api.Client) error {
 				return isAvailable(c), nil
 			}
 			return false, nil
-		}},
+		},
+	},
 	)
 }
 
