@@ -13,6 +13,7 @@ type Cmd struct {
 	Config      configCmd      `cmd:"" group:"deplo.io" name:"config"  help:"Update an existing deplo.io Project Configuration. (Beta - requires access)"`
 	Project     projectCmd     `cmd:"" group:"management.nine.ch" name:"project"  help:"Update an existing Project"`
 	MySQL       mySQLCmd       `cmd:"" group:"storage.nine.ch" name:"mysql" help:"Update an existing MySQL instance."`
+	Update      redisCmd       `cmd:"" group:"storage.nine.ch" name:"redis"  help:"Update an existing Redis instance"`
 }
 
 type updater struct {
@@ -24,8 +25,8 @@ type updater struct {
 
 type updateFunc func(current resource.Managed) error
 
-func newUpdater(client *api.Client, mg resource.Managed, kind string, f updateFunc) updater {
-	return updater{client: client, mg: mg, kind: kind, updateFunc: f}
+func newUpdater(client *api.Client, mg resource.Managed, kind string, f updateFunc) *updater {
+	return &updater{client: client, mg: mg, kind: kind, updateFunc: f}
 }
 
 func (u *updater) Update(ctx context.Context) error {
