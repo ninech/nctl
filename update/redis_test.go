@@ -9,25 +9,80 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-
-func Test_redisCmd_Run(t *testing.T) {
+func TestRedis(t *testing.T) {
 	tests := []struct {
 		name    string
-		cmd     redisCmd
+		create  storage.RedisParameters
+		update  redisCmd
+		want    storage.RedisParameters
 		wantErr bool
 	}{
-		{"simple", redisCmd{}, false},
-		{"memorySize", redisCmd{MemorySize: &storage.RedisMemorySize{Quantity: resource.MustParse("1G")}}, false},
-		{"maxMemoryPolicy", redisCmd{MaxMemoryPolicy: ptr.To(storage.RedisMaxMemoryPolicy("noeviction"))}, false},
-		{"allowedCIDRs", redisCmd{AllowedCIDRs: &[]storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}}, false},
+		{"simple", storage.RedisParameters{}, redisCmd{}, storage.RedisParameters{}, false},
+		{
+			"memorySize",
+			storage.RedisParameters{},
+			redisCmd{MemorySize: ptr.To("1G")},
+			storage.RedisParameters{MemorySize: memorySize("1G")},
+			false,
+		},
+		{
+			"memorySize",
+			storage.RedisParameters{MemorySize: memorySize("2G")},
+			redisCmd{MemorySize: ptr.To("1G")},
+			storage.RedisParameters{MemorySize: memorySize("1G")},
+			false,
+		},
+		{
+			"invalid",
+			storage.RedisParameters{MemorySize: memorySize("2G")},
+			redisCmd{MemorySize: ptr.To("invalid")},
+			storage.RedisParameters{MemorySize: memorySize("2G")},
+			true,
+		},
+		{
+			"maxMemoryPolicy",
+			storage.RedisParameters{},
+			redisCmd{MaxMemoryPolicy: ptr.To(storage.RedisMaxMemoryPolicy("noeviction"))},
+			storage.RedisParameters{MaxMemoryPolicy: storage.RedisMaxMemoryPolicy("noeviction")},
+			false,
+		},
+		{
+			"maxMemoryPolicy",
+			storage.RedisParameters{MaxMemoryPolicy: storage.RedisMaxMemoryPolicy("allkeys-lfu")},
+			redisCmd{MaxMemoryPolicy: ptr.To(storage.RedisMaxMemoryPolicy("noeviction"))},
+			storage.RedisParameters{MaxMemoryPolicy: storage.RedisMaxMemoryPolicy("noeviction")},
+			false,
+		},
+		{
+			"allowedCIDRs",
+			storage.RedisParameters{},
+			redisCmd{AllowedCIDRs: &[]storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
+			storage.RedisParameters{AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
+			false,
+		},
+		{
+			"allowedCIDRs",
+			storage.RedisParameters{AllowedCIDRs: []storage.IPv4CIDR{"192.168.0.1/24"}},
+			redisCmd{AllowedCIDRs: &[]storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
+			storage.RedisParameters{AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
+			false,
+		},
+		{
+			"allowedCIDRs",
+			storage.RedisParameters{AllowedCIDRs: []storage.IPv4CIDR{"0.0.0.0/0"}},
+			redisCmd{MemorySize: ptr.To("1G")},
+			storage.RedisParameters{MemorySize: memorySize("1G"), AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.cmd.Name = "test-" + t.Name()
+			tt.update.Name = "test-" + t.Name()
 
 			scheme, err := api.NewScheme()
 			if err != nil {
@@ -36,30 +91,30 @@ func Test_redisCmd_Run(t *testing.T) {
 			apiClient := &api.Client{WithWatch: fake.NewClientBuilder().WithScheme(scheme).Build(), Project: "default"}
 			ctx := context.Background()
 
-			redis :=  test.Redis(tt.cmd.Name, apiClient.Project, "nine-es34")
-			if err := apiClient.Create(ctx, redis); err != nil {
+			created := test.Redis(tt.update.Name, apiClient.Project, "nine-es34")
+			created.Spec.ForProvider = tt.create
+			if err := apiClient.Create(ctx, created); err != nil {
 				t.Fatalf("redis create error, got: %s", err)
 			}
-			if err := apiClient.Get(ctx, api.ObjectName(redis), redis); err != nil {
+			if err := apiClient.Get(ctx, api.ObjectName(created), created); err != nil {
 				t.Fatalf("expected redis to exist, got: %s", err)
 			}
 
-			if err := tt.cmd.Run(ctx, apiClient); (err != nil) != tt.wantErr {
+			updated := &storage.Redis{ObjectMeta: metav1.ObjectMeta{Name: created.Name, Namespace: created.Namespace}}
+			if err := tt.update.Run(ctx, apiClient); (err != nil) != tt.wantErr {
 				t.Errorf("redisCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
-
-			if err := apiClient.Get(ctx, api.ObjectName(redis), redis); (err != nil) != tt.wantErr {
+			if err := apiClient.Get(ctx, api.ObjectName(updated), updated); err != nil {
 				t.Fatalf("expected redis to exist, got: %s", err)
 			}
-			if !reflect.DeepEqual(redis.Spec.ForProvider.MemorySize, tt.cmd.MemorySize) {
-				t.Fatalf("expected redis.Spec.ForProvider.MemorySize = %v, got: %v", tt.cmd.MemorySize, redis.Spec.ForProvider.MemorySize)
-			}
-			if tt.cmd.MaxMemoryPolicy != nil && !reflect.DeepEqual(redis.Spec.ForProvider.MaxMemoryPolicy, *tt.cmd.MaxMemoryPolicy) {
-				t.Fatalf("expected redis.Spec.ForProvider.MaxMemoryPolicy = %v, got: %v", *tt.cmd.MaxMemoryPolicy, redis.Spec.ForProvider.MaxMemoryPolicy)
-			}
-			if tt.cmd.AllowedCIDRs != nil && !reflect.DeepEqual(redis.Spec.ForProvider.AllowedCIDRs, *tt.cmd.AllowedCIDRs) {
-				t.Fatalf("expected redis.Spec.ForProvider.AllowedCIDRs = %v, got: %v", *tt.cmd.AllowedCIDRs, redis.Spec.ForProvider.AllowedCIDRs)
+
+			if !reflect.DeepEqual(updated.Spec.ForProvider, tt.want) {
+				t.Fatalf("expected redis.Spec.ForProvider = %v, got: %v", updated.Spec.ForProvider, tt.want)
 			}
 		})
 	}
+}
+
+func memorySize(s string) *storage.RedisMemorySize {
+	return &storage.RedisMemorySize{Quantity: resource.MustParse(s)}
 }
