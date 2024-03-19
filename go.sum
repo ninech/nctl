@@ -679,6 +679,8 @@ github.com/lucasb-eyer/go-colorful v1.2.0 h1:1nnpGOrhyZZuNyfu1QjKiUICQ74+3FNCN69
 github.com/lucasb-eyer/go-colorful v1.2.0/go.mod h1:R4dSotOR9KMtayYi1e77YzuveK+i7ruzyGqttikkLy0=
 github.com/lucasepe/codename v0.2.0 h1:zkW9mKWSO8jjVIYFyZWE9FPvBtFVJxgMpQcMkf4Vv20=
 github.com/lucasepe/codename v0.2.0/go.mod h1:RDcExRuZPWp5Uz+BosvpROFTrxpt5r1vSzBObHdBdDM=
+github.com/lucasepe/codename v0.2.1-0.20230220151621-5e31bf1e775f h1:0uoykAoKHMZNS4dOQfkRLJaQmgkdMZvCFotCEHC1zMk=
+github.com/lucasepe/codename v0.2.1-0.20230220151621-5e31bf1e775f/go.mod h1:RDcExRuZPWp5Uz+BosvpROFTrxpt5r1vSzBObHdBdDM=
 github.com/mailru/easyjson v0.0.0-20190614124828-94de47d64c63/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=
 github.com/mailru/easyjson v0.0.0-20190626092158-b2ccc519800e/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=
 github.com/mailru/easyjson v0.7.6/go.mod h1:xzfreul335JAWq5oZzymOObrkdz5UnU4kGfJJLY9Nlc=

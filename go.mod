@@ -18,7 +18,7 @@ require (
 	github.com/grafana/loki v1.6.2-0.20240110103520-24fa648893d1
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/int128/kubelogin v1.25.3
-	github.com/lucasepe/codename v0.2.0
+	github.com/lucasepe/codename v0.2.1-0.20230220151621-5e31bf1e775f
 	github.com/mattn/go-isatty v0.0.19
 	github.com/moby/moby v24.0.1+incompatible
 	github.com/moby/term v0.5.0
