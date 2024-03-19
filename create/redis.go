@@ -20,7 +20,7 @@ type redisCmd struct {
 	RedisVersion    storage.RedisVersion         `help:"Version specifies the Redis version."`
 	MemorySize      string                       `help:"MemorySize configures Redis to use a specified amount of memory for the data set."`
 	MaxMemoryPolicy storage.RedisMaxMemoryPolicy `help:"MaxMemoryPolicy specifies the exact behavior Redis follows when the maxmemory limit is reached."`
-	AllowedCIDRs    []storage.IPv4CIDR           `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance."`
+	AllowedCidrs    []storage.IPv4CIDR           `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance."`
 	Wait            bool                         `default:"true" help:"Wait until Redis is created."`
 	WaitTimeout     time.Duration                `default:"300s" help:"Duration to wait for Redis getting ready. Only relevant if wait is set."`
 }
@@ -74,7 +74,7 @@ func (cmd *redisCmd) newRedis(namespace string) (*storage.Redis, error) {
 				Location:        meta.LocationName(cmd.Location),
 				Version:         cmd.RedisVersion,
 				MaxMemoryPolicy: cmd.MaxMemoryPolicy,
-				AllowedCIDRs:    cmd.AllowedCIDRs,
+				AllowedCIDRs:    cmd.AllowedCidrs,
 			},
 		},
 	}

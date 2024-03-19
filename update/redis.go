@@ -15,7 +15,7 @@ type redisCmd struct {
 	Name            string                        `arg:"" default:"" help:"Name of the Redis instance to update."`
 	MemorySize      *string                       `help:"MemorySize configures Redis to use a specified amount of memory for the data set."`
 	MaxMemoryPolicy *storage.RedisMaxMemoryPolicy `help:"MaxMemoryPolicy specifies the exact behavior Redis follows when the maxmemory limit is reached."`
-	AllowedCIDRs    *[]storage.IPv4CIDR           `default:"" help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance."`
+	AllowedCidrs    *[]storage.IPv4CIDR           `default:"" help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance."`
 }
 
 func (cmd *redisCmd) Run(ctx context.Context, client *api.Client) error {
@@ -48,8 +48,8 @@ func (cmd *redisCmd) applyUpdates(redis *storage.Redis) error {
 	if cmd.MaxMemoryPolicy != nil {
 		redis.Spec.ForProvider.MaxMemoryPolicy = *cmd.MaxMemoryPolicy
 	}
-	if cmd.AllowedCIDRs != nil {
-		redis.Spec.ForProvider.AllowedCIDRs = *cmd.AllowedCIDRs
+	if cmd.AllowedCidrs != nil {
+		redis.Spec.ForProvider.AllowedCIDRs = *cmd.AllowedCidrs
 	}
 
 	return nil
