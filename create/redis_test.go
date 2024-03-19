@@ -35,7 +35,7 @@ func TestRedis(t *testing.T) {
 		},
 		{
 			"allowedCIDRs",
-			redisCmd{AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
+			redisCmd{AllowedCidrs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
 			storage.RedisParameters{AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
 			false,
 		},

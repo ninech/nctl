@@ -61,14 +61,14 @@ func TestRedis(t *testing.T) {
 		{
 			"allowedCIDRs",
 			storage.RedisParameters{},
-			redisCmd{AllowedCIDRs: &[]storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
+			redisCmd{AllowedCidrs: &[]storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
 			storage.RedisParameters{AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
 			false,
 		},
 		{
 			"allowedCIDRs",
 			storage.RedisParameters{AllowedCIDRs: []storage.IPv4CIDR{"192.168.0.1/24"}},
-			redisCmd{AllowedCIDRs: &[]storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
+			redisCmd{AllowedCidrs: &[]storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
 			storage.RedisParameters{AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
 			false,
 		},
