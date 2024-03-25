@@ -13,9 +13,9 @@ import (
 
 type redisCmd struct {
 	Name            string                        `arg:"" default:"" help:"Name of the Redis instance to update."`
-	MemorySize      *string                       `help:"MemorySize configures Redis to use a specified amount of memory for the data set."`
-	MaxMemoryPolicy *storage.RedisMaxMemoryPolicy `help:"MaxMemoryPolicy specifies the exact behavior Redis follows when the maxmemory limit is reached."`
-	AllowedCidrs    *[]storage.IPv4CIDR           `default:"" help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance."`
+	MemorySize      *string                       `help:"MemorySize configures Redis to use a specified amount of memory for the data set." placeholder:"1Gi"`
+	MaxMemoryPolicy *storage.RedisMaxMemoryPolicy `help:"MaxMemoryPolicy specifies the exact behavior Redis follows when the maxmemory limit is reached." placeholder:"allkeys-lru"`
+	AllowedCidrs    *[]storage.IPv4CIDR           `default:"" help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance." placeholder:"0.0.0.0/0"`
 }
 
 func (cmd *redisCmd) Run(ctx context.Context, client *api.Client) error {
