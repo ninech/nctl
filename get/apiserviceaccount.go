@@ -75,7 +75,7 @@ func (asa *apiServiceAccountsCmd) print(sas []iam.APIServiceAccount, get *Cmd, h
 }
 
 func (asa *apiServiceAccountsCmd) printToken(ctx context.Context, client *api.Client, sa *iam.APIServiceAccount) error {
-	token, err := getConnectionSecret(ctx, client, "token", sa)
+	token, err := getConnectionSecret(ctx, client, tokenKey, sa)
 	if err != nil {
 		return err
 	}

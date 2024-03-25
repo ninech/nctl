@@ -19,20 +19,20 @@ type redisCmd struct {
 }
 
 func (cmd *redisCmd) Run(ctx context.Context, client *api.Client) error {
-	project := &storage.Redis{
+	redis := &storage.Redis{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cmd.Name,
 			Namespace: client.Project,
 		},
 	}
 
-	return newUpdater(client, project, storage.RedisKind, func(current resource.Managed) error {
-		project, ok := current.(*storage.Redis)
+	return newUpdater(client, redis, storage.RedisKind, func(current resource.Managed) error {
+		redis, ok := current.(*storage.Redis)
 		if !ok {
 			return fmt.Errorf("resource is of type %T, expected %T", current, storage.Redis{})
 		}
 
-		return cmd.applyUpdates(project)
+		return cmd.applyUpdates(redis)
 	}).Update(ctx)
 }
 
