@@ -19,6 +19,7 @@ type Cmd struct {
 	Project           projectCmd           `cmd:"" group:"management.nine.ch" name:"project" aliases:"proj" help:"Delete a Project."`
 	Config            configCmd            `cmd:"" group:"deplo.io" name:"config" help:"Delete a deplo.io Project Configuration. (Beta - requires access)"`
 	Application       applicationCmd       `cmd:"" group:"deplo.io" name:"application" aliases:"app" help:"Delete a deplo.io Application. (Beta - requires access)"`
+	Redis             redisCmd             `cmd:"" group:"storage.nine.ch" name:"redis" help:"Delete a Redis instance."`
 }
 
 // cleanupFunc is called after the resource has been deleted in order to do

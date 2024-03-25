@@ -75,18 +75,12 @@ func (asa *apiServiceAccountsCmd) print(sas []iam.APIServiceAccount, get *Cmd, h
 }
 
 func (asa *apiServiceAccountsCmd) printToken(ctx context.Context, client *api.Client, sa *iam.APIServiceAccount) error {
-	secret, err := client.GetConnectionSecret(ctx, sa)
+	token, err := getConnectionSecret(ctx, client, tokenKey, sa)
 	if err != nil {
-		return fmt.Errorf("unable to get connection secret: %w", err)
-	}
-
-	token, ok := secret.Data[tokenKey]
-	if !ok {
-		return fmt.Errorf("secret of API Service Account %s has no token", sa.Name)
+		return err
 	}
 
 	fmt.Printf("%s\n", token)
-
 	return nil
 }
 
