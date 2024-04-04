@@ -7,7 +7,7 @@ env:
   GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
 
 jobs:
-  golangci:
+  lint:
     name: lint
     runs-on: ubuntu-latest
     steps:
@@ -21,6 +21,10 @@ jobs:
         with:
           version: v1.54
           args: --timeout=10m
+      - uses: dominikh/staticcheck-action@v1
+        with:
+          version: latest
+          install-go: false
   test:
     name: test
     container: ninech/controller-test-image:latest
