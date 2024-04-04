@@ -24,8 +24,8 @@ type updater struct {
 
 type updateFunc func(current resource.Managed) error
 
-func newUpdater(client *api.Client, mg resource.Managed, kind string, f updateFunc) updater {
-	return updater{client: client, mg: mg, kind: kind, updateFunc: f}
+func newUpdater(client *api.Client, mg resource.Managed, kind string, f updateFunc) *updater {
+	return &updater{client: client, mg: mg, kind: kind, updateFunc: f}
 }
 
 func (u *updater) Update(ctx context.Context) error {
