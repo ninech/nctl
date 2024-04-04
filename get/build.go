@@ -9,7 +9,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 	"github.com/moby/moby/api/types/registry"
 	"github.com/moby/moby/pkg/jsonmessage"
@@ -100,7 +100,7 @@ func pullImage(ctx context.Context, apiClient *api.Client, build *apps.Build) er
 
 	fmt.Printf("Pulling image of build %s\n", build.Name)
 
-	reader, err := cli.ImagePull(ctx, ImageRef(build.Spec.ForProvider.Image), types.ImagePullOptions{
+	reader, err := cli.ImagePull(ctx, ImageRef(build.Spec.ForProvider.Image), image.PullOptions{
 		RegistryAuth: registryAuth,
 	})
 	if err != nil {
