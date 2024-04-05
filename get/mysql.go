@@ -22,6 +22,11 @@ type mySQLCmd struct {
 func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
 	cmd.out = defaultOut(cmd.out)
 
+	if cmd.Name != "" && cmd.PrintUser {
+		fmt.Fprintln(cmd.out, storage.MySQLUser)
+		return nil
+	}
+
 	mysqlList := &storage.MySQLList{}
 
 	if err := get.list(ctx, client, mysqlList, matchName(cmd.Name)); err != nil {
@@ -30,11 +35,6 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client, get *Cmd) erro
 
 	if len(mysqlList.Items) == 0 {
 		printEmptyMessage(cmd.out, storage.MySQLKind, client.Project)
-		return nil
-	}
-
-	if cmd.Name != "" && cmd.PrintUser {
-		fmt.Fprintln(cmd.out, storage.MySQLUser)
 		return nil
 	}
 
