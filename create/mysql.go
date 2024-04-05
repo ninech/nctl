@@ -1,10 +1,8 @@
 package create
 
 import (
-	"bufio"
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,7 +21,7 @@ type mySQLCmd struct {
 	MachineType           infra.MachineType                      `help:"Defines the sizing for a particular MySQL instance." placeholder:"nine-standard-1" default:"nine-standard-1"`
 	AllowedCidrs          []storage.IPv4CIDR                     `help:"Specify the allowed IP addresses, connecting to the instance." placeholder:"0.0.0.0/0"`
 	SSHKeys               []storage.SSHKey                       `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups." xor:"sshkeys"`
-	SSHKeysFile           *string                                `help:"File containing a list of SSH public keys (see above), separated by newlines." xor:"sshkeys"`
+	SSHKeysFile           string                                 `help:"File containing a list of SSH public keys (see above), separated by newlines." xor:"sshkeys"`
 	SQLMode               *[]storage.MySQLMode                   `help:"Configures the sql_mode setting. Modes affect the SQL syntax MySQL supports and the data validation checks it performs."`
 	CharacterSetName      string                                 `help:"Configures the character_set_server variable."`
 	CharacterSetCollation string                                 `help:"Configures the collation_server variable."`
@@ -36,11 +34,11 @@ type mySQLCmd struct {
 }
 
 func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
-	if cmd.SSHKeysFile != nil {
-		if err := cmd.sshKeysFile(); err != nil {
-			return fmt.Errorf("error when reading SSH keys file: %w", err)
-		}
+	sshkeys, err := file.readSSHKeys(cmd.SSHKeysFile)
+	if err != nil {
+		return fmt.Errorf("error when reading SSH keys file: %w", err)
 	}
+	cmd.SSHKeys = append(cmd.SSHKeys, sshkeys)
 
 	mysql := cmd.newMySQL(client.Project)
 
@@ -112,18 +110,11 @@ func (cmd *mySQLCmd) newMySQL(namespace string) *storage.MySQL {
 }
 
 func (cmd *mySQLCmd) sshKeysFile() error {
-	file, err := os.Open(*cmd.SSHKeysFile)
+	sshkeys, err := file.readSSHKeys(cmd.SSHKeysFile)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
 
-	fileScanner := bufio.NewScanner(file)
-	fileScanner.Split(bufio.ScanLines)
-
-	for fileScanner.Scan() {
-		cmd.SSHKeys = append(cmd.SSHKeys, storage.SSHKey(fileScanner.Text()))
-	}
-
+	cmd.SSHKeys = sshkeys
 	return nil
 }
