@@ -28,7 +28,7 @@ type mySQLCmd struct {
 	TransactionIsolation  storage.MySQLTransactionCharacteristic `help:"Configures the transaction_isolation variable."`
 	KeepDailyBackups      *int                                   `help:"Number of daily database backups to keep. Note that setting this to 0, backup will be disabled and existing dumps deleted immediately."`
 	Wait                  bool                                   `default:"true" help:"Wait until MySQL instance is created."`
-	WaitTimeout           time.Duration                          `default:"600s" help:"Duration to wait for MySQL getting ready. Only relevant if --wait is set."`
+	WaitTimeout           time.Duration                          `default:"900s" help:"Duration to wait for MySQL getting ready. Only relevant if --wait is set."`
 }
 
 func (cmd mySQLCmd) Run(ctx context.Context, client *api.Client) error {
