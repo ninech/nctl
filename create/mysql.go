@@ -42,10 +42,7 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
 		}
 	}
 
-	mysql, err := cmd.newMySQL(client.Project)
-	if err != nil {
-		return err
-	}
+	mysql := cmd.newMySQL(client.Project)
 
 	c := newCreator(client, mysql, "mysql")
 	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
@@ -71,7 +68,7 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
 	)
 }
 
-func (cmd *mySQLCmd) newMySQL(namespace string) (*storage.MySQL, error) {
+func (cmd *mySQLCmd) newMySQL(namespace string) *storage.MySQL {
 	name := getName(cmd.Name)
 
 	mySQL := &storage.MySQL{
@@ -111,7 +108,7 @@ func (cmd *mySQLCmd) newMySQL(namespace string) (*storage.MySQL, error) {
 		mySQL.Spec.ForProvider.SSHKeys = cmd.SSHKeys
 	}
 
-	return mySQL, nil
+	return mySQL
 }
 
 func (cmd *mySQLCmd) sshKeysFile() error {
