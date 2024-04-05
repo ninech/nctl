@@ -79,8 +79,8 @@ func (cmd *mySQLCmd) newMySQL(namespace string) (*storage.MySQL, error) {
 			ForProvider: storage.MySQLParameters{
 				Location:     meta.LocationName(cmd.Location),
 				MachineType:  cmd.MachineType,
-				AllowedCIDRs: cmd.AllowedCidrs,
-				SSHKeys:      cmd.SSHKeys,
+				AllowedCIDRs: []storage.IPv4CIDR{},
+				SSHKeys:      []storage.SSHKey{},
 				SQLMode:      cmd.SQLMode,
 				CharacterSet: storage.MySQLCharacterSet{
 					Name:      cmd.CharacterSetName,
@@ -92,6 +92,13 @@ func (cmd *mySQLCmd) newMySQL(namespace string) (*storage.MySQL, error) {
 				KeepDailyBackups:     cmd.KeepDailyBackups,
 			},
 		},
+	}
+
+	if cmd.AllowedCidrs != nil {
+		mySQL.Spec.ForProvider.AllowedCIDRs = cmd.AllowedCidrs
+	}
+	if cmd.SSHKeys != nil {
+		mySQL.Spec.ForProvider.SSHKeys = cmd.SSHKeys
 	}
 
 	return mySQL, nil
