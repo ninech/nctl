@@ -1,8 +1,10 @@
 package update
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
@@ -15,7 +17,8 @@ type mySQLCmd struct {
 	Name                  string                                  `arg:"" default:"" help:"Name of the MySQL instance to update."`
 	MachineType           *infra.MachineType                      `help:"Defines the sizing for a particular MySQL instance."`
 	AllowedCidrs          *[]storage.IPv4CIDR                     `default:"" help:"Specify the allowed IP addresses, connecting to the instance."`
-	SSHKeys               *[]storage.SSHKey                       `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups."`
+	SSHKeys               *[]storage.SSHKey                       `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups." xor:"sshkeys"`
+	SSHKeysFile           *string                                 `help:"File containing a list of SSH public keys (see above), separated by newlines." xor:"sshkeys"`
 	SQLMode               *[]storage.MySQLMode                    `help:"Configures the sql_mode setting. Modes affect the SQL syntax MySQL supports and the data validation checks it performs."`
 	CharacterSetName      *string                                 `help:"Configures the character_set_server variable."`
 	CharacterSetCollation *string                                 `help:"Configures the collation_server variable."`
@@ -26,24 +29,31 @@ type mySQLCmd struct {
 }
 
 func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
-	project := &storage.MySQL{
+	mysql := &storage.MySQL{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cmd.Name,
 			Namespace: client.Project,
 		},
 	}
 
-	return newUpdater(client, project, storage.MySQLKind, func(current resource.Managed) error {
-		project, ok := current.(*storage.MySQL)
+	return newUpdater(client, mysql, storage.MySQLKind, func(current resource.Managed) error {
+		mysql, ok := current.(*storage.MySQL)
 		if !ok {
 			return fmt.Errorf("resource is of type %T, expected %T", current, storage.MySQL{})
 		}
 
-		return cmd.applyUpdates(project)
+		if cmd.SSHKeysFile != nil {
+			if err := cmd.sshKeysFile(); err != nil {
+				return fmt.Errorf("error when reading SSH keys file: %w", err)
+			}
+		}
+
+		cmd.applyUpdates(mysql)
+		return nil
 	}).Update(ctx)
 }
 
-func (cmd *mySQLCmd) applyUpdates(mysql *storage.MySQL) error {
+func (cmd *mySQLCmd) applyUpdates(mysql *storage.MySQL) {
 	if cmd.MachineType != nil {
 		mysql.Spec.ForProvider.MachineType = *cmd.MachineType
 	}
@@ -74,6 +84,23 @@ func (cmd *mySQLCmd) applyUpdates(mysql *storage.MySQL) error {
 	if cmd.KeepDailyBackups != nil {
 		mysql.Spec.ForProvider.KeepDailyBackups = cmd.KeepDailyBackups
 	}
+}
 
+func (cmd *mySQLCmd) sshKeysFile() error {
+	file, err := os.Open(*cmd.SSHKeysFile)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	fileScanner := bufio.NewScanner(file)
+	fileScanner.Split(bufio.ScanLines)
+
+	sshKeys := []storage.SSHKey{}
+	for fileScanner.Scan() {
+		sshKeys = append(sshKeys, storage.SSHKey(fileScanner.Text()))
+	}
+
+	cmd.SSHKeys = &sshKeys
 	return nil
 }
