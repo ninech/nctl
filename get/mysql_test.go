@@ -16,7 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func Test_mysqlCmd_Run(t *testing.T) {
+func TestMySQL(t *testing.T) {
 	tests := []struct {
 		name        string
 		instances   map[string]storage.MySQLParameters
