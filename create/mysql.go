@@ -44,6 +44,7 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
 		cmd.SSHKeys = append(cmd.SSHKeys, sshkeys...)
 	}
 
+	fmt.Println("Creating new mysql. This can take up to 15 minutes.")
 	mysql := cmd.newMySQL(client.Project)
 
 	c := newCreator(client, mysql, "mysql")
