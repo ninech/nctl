@@ -35,7 +35,7 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
 		},
 	}
 
-	return newUpdater(client, mysql, storage.MySQLKind, func(current resource.Managed) error {
+	upd := newUpdater(client, mysql, storage.MySQLKind, func(current resource.Managed) error {
 		mysql, ok := current.(*storage.MySQL)
 		if !ok {
 			return fmt.Errorf("resource is of type %T, expected %T", current, storage.MySQL{})
@@ -51,7 +51,9 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
 
 		cmd.applyUpdates(mysql)
 		return nil
-	}).Update(ctx)
+	})
+
+	return upd.Update(ctx)
 }
 
 func (cmd *mySQLCmd) applyUpdates(mysql *storage.MySQL) {
