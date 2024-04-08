@@ -9,7 +9,6 @@ import (
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -135,11 +134,11 @@ func TestMySQL(t *testing.T) {
 				t.Fatalf("expected mysql to exist, got: %s", err)
 			}
 
-			updated := &storage.MySQL{ObjectMeta: metav1.ObjectMeta{Name: created.Name, Namespace: created.Namespace}}
+			updated := &storage.MySQL{}
 			if err := tt.update.Run(ctx, apiClient); (err != nil) != tt.wantErr {
 				t.Errorf("mySQLCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if err := apiClient.Get(ctx, api.ObjectName(updated), updated); err != nil {
+			if err := apiClient.Get(ctx, api.ObjectName(created), updated); err != nil {
 				t.Fatalf("expected mysql to exist, got: %s", err)
 			}
 
