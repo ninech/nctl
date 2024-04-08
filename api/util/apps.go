@@ -1,14 +1,17 @@
 package util
 
 import (
+	"context"
 	"encoding/pem"
 	"fmt"
 	"sort"
 	"strings"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
+	"github.com/ninech/nctl/api"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -127,6 +130,48 @@ type GitAuth struct {
 	Username      *string
 	Password      *string
 	SSHPrivateKey *string
+}
+
+func GitAuthFromApp(ctx context.Context, client *api.Client, app *apps.Application) (GitAuth, error) {
+	auth := GitAuth{}
+	if app.Spec.ForProvider.Git.Auth == nil {
+		return auth, nil
+	}
+
+	if len(app.Spec.ForProvider.Git.Auth.Username) != 0 {
+		auth.Username = &app.Spec.ForProvider.Git.Auth.Username
+	}
+
+	if len(app.Spec.ForProvider.Git.Auth.Password) != 0 {
+		auth.Password = &app.Spec.ForProvider.Git.Auth.Password
+	}
+
+	if len(app.Spec.ForProvider.Git.Auth.SSHPrivateKey) != 0 {
+		auth.SSHPrivateKey = &app.Spec.ForProvider.Git.Auth.SSHPrivateKey
+	}
+
+	if app.Spec.ForProvider.Git.Auth.FromSecret == nil {
+		return auth, nil
+	}
+
+	secret := auth.Secret(app)
+	if err := client.Get(ctx, client.Name(secret.Name), secret); err != nil {
+		return auth, err
+	}
+
+	if val, ok := secret.Data[PrivateKeySecretKey]; ok {
+		auth.SSHPrivateKey = ptr.To(string(val))
+	}
+
+	if val, ok := secret.Data[UsernameSecretKey]; ok {
+		auth.Username = ptr.To(string(val))
+	}
+
+	if val, ok := secret.Data[PasswordSecretKey]; ok {
+		auth.Password = ptr.To(string(val))
+	}
+
+	return auth, nil
 }
 
 func (git GitAuth) HasPrivateKey() bool {

@@ -121,6 +121,18 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 				Token:                    client.Token,
 				Debug:                    cmd.Debug,
 			}
+
+			if !auth.Enabled() {
+				// if the auth was not changed but e.g. the branch changes and
+				// auth is pre-configured, we need to fetch the existing git
+				// auth from the app.
+				a, err := util.GitAuthFromApp(ctx, client, app)
+				if err != nil {
+					return fmt.Errorf("error reading preconfigured auth secret")
+				}
+				auth = a
+			}
+
 			if err := validator.Validate(ctx, &app.Spec.ForProvider.Git.GitTarget, auth); err != nil {
 				return err
 			}
