@@ -58,11 +58,11 @@ func (cmd *mySQLCmd) printMySQLInstances(list []storage.MySQL, get *Cmd, header 
 	w := tabwriter.NewWriter(cmd.out, 0, 0, 4, ' ', 0)
 
 	if header {
-		get.writeHeader(w, "NAME", "FQDN", "TLS", "MACHINE TYPE")
+		get.writeHeader(w, "NAME", "FQDN", "LOCATION", "MACHINE TYPE")
 	}
 
 	for _, mysql := range list {
-		get.writeTabRow(w, mysql.Namespace, mysql.Name, mysql.Status.AtProvider.FQDN, "true", string(mysql.Spec.ForProvider.MachineType))
+		get.writeTabRow(w, mysql.Namespace, mysql.Name, mysql.Status.AtProvider.FQDN, string(mysql.Spec.ForProvider.Location), string(mysql.Spec.ForProvider.MachineType))
 	}
 
 	return w.Flush()
