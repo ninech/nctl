@@ -63,6 +63,13 @@ func (g gitConfig) sshPrivateKey() (*string, error) {
 	return util.ValidatePEM(string(content))
 }
 
+func (g gitConfig) empty() bool {
+	return g.URL == nil && g.SubPath == nil &&
+		g.Revision == nil && g.Username == nil &&
+		g.Password == nil && g.SSHPrivateKey == nil &&
+		g.SSHPrivateKeyFromFile == nil
+}
+
 type deployJob struct {
 	Enabled *bool          `help:"Disables the deploy job if set to false." placeholder:"false"`
 	Command *string        `help:"Command to execute before a new release gets deployed. No deploy job will be executed if this is not specified." placeholder:"\"rake db:prepare\""`
@@ -95,7 +102,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 
 		// if there was no change in the git config, we don't have
 		// anything to do anymore
-		if cmd.Git == nil {
+		if cmd.Git == nil || cmd.Git.empty() {
 			return nil
 		}
 
@@ -114,6 +121,18 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 				Token:                    client.Token,
 				Debug:                    cmd.Debug,
 			}
+
+			if !auth.Enabled() {
+				// if the auth was not changed but e.g. the branch changes and
+				// auth is pre-configured, we need to fetch the existing git
+				// auth from the app.
+				a, err := util.GitAuthFromApp(ctx, client, app)
+				if err != nil {
+					return fmt.Errorf("error reading preconfigured auth secret")
+				}
+				auth = a
+			}
+
 			if err := validator.Validate(ctx, &app.Spec.ForProvider.Git.GitTarget, auth); err != nil {
 				return err
 			}
