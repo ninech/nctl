@@ -12,7 +12,9 @@ import (
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
+
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/file"
 )
 
 type mySQLCmd struct {
@@ -20,8 +22,8 @@ type mySQLCmd struct {
 	Location              string                                 `default:"nine-cz41" help:"Location where the MySQL instance is created."`
 	MachineType           infra.MachineType                      `help:"Defines the sizing for a particular MySQL instance." placeholder:"nine-standard-1" default:"nine-standard-1"`
 	AllowedCidrs          []storage.IPv4CIDR                     `help:"Specify the allowed IP addresses, connecting to the instance." placeholder:"0.0.0.0/0"`
-	SSHKeys               []storage.SSHKey                       `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups." xor:"sshkeys"`
-	SSHKeysFile           string                                 `help:"File containing a list of SSH public keys (see above), separated by newlines." xor:"sshkeys"`
+	SSHKeys               []storage.SSHKey                       `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups."`
+	SSHKeysFile           string                                 `help:"File containing a list of SSH public keys (see above), separated by newlines."`
 	SQLMode               *[]storage.MySQLMode                   `help:"Configures the sql_mode setting. Modes affect the SQL syntax MySQL supports and the data validation checks it performs."`
 	CharacterSetName      string                                 `help:"Configures the character_set_server variable."`
 	CharacterSetCollation string                                 `help:"Configures the collation_server variable."`
@@ -34,11 +36,13 @@ type mySQLCmd struct {
 }
 
 func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
-	sshkeys, err := file.readSSHKeys(cmd.SSHKeysFile)
+	sshkeys, err := file.ReadSSHKeys(cmd.SSHKeysFile)
 	if err != nil {
 		return fmt.Errorf("error when reading SSH keys file: %w", err)
 	}
-	cmd.SSHKeys = append(cmd.SSHKeys, sshkeys)
+	if sshkeys != nil {
+		cmd.SSHKeys = append(cmd.SSHKeys, sshkeys...)
+	}
 
 	mysql := cmd.newMySQL(client.Project)
 
@@ -107,14 +111,4 @@ func (cmd *mySQLCmd) newMySQL(namespace string) *storage.MySQL {
 	}
 
 	return mySQL
-}
-
-func (cmd *mySQLCmd) sshKeysFile() error {
-	sshkeys, err := file.readSSHKeys(cmd.SSHKeysFile)
-	if err != nil {
-		return err
-	}
-
-	cmd.SSHKeys = sshkeys
-	return nil
 }

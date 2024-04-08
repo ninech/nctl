@@ -1,15 +1,14 @@
 package update
 
 import (
-	"bufio"
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/file"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -17,8 +16,8 @@ type mySQLCmd struct {
 	Name                  string                                  `arg:"" default:"" help:"Name of the MySQL instance to update."`
 	MachineType           *infra.MachineType                      `help:"Defines the sizing for a particular MySQL instance."`
 	AllowedCidrs          *[]storage.IPv4CIDR                     `default:"" help:"Specify the allowed IP addresses, connecting to the instance."`
-	SSHKeys               *[]storage.SSHKey                       `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups." xor:"sshkeys"`
-	SSHKeysFile           *string                                 `help:"File containing a list of SSH public keys (see above), separated by newlines." xor:"sshkeys"`
+	SSHKeys               []storage.SSHKey                        `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups."`
+	SSHKeysFile           string                                  `help:"File containing a list of SSH public keys (see above), separated by newlines."`
 	SQLMode               *[]storage.MySQLMode                    `help:"Configures the sql_mode setting. Modes affect the SQL syntax MySQL supports and the data validation checks it performs."`
 	CharacterSetName      *string                                 `help:"Configures the character_set_server variable."`
 	CharacterSetCollation *string                                 `help:"Configures the collation_server variable."`
@@ -42,10 +41,12 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
 			return fmt.Errorf("resource is of type %T, expected %T", current, storage.MySQL{})
 		}
 
-		if cmd.SSHKeysFile != nil {
-			if err := cmd.sshKeysFile(); err != nil {
-				return fmt.Errorf("error when reading SSH keys file: %w", err)
-			}
+		sshkeys, err := file.ReadSSHKeys(cmd.SSHKeysFile)
+		if err != nil {
+			return fmt.Errorf("error when reading SSH keys file: %w", err)
+		}
+		if sshkeys != nil {
+			cmd.SSHKeys = append(cmd.SSHKeys, sshkeys...)
 		}
 
 		cmd.applyUpdates(mysql)
@@ -61,7 +62,7 @@ func (cmd *mySQLCmd) applyUpdates(mysql *storage.MySQL) {
 		mysql.Spec.ForProvider.AllowedCIDRs = *cmd.AllowedCidrs
 	}
 	if cmd.SSHKeys != nil {
-		mysql.Spec.ForProvider.SSHKeys = *cmd.SSHKeys
+		mysql.Spec.ForProvider.SSHKeys = cmd.SSHKeys
 	}
 	if cmd.SQLMode != nil {
 		mysql.Spec.ForProvider.SQLMode = cmd.SQLMode
@@ -84,23 +85,4 @@ func (cmd *mySQLCmd) applyUpdates(mysql *storage.MySQL) {
 	if cmd.KeepDailyBackups != nil {
 		mysql.Spec.ForProvider.KeepDailyBackups = cmd.KeepDailyBackups
 	}
-}
-
-func (cmd *mySQLCmd) sshKeysFile() error {
-	file, err := os.Open(*cmd.SSHKeysFile)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	fileScanner := bufio.NewScanner(file)
-	fileScanner.Split(bufio.ScanLines)
-
-	sshKeys := []storage.SSHKey{}
-	for fileScanner.Scan() {
-		sshKeys = append(sshKeys, storage.SSHKey(fileScanner.Text()))
-	}
-
-	cmd.SSHKeys = &sshKeys
-	return nil
 }
