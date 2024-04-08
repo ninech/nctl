@@ -83,8 +83,7 @@ func TestMySQL(t *testing.T) {
 			for name, instance := range tt.instances {
 				created := test.MySQL(name, "default", "nine-es34")
 				created.Spec.ForProvider = instance
-				objects = append(objects, created)
-				objects = append(objects, &corev1.Secret{
+				objects = append(objects, created, &corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      created.GetWriteConnectionSecretToReference().Name,
 						Namespace: created.GetWriteConnectionSecretToReference().Namespace,
