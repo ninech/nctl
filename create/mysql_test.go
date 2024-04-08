@@ -110,7 +110,7 @@ func TestMySQL(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(created.Spec.ForProvider, tt.want) {
-				t.Fatalf("expected mysql.Spec.ForProvider = %v, got: %v", created.Spec.ForProvider, tt.want)
+				t.Fatalf("expected mysql.Spec.ForProvider = %+v, got: %+v", created.Spec.ForProvider, tt.want)
 			}
 		})
 	}
