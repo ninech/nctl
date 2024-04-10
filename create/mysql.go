@@ -23,11 +23,11 @@ type mySQLCmd struct {
 	MachineType           infra.MachineType                      `help:"Defines the sizing for a particular MySQL instance." placeholder:"nine-standard-1" default:"nine-standard-1"`
 	AllowedCidrs          []storage.IPv4CIDR                     `help:"Specify the allowed IP addresses, connecting to the instance." placeholder:"0.0.0.0/0"`
 	SSHKeys               []storage.SSHKey                       `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups."`
-	SSHKeysFile           string                                 `help:"File containing a list of SSH public keys (see above), separated by newlines."`
+	SSHKeysFile           string                                 `help:"Path to a file containing a list of SSH public keys (see above), separated by newlines."`
 	SQLMode               *[]storage.MySQLMode                   `help:"Configures the sql_mode setting. Modes affect the SQL syntax MySQL supports and the data validation checks it performs."`
 	CharacterSetName      string                                 `help:"Configures the character_set_server variable."`
 	CharacterSetCollation string                                 `help:"Configures the collation_server variable."`
-	LongQueryTime         storage.LongQueryTime                  `help:"Configures the long_query_time variable. If a query takes longer than this many seconds, the the query is logged to the slow query log file."`
+	LongQueryTime         storage.LongQueryTime                  `help:"Configures the long_query_time variable. If a query takes longer than this duration, the query is logged to the slow query log file."`
 	MinWordLength         *int                                   `help:"Configures the ft_min_word_len and innodb_ft_min_token_size variables."`
 	TransactionIsolation  storage.MySQLTransactionCharacteristic `help:"Configures the transaction_isolation variable."`
 	KeepDailyBackups      *int                                   `help:"Number of daily database backups to keep. Note that setting this to 0, backup will be disabled and existing dumps deleted immediately."`

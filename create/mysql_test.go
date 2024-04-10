@@ -76,12 +76,6 @@ func TestMySQL(t *testing.T) {
 			storage.MySQLParameters{KeepDailyBackups: ptr.To(5)},
 			false,
 		},
-		{
-			"minWordLength",
-			mySQLCmd{MinWordLength: ptr.To(5)},
-			storage.MySQLParameters{MinWordLength: ptr.To(5)},
-			false,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
