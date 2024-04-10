@@ -15,7 +15,7 @@ import (
 type mySQLCmd struct {
 	Name                  string                                  `arg:"" default:"" help:"Name of the MySQL instance to update."`
 	MachineType           *infra.MachineType                      `help:"Defines the sizing for a particular MySQL instance."`
-	AllowedCidrs          *[]storage.IPv4CIDR                     `default:"" help:"Specify the allowed IP addresses, connecting to the instance."`
+	AllowedCidrs          *[]storage.IPv4CIDR                     `default:"" help:"Specifies the IP addresses allowed to connect to the instance."`
 	SSHKeys               []storage.SSHKey                        `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups."`
 	SSHKeysFile           string                                  `help:"Path to a file containing a list of SSH public keys (see above), separated by newlines."`
 	SQLMode               *[]storage.MySQLMode                    `help:"Configures the sql_mode setting. Modes affect the SQL syntax MySQL supports and the data validation checks it performs."`

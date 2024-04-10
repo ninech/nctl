@@ -21,7 +21,7 @@ type mySQLCmd struct {
 	Name                  string                                 `arg:"" default:"" help:"Name of the MySQL instance. A random name is generated if omitted."`
 	Location              string                                 `default:"nine-cz41" help:"Location where the MySQL instance is created."`
 	MachineType           infra.MachineType                      `help:"Defines the sizing for a particular MySQL instance." placeholder:"nine-standard-1" default:"nine-standard-1"`
-	AllowedCidrs          []storage.IPv4CIDR                     `help:"Specify the allowed IP addresses, connecting to the instance." placeholder:"0.0.0.0/0"`
+	AllowedCidrs          []storage.IPv4CIDR                     `help:"Specifies the IP addresses allowed to connect to the instance." placeholder:"0.0.0.0/0"`
 	SSHKeys               []storage.SSHKey                       `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups."`
 	SSHKeysFile           string                                 `help:"Path to a file containing a list of SSH public keys (see above), separated by newlines."`
 	SQLMode               *[]storage.MySQLMode                   `help:"Configures the sql_mode setting. Modes affect the SQL syntax MySQL supports and the data validation checks it performs."`
