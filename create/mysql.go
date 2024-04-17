@@ -3,11 +3,13 @@ package create
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 
+	"github.com/alecthomas/kong"
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
@@ -24,13 +26,13 @@ type mySQLCmd struct {
 	AllowedCidrs          []storage.IPv4CIDR                     `help:"Specifies the IP addresses allowed to connect to the instance." placeholder:"0.0.0.0/0"`
 	SSHKeys               []storage.SSHKey                       `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups."`
 	SSHKeysFile           string                                 `help:"Path to a file containing a list of SSH public keys (see above), separated by newlines."`
-	SQLMode               *[]storage.MySQLMode                   `help:"Configures the sql_mode setting. Modes affect the SQL syntax MySQL supports and the data validation checks it performs."`
-	CharacterSetName      string                                 `help:"Configures the character_set_server variable."`
-	CharacterSetCollation string                                 `help:"Configures the collation_server variable."`
-	LongQueryTime         storage.LongQueryTime                  `help:"Configures the long_query_time variable. If a query takes longer than this duration, the query is logged to the slow query log file."`
-	MinWordLength         *int                                   `help:"Configures the ft_min_word_len and innodb_ft_min_token_size variables."`
-	TransactionIsolation  storage.MySQLTransactionCharacteristic `help:"Configures the transaction_isolation variable."`
-	KeepDailyBackups      *int                                   `help:"Number of daily database backups to keep. Note that setting this to 0, backup will be disabled and existing dumps deleted immediately."`
+	SQLMode               *[]storage.MySQLMode                   `default:"<\"MODE1, MODE2, ...\">" help:"Configures the sql_mode setting. Modes affect the SQL syntax MySQL supports and the data validation checks it performs. Defaults to: ${mysql_mode}"`
+	CharacterSetName      string                                 `default:"${mysql_charset}" help:"Configures the character_set_server variable."`
+	CharacterSetCollation string                                 `default:"${mysql_collation}" help:"Configures the collation_server variable."`
+	LongQueryTime         storage.LongQueryTime                  `default:"${mysql_long_query_time}" help:"Configures the long_query_time variable. If a query takes longer than this duration, the query is logged to the slow query log file."`
+	MinWordLength         *int                                   `default:"${mysql_min_word_length}" help:"Configures the ft_min_word_len and innodb_ft_min_token_size variables."`
+	TransactionIsolation  storage.MySQLTransactionCharacteristic `default:"${mysql_transaction_isolation}" help:"Configures the transaction_isolation variable."`
+	KeepDailyBackups      *int                                   `default:"${mysql_backup_retention_days}" help:"Number of daily database backups to keep. Note that setting this to 0, backup will be disabled and existing dumps deleted immediately."`
 	Wait                  bool                                   `default:"true" help:"Wait until MySQL instance is created."`
 	WaitTimeout           time.Duration                          `default:"900s" help:"Duration to wait for MySQL getting ready. Only relevant if --wait is set."`
 }
@@ -112,4 +114,19 @@ func (cmd *mySQLCmd) newMySQL(namespace string) *storage.MySQL {
 	}
 
 	return mySQL
+}
+
+// ApplicationKongVars returns all variables which are used in the application
+// create command
+func MySQLKongVars() (kong.Vars, error) {
+	result := make(kong.Vars)
+	result["mysql_user"] = string(storage.MySQLUser)
+	result["mysql_mode"] = strings.Join(storage.MySQLModeDefault, ", ")
+	result["mysql_long_query_time"] = string(storage.MySQLLongQueryTimeDefault)
+	result["mysql_charset"] = string(storage.MySQLCharsetDefault)
+	result["mysql_collation"] = string(storage.MySQLCollationDefault)
+	result["mysql_min_word_length"] = fmt.Sprintf("%d", storage.MySQLMinWordLengthDefault)
+	result["mysql_transaction_isolation"] = string(storage.MySQLTransactionIsolationDefault)
+	result["mysql_backup_retention_days"] = fmt.Sprintf("%d", storage.MySQLBackupRetentionDaysDefault)
+	return result, nil
 }
