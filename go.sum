@@ -584,6 +584,12 @@ github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f/go.mod h1:qRW
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/ninech/apis v0.0.0-20240404091234-b8ea3d333f9d h1:qcJA3fdugTlYrx4RmitVOwysGKeaT4TyrcY6hq/IgDE=
 github.com/ninech/apis v0.0.0-20240404091234-b8ea3d333f9d/go.mod h1:6lFCwHqvcTFZvJ6zY0rxaPIoKc0CX9sHhtH/nyo/5is=
+github.com/ninech/apis v0.0.0-20240412101426-56fd756c7445 h1:hqUaUcd8qNmEn/KYVE2oXM8RxjkY2XSeciDNvK+Tuxo=
+github.com/ninech/apis v0.0.0-20240412101426-56fd756c7445/go.mod h1:6lFCwHqvcTFZvJ6zY0rxaPIoKc0CX9sHhtH/nyo/5is=
+github.com/ninech/apis v0.0.0-20240415094850-e5c1ffdfaebc h1:nsDzgqsA7k3umT1j6ltSImzqvvX1Carug8nMn36l3EI=
+github.com/ninech/apis v0.0.0-20240415094850-e5c1ffdfaebc/go.mod h1:6lFCwHqvcTFZvJ6zY0rxaPIoKc0CX9sHhtH/nyo/5is=
+github.com/ninech/apis v0.0.0-20240417150103-d7d5bf5ca446 h1:Hzqrx0AzrYKIM9DH1vPlNSSOm3NGIUg9QXGm0P9S1Bs=
+github.com/ninech/apis v0.0.0-20240417150103-d7d5bf5ca446/go.mod h1:6lFCwHqvcTFZvJ6zY0rxaPIoKc0CX9sHhtH/nyo/5is=
 github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
 github.com/oklog/ulid v1.3.1 h1:EGfNDEx6MqHz8B3uNV6QAib1UR2Lm97sHi3ocA6ESJ4=

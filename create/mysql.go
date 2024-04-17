@@ -21,7 +21,7 @@ import (
 
 type mySQLCmd struct {
 	Name                  string                                 `arg:"" default:"" help:"Name of the MySQL instance. A random name is generated if omitted."`
-	Location              string                                 `default:"nine-cz41" help:"Location where the MySQL instance is created."`
+	Location              string                                 `default:"${mysql_location_default}" help:"Location where the MySQL instance is created. Currently available locations are: ${mysql_location_options}"`
 	MachineType           infra.MachineType                      `help:"Defines the sizing for a particular MySQL instance." placeholder:"nine-standard-1" default:"nine-standard-1"`
 	AllowedCidrs          []storage.IPv4CIDR                     `help:"Specifies the IP addresses allowed to connect to the instance." placeholder:"0.0.0.0/0"`
 	SSHKeys               []storage.SSHKey                       `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups."`
@@ -120,6 +120,8 @@ func (cmd *mySQLCmd) newMySQL(namespace string) *storage.MySQL {
 // create command
 func MySQLKongVars() (kong.Vars, error) {
 	result := make(kong.Vars)
+	result["mysql_location_options"] = strings.Join(storage.MySQLLocationOptions, ", ")
+	result["mysql_location_default"] = string(storage.MySQLLocationDefault)
 	result["mysql_user"] = string(storage.MySQLUser)
 	result["mysql_mode"] = strings.Join(storage.MySQLModeDefault, ", ")
 	result["mysql_long_query_time"] = string(storage.MySQLLongQueryTimeDefault)
