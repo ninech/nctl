@@ -21,18 +21,18 @@ import (
 
 type mySQLCmd struct {
 	Name                  string                                 `arg:"" default:"" help:"Name of the MySQL instance. A random name is generated if omitted."`
-	Location              string                                 `default:"${mysql_location_default}" help:"Location where the MySQL instance is created. Currently available locations are: ${mysql_location_options}"`
-	MachineType           infra.MachineType                      `help:"Defines the sizing for a particular MySQL instance." placeholder:"nine-standard-1" default:"nine-standard-1"`
-	AllowedCidrs          []storage.IPv4CIDR                     `help:"Specifies the IP addresses allowed to connect to the instance." placeholder:"0.0.0.0/0"`
+	Location              string                                 `placeholder:"${mysql_location_default}" help:"Location where the MySQL instance is created. Available locations are: ${mysql_location_options}"`
+	MachineType           infra.MachineType                      `placeholder:"${mysql_machine_default}" help:"Defines the sizing for a particular MySQL instance. Available types: ${mysql_machine_types}"`
+	AllowedCidrs          []storage.IPv4CIDR                     `placeholder:"0.0.0.0/0" help:"Specifies the IP addresses allowed to connect to the instance." `
 	SSHKeys               []storage.SSHKey                       `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups."`
 	SSHKeysFile           string                                 `help:"Path to a file containing a list of SSH public keys (see above), separated by newlines."`
-	SQLMode               *[]storage.MySQLMode                   `default:"<\"MODE1, MODE2, ...\">" help:"Configures the sql_mode setting. Modes affect the SQL syntax MySQL supports and the data validation checks it performs. Defaults to: ${mysql_mode}"`
-	CharacterSetName      string                                 `default:"${mysql_charset}" help:"Configures the character_set_server variable."`
-	CharacterSetCollation string                                 `default:"${mysql_collation}" help:"Configures the collation_server variable."`
-	LongQueryTime         storage.LongQueryTime                  `default:"${mysql_long_query_time}" help:"Configures the long_query_time variable. If a query takes longer than this duration, the query is logged to the slow query log file."`
-	MinWordLength         *int                                   `default:"${mysql_min_word_length}" help:"Configures the ft_min_word_len and innodb_ft_min_token_size variables."`
-	TransactionIsolation  storage.MySQLTransactionCharacteristic `default:"${mysql_transaction_isolation}" help:"Configures the transaction_isolation variable."`
-	KeepDailyBackups      *int                                   `default:"${mysql_backup_retention_days}" help:"Number of daily database backups to keep. Note that setting this to 0, backup will be disabled and existing dumps deleted immediately."`
+	SQLMode               *[]storage.MySQLMode                   `placeholder:"\"MODE1, MODE2, ...\"" help:"Configures the sql_mode setting. Modes affect the SQL syntax MySQL supports and the data validation checks it performs. Defaults to: ${mysql_mode}"`
+	CharacterSetName      string                                 `placeholder:"${mysql_charset}" help:"Configures the character_set_server variable."`
+	CharacterSetCollation string                                 `placeholder:"${mysql_collation}" help:"Configures the collation_server variable."`
+	LongQueryTime         storage.LongQueryTime                  `placeholder:"${mysql_long_query_time}" help:"Configures the long_query_time variable. If a query takes longer than this duration, the query is logged to the slow query log file."`
+	MinWordLength         *int                                   `placeholder:"${mysql_min_word_length}" help:"Configures the ft_min_word_len and innodb_ft_min_token_size variables."`
+	TransactionIsolation  storage.MySQLTransactionCharacteristic `placeholder:"${mysql_transaction_isolation}" help:"Configures the transaction_isolation variable."`
+	KeepDailyBackups      *int                                   `placeholder:"${mysql_backup_retention_days}" help:"Number of daily database backups to keep. Note that setting this to 0, backup will be disabled and existing dumps deleted immediately."`
 	Wait                  bool                                   `default:"true" help:"Wait until MySQL instance is created."`
 	WaitTimeout           time.Duration                          `default:"900s" help:"Duration to wait for MySQL getting ready. Only relevant if --wait is set."`
 }
@@ -119,7 +119,14 @@ func (cmd *mySQLCmd) newMySQL(namespace string) *storage.MySQL {
 // ApplicationKongVars returns all variables which are used in the application
 // create command
 func MySQLKongVars() (kong.Vars, error) {
+	vmTypes := make([]string, len(infra.MachineTypes))
+	for i, machineType := range infra.MachineTypes {
+		vmTypes[i] = string(machineType)
+	}
+
 	result := make(kong.Vars)
+	result["mysql_machine_types"] = strings.Join(vmTypes, ", ")
+	result["mysql_machine_default"] = string(infra.MachineTypes[0])
 	result["mysql_location_options"] = strings.Join(storage.MySQLLocationOptions, ", ")
 	result["mysql_location_default"] = string(storage.MySQLLocationDefault)
 	result["mysql_user"] = string(storage.MySQLUser)

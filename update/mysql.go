@@ -14,17 +14,17 @@ import (
 
 type mySQLCmd struct {
 	Name                  string                                  `arg:"" default:"" help:"Name of the MySQL instance to update."`
-	MachineType           *infra.MachineType                      `help:"Defines the sizing for a particular MySQL instance."`
-	AllowedCidrs          *[]storage.IPv4CIDR                     `default:"" help:"Specifies the IP addresses allowed to connect to the instance."`
+	MachineType           *infra.MachineType                      `placeholder:"${mysql_machine_default}" help:"Defines the sizing for a particular MySQL instance. Available types: ${mysql_machine_types}"`
+	AllowedCidrs          *[]storage.IPv4CIDR                     `placeholder:"0.0.0.0/0" help:"Specifies the IP addresses allowed to connect to the instance." `
 	SSHKeys               []storage.SSHKey                        `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups."`
 	SSHKeysFile           string                                  `help:"Path to a file containing a list of SSH public keys (see above), separated by newlines."`
-	SQLMode               *[]storage.MySQLMode                    `help:"Configures the sql_mode setting. Modes affect the SQL syntax MySQL supports and the data validation checks it performs."`
-	CharacterSetName      *string                                 `help:"Configures the character_set_server variable."`
-	CharacterSetCollation *string                                 `help:"Configures the collation_server variable."`
-	LongQueryTime         *storage.LongQueryTime                  `help:"Configures the long_query_time variable. If a query takes longer than this duration, the query is logged to the slow query log file."`
-	MinWordLength         *int                                    `help:"Configures the ft_min_word_len and innodb_ft_min_token_size variables."`
-	TransactionIsolation  *storage.MySQLTransactionCharacteristic `help:"Configures the transaction_isolation variable."`
-	KeepDailyBackups      *int                                    `help:"Number of daily database backups to keep. Note that setting this to 0, backup will be disabled and existing dumps deleted immediately."`
+	SQLMode               *[]storage.MySQLMode                    `placeholder:"\"MODE1, MODE2, ...\"" help:"Configures the sql_mode setting. Modes affect the SQL syntax MySQL supports and the data validation checks it performs. Defaults to: ${mysql_mode}"`
+	CharacterSetName      *string                                 `placeholder:"${mysql_charset}" help:"Configures the character_set_server variable."`
+	CharacterSetCollation *string                                 `placeholder:"${mysql_collation}" help:"Configures the collation_server variable."`
+	LongQueryTime         *storage.LongQueryTime                  `placeholder:"${mysql_long_query_time}" help:"Configures the long_query_time variable. If a query takes longer than this duration, the query is logged to the slow query log file."`
+	MinWordLength         *int                                    `placeholder:"${mysql_min_word_length}" help:"Configures the ft_min_word_len and innodb_ft_min_token_size variables."`
+	TransactionIsolation  *storage.MySQLTransactionCharacteristic `placeholder:"${mysql_transaction_isolation}" help:"Configures the transaction_isolation variable."`
+	KeepDailyBackups      *int                                    `placeholder:"${mysql_backup_retention_days}" help:"Number of daily database backups to keep. Note that setting this to 0, backup will be disabled and existing dumps deleted immediately."`
 }
 
 func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
