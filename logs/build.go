@@ -2,6 +2,7 @@ package logs
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
@@ -15,6 +16,9 @@ type buildCmd struct {
 }
 
 func (cmd *buildCmd) Run(ctx context.Context, client *api.Client) error {
+	if cmd.Name == "" && cmd.ApplicationName == "" {
+		return errors.New("please specify a build name or an application name to see build logs from")
+	}
 	build := &apps.Build{}
 	if cmd.Name != "" {
 		if err := client.Get(ctx, api.NamespacedName(cmd.Name, client.Project), build); err != nil {
