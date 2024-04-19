@@ -91,6 +91,8 @@ func (cmd *mySQLCmd) newMySQL(namespace string) *storage.MySQL {
 			ForProvider: storage.MySQLParameters{
 				Location:     meta.LocationName(cmd.Location),
 				MachineType:  cmd.MachineType,
+				AllowedCIDRs: cmd.AllowedCidrs,
+				SSHKeys:      cmd.SSHKeys,
 				SQLMode:      cmd.SQLMode,
 				CharacterSet: storage.MySQLCharacterSet{
 					Name:      cmd.CharacterSetName,
@@ -102,13 +104,6 @@ func (cmd *mySQLCmd) newMySQL(namespace string) *storage.MySQL {
 				KeepDailyBackups:     cmd.KeepDailyBackups,
 			},
 		},
-	}
-
-	if cmd.AllowedCidrs != nil {
-		mySQL.Spec.ForProvider.AllowedCIDRs = cmd.AllowedCidrs
-	}
-	if cmd.SSHKeys != nil {
-		mySQL.Spec.ForProvider.SSHKeys = cmd.SSHKeys
 	}
 
 	return mySQL
