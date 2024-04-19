@@ -11,15 +11,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func TestRedis(t *testing.T) {
-	cmd := redisCmd{
+func TestKeyValueStore(t *testing.T) {
+	cmd := keyValueStoreCmd{
 		Name:        "test",
 		Force:       true,
 		Wait:        false,
 		WaitTimeout: time.Second,
 	}
 
-	redis := test.Redis("test", "default", "nine-es34")
+	keyValueStore := test.KeyValueStore("test", "default", "nine-es34")
 
 	scheme, err := api.NewScheme()
 	if err != nil {
@@ -29,20 +29,20 @@ func TestRedis(t *testing.T) {
 	apiClient := &api.Client{WithWatch: client, Project: "default"}
 	ctx := context.Background()
 
-	if err := apiClient.Create(ctx, redis); err != nil {
-		t.Fatalf("redis create error, got: %s", err)
+	if err := apiClient.Create(ctx, keyValueStore); err != nil {
+		t.Fatalf("keyvaluestore create error, got: %s", err)
 	}
-	if err := apiClient.Get(ctx, api.ObjectName(redis), redis); err != nil {
-		t.Fatalf("expected redis to exist, got: %s", err)
+	if err := apiClient.Get(ctx, api.ObjectName(keyValueStore), keyValueStore); err != nil {
+		t.Fatalf("expected keyvaluestore to exist, got: %s", err)
 	}
 	if err := cmd.Run(ctx, apiClient); err != nil {
 		t.Fatal(err)
 	}
-	err = apiClient.Get(ctx, api.ObjectName(redis), redis)
+	err = apiClient.Get(ctx, api.ObjectName(keyValueStore), keyValueStore)
 	if err == nil {
-		t.Fatalf("expected redis to be deleted, but exists")
+		t.Fatalf("expected keyvaluestore to be deleted, but exists")
 	}
 	if !errors.IsNotFound(err) {
-		t.Fatalf("expected redis to be deleted, got: %s", err.Error())
+		t.Fatalf("expected keyvaluestore to be deleted, got: %s", err.Error())
 	}
 }

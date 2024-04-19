@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func Redis(name, project, location string) *storage.Redis {
+func KeyValueStore(name, project, location string) *storage.Redis {
 	return &storage.Redis{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
