@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-
 	"os"
 	"os/signal"
 	"strings"
@@ -150,28 +149,28 @@ func kongVariables() (kong.Vars, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error on application create kong vars: %w", err)
 	}
-	if err := merge(result, appCreateKongVars); err != nil {
-		return nil, fmt.Errorf("error when merging application create kong variables: %w", err)
-	}
-
 	mysqlCreateKongVars, err := create.MySQLKongVars()
 	if err != nil {
 		return nil, fmt.Errorf("error on mysql create kong vars: %w", err)
 	}
-	if err := merge(result, mysqlCreateKongVars); err != nil {
-		return nil, fmt.Errorf("error when merging mysql create kong variables: %w", err)
+
+	if err := merge(result, appCreateKongVars, mysqlCreateKongVars); err != nil {
+		return nil, fmt.Errorf("error when merging kong variables: %w", err)
 	}
 
 	return result, nil
 }
 
-func merge(existing kong.Vars, with kong.Vars) error {
-	for k, v := range with {
-		_, exists := existing[k]
-		if exists {
-			return fmt.Errorf("variable %q is already in use", k)
+func merge(existing kong.Vars, withs ...kong.Vars) error {
+	for _, with := range withs {
+		for k, v := range with {
+			_, exists := existing[k]
+			if exists {
+				return fmt.Errorf("variable %q is already in use", k)
+			}
+			existing[k] = v
 		}
-		existing[k] = v
 	}
+
 	return nil
 }
