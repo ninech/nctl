@@ -91,8 +91,6 @@ func (cmd *mySQLCmd) newMySQL(namespace string) *storage.MySQL {
 			ForProvider: storage.MySQLParameters{
 				Location:     meta.LocationName(cmd.Location),
 				MachineType:  cmd.MachineType,
-				AllowedCIDRs: []storage.IPv4CIDR{},
-				SSHKeys:      []storage.SSHKey{},
 				SQLMode:      cmd.SQLMode,
 				CharacterSet: storage.MySQLCharacterSet{
 					Name:      cmd.CharacterSetName,
