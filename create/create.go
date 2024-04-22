@@ -27,6 +27,7 @@ type Cmd struct {
 	Project           projectCmd           `cmd:"" group:"management.nine.ch" name:"project" help:"Create a new project."`
 	Config            configCmd            `cmd:"" group:"deplo.io" name:"config"  help:"Create a new deplo.io Project Configuration. (Beta - requires access)"`
 	Application       applicationCmd       `cmd:"" group:"deplo.io" name:"application" aliases:"app" help:"Create a new deplo.io Application. (Beta - requires access)"`
+	MySQL             mySQLCmd             `cmd:"" group:"storage.nine.ch" name:"mysql" help:"Create a new MySQL instance."`
 }
 
 // resultFunc is the function called on a watch event during creation. It
