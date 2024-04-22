@@ -34,7 +34,7 @@ type mySQLCmd struct {
 	TransactionIsolation  storage.MySQLTransactionCharacteristic `placeholder:"${mysql_transaction_isolation}" help:"Configures the transaction_isolation variable."`
 	KeepDailyBackups      *int                                   `placeholder:"${mysql_backup_retention_days}" help:"Number of daily database backups to keep. Note that setting this to 0, backup will be disabled and existing dumps deleted immediately."`
 	Wait                  bool                                   `default:"true" help:"Wait until MySQL instance is created."`
-	WaitTimeout           time.Duration                          `default:"900s" help:"Duration to wait for MySQL getting ready. Only relevant if --wait is set."`
+	WaitTimeout           time.Duration                          `default:"1200s" help:"Duration to wait for MySQL getting ready. Only relevant if --wait is set."`
 }
 
 func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
@@ -44,7 +44,7 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
 	}
 	cmd.SSHKeys = append(cmd.SSHKeys, sshkeys...)
 
-	fmt.Println("Creating new mysql. This can take up to 15 minutes.")
+	fmt.Println("Creating new mysql. This can take up to 20 minutes.")
 	mysql := cmd.newMySQL(client.Project)
 
 	c := newCreator(client, mysql, "mysql")
