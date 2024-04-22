@@ -18,55 +18,50 @@ import (
 
 func TestMySQL(t *testing.T) {
 	tests := []struct {
-		name        string
-		instances   map[string]storage.MySQLParameters
-		get         mySQLCmd
+		name      string
+		instances map[string]storage.MySQLParameters
+		get       mySQLCmd
+		// out defines the output format and will bet set to "full" if
+		// not given
 		out         output
 		wantContain []string
 		wantErr     bool
 	}{
-		{"simple", map[string]storage.MySQLParameters{}, mySQLCmd{}, full, []string{"no MySQLs found"}, false},
 		{
-			"single",
-			map[string]storage.MySQLParameters{"test": {MachineType: infra.MachineType("nine-standard-1")}},
-			mySQLCmd{},
-			full,
-			[]string{"nine-standard-1"},
-			false,
+			name:        "simple",
+			wantContain: []string{"no MySQLs found"},
 		},
 		{
-			"multiple",
-			map[string]storage.MySQLParameters{
+			name:        "single",
+			instances:   map[string]storage.MySQLParameters{"test": {MachineType: infra.MachineType("nine-standard-1")}},
+			wantContain: []string{"nine-standard-1"},
+		},
+		{
+			name: "multiple",
+			instances: map[string]storage.MySQLParameters{
 				"test1": {MachineType: infra.MachineType("nine-standard-1")},
 				"test2": {MachineType: infra.MachineType("nine-standard-2")},
 				"test3": {MachineType: infra.MachineType("nine-standard-4")},
 			},
-			mySQLCmd{},
-			full,
-			[]string{"nine-standard-1", "nine-standard-2", "test3"},
-			false,
+			wantContain: []string{"nine-standard-1", "nine-standard-2", "test3"},
 		},
 		{
-			"name",
-			map[string]storage.MySQLParameters{
+			name: "get-by-name",
+			instances: map[string]storage.MySQLParameters{
 				"test1": {MachineType: infra.MachineType("nine-standard-1")},
 				"test2": {MachineType: infra.MachineType("nine-standard-2")},
 			},
-			mySQLCmd{Name: "test1"},
-			full,
-			[]string{"test1", "nine-standard-1"},
-			false,
+			get:         mySQLCmd{Name: "test1"},
+			wantContain: []string{"test1", "nine-standard-1"},
 		},
 		{
-			"password",
-			map[string]storage.MySQLParameters{
+			name: "show-password",
+			instances: map[string]storage.MySQLParameters{
 				"test1": {MachineType: infra.MachineType("nine-standard-1")},
 				"test2": {MachineType: infra.MachineType("nine-standard-2")},
 			},
-			mySQLCmd{Name: "test2", PrintPassword: true},
-			full,
-			[]string{"test2-topsecret"},
-			false,
+			get:         mySQLCmd{Name: "test2", PrintPassword: true},
+			wantContain: []string{"test2-topsecret"},
 		},
 	}
 	for _, tt := range tests {
@@ -101,6 +96,9 @@ func TestMySQL(t *testing.T) {
 			apiClient := &api.Client{WithWatch: client, Project: "default"}
 			ctx := context.Background()
 
+			if tt.out == "" {
+				tt.out = full
+			}
 			if err := tt.get.Run(ctx, apiClient, &Cmd{Output: tt.out}); (err != nil) != tt.wantErr {
 				t.Errorf("mySQLCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
