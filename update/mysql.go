@@ -45,9 +45,7 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
 		if err != nil {
 			return fmt.Errorf("error when reading SSH keys file: %w", err)
 		}
-		if sshkeys != nil {
-			cmd.SSHKeys = append(cmd.SSHKeys, sshkeys...)
-		}
+		cmd.SSHKeys = append(cmd.SSHKeys, sshkeys...)
 
 		cmd.applyUpdates(mysql)
 		return nil

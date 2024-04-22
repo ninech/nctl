@@ -7,11 +7,11 @@ import (
 	storage "github.com/ninech/apis/storage/v1alpha1"
 )
 
+// ReadSSHKeys reads SSH keys from the file specified by path
 func ReadSSHKeys(path string) ([]storage.SSHKey, error) {
 	if path == "" {
-		return nil, nil
+		return []storage.SSHKey{}, nil
 	}
-
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
