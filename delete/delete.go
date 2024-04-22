@@ -20,7 +20,7 @@ type Cmd struct {
 	Config            configCmd            `cmd:"" group:"deplo.io" name:"config" help:"Delete a deplo.io Project Configuration. (Beta - requires access)"`
 	Application       applicationCmd       `cmd:"" group:"deplo.io" name:"application" aliases:"app" help:"Delete a deplo.io Application. (Beta - requires access)"`
 	MySQL             mySQLCmd             `cmd:"" group:"storage.nine.ch" name:"mysql" help:"Delete a MySQL instance."`
-	KeyValueStore     keyValueStoreCmd     `cmd:"" group:"storage.nine.ch" name:"keyvaluestore" help:"Delete a KeyValueStore instance."`
+	KeyValueStore     keyValueStoreCmd     `cmd:"" group:"storage.nine.ch" name:"keyvaluestore" aliases:"kvs" help:"Delete a KeyValueStore instance."`
 }
 
 // cleanupFunc is called after the resource has been deleted in order to do
