@@ -2,6 +2,7 @@ package create
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"testing"
 	"time"
@@ -11,70 +12,78 @@ import (
 	"github.com/ninech/nctl/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 func TestMySQL(t *testing.T) {
 	tests := []struct {
-		name    string
-		create  mySQLCmd
-		want    storage.MySQLParameters
-		wantErr bool
+		name             string
+		create           mySQLCmd
+		want             storage.MySQLParameters
+		wantErr          bool
+		interceptorFuncs *interceptor.Funcs
 	}{
-		{"simple", mySQLCmd{}, storage.MySQLParameters{}, false},
 		{
-			"machineType",
-			mySQLCmd{MachineType: infra.MachineType("nine-standard-1")},
-			storage.MySQLParameters{MachineType: infra.MachineType("nine-standard-1")},
-			false,
+			name:   "simple",
+			create: mySQLCmd{},
+			want:   storage.MySQLParameters{},
 		},
 		{
-			"sshKeys",
-			mySQLCmd{SSHKeys: []storage.SSHKey{"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJGG5/nnivrW4zLD4ANLclVT3y68GAg6NOA3HpzFLo5e test@test"}},
-			storage.MySQLParameters{SSHKeys: []storage.SSHKey{"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJGG5/nnivrW4zLD4ANLclVT3y68GAg6NOA3HpzFLo5e test@test"}},
-			false,
+			name:    "simpleErrorOnCreation",
+			create:  mySQLCmd{},
+			wantErr: true,
+			interceptorFuncs: &interceptor.Funcs{
+				Create: func(_ context.Context, _ client.WithWatch, _ client.Object, _ ...client.CreateOption) error {
+					return errors.New("error on creation")
+				},
+			},
 		},
 		{
-			"sqlMode",
-			mySQLCmd{SQLMode: &[]storage.MySQLMode{"ONLY_FULL_GROUP_BY"}},
-			storage.MySQLParameters{SQLMode: &[]storage.MySQLMode{"ONLY_FULL_GROUP_BY"}},
-			false,
+			name:   "machineType",
+			create: mySQLCmd{MachineType: infra.MachineType("nine-standard-1")},
+			want:   storage.MySQLParameters{MachineType: infra.MachineType("nine-standard-1")},
 		},
 		{
-			"allowedCIDRs",
-			mySQLCmd{AllowedCidrs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
-			storage.MySQLParameters{AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
-			false,
+			name:   "sshKeys",
+			create: mySQLCmd{SSHKeys: []storage.SSHKey{"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJGG5/nnivrW4zLD4ANLclVT3y68GAg6NOA3HpzFLo5e test@test"}},
+			want:   storage.MySQLParameters{SSHKeys: []storage.SSHKey{"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJGG5/nnivrW4zLD4ANLclVT3y68GAg6NOA3HpzFLo5e test@test"}},
 		},
 		{
-			"characterSet",
-			mySQLCmd{CharacterSetName: "utf8mb4", CharacterSetCollation: "utf8mb4_unicode_ci"},
-			storage.MySQLParameters{CharacterSet: storage.MySQLCharacterSet{Name: "utf8mb4", Collation: "utf8mb4_unicode_ci"}},
-			false,
+			name:   "sqlMode",
+			create: mySQLCmd{SQLMode: &[]storage.MySQLMode{"ONLY_FULL_GROUP_BY"}},
+			want:   storage.MySQLParameters{SQLMode: &[]storage.MySQLMode{"ONLY_FULL_GROUP_BY"}},
 		},
 		{
-			"longQueryTime",
-			mySQLCmd{LongQueryTime: storage.LongQueryTime("300")},
-			storage.MySQLParameters{LongQueryTime: storage.LongQueryTime("300")},
-			false,
+			name:   "allowedCIDRs",
+			create: mySQLCmd{AllowedCidrs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
+			want:   storage.MySQLParameters{AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
 		},
 		{
-			"minWordLength",
-			mySQLCmd{MinWordLength: ptr.To(5)},
-			storage.MySQLParameters{MinWordLength: ptr.To(5)},
-			false,
+			name:   "characterSet",
+			create: mySQLCmd{CharacterSetName: "utf8mb4", CharacterSetCollation: "utf8mb4_unicode_ci"},
+			want:   storage.MySQLParameters{CharacterSet: storage.MySQLCharacterSet{Name: "utf8mb4", Collation: "utf8mb4_unicode_ci"}},
 		},
 		{
-			"transactionIsolation",
-			mySQLCmd{TransactionIsolation: storage.MySQLTransactionCharacteristic("READ-UNCOMMITTED")},
-			storage.MySQLParameters{TransactionIsolation: storage.MySQLTransactionCharacteristic("READ-UNCOMMITTED")},
-			false,
+			name:   "longQueryTime",
+			create: mySQLCmd{LongQueryTime: storage.LongQueryTime("300")},
+			want:   storage.MySQLParameters{LongQueryTime: storage.LongQueryTime("300")},
 		},
 		{
-			"keepDailyBackups",
-			mySQLCmd{KeepDailyBackups: ptr.To(5)},
-			storage.MySQLParameters{KeepDailyBackups: ptr.To(5)},
-			false,
+			name:   "minWordLength",
+			create: mySQLCmd{MinWordLength: ptr.To(5)},
+			want:   storage.MySQLParameters{MinWordLength: ptr.To(5)},
+		},
+		{
+			name:   "transactionIsolation",
+			create: mySQLCmd{TransactionIsolation: storage.MySQLTransactionCharacteristic("READ-UNCOMMITTED")},
+			want:   storage.MySQLParameters{TransactionIsolation: storage.MySQLTransactionCharacteristic("READ-UNCOMMITTED")},
+		},
+		{
+			name:   "keepDailyBackups",
+			create: mySQLCmd{KeepDailyBackups: ptr.To(5)},
+			want:   storage.MySQLParameters{KeepDailyBackups: ptr.To(5)},
 		},
 	}
 	for _, tt := range tests {
@@ -87,7 +96,11 @@ func TestMySQL(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			client := fake.NewClientBuilder().WithScheme(scheme).Build()
+			builder := fake.NewClientBuilder().WithScheme(scheme)
+			if tt.interceptorFuncs != nil {
+				builder = builder.WithInterceptorFuncs(*tt.interceptorFuncs)
+			}
+			client := builder.Build()
 			apiClient := &api.Client{WithWatch: client, Project: "default"}
 			ctx := context.Background()
 
