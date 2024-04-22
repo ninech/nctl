@@ -149,12 +149,7 @@ func kongVariables() (kong.Vars, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error on application create kong vars: %w", err)
 	}
-	mysqlCreateKongVars, err := create.MySQLKongVars()
-	if err != nil {
-		return nil, fmt.Errorf("error on mysql create kong vars: %w", err)
-	}
-
-	if err := merge(result, appCreateKongVars, mysqlCreateKongVars); err != nil {
+	if err := merge(result, appCreateKongVars, create.MySQLKongVars()); err != nil {
 		return nil, fmt.Errorf("error when merging kong variables: %w", err)
 	}
 

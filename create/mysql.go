@@ -109,7 +109,7 @@ func (cmd *mySQLCmd) newMySQL(namespace string) *storage.MySQL {
 
 // ApplicationKongVars returns all variables which are used in the application
 // create command
-func MySQLKongVars() (kong.Vars, error) {
+func MySQLKongVars() kong.Vars {
 	vmTypes := make([]string, len(infra.MachineTypes))
 	for i, machineType := range infra.MachineTypes {
 		vmTypes[i] = string(machineType)
@@ -128,5 +128,5 @@ func MySQLKongVars() (kong.Vars, error) {
 	result["mysql_min_word_length"] = fmt.Sprintf("%d", storage.MySQLMinWordLengthDefault)
 	result["mysql_transaction_isolation"] = string(storage.MySQLTransactionIsolationDefault)
 	result["mysql_backup_retention_days"] = fmt.Sprintf("%d", storage.MySQLBackupRetentionDaysDefault)
-	return result, nil
+	return result
 }
