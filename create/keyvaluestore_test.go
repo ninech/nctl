@@ -17,32 +17,32 @@ func TestKeyValueStore(t *testing.T) {
 	tests := []struct {
 		name    string
 		create  keyValueStoreCmd
-		want    storage.RedisParameters
+		want    storage.KeyValueStoreParameters
 		wantErr bool
 	}{
-		{"simple", keyValueStoreCmd{}, storage.RedisParameters{}, false},
+		{"simple", keyValueStoreCmd{}, storage.KeyValueStoreParameters{}, false},
 		{
 			"memorySize",
 			keyValueStoreCmd{MemorySize: "1G"},
-			storage.RedisParameters{MemorySize: &storage.RedisMemorySize{Quantity: resource.MustParse("1G")}},
+			storage.KeyValueStoreParameters{MemorySize: &storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("1G")}},
 			false,
 		},
 		{
 			"maxMemoryPolicy",
-			keyValueStoreCmd{MaxMemoryPolicy: storage.RedisMaxMemoryPolicy("noeviction")},
-			storage.RedisParameters{MaxMemoryPolicy: storage.RedisMaxMemoryPolicy("noeviction")},
+			keyValueStoreCmd{MaxMemoryPolicy: storage.KeyValueStoreMaxMemoryPolicy("noeviction")},
+			storage.KeyValueStoreParameters{MaxMemoryPolicy: storage.KeyValueStoreMaxMemoryPolicy("noeviction")},
 			false,
 		},
 		{
 			"allowedCIDRs",
 			keyValueStoreCmd{AllowedCidrs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
-			storage.RedisParameters{AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
+			storage.KeyValueStoreParameters{AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
 			false,
 		},
 		{
 			"invalid",
 			keyValueStoreCmd{MemorySize: "invalid"},
-			storage.RedisParameters{},
+			storage.KeyValueStoreParameters{},
 			true,
 		},
 	}
@@ -64,7 +64,7 @@ func TestKeyValueStore(t *testing.T) {
 				t.Errorf("keyValueStoreCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			created := &storage.Redis{ObjectMeta: metav1.ObjectMeta{Name: tt.create.Name, Namespace: apiClient.Project}}
+			created := &storage.KeyValueStore{ObjectMeta: metav1.ObjectMeta{Name: tt.create.Name, Namespace: apiClient.Project}}
 			if err := apiClient.Get(ctx, api.ObjectName(created), created); (err != nil) != tt.wantErr {
 				t.Fatalf("expected keyvaluestore to exist, got: %s", err)
 			}

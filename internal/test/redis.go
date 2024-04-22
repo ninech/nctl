@@ -7,20 +7,20 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func KeyValueStore(name, project, location string) *storage.Redis {
-	return &storage.Redis{
+func KeyValueStore(name, project, location string) *storage.KeyValueStore {
+	return &storage.KeyValueStore{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: project,
 		},
-		Spec: storage.RedisSpec{
+		Spec: storage.KeyValueStoreSpec{
 			ResourceSpec: runtimev1.ResourceSpec{
 				WriteConnectionSecretToReference: &runtimev1.SecretReference{
 					Name:      name,
 					Namespace: project,
 				},
 			},
-			ForProvider: storage.RedisParameters{
+			ForProvider: storage.KeyValueStoreParameters{
 				Location: meta.LocationName(location),
 			},
 		},

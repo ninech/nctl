@@ -17,66 +17,66 @@ import (
 func TestKeyValueStore(t *testing.T) {
 	tests := []struct {
 		name    string
-		create  storage.RedisParameters
+		create  storage.KeyValueStoreParameters
 		update  keyValueStoreCmd
-		want    storage.RedisParameters
+		want    storage.KeyValueStoreParameters
 		wantErr bool
 	}{
-		{"simple", storage.RedisParameters{}, keyValueStoreCmd{}, storage.RedisParameters{}, false},
+		{"simple", storage.KeyValueStoreParameters{}, keyValueStoreCmd{}, storage.KeyValueStoreParameters{}, false},
 		{
 			"memorySize",
-			storage.RedisParameters{},
+			storage.KeyValueStoreParameters{},
 			keyValueStoreCmd{MemorySize: ptr.To("1G")},
-			storage.RedisParameters{MemorySize: memorySize("1G")},
+			storage.KeyValueStoreParameters{MemorySize: memorySize("1G")},
 			false,
 		},
 		{
 			"memorySize",
-			storage.RedisParameters{MemorySize: memorySize("2G")},
+			storage.KeyValueStoreParameters{MemorySize: memorySize("2G")},
 			keyValueStoreCmd{MemorySize: ptr.To("1G")},
-			storage.RedisParameters{MemorySize: memorySize("1G")},
+			storage.KeyValueStoreParameters{MemorySize: memorySize("1G")},
 			false,
 		},
 		{
 			"invalid",
-			storage.RedisParameters{MemorySize: memorySize("2G")},
+			storage.KeyValueStoreParameters{MemorySize: memorySize("2G")},
 			keyValueStoreCmd{MemorySize: ptr.To("invalid")},
-			storage.RedisParameters{MemorySize: memorySize("2G")},
+			storage.KeyValueStoreParameters{MemorySize: memorySize("2G")},
 			true,
 		},
 		{
 			"maxMemoryPolicy",
-			storage.RedisParameters{},
-			keyValueStoreCmd{MaxMemoryPolicy: ptr.To(storage.RedisMaxMemoryPolicy("noeviction"))},
-			storage.RedisParameters{MaxMemoryPolicy: storage.RedisMaxMemoryPolicy("noeviction")},
+			storage.KeyValueStoreParameters{},
+			keyValueStoreCmd{MaxMemoryPolicy: ptr.To(storage.KeyValueStoreMaxMemoryPolicy("noeviction"))},
+			storage.KeyValueStoreParameters{MaxMemoryPolicy: storage.KeyValueStoreMaxMemoryPolicy("noeviction")},
 			false,
 		},
 		{
 			"maxMemoryPolicy",
-			storage.RedisParameters{MaxMemoryPolicy: storage.RedisMaxMemoryPolicy("allkeys-lfu")},
-			keyValueStoreCmd{MaxMemoryPolicy: ptr.To(storage.RedisMaxMemoryPolicy("noeviction"))},
-			storage.RedisParameters{MaxMemoryPolicy: storage.RedisMaxMemoryPolicy("noeviction")},
+			storage.KeyValueStoreParameters{MaxMemoryPolicy: storage.KeyValueStoreMaxMemoryPolicy("allkeys-lfu")},
+			keyValueStoreCmd{MaxMemoryPolicy: ptr.To(storage.KeyValueStoreMaxMemoryPolicy("noeviction"))},
+			storage.KeyValueStoreParameters{MaxMemoryPolicy: storage.KeyValueStoreMaxMemoryPolicy("noeviction")},
 			false,
 		},
 		{
 			"allowedCIDRs",
-			storage.RedisParameters{},
+			storage.KeyValueStoreParameters{},
 			keyValueStoreCmd{AllowedCidrs: &[]storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
-			storage.RedisParameters{AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
+			storage.KeyValueStoreParameters{AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
 			false,
 		},
 		{
 			"allowedCIDRs",
-			storage.RedisParameters{AllowedCIDRs: []storage.IPv4CIDR{"192.168.0.1/24"}},
+			storage.KeyValueStoreParameters{AllowedCIDRs: []storage.IPv4CIDR{"192.168.0.1/24"}},
 			keyValueStoreCmd{AllowedCidrs: &[]storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
-			storage.RedisParameters{AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
+			storage.KeyValueStoreParameters{AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
 			false,
 		},
 		{
 			"allowedCIDRs",
-			storage.RedisParameters{AllowedCIDRs: []storage.IPv4CIDR{"0.0.0.0/0"}},
+			storage.KeyValueStoreParameters{AllowedCIDRs: []storage.IPv4CIDR{"0.0.0.0/0"}},
 			keyValueStoreCmd{MemorySize: ptr.To("1G")},
-			storage.RedisParameters{MemorySize: memorySize("1G"), AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
+			storage.KeyValueStoreParameters{MemorySize: memorySize("1G"), AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
 			false,
 		},
 	}
@@ -100,7 +100,7 @@ func TestKeyValueStore(t *testing.T) {
 				t.Fatalf("expected keyvaluestore to exist, got: %s", err)
 			}
 
-			updated := &storage.Redis{ObjectMeta: metav1.ObjectMeta{Name: created.Name, Namespace: created.Namespace}}
+			updated := &storage.KeyValueStore{ObjectMeta: metav1.ObjectMeta{Name: created.Name, Namespace: created.Namespace}}
 			if err := tt.update.Run(ctx, apiClient); (err != nil) != tt.wantErr {
 				t.Errorf("keyValueStoreCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -115,6 +115,6 @@ func TestKeyValueStore(t *testing.T) {
 	}
 }
 
-func memorySize(s string) *storage.RedisMemorySize {
-	return &storage.RedisMemorySize{Quantity: resource.MustParse(s)}
+func memorySize(s string) *storage.KeyValueStoreMemorySize {
+	return &storage.KeyValueStoreMemorySize{Quantity: resource.MustParse(s)}
 }

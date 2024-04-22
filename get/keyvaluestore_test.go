@@ -19,16 +19,16 @@ import (
 func TestKeyValueStore(t *testing.T) {
 	tests := []struct {
 		name        string
-		instances   map[string]storage.RedisParameters
+		instances   map[string]storage.KeyValueStoreParameters
 		get         keyValueStoreCmd
 		out         output
 		wantContain []string
 		wantErr     bool
 	}{
-		{"simple", map[string]storage.RedisParameters{}, keyValueStoreCmd{}, full, []string{"no Redis found"}, false},
+		{"simple", map[string]storage.KeyValueStoreParameters{}, keyValueStoreCmd{}, full, []string{"no KeyValueStores found"}, false},
 		{
 			"single",
-			map[string]storage.RedisParameters{"test": {MemorySize: &storage.RedisMemorySize{Quantity: resource.MustParse("1G")}}},
+			map[string]storage.KeyValueStoreParameters{"test": {MemorySize: &storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("1G")}}},
 			keyValueStoreCmd{},
 			full,
 			[]string{"1G"},
@@ -36,10 +36,10 @@ func TestKeyValueStore(t *testing.T) {
 		},
 		{
 			"multiple",
-			map[string]storage.RedisParameters{
-				"test1": {MemorySize: &storage.RedisMemorySize{Quantity: resource.MustParse("1G")}},
-				"test2": {MemorySize: &storage.RedisMemorySize{Quantity: resource.MustParse("2G")}},
-				"test3": {MemorySize: &storage.RedisMemorySize{Quantity: resource.MustParse("3G")}},
+			map[string]storage.KeyValueStoreParameters{
+				"test1": {MemorySize: &storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("1G")}},
+				"test2": {MemorySize: &storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("2G")}},
+				"test3": {MemorySize: &storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("3G")}},
 			},
 			keyValueStoreCmd{},
 			full,
@@ -48,9 +48,9 @@ func TestKeyValueStore(t *testing.T) {
 		},
 		{
 			"name",
-			map[string]storage.RedisParameters{
-				"test1": {MemorySize: &storage.RedisMemorySize{Quantity: resource.MustParse("1G")}},
-				"test2": {MemorySize: &storage.RedisMemorySize{Quantity: resource.MustParse("2G")}},
+			map[string]storage.KeyValueStoreParameters{
+				"test1": {MemorySize: &storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("1G")}},
+				"test2": {MemorySize: &storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("2G")}},
 			},
 			keyValueStoreCmd{Name: "test1"},
 			full,
@@ -59,9 +59,9 @@ func TestKeyValueStore(t *testing.T) {
 		},
 		{
 			"password",
-			map[string]storage.RedisParameters{
-				"test1": {MemorySize: &storage.RedisMemorySize{Quantity: resource.MustParse("1G")}},
-				"test2": {MemorySize: &storage.RedisMemorySize{Quantity: resource.MustParse("2G")}},
+			map[string]storage.KeyValueStoreParameters{
+				"test1": {MemorySize: &storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("1G")}},
+				"test2": {MemorySize: &storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("2G")}},
 			},
 			keyValueStoreCmd{Name: "test2", PrintToken: true},
 			full,
@@ -95,7 +95,7 @@ func TestKeyValueStore(t *testing.T) {
 
 			client := fake.NewClientBuilder().
 				WithScheme(scheme).
-				WithIndex(&storage.Redis{}, "metadata.name", func(o client.Object) []string {
+				WithIndex(&storage.KeyValueStore{}, "metadata.name", func(o client.Object) []string {
 					return []string{o.GetName()}
 				}).
 				WithObjects(objects...).Build()

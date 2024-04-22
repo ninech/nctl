@@ -21,14 +21,14 @@ type keyValueStoreCmd struct {
 func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
 	cmd.out = defaultOut(cmd.out)
 
-	keyValueStoreList := &storage.RedisList{}
+	keyValueStoreList := &storage.KeyValueStoreList{}
 
 	if err := get.list(ctx, client, keyValueStoreList, matchName(cmd.Name)); err != nil {
 		return err
 	}
 
 	if len(keyValueStoreList.Items) == 0 {
-		printEmptyMessage(cmd.out, storage.RedisKind, client.Project)
+		printEmptyMessage(cmd.out, storage.KeyValueStoreKind, client.Project)
 		return nil
 	}
 
@@ -48,7 +48,7 @@ func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client, get *C
 	return nil
 }
 
-func (cmd *keyValueStoreCmd) printKeyValueStoreInstances(list []storage.Redis, get *Cmd, header bool) error {
+func (cmd *keyValueStoreCmd) printKeyValueStoreInstances(list []storage.KeyValueStore, get *Cmd, header bool) error {
 	w := tabwriter.NewWriter(cmd.out, 0, 0, 4, ' ', 0)
 
 	if header {
@@ -62,8 +62,8 @@ func (cmd *keyValueStoreCmd) printKeyValueStoreInstances(list []storage.Redis, g
 	return w.Flush()
 }
 
-func (cmd *keyValueStoreCmd) printPassword(ctx context.Context, client *api.Client, keyValueStore *storage.Redis) error {
-	pw, err := getConnectionSecret(ctx, client, storage.RedisUser, keyValueStore)
+func (cmd *keyValueStoreCmd) printPassword(ctx context.Context, client *api.Client, keyValueStore *storage.KeyValueStore) error {
+	pw, err := getConnectionSecret(ctx, client, storage.KeyValueStoreUser, keyValueStore)
 	if err != nil {
 		return err
 	}
