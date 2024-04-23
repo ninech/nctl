@@ -21,7 +21,7 @@ type keyValueStoreCmd struct {
 	MaxMemoryPolicy storage.KeyValueStoreMaxMemoryPolicy `help:"MaxMemoryPolicy specifies the exact behavior KeyValueStore follows when the maxmemory limit is reached." placeholder:"allkeys-lru"`
 	AllowedCidrs    []storage.IPv4CIDR                   `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance." placeholder:"0.0.0.0/0"`
 	Wait            bool                                 `default:"true" help:"Wait until KeyValueStore is created."`
-	WaitTimeout     time.Duration                        `default:"300s" help:"Duration to wait for KeyValueStore getting ready. Only relevant if --wait is set."`
+	WaitTimeout     time.Duration                        `default:"600s" help:"Duration to wait for KeyValueStore getting ready. Only relevant if --wait is set."`
 }
 
 func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client) error {
