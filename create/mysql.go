@@ -34,7 +34,7 @@ type mySQLCmd struct {
 	TransactionIsolation  storage.MySQLTransactionCharacteristic `placeholder:"${mysql_transaction_isolation}" help:"Configures the transaction_isolation variable."`
 	KeepDailyBackups      *int                                   `placeholder:"${mysql_backup_retention_days}" help:"Number of daily database backups to keep. Note that setting this to 0, backup will be disabled and existing dumps deleted immediately."`
 	Wait                  bool                                   `default:"true" help:"Wait until MySQL instance is created."`
-	WaitTimeout           time.Duration                          `default:"1200s" help:"Duration to wait for MySQL getting ready. Only relevant if --wait is set."`
+	WaitTimeout           time.Duration                          `default:"1500s" help:"Duration to wait for MySQL getting ready. Only relevant if --wait is set."`
 }
 
 func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
@@ -44,7 +44,7 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
 	}
 	cmd.SSHKeys = append(cmd.SSHKeys, sshkeys...)
 
-	fmt.Println("Creating new mysql. This can take up to 20 minutes.")
+	fmt.Println("Creating new mysql. This can take up to 25 minutes.")
 	mysql := cmd.newMySQL(client.Project)
 
 	c := newCreator(client, mysql, "mysql")
@@ -89,8 +89,8 @@ func (cmd *mySQLCmd) newMySQL(namespace string) *storage.MySQL {
 			ForProvider: storage.MySQLParameters{
 				Location:     meta.LocationName(cmd.Location),
 				MachineType:  cmd.MachineType,
-				AllowedCIDRs: cmd.AllowedCidrs,
-				SSHKeys:      cmd.SSHKeys,
+				AllowedCIDRs: []storage.IPv4CIDR{}, // avoid missing parameter error
+				SSHKeys:      []storage.SSHKey{},   // avoid missing parameter error
 				SQLMode:      cmd.SQLMode,
 				CharacterSet: storage.MySQLCharacterSet{
 					Name:      cmd.CharacterSetName,
@@ -102,6 +102,13 @@ func (cmd *mySQLCmd) newMySQL(namespace string) *storage.MySQL {
 				KeepDailyBackups:     cmd.KeepDailyBackups,
 			},
 		},
+	}
+
+	if cmd.AllowedCidrs != nil {
+		mySQL.Spec.ForProvider.AllowedCIDRs = cmd.AllowedCidrs
+	}
+	if cmd.SSHKeys != nil {
+		mySQL.Spec.ForProvider.SSHKeys = cmd.SSHKeys
 	}
 
 	return mySQL
