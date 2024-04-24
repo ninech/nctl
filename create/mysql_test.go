@@ -27,8 +27,8 @@ func TestMySQL(t *testing.T) {
 	}{
 		{
 			name:   "simple",
-			create: mySQLCmd{SSHKeys: []storage.SSHKey{""}, AllowedCidrs: []storage.IPv4CIDR{}},
-			want:   storage.MySQLParameters{SSHKeys: []storage.SSHKey{""}, AllowedCIDRs: []storage.IPv4CIDR{}},
+			create: mySQLCmd{},
+			want:   storage.MySQLParameters{},
 		},
 		{
 			name:    "simpleErrorOnCreation",
@@ -42,48 +42,48 @@ func TestMySQL(t *testing.T) {
 		},
 		{
 			name:   "machineType",
-			create: mySQLCmd{MachineType: infra.MachineType("nine-standard-1"), SSHKeys: []storage.SSHKey{""}, AllowedCidrs: []storage.IPv4CIDR{}},
-			want:   storage.MySQLParameters{MachineType: infra.MachineType("nine-standard-1"), SSHKeys: []storage.SSHKey{""}, AllowedCIDRs: []storage.IPv4CIDR{}},
+			create: mySQLCmd{MachineType: infra.MachineType("nine-standard-1")},
+			want:   storage.MySQLParameters{MachineType: infra.MachineType("nine-standard-1")},
 		},
 		{
 			name:   "sshKeys",
-			create: mySQLCmd{SSHKeys: []storage.SSHKey{"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJGG5/nnivrW4zLD4ANLclVT3y68GAg6NOA3HpzFLo5e test@test"}, AllowedCidrs: []storage.IPv4CIDR{}},
-			want:   storage.MySQLParameters{SSHKeys: []storage.SSHKey{"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJGG5/nnivrW4zLD4ANLclVT3y68GAg6NOA3HpzFLo5e test@test"}, AllowedCIDRs: []storage.IPv4CIDR{}},
+			create: mySQLCmd{SSHKeys: []storage.SSHKey{"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJGG5/nnivrW4zLD4ANLclVT3y68GAg6NOA3HpzFLo5e test@test"}},
+			want:   storage.MySQLParameters{SSHKeys: []storage.SSHKey{"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJGG5/nnivrW4zLD4ANLclVT3y68GAg6NOA3HpzFLo5e test@test"}},
 		},
 		{
 			name:   "sqlMode",
-			create: mySQLCmd{SQLMode: &[]storage.MySQLMode{"ONLY_FULL_GROUP_BY"}, SSHKeys: []storage.SSHKey{""}, AllowedCidrs: []storage.IPv4CIDR{}},
-			want:   storage.MySQLParameters{SQLMode: &[]storage.MySQLMode{"ONLY_FULL_GROUP_BY"}, SSHKeys: []storage.SSHKey{""}, AllowedCIDRs: []storage.IPv4CIDR{}},
+			create: mySQLCmd{SQLMode: &[]storage.MySQLMode{"ONLY_FULL_GROUP_BY"}},
+			want:   storage.MySQLParameters{SQLMode: &[]storage.MySQLMode{"ONLY_FULL_GROUP_BY"}},
 		},
 		{
 			name:   "allowedCIDRs",
-			create: mySQLCmd{AllowedCidrs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}, SSHKeys: []storage.SSHKey{""}},
-			want:   storage.MySQLParameters{AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}, SSHKeys: []storage.SSHKey{""}},
+			create: mySQLCmd{AllowedCidrs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
+			want:   storage.MySQLParameters{AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
 		},
 		{
 			name:   "characterSet",
-			create: mySQLCmd{CharacterSetName: "utf8mb4", CharacterSetCollation: "utf8mb4_unicode_ci", SSHKeys: []storage.SSHKey{""}, AllowedCidrs: []storage.IPv4CIDR{}},
-			want:   storage.MySQLParameters{CharacterSet: storage.MySQLCharacterSet{Name: "utf8mb4", Collation: "utf8mb4_unicode_ci"}, SSHKeys: []storage.SSHKey{""}, AllowedCIDRs: []storage.IPv4CIDR{}},
+			create: mySQLCmd{CharacterSetName: "utf8mb4", CharacterSetCollation: "utf8mb4_unicode_ci"},
+			want:   storage.MySQLParameters{CharacterSet: storage.MySQLCharacterSet{Name: "utf8mb4", Collation: "utf8mb4_unicode_ci"}},
 		},
 		{
 			name:   "longQueryTime",
-			create: mySQLCmd{LongQueryTime: storage.LongQueryTime("300"), SSHKeys: []storage.SSHKey{""}, AllowedCidrs: []storage.IPv4CIDR{}},
-			want:   storage.MySQLParameters{LongQueryTime: storage.LongQueryTime("300"), SSHKeys: []storage.SSHKey{""}, AllowedCIDRs: []storage.IPv4CIDR{}},
+			create: mySQLCmd{LongQueryTime: storage.LongQueryTime("300")},
+			want:   storage.MySQLParameters{LongQueryTime: storage.LongQueryTime("300")},
 		},
 		{
 			name:   "minWordLength",
-			create: mySQLCmd{MinWordLength: ptr.To(5), SSHKeys: []storage.SSHKey{""}, AllowedCidrs: []storage.IPv4CIDR{}},
-			want:   storage.MySQLParameters{MinWordLength: ptr.To(5), SSHKeys: []storage.SSHKey{""}, AllowedCIDRs: []storage.IPv4CIDR{}},
+			create: mySQLCmd{MinWordLength: ptr.To(5)},
+			want:   storage.MySQLParameters{MinWordLength: ptr.To(5)},
 		},
 		{
 			name:   "transactionIsolation",
-			create: mySQLCmd{TransactionIsolation: storage.MySQLTransactionCharacteristic("READ-UNCOMMITTED"), SSHKeys: []storage.SSHKey{""}, AllowedCidrs: []storage.IPv4CIDR{}},
-			want:   storage.MySQLParameters{TransactionIsolation: storage.MySQLTransactionCharacteristic("READ-UNCOMMITTED"), SSHKeys: []storage.SSHKey{""}, AllowedCIDRs: []storage.IPv4CIDR{}},
+			create: mySQLCmd{TransactionIsolation: storage.MySQLTransactionCharacteristic("READ-UNCOMMITTED")},
+			want:   storage.MySQLParameters{TransactionIsolation: storage.MySQLTransactionCharacteristic("READ-UNCOMMITTED")},
 		},
 		{
 			name:   "keepDailyBackups",
-			create: mySQLCmd{KeepDailyBackups: ptr.To(5), SSHKeys: []storage.SSHKey{""}, AllowedCidrs: []storage.IPv4CIDR{}},
-			want:   storage.MySQLParameters{KeepDailyBackups: ptr.To(5), SSHKeys: []storage.SSHKey{""}, AllowedCIDRs: []storage.IPv4CIDR{}},
+			create: mySQLCmd{KeepDailyBackups: ptr.To(5)},
+			want:   storage.MySQLParameters{KeepDailyBackups: ptr.To(5)},
 		},
 	}
 	for _, tt := range tests {
@@ -114,6 +114,14 @@ func TestMySQL(t *testing.T) {
 			}
 			if tt.wantErr {
 				return
+			}
+
+			// we set defaults for the slices
+			if tt.want.AllowedCIDRs == nil {
+				tt.want.AllowedCIDRs = []storage.IPv4CIDR{}
+			}
+			if tt.want.SSHKeys == nil {
+				tt.want.SSHKeys = []storage.SSHKey{}
 			}
 
 			if !reflect.DeepEqual(created.Spec.ForProvider, tt.want) {
