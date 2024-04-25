@@ -25,6 +25,7 @@ type Cmd struct {
 	Releases           releasesCmd           `cmd:"" group:"deplo.io" name:"releases" aliases:"release" help:"Get deplo.io Releases. (Beta - requires access)"`
 	Configs            configsCmd            `cmd:"" group:"deplo.io" name:"configs" aliases:"config" help:"Get deplo.io Project Configuration. (Beta - requires access)"`
 	MySQL              mySQLCmd              `cmd:"" group:"storage.nine.ch" name:"mysql" help:"Get MySQL instances."`
+	KeyValueStore      keyValueStoreCmd      `cmd:"" group:"storage.nine.ch" name:"keyvaluestore" aliases:"kvs" help:"Get KeyValueStore instances."`
 	All                allCmd                `cmd:"" name:"all" help:"Get project content"`
 
 	opts []runtimeclient.ListOption
@@ -49,6 +50,7 @@ func matchName(name string) listOpt {
 		cmd.opts = append(cmd.opts, runtimeclient.MatchingFields{"metadata.name": name})
 	}
 }
+
 func matchLabel(k, v string) listOpt {
 	return func(cmd *Cmd) {
 		cmd.opts = append(cmd.opts, runtimeclient.MatchingLabels{k: v})

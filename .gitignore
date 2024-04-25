@@ -3,6 +3,7 @@ dist/
 ### vscode ###
 .vscode/*
 *.code-workspace
+/.devcontainer
 
 ### MacOS ###
 .DS_Store
