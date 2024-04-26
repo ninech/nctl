@@ -200,7 +200,7 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		return err
 	}
 
-	if err := spinnerMessage("co2 compensating the app 🌳", 2*time.Second); err != nil {
+	if err := spinnerMessage("CO₂ compensating the app", "🌳", 2*time.Second); err != nil {
 		return err
 	}
 
@@ -228,8 +228,9 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	return nil
 }
 
-func spinnerMessage(msg string, sleepTime time.Duration) error {
-	spinner, err := format.NewSpinner(msg, msg)
+func spinnerMessage(msg, icon string, sleepTime time.Duration) error {
+	fullMsg := format.ProgressMessagef(icon, msg)
+	spinner, err := format.NewSpinner(fullMsg, fullMsg)
 	if err != nil {
 		return err
 	}
