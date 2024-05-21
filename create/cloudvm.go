@@ -18,14 +18,14 @@ import (
 type cloudVMCmd struct {
 	Name                string            `arg:"" default:"" help:"Name of the CloudVM instance. A random name is generated if omitted."`
 	Location            string            `default:"nine-es34" help:"Location where the CloudVM instance is created."`
-	MachineType         string            `default:"" help:"MachineType defines the sizing for a particular cloud vm."`
+	MachineType         string            `default:"" help:"The machine type defines the sizing for a particular CloudVM."`
 	Hostname            string            `default:"" help:"Hostname allows to set the hostname explicitly. If unset, the name of the resource will be used as the hostname. This does not affect the DNS name."`
-	PowerState          string            `default:"on" help:"PowerState specifies the power state of the cloud VM. A value of On turns the VM on, shutdown sends an ACPI signal to the VM to perform a clean shutdown and off forces the power off immediately."`
+	PowerState          string            `default:"on" help:"Specify the initial power state of the CloudVM. Set to off to create "`
 	OS                  string            `default:"" help:"OS which should be used to boot the VM."`
-	BootDiskSize        string            `default:"20Gi" help:"BootDiskSize that will be used to boot the VM from."`
+	BootDiskSize        string            `default:"20Gi" help:"Configures the size of the boot disk."`
 	Disks               map[string]string `default:"" help:"Disks specifies which additional disks to mount to the machine."`
-	PublicKeys          []string          `default:"" help:"PublicKeys specifies the SSH Public Keys that can be used to connect to the VM as root. The keys are expected to be in SSH format as defined in RFC4253. Immutable after creation."`
-	PublicKeysFromFiles []string          `default:"" predictor:"file" help:"CloudConfig via file. Has precedence over args. PublicKeys specifies the SSH Public Keys that can be used to connect to the VM as root. The keys are expected to be in SSH format as defined in RFC4253. Immutable after creation."`
+	PublicKeys          []string          `default:"" help:"SSH public keys that can be used to connect to the CloudVM as root. The keys are expected to be in SSH format as defined in RFC4253. Immutable after creation."`
+	PublicKeysFromFiles []string          `default:"" predictor:"file" help:"SSH public key files that can be used to connect to the VM as root. The keys are expected to be in SSH format as defined in RFC4253. Immutable after creation."`
 	CloudConfig         string            `default:"" help:"CloudConfig allows to pass custom cloud config data (https://cloudinit.readthedocs.io/en/latest/topics/format.html#cloud-config-data) to the cloud VM. If a CloudConfig is passed, the PublicKey parameter is ignored. Immutable after creation."`
 	CloudConfigFromFile string            `default:"" predictor:"file" help:"CloudConfig via file. Has precedence over args. CloudConfig allows to pass custom cloud config data (https://cloudinit.readthedocs.io/en/latest/topics/format.html#cloud-config-data) to the cloud VM. If a CloudConfig is passed, the PublicKey parameter is ignored. Immutable after creation."`
 	Wait                bool              `default:"true" help:"Wait until CloudVM is created."`
