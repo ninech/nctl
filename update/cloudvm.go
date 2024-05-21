@@ -3,6 +3,7 @@ package update
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
@@ -13,15 +14,18 @@ import (
 )
 
 type cloudVMCmd struct {
-	Name        string            `arg:"" help:"Name of the CloudVM instance to update."`
-	MachineType string            `placeholder:"nine-standard-1" help:"MachineType defines the sizing for a particular cloud vm."`
-	Hostname    string            `placeholder:"" help:"Hostname allows to set the hostname explicitly. If unset, the name of the resource will be used as the hostname. This does not affect the DNS name."`
-	OS          string            `placeholder:"ubuntu22.04" help:"OS which should be used to boot the VM."`
-	BootDisk    map[string]string `placeholder:"{name:\"root\",size:\"20Gi\"}" help:"BootDisk that will be used to boot the VM from. Needs to be in the following format: {name:\"<name>\",size:\"<size>Gi\"}"`
-	Disks       map[string]string `placeholder:"{}" help:"Disks specifies which additional disks to mount to the machine."`
-	On          *bool             `placeholder:"false" help:"Turns the cloudvirtualmachine on"`
-	Off         *bool             `placeholder:"false" help:"Turns the cloudvirtualmachine off"`
-	Shutdown    *bool             `placeholder:"false" help:"Shuts off the cloudvirtualmachine"`
+	Name                      string            `arg:"" help:"Name of the CloudVM instance to update."`
+	MachineType               string            `placeholder:"nine-standard-1" help:"MachineType defines the sizing for a particular cloud vm."`
+	Hostname                  string            `placeholder:"" help:"Hostname allows to set the hostname explicitly. If unset, the name of the resource will be used as the hostname. This does not affect the DNS name."`
+	OS                        string            `placeholder:"ubuntu22.04" help:"OS which should be used to boot the VM."`
+	BootDisk                  map[string]string `placeholder:"{name:\"root\",size:\"20Gi\"}" help:"BootDisk that will be used to boot the VM from. Needs to be in the following format: {name:\"<name>\",size:\"<size>Gi\"}"`
+	Disks                     map[string]string `placeholder:"{}" help:"Disks specifies which additional disks to mount to the machine."`
+	On                        *bool             `placeholder:"false" help:"Turns the cloudvirtualmachine on"`
+	Off                       *bool             `placeholder:"false" help:"Turns the cloudvirtualmachine off"`
+	Shutdown                  *bool             `placeholder:"false" help:"Shuts off the cloudvirtualmachine"`
+	BootRescue                *bool             `help:"Boot CloudVM into a live rescue environment."`
+	RescuePublicKeys          []string          `default:"" help:"SSH Public Keys that can be used to connect to the CloudVM while booted into rescue. The keys are expected to be in SSH format as defined in RFC4253."`
+	RescuePublicKeysFromFiles []string          `default:"" predictor:"file" help:"SSH Public Key file that can be used to connect to the CloudVM while booted into rescue. The keys are expected to be in SSH format as defined in RFC4253."`
 }
 
 func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {
@@ -32,14 +36,22 @@ func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {
 		},
 	}
 
-	return newUpdater(client, cloudvm, infrastructure.CloudVirtualMachineKind, func(current resource.Managed) error {
+	if err := newUpdater(client, cloudvm, infrastructure.CloudVirtualMachineKind, func(current resource.Managed) error {
 		cloudvm, ok := current.(*infrastructure.CloudVirtualMachine)
 		if !ok {
 			return fmt.Errorf("resource is of type %T, expected %T", current, infrastructure.CloudVirtualMachine{})
 		}
 
 		return cmd.applyUpdates(cloudvm)
-	}).Update(ctx)
+	}).Update(ctx); err != nil {
+		return err
+	}
+
+	if cmd.BootRescue != nil && *cmd.BootRescue {
+		fmt.Println("Booting CloudVM into rescue mode. It can take a few minutes for the VM to be reachable.")
+	}
+
+	return nil
 }
 
 func (cmd *cloudVMCmd) applyUpdates(cloudVM *infrastructure.CloudVirtualMachine) error {
@@ -90,6 +102,30 @@ func (cmd *cloudVMCmd) applyUpdates(cloudVM *infrastructure.CloudVirtualMachine)
 
 	if cmd.On != nil {
 		cloudVM.Spec.ForProvider.PowerState = infrastructure.VirtualMachinePowerState("on")
+	}
+
+	if cmd.BootRescue != nil {
+		if cloudVM.Spec.ForProvider.Rescue == nil {
+			cloudVM.Spec.ForProvider.Rescue = &infrastructure.CloudVirtualMachineRescue{Enabled: *cmd.BootRescue}
+		} else {
+			cloudVM.Spec.ForProvider.Rescue.Enabled = *cmd.BootRescue
+		}
+	}
+
+	if len(cmd.RescuePublicKeysFromFiles) != 0 {
+		var keys []string
+		for _, file := range cmd.RescuePublicKeysFromFiles {
+			b, err := os.ReadFile(file)
+			if err != nil {
+				return fmt.Errorf("error reading public key file %q: %w", cmd.RescuePublicKeysFromFiles, err)
+			}
+			keys = append(keys, string(b))
+		}
+		if cloudVM.Spec.ForProvider.Rescue == nil {
+			cloudVM.Spec.ForProvider.Rescue = &infrastructure.CloudVirtualMachineRescue{PublicKeys: keys}
+		} else {
+			cloudVM.Spec.ForProvider.Rescue.PublicKeys = keys
+		}
 	}
 
 	return nil
