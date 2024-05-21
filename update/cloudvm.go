@@ -15,17 +15,17 @@ import (
 
 type cloudVMCmd struct {
 	Name                      string            `arg:"" help:"Name of the CloudVM instance to update."`
-	MachineType               string            `placeholder:"nine-standard-1" help:"MachineType defines the sizing for a particular cloud vm."`
+	MachineType               string            `placeholder:"nine-standard-1" help:"The machine type defines the sizing for a particular CloudVM."`
 	Hostname                  string            `placeholder:"" help:"Hostname allows to set the hostname explicitly. If unset, the name of the resource will be used as the hostname. This does not affect the DNS name."`
 	OS                        string            `placeholder:"ubuntu22.04" help:"OS which should be used to boot the VM."`
-	BootDisk                  map[string]string `placeholder:"{name:\"root\",size:\"20Gi\"}" help:"BootDisk that will be used to boot the VM from. Needs to be in the following format: {name:\"<name>\",size:\"<size>Gi\"}"`
+	BootDiskSize              string            `placeholder:"20Gi" help:"Configures the size of the boot disk."`
 	Disks                     map[string]string `placeholder:"{}" help:"Disks specifies which additional disks to mount to the machine."`
-	On                        *bool             `placeholder:"false" help:"Turns the cloudvirtualmachine on"`
-	Off                       *bool             `placeholder:"false" help:"Turns the cloudvirtualmachine off"`
-	Shutdown                  *bool             `placeholder:"false" help:"Shuts off the cloudvirtualmachine"`
+	On                        *bool             `help:"Turns the CloudVM on."`
+	Off                       *bool             `help:"Turns the CloudVM off immediately."`
+	Shutdown                  *bool             `help:"Shuts down the CloudVM via ACPI."`
 	BootRescue                *bool             `help:"Boot CloudVM into a live rescue environment."`
-	RescuePublicKeys          []string          `default:"" help:"SSH Public Keys that can be used to connect to the CloudVM while booted into rescue. The keys are expected to be in SSH format as defined in RFC4253."`
-	RescuePublicKeysFromFiles []string          `default:"" predictor:"file" help:"SSH Public Key file that can be used to connect to the CloudVM while booted into rescue. The keys are expected to be in SSH format as defined in RFC4253."`
+	RescuePublicKeys          []string          `placeholder:"ssh-ed25519" help:"SSH public keys that can be used to connect to the CloudVM while booted into rescue. The keys are expected to be in SSH format as defined in RFC4253."`
+	RescuePublicKeysFromFiles []string          `placeholder:"~/.ssh/id_ed25519.pub" predictor:"file" help:"SSH public key files that can be used to connect to the CloudVM while booted into rescue. The keys are expected to be in SSH format as defined in RFC4253."`
 }
 
 func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {
@@ -67,17 +67,12 @@ func (cmd *cloudVMCmd) applyUpdates(cloudVM *infrastructure.CloudVirtualMachine)
 		cloudVM.Spec.ForProvider.OS = infrastructure.CloudVirtualMachineOS(cmd.OS)
 	}
 
-	if len(cmd.BootDisk) != 0 {
-		if len(cmd.BootDisk) > 1 {
-			return fmt.Errorf("boot disk can only have one entry but got %q", cmd.BootDisk)
+	if cmd.BootDiskSize != "" {
+		q, err := res.ParseQuantity(cmd.BootDiskSize)
+		if err != nil {
+			return fmt.Errorf("error parsing disk size %q: %w", cmd.BootDiskSize, err)
 		}
-		for name, size := range cmd.BootDisk {
-			q, err := res.ParseQuantity(size)
-			if err != nil {
-				return fmt.Errorf("error parsing disk size %q: %w", size, err)
-			}
-			cloudVM.Spec.ForProvider.BootDisk = &infrastructure.Disk{Name: name, Size: q}
-		}
+		cloudVM.Spec.ForProvider.BootDisk = &infrastructure.Disk{Name: cmd.BootDiskSize, Size: q}
 	}
 
 	if len(cmd.Disks) != 0 {
