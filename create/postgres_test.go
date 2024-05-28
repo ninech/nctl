@@ -8,6 +8,7 @@ import (
 	"time"
 
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
+	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -52,8 +53,8 @@ func TestPostgres(t *testing.T) {
 		},
 		{
 			name:   "allowedCIDRs",
-			create: postgresCmd{AllowedCidrs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
-			want:   storage.PostgresParameters{AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
+			create: postgresCmd{AllowedCidrs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
+			want:   storage.PostgresParameters{AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
 		},
 		{
 			name:   "version",
@@ -98,7 +99,7 @@ func TestPostgres(t *testing.T) {
 
 			// we set defaults for the slices
 			if tt.want.AllowedCIDRs == nil {
-				tt.want.AllowedCIDRs = []storage.IPv4CIDR{}
+				tt.want.AllowedCIDRs = []meta.IPv4CIDR{}
 			}
 			if tt.want.SSHKeys == nil {
 				tt.want.SSHKeys = []storage.SSHKey{}

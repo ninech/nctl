@@ -23,7 +23,7 @@ type mySQLCmd struct {
 	Name                  string                                 `arg:"" default:"" help:"Name of the MySQL instance. A random name is generated if omitted."`
 	Location              string                                 `placeholder:"${mysql_location_default}" help:"Location where the MySQL instance is created. Available locations are: ${mysql_location_options}"`
 	MachineType           infra.MachineType                      `placeholder:"${mysql_machine_default}" help:"Defines the sizing for a particular MySQL instance. Available types: ${mysql_machine_types}"`
-	AllowedCidrs          []storage.IPv4CIDR                     `placeholder:"0.0.0.0/0" help:"Specifies the IP addresses allowed to connect to the instance." `
+	AllowedCidrs          []meta.IPv4CIDR                        `placeholder:"0.0.0.0/0" help:"Specifies the IP addresses allowed to connect to the instance." `
 	SSHKeys               []storage.SSHKey                       `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups."`
 	SSHKeysFile           string                                 `help:"Path to a file containing a list of SSH public keys (see above), separated by newlines."`
 	SQLMode               *[]storage.MySQLMode                   `placeholder:"\"MODE1, MODE2, ...\"" help:"Configures the sql_mode setting. Modes affect the SQL syntax MySQL supports and the data validation checks it performs. Defaults to: ${mysql_mode}"`
@@ -89,8 +89,8 @@ func (cmd *mySQLCmd) newMySQL(namespace string) *storage.MySQL {
 			ForProvider: storage.MySQLParameters{
 				Location:     meta.LocationName(cmd.Location),
 				MachineType:  cmd.MachineType,
-				AllowedCIDRs: []storage.IPv4CIDR{}, // avoid missing parameter error
-				SSHKeys:      []storage.SSHKey{},   // avoid missing parameter error
+				AllowedCIDRs: []meta.IPv4CIDR{},  // avoid missing parameter error
+				SSHKeys:      []storage.SSHKey{}, // avoid missing parameter error
 				SQLMode:      cmd.SQLMode,
 				CharacterSet: storage.MySQLCharacterSet{
 					Name:      cmd.CharacterSetName,

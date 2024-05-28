@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
+	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
@@ -47,20 +48,20 @@ func TestPostgres(t *testing.T) {
 		},
 		{
 			name:   "allowedCIDRs-nothing-set-initially",
-			update: postgresCmd{AllowedCidrs: &[]storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
-			want:   storage.PostgresParameters{AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
+			update: postgresCmd{AllowedCidrs: &[]meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
+			want:   storage.PostgresParameters{AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
 		},
 		{
 			name:   "allowedCIDRs-set-initially",
-			create: storage.PostgresParameters{AllowedCIDRs: []storage.IPv4CIDR{"192.168.0.1/24"}},
-			update: postgresCmd{AllowedCidrs: &[]storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
-			want:   storage.PostgresParameters{AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
+			create: storage.PostgresParameters{AllowedCIDRs: []meta.IPv4CIDR{"192.168.0.1/24"}},
+			update: postgresCmd{AllowedCidrs: &[]meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
+			want:   storage.PostgresParameters{AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
 		},
 		{
 			name:   "multi-update",
-			create: storage.PostgresParameters{AllowedCIDRs: []storage.IPv4CIDR{"0.0.0.0/0"}},
+			create: storage.PostgresParameters{AllowedCIDRs: []meta.IPv4CIDR{"0.0.0.0/0"}},
 			update: postgresCmd{MachineType: ptr.To(infra.MachineType("nine-standard-1"))},
-			want:   storage.PostgresParameters{MachineType: infra.MachineType("nine-standard-1"), AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
+			want:   storage.PostgresParameters{MachineType: infra.MachineType("nine-standard-1"), AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
 		},
 	}
 	for _, tt := range tests {

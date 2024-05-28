@@ -6,6 +6,7 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
+	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/file"
@@ -15,7 +16,7 @@ import (
 type mySQLCmd struct {
 	Name                  string                                  `arg:"" default:"" help:"Name of the MySQL instance to update."`
 	MachineType           *infra.MachineType                      `placeholder:"${mysql_machine_default}" help:"Defines the sizing for a particular MySQL instance. Available types: ${mysql_machine_types}"`
-	AllowedCidrs          *[]storage.IPv4CIDR                     `placeholder:"0.0.0.0/0" help:"Specifies the IP addresses allowed to connect to the instance." `
+	AllowedCidrs          *[]meta.IPv4CIDR                        `placeholder:"0.0.0.0/0" help:"Specifies the IP addresses allowed to connect to the instance." `
 	SSHKeys               []storage.SSHKey                        `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups."`
 	SSHKeysFile           string                                  `help:"Path to a file containing a list of SSH public keys (see above), separated by newlines."`
 	SQLMode               *[]storage.MySQLMode                    `placeholder:"\"MODE1, MODE2, ...\"" help:"Configures the sql_mode setting. Modes affect the SQL syntax MySQL supports and the data validation checks it performs. Defaults to: ${mysql_mode}"`
