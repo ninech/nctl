@@ -19,7 +19,7 @@ type keyValueStoreCmd struct {
 	Location        string                               `default:"nine-es34" help:"Location where the KeyValueStore instance is created."`
 	MemorySize      string                               `help:"MemorySize configures KeyValueStore to use a specified amount of memory for the data set." placeholder:"1Gi"`
 	MaxMemoryPolicy storage.KeyValueStoreMaxMemoryPolicy `help:"MaxMemoryPolicy specifies the exact behavior KeyValueStore follows when the maxmemory limit is reached." placeholder:"allkeys-lru"`
-	AllowedCidrs    []storage.IPv4CIDR                   `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance." placeholder:"0.0.0.0/0"`
+	AllowedCidrs    []meta.IPv4CIDR                      `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance." placeholder:"0.0.0.0/0"`
 	Wait            bool                                 `default:"true" help:"Wait until KeyValueStore is created."`
 	WaitTimeout     time.Duration                        `default:"600s" help:"Duration to wait for KeyValueStore getting ready. Only relevant if --wait is set."`
 }

@@ -13,6 +13,7 @@ type Cmd struct {
 	Config              configCmd        `cmd:"" group:"deplo.io" name:"config"  help:"Update an existing deplo.io Project Configuration. (Beta - requires access)"`
 	Project             projectCmd       `cmd:"" group:"management.nine.ch" name:"project"  help:"Update an existing Project"`
 	MySQL               mySQLCmd         `cmd:"" group:"storage.nine.ch" name:"mysql" help:"Update an existing MySQL instance."`
+	Postgres            postgresCmd      `cmd:"" group:"storage.nine.ch" name:"postgres" help:"Update an existing PostgreSQL instance."`
 	KeyValueStore       keyValueStoreCmd `cmd:"" group:"storage.nine.ch" name:"keyvaluestore" aliases:"kvs" help:"Update an existing KeyValueStore instance"`
 	CloudVirtualMachine cloudVMCmd       `cmd:"" group:"infrastructure.nine.ch" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Update a CloudVM."`
 }

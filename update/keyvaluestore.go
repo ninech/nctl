@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	kresource "k8s.io/apimachinery/pkg/api/resource"
@@ -15,7 +16,7 @@ type keyValueStoreCmd struct {
 	Name            string                                `arg:"" default:"" help:"Name of the KeyValueStore instance to update."`
 	MemorySize      *string                               `help:"MemorySize configures KeyValueStore to use a specified amount of memory for the data set." placeholder:"1Gi"`
 	MaxMemoryPolicy *storage.KeyValueStoreMaxMemoryPolicy `help:"MaxMemoryPolicy specifies the exact behavior KeyValueStore follows when the maxmemory limit is reached." placeholder:"allkeys-lru"`
-	AllowedCidrs    *[]storage.IPv4CIDR                   `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance." placeholder:"0.0.0.0/0"`
+	AllowedCidrs    *[]meta.IPv4CIDR                      `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance." placeholder:"0.0.0.0/0"`
 }
 
 func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client) error {

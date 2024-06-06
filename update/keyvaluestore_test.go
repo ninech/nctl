@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
@@ -61,22 +62,22 @@ func TestKeyValueStore(t *testing.T) {
 		{
 			"allowedCIDRs",
 			storage.KeyValueStoreParameters{},
-			keyValueStoreCmd{AllowedCidrs: &[]storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
-			storage.KeyValueStoreParameters{AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
+			keyValueStoreCmd{AllowedCidrs: &[]meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
+			storage.KeyValueStoreParameters{AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
 			false,
 		},
 		{
 			"allowedCIDRs",
-			storage.KeyValueStoreParameters{AllowedCIDRs: []storage.IPv4CIDR{"192.168.0.1/24"}},
-			keyValueStoreCmd{AllowedCidrs: &[]storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
-			storage.KeyValueStoreParameters{AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
+			storage.KeyValueStoreParameters{AllowedCIDRs: []meta.IPv4CIDR{"192.168.0.1/24"}},
+			keyValueStoreCmd{AllowedCidrs: &[]meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
+			storage.KeyValueStoreParameters{AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
 			false,
 		},
 		{
 			"allowedCIDRs",
-			storage.KeyValueStoreParameters{AllowedCIDRs: []storage.IPv4CIDR{"0.0.0.0/0"}},
+			storage.KeyValueStoreParameters{AllowedCIDRs: []meta.IPv4CIDR{"0.0.0.0/0"}},
 			keyValueStoreCmd{MemorySize: ptr.To("1G")},
-			storage.KeyValueStoreParameters{MemorySize: memorySize("1G"), AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
+			storage.KeyValueStoreParameters{MemorySize: memorySize("1G"), AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
 			false,
 		},
 	}

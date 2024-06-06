@@ -590,6 +590,10 @@ github.com/ninech/apis v0.0.0-20240514124255-f0f5402eea20 h1:QMIxpbxHDjyAXn24K1j
 github.com/ninech/apis v0.0.0-20240514124255-f0f5402eea20/go.mod h1:6lFCwHqvcTFZvJ6zY0rxaPIoKc0CX9sHhtH/nyo/5is=
 github.com/ninech/apis v0.0.0-20240521070742-7162e783d4de h1:UWX/X1Gc0AAx9vr1GOMb9ZBLsB43DooI+SyZMcFHAkE=
 github.com/ninech/apis v0.0.0-20240521070742-7162e783d4de/go.mod h1:6lFCwHqvcTFZvJ6zY0rxaPIoKc0CX9sHhtH/nyo/5is=
+github.com/ninech/apis v0.0.0-20240604065453-1a4b503198d6 h1:pLpF8VsnBVqovY3wGxU8LQO8scEn32Lsc9zoqRY3jbs=
+github.com/ninech/apis v0.0.0-20240604065453-1a4b503198d6/go.mod h1:6lFCwHqvcTFZvJ6zY0rxaPIoKc0CX9sHhtH/nyo/5is=
+github.com/ninech/apis v0.0.0-20240605094855-a5b7bb13f4d9 h1:aiBI5cgyYhajoSIP2n7fSNqjgniSFKxccy6EsPrUq/E=
+github.com/ninech/apis v0.0.0-20240605094855-a5b7bb13f4d9/go.mod h1:6lFCwHqvcTFZvJ6zY0rxaPIoKc0CX9sHhtH/nyo/5is=
 github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
 github.com/oklog/ulid v1.3.1 h1:EGfNDEx6MqHz8B3uNV6QAib1UR2Lm97sHi3ocA6ESJ4=

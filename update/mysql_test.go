@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
+	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
@@ -78,20 +79,20 @@ func TestMySQL(t *testing.T) {
 		},
 		{
 			name:   "allowedCIDRs-nothing-set-initially",
-			update: mySQLCmd{AllowedCidrs: &[]storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
-			want:   storage.MySQLParameters{AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
+			update: mySQLCmd{AllowedCidrs: &[]meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
+			want:   storage.MySQLParameters{AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
 		},
 		{
 			name:   "allowedCIDRs-set-initially",
-			create: storage.MySQLParameters{AllowedCIDRs: []storage.IPv4CIDR{"192.168.0.1/24"}},
-			update: mySQLCmd{AllowedCidrs: &[]storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
-			want:   storage.MySQLParameters{AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
+			create: storage.MySQLParameters{AllowedCIDRs: []meta.IPv4CIDR{"192.168.0.1/24"}},
+			update: mySQLCmd{AllowedCidrs: &[]meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
+			want:   storage.MySQLParameters{AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
 		},
 		{
 			name:   "multi-update",
-			create: storage.MySQLParameters{AllowedCIDRs: []storage.IPv4CIDR{"0.0.0.0/0"}},
+			create: storage.MySQLParameters{AllowedCIDRs: []meta.IPv4CIDR{"0.0.0.0/0"}},
 			update: mySQLCmd{MachineType: ptr.To(infra.MachineType("nine-standard-1"))},
-			want:   storage.MySQLParameters{MachineType: infra.MachineType("nine-standard-1"), AllowedCIDRs: []storage.IPv4CIDR{storage.IPv4CIDR("0.0.0.0/0")}},
+			want:   storage.MySQLParameters{MachineType: infra.MachineType("nine-standard-1"), AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
 		},
 	}
 	for _, tt := range tests {
