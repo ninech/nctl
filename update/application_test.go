@@ -86,7 +86,9 @@ func TestApplication(t *testing.T) {
 		"change port": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				Name: ptr.To(existingApp.Name),
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
 				Port: ptr.To(int32(1234)),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
@@ -96,7 +98,9 @@ func TestApplication(t *testing.T) {
 		"port is unchanged when updating unrelated field": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				Name: ptr.To(existingApp.Name),
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
 				Size: ptr.To("newsize"),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
@@ -107,7 +111,9 @@ func TestApplication(t *testing.T) {
 		"all field updates": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				Name: ptr.To(existingApp.Name),
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
 				Git: &gitConfig{
 					URL:      ptr.To("https://newgit.example.org"),
 					SubPath:  ptr.To("new/path"),
@@ -148,7 +154,9 @@ func TestApplication(t *testing.T) {
 		"reset env variable": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				Name:      ptr.To(existingApp.Name),
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
 				DeleteEnv: &[]string{"foo"},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
@@ -159,8 +167,10 @@ func TestApplication(t *testing.T) {
 		"change multiple env variables at once": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				Name: ptr.To(existingApp.Name),
-				Env:  map[string]string{"bar1": "zoo", "bar2": "foo"},
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
+				Env: map[string]string{"bar1": "zoo", "bar2": "foo"},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				assert.Contains(t, updated.Spec.ForProvider.Config.Env, apps.EnvVar{Name: "bar1", Value: "zoo"})
@@ -171,7 +181,9 @@ func TestApplication(t *testing.T) {
 		"reset build env variable": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				Name:           ptr.To(existingApp.Name),
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
 				DeleteBuildEnv: &[]string{"BP_ENVIRONMENT_VARIABLE"},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
@@ -186,7 +198,9 @@ func TestApplication(t *testing.T) {
 				Password: ptr.To("some-password"),
 			},
 			cmd: applicationCmd{
-				Name: ptr.To(existingApp.Name),
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
 				Git: &gitConfig{
 					Username: ptr.To("new-user"),
 					Password: ptr.To("new-pass"),
@@ -217,7 +231,9 @@ func TestApplication(t *testing.T) {
 				SSHPrivateKey: ptr.To("fakekey"),
 			},
 			cmd: applicationCmd{
-				Name: ptr.To(existingApp.Name),
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
 				Git: &gitConfig{
 					SSHPrivateKey: &dummyRSAKey,
 				},
@@ -244,7 +260,9 @@ func TestApplication(t *testing.T) {
 			orig:    existingApp,
 			gitAuth: nil,
 			cmd: applicationCmd{
-				Name: ptr.To(existingApp.Name),
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
 				Git: &gitConfig{
 					Username: ptr.To("new-user"),
 					Password: ptr.To("new-pass"),
@@ -275,7 +293,9 @@ func TestApplication(t *testing.T) {
 				SSHPrivateKey: ptr.To("fakekey"),
 			},
 			cmd: applicationCmd{
-				Name: ptr.To(existingApp.Name),
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
 				Git: &gitConfig{
 					URL: ptr.To("https://newgit.example.org"),
 				},
@@ -307,7 +327,9 @@ func TestApplication(t *testing.T) {
 				SSHPrivateKey: ptr.To("fakekey"),
 			},
 			cmd: applicationCmd{
-				Name: ptr.To(existingApp.Name),
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
 				Git: &gitConfig{
 					URL: ptr.To("https://newgit.example.org"),
 				},
@@ -333,7 +355,9 @@ func TestApplication(t *testing.T) {
 		"retry build": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				Name:       ptr.To(existingApp.Name),
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
 				RetryBuild: ptr.To(true),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
@@ -343,7 +367,9 @@ func TestApplication(t *testing.T) {
 		"do not retry build": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				Name:       ptr.To(existingApp.Name),
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
 				RetryBuild: ptr.To(false),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
@@ -353,7 +379,9 @@ func TestApplication(t *testing.T) {
 		"disabling the git repo check works": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				Name: ptr.To(existingApp.Name),
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
 				Git: &gitConfig{
 					URL: ptr.To("https://newgit.example.org"),
 				},
@@ -372,7 +400,9 @@ func TestApplication(t *testing.T) {
 		"an error on the git repo check will lead to an error shown to the user": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				Name: ptr.To(existingApp.Name),
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
 				Git: &gitConfig{
 					URL: ptr.To("https://newgit.example.org"),
 				},
@@ -388,7 +418,9 @@ func TestApplication(t *testing.T) {
 		"specifying a non existing branch/tag will be detected": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				Name: ptr.To(existingApp.Name),
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
 				Git: &gitConfig{
 					URL:      ptr.To("https://newgit.example.org"),
 					Revision: ptr.To("not-existent"),
@@ -412,7 +444,9 @@ func TestApplication(t *testing.T) {
 		"defaulting to HTTPS when not specifying a scheme in a git URL works": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				Name: ptr.To(existingApp.Name),
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
 				Git: &gitConfig{
 					URL:      ptr.To("github.com/ninech/new-repo"),
 					Revision: ptr.To("main"),

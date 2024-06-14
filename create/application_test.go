@@ -76,13 +76,15 @@ func TestApplication(t *testing.T) {
 	}{
 		"without git auth": {
 			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Wait: false,
+					Name: "custom-name",
+				},
 				Git: gitConfig{
 					URL:      "https://github.com/ninech/doesnotexist.git",
 					SubPath:  "/my/app",
 					Revision: "superbug",
 				},
-				Wait:                false,
-				Name:                "custom-name",
 				Size:                ptr.To("mini"),
 				Hosts:               []string{"custom.example.org", "custom2.example.org"},
 				Port:                ptr.To(int32(1337)),
@@ -114,8 +116,10 @@ func TestApplication(t *testing.T) {
 		},
 		"with basic auth": {
 			cmd: applicationCmd{
-				Wait:                false,
-				Name:                "basic-auth",
+				resourceCmd: resourceCmd{
+					Wait: false,
+					Name: "basic-auth",
+				},
 				Size:                ptr.To("mini"),
 				BasicAuth:           ptr.To(true),
 				SkipRepoAccessCheck: true,
@@ -133,8 +137,10 @@ func TestApplication(t *testing.T) {
 					Username: ptr.To("deploy"),
 					Password: ptr.To("hunter2"),
 				},
-				Wait:                false,
-				Name:                "user-pass-auth",
+				resourceCmd: resourceCmd{
+					Wait: false,
+					Name: "user-pass-auth",
+				},
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
@@ -155,8 +161,10 @@ func TestApplication(t *testing.T) {
 					URL:           "https://github.com/ninech/doesnotexist.git",
 					SSHPrivateKey: &dummyRSAKey,
 				},
-				Wait:                false,
-				Name:                "ssh-key-auth",
+				resourceCmd: resourceCmd{
+					Wait: false,
+					Name: "ssh-key-auth",
+				},
 				Size:                ptr.To("mini"),
 				SkipRepoAccessCheck: true,
 			},
@@ -177,8 +185,10 @@ func TestApplication(t *testing.T) {
 					URL:           "https://github.com/ninech/doesnotexist.git",
 					SSHPrivateKey: &dummyED25519Key,
 				},
-				Wait:                false,
-				Name:                "ssh-key-auth-ed25519",
+				resourceCmd: resourceCmd{
+					Wait: false,
+					Name: "ssh-key-auth-ed25519",
+				},
 				Size:                ptr.To("mini"),
 				SkipRepoAccessCheck: true,
 			},
@@ -199,8 +209,10 @@ func TestApplication(t *testing.T) {
 					URL:                   "https://github.com/ninech/doesnotexist.git",
 					SSHPrivateKeyFromFile: ptr.To(filenameRSAKey),
 				},
-				Wait:                false,
-				Name:                "ssh-key-auth-from-file",
+				resourceCmd: resourceCmd{
+					Wait: false,
+					Name: "ssh-key-auth-from-file",
+				},
 				Size:                ptr.To("mini"),
 				SkipRepoAccessCheck: true,
 			},
@@ -221,8 +233,10 @@ func TestApplication(t *testing.T) {
 					URL:                   "https://github.com/ninech/doesnotexist.git",
 					SSHPrivateKeyFromFile: ptr.To(filenameED25519Key),
 				},
-				Wait:                false,
-				Name:                "ssh-key-auth-from-file-ed25519",
+				resourceCmd: resourceCmd{
+					Wait: false,
+					Name: "ssh-key-auth-from-file-ed25519",
+				},
 				Size:                ptr.To("mini"),
 				SkipRepoAccessCheck: true,
 			},
@@ -243,8 +257,10 @@ func TestApplication(t *testing.T) {
 					URL:           "https://github.com/ninech/doesnotexist.git",
 					SSHPrivateKey: ptr.To("not valid"),
 				},
-				Wait:                false,
-				Name:                "ssh-key-auth-non-valid",
+				resourceCmd: resourceCmd{
+					Wait: false,
+					Name: "ssh-key-auth-non-valid",
+				},
 				Size:                ptr.To("mini"),
 				SkipRepoAccessCheck: true,
 			},
@@ -255,8 +271,10 @@ func TestApplication(t *testing.T) {
 				Git: gitConfig{
 					URL: "https://github.com/ninech/doesnotexist.git",
 				},
-				Wait:                false,
-				Name:                "deploy-job-empty-command",
+				resourceCmd: resourceCmd{
+					Wait: false,
+					Name: "deploy-job-empty-command",
+				},
 				Size:                ptr.To("mini"),
 				DeployJob:           deployJob{Command: "", Name: "print-date", Retries: 2, Timeout: time.Minute},
 				SkipRepoAccessCheck: true,
@@ -270,8 +288,10 @@ func TestApplication(t *testing.T) {
 				Git: gitConfig{
 					URL: "https://github.com/ninech/doesnotexist.git",
 				},
-				Wait:                false,
-				Name:                "deploy-job-empty-name",
+				resourceCmd: resourceCmd{
+					Wait: false,
+					Name: "deploy-job-empty-name",
+				},
 				Size:                ptr.To("mini"),
 				DeployJob:           deployJob{Command: "date", Name: "", Retries: 2, Timeout: time.Minute},
 				SkipRepoAccessCheck: true,
@@ -287,8 +307,10 @@ func TestApplication(t *testing.T) {
 					SubPath:  "/my/app",
 					Revision: "superbug",
 				},
-				Wait: false,
-				Name: "git-information-happy-path",
+				resourceCmd: resourceCmd{
+					Wait: false,
+					Name: "git-information-happy-path",
+				},
 				Size: ptr.To("mini"),
 			},
 			gitInformationServiceResponse: test.GitInformationServiceResponse{
@@ -321,8 +343,10 @@ func TestApplication(t *testing.T) {
 					SubPath:  "/my/app",
 					Revision: "superbug",
 				},
-				Wait: false,
-				Name: "git-information-errors",
+				resourceCmd: resourceCmd{
+					Wait: false,
+					Name: "git-information-errors",
+				},
 				Size: ptr.To("mini"),
 			},
 			gitInformationServiceResponse: test.GitInformationServiceResponse{
@@ -340,8 +364,10 @@ func TestApplication(t *testing.T) {
 					SubPath:  "/my/app",
 					Revision: "notexistent",
 				},
-				Wait: false,
-				Name: "git-information-unknown-revision",
+				resourceCmd: resourceCmd{
+					Wait: false,
+					Name: "git-information-unknown-revision",
+				},
 				Size: ptr.To("mini"),
 			},
 			gitInformationServiceResponse: test.GitInformationServiceResponse{
@@ -367,8 +393,10 @@ func TestApplication(t *testing.T) {
 					SubPath:  "/my/app",
 					Revision: "notexistent",
 				},
-				Wait: false,
-				Name: "git-information-unknown-revision",
+				resourceCmd: resourceCmd{
+					Wait: false,
+					Name: "git-information-unknown-revision",
+				},
 				Size: ptr.To("mini"),
 			},
 			gitInformationServiceResponse: test.GitInformationServiceResponse{
@@ -384,8 +412,10 @@ func TestApplication(t *testing.T) {
 					SubPath:  "/my/app",
 					Revision: "main",
 				},
-				Wait: false,
-				Name: "git-information-update-url-to-https",
+				resourceCmd: resourceCmd{
+					Wait: false,
+					Name: "git-information-update-url-to-https",
+				},
 				Size: ptr.To("mini"),
 			},
 			gitInformationServiceResponse: test.GitInformationServiceResponse{
@@ -438,9 +468,11 @@ func TestApplication(t *testing.T) {
 
 func TestApplicationWait(t *testing.T) {
 	cmd := applicationCmd{
-		Wait:                true,
-		WaitTimeout:         time.Second * 5,
-		Name:                "some-name",
+		resourceCmd: resourceCmd{
+			Wait:        true,
+			WaitTimeout: time.Second * 5,
+			Name:        "some-name",
+		},
 		BasicAuth:           ptr.To(true),
 		SkipRepoAccessCheck: true,
 	}
@@ -578,9 +610,11 @@ func TestApplicationWait(t *testing.T) {
 
 func TestApplicationBuildFail(t *testing.T) {
 	cmd := applicationCmd{
-		Wait:                true,
-		WaitTimeout:         time.Second * 5,
-		Name:                "some-name",
+		resourceCmd: resourceCmd{
+			Wait:        true,
+			WaitTimeout: time.Second * 5,
+			Name:        "some-name",
+		},
 		SkipRepoAccessCheck: true,
 	}
 	project := "default"

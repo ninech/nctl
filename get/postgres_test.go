@@ -51,7 +51,7 @@ func TestPostgres(t *testing.T) {
 				"test1": {MachineType: infra.MachineType("nine-standard-1")},
 				"test2": {MachineType: infra.MachineType("nine-standard-2")},
 			},
-			get:         postgresCmd{Name: "test1"},
+			get:         postgresCmd{resourceCmd: resourceCmd{Name: "test1"}},
 			wantContain: []string{"test1", "nine-standard-1"},
 		},
 		{
@@ -60,7 +60,7 @@ func TestPostgres(t *testing.T) {
 				"test1": {MachineType: infra.MachineType("nine-standard-1")},
 				"test2": {MachineType: infra.MachineType("nine-standard-2")},
 			},
-			get:         postgresCmd{Name: "test2", PrintPassword: true},
+			get:         postgresCmd{resourceCmd: resourceCmd{Name: "test2"}, PrintPassword: true},
 			wantContain: []string{"test2-topsecret"},
 		},
 	}

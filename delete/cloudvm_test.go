@@ -14,10 +14,12 @@ import (
 
 func TestCloudVM(t *testing.T) {
 	cmd := cloudVMCmd{
-		Name:        "test",
-		Force:       true,
-		Wait:        false,
-		WaitTimeout: time.Second,
+		resourceCmd: resourceCmd{
+			Name:        "test",
+			Force:       true,
+			Wait:        false,
+			WaitTimeout: time.Second,
+		},
 	}
 
 	cloudvm := test.CloudVirtualMachine("test", "default", "nine-es34", v1alpha1.VirtualMachinePowerState("on"))

@@ -12,8 +12,8 @@ import (
 )
 
 type keyValueStoreCmd struct {
-	Name       string `arg:"" help:"Name of the KeyValueStore Instance to get. If omitted all in the project will be listed." default:""`
-	PrintToken bool   `help:"Print the bearer token of the Account. Requires name to be set." default:"false"`
+	resourceCmd
+	PrintToken bool `help:"Print the bearer token of the Account. Requires name to be set." default:"false"`
 
 	out io.Writer
 }

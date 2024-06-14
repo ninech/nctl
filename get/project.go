@@ -13,8 +13,8 @@ import (
 )
 
 type projectCmd struct {
-	Name string `arg:"" help:"Name of the project to get. If omitted all projects will be listed." default:""`
-	out  io.Writer
+	resourceCmd
+	out io.Writer
 }
 
 func (proj *projectCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {

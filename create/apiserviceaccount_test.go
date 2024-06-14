@@ -16,9 +16,11 @@ func TestAPIServiceAccount(t *testing.T) {
 	}
 
 	cmd := apiServiceAccountCmd{
-		Name:        "test",
-		Wait:        false,
-		WaitTimeout: time.Second,
+		resourceCmd: resourceCmd{
+			Name:        "test",
+			Wait:        false,
+			WaitTimeout: time.Second,
+		},
 	}
 
 	asa := cmd.newAPIServiceAccount("default")

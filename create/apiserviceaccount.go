@@ -2,7 +2,6 @@ package create
 
 import (
 	"context"
-	"time"
 
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	iam "github.com/ninech/apis/iam/v1alpha1"
@@ -11,9 +10,7 @@ import (
 )
 
 type apiServiceAccountCmd struct {
-	Name        string        `arg:"" default:"" help:"Name of the API Service Account. A random name is generated if omitted."`
-	Wait        bool          `default:"true" help:"Wait until API Service Account is fully created."`
-	WaitTimeout time.Duration `default:"10s" help:"Duration to wait for API Service Account getting ready. Only relevant if wait is set."`
+	resourceCmd
 }
 
 func (asa *apiServiceAccountCmd) Run(ctx context.Context, client *api.Client) error {

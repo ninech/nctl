@@ -12,9 +12,9 @@ import (
 )
 
 type mySQLCmd struct {
-	Name          string `arg:"" help:"Name of the MySQL instance to get. If omitted all in the project will be listed." default:""`
-	PrintPassword bool   `help:"Print the password of the MySQL User. Requires name to be set." xor:"print"`
-	PrintUser     bool   `help:"Print the name of the MySQL User. Requires name to be set." xor:"print"`
+	resourceCmd
+	PrintPassword bool `help:"Print the password of the MySQL User. Requires name to be set." xor:"print"`
+	PrintUser     bool `help:"Print the name of the MySQL User. Requires name to be set." xor:"print"`
 
 	out io.Writer
 }

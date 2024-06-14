@@ -3,7 +3,6 @@ package delete
 import (
 	"context"
 	"fmt"
-	"time"
 
 	iam "github.com/ninech/apis/iam/v1alpha1"
 	"github.com/ninech/nctl/api"
@@ -11,10 +10,7 @@ import (
 )
 
 type apiServiceAccountCmd struct {
-	Name        string        `arg:"" help:"Name of the API Service Account."`
-	Force       bool          `default:"false" help:"Do not ask for confirmation of deletion."`
-	Wait        bool          `default:"true" help:"Wait until API Service Account is fully deleted"`
-	WaitTimeout time.Duration `default:"10s" help:"Duration to wait for the deletion. Only relevant if wait is set."`
+	resourceCmd
 }
 
 func (asa *apiServiceAccountCmd) Run(ctx context.Context, client *api.Client) error {

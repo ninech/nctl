@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -20,7 +19,7 @@ import (
 )
 
 type postgresCmd struct {
-	Name             string                  `arg:"" default:"" help:"Name of the PostgreSQL instance. A random name is generated if omitted."`
+	resourceCmd
 	Location         string                  `placeholder:"${postgres_location_default}" help:"Location where the PostgreSQL instance is created. Available locations are: ${postgres_location_options}"`
 	MachineType      infra.MachineType       `placeholder:"${postgres_machine_default}" help:"Defines the sizing for a particular PostgreSQL instance. Available types: ${postgres_machine_types}"`
 	AllowedCidrs     []meta.IPv4CIDR         `placeholder:"0.0.0.0/0" help:"Specifies the IP addresses allowed to connect to the instance." `
@@ -28,8 +27,6 @@ type postgresCmd struct {
 	SSHKeysFile      string                  `help:"Path to a file containing a list of SSH public keys (see above), separated by newlines."`
 	PostgresVersion  storage.PostgresVersion `placeholder:"${postgres_version_default}" help:"Release version with which the PostgreSQL instance is created"`
 	KeepDailyBackups *int                    `placeholder:"${postgres_backup_retention_days}" help:"Number of daily database backups to keep. Note that setting this to 0, backup will be disabled and existing dumps deleted immediately."`
-	Wait             bool                    `default:"true" help:"Wait until PostgreSQL instance is created."`
-	WaitTimeout      time.Duration           `default:"25m" help:"Duration to wait for PostgreSQL getting ready. Only relevant if --wait is set."`
 }
 
 func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client) error {

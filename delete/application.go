@@ -3,7 +3,6 @@ package delete
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/hashicorp/go-multierror"
 	apps "github.com/ninech/apis/apps/v1alpha1"
@@ -16,10 +15,7 @@ import (
 )
 
 type applicationCmd struct {
-	Name        string        `arg:"" help:"Name of the Application."`
-	Force       bool          `default:"false" help:"Do not ask for confirmation of deletion."`
-	Wait        bool          `default:"true" help:"Wait until Application is fully deleted."`
-	WaitTimeout time.Duration `default:"1m" help:"Duration to wait for the deletion. Only relevant if wait is set."`
+	resourceCmd
 }
 
 func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {

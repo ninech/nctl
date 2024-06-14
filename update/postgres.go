@@ -14,7 +14,7 @@ import (
 )
 
 type postgresCmd struct {
-	Name             string             `arg:"" default:"" help:"Name of the PostgreSQL instance to update."`
+	resourceCmd
 	MachineType      *infra.MachineType `placeholder:"${postgres_machine_default}" help:"Defines the sizing for a particular PostgreSQL instance. Available types: ${postgres_machine_types}"`
 	AllowedCidrs     *[]meta.IPv4CIDR   `placeholder:"0.0.0.0/0" help:"Specifies the IP addresses allowed to connect to the instance." `
 	SSHKeys          []storage.SSHKey   `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups."`

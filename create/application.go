@@ -32,9 +32,7 @@ import (
 // note: when adding/changing fields here also make sure to carry it over to
 // update/application.go.
 type applicationCmd struct {
-	Name                     string            `arg:"" default:"" help:"Name of the app. A random name is generated if omitted."`
-	Wait                     bool              `default:"true" help:"Wait until the app is fully created."`
-	WaitTimeout              time.Duration     `default:"15m" help:"Duration to wait for the app getting ready. Only relevant if wait is set."`
+	resourceCmd
 	Git                      gitConfig         `embed:"" prefix:"git-"`
 	Size                     *string           `help:"Size of the app (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
 	Port                     *int32            `help:"Port the app is listening on (defaults to ${app_default_port})." placeholder:"${app_default_port}"`

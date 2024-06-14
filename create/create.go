@@ -33,6 +33,12 @@ type Cmd struct {
 	CloudVirtualMachine cloudVMCmd           `cmd:"" group:"infrastructure.nine.ch" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Create a new CloudVM."`
 }
 
+type resourceCmd struct {
+	Name        string        `arg:"" help:"Name of the new resource. A random name is generated if omitted." default:""`
+	Wait        bool          `default:"true" help:"Wait until resource is fully created."`
+	WaitTimeout time.Duration `default:"30m" help:"Duration to wait for resource getting ready. Only relevant if wait is set."`
+}
+
 // resultFunc is the function called on a watch event during creation. It
 // should return true whenever the wait can be considered done.
 type resultFunc func(watch.Event) (bool, error)

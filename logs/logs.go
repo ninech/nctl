@@ -18,6 +18,10 @@ type Cmd struct {
 	Builds       buildCmd       `cmd:"" group:"deplo.io" name:"build" help:"Get deplo.io Build logs. (Beta - requires access)"`
 }
 
+type resourceCmd struct {
+	Name string `arg:"" help:"Name of the resource." default:""`
+}
+
 type logsCmd struct {
 	Follow bool          `help:"Follow the logs by live tailing." short:"f"`
 	Lines  int           `help:"Amount of lines to output" default:"20" short:"l"`

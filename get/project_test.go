@@ -125,8 +125,10 @@ dev     <none>
 
 			buf := &bytes.Buffer{}
 			cmd := projectCmd{
-				out:  buf,
-				Name: testCase.name,
+				resourceCmd: resourceCmd{
+					Name: testCase.name,
+				},
+				out: buf,
 			}
 
 			if err := cmd.Run(ctx, apiClient, get); err != nil {
@@ -145,7 +147,9 @@ func TestProjectsConfigErrors(t *testing.T) {
 		t.Fatal(err)
 	}
 	cmd := projectCmd{
-		Name: "testproject",
+		resourceCmd: resourceCmd{
+			Name: "testproject",
+		},
 	}
 	get := &Cmd{
 		Output: full,

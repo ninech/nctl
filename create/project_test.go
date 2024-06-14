@@ -25,10 +25,12 @@ func TestProjects(t *testing.T) {
 	defer os.Remove(kubeconfig)
 
 	cmd := projectCmd{
-		Name:        projectName,
+		resourceCmd: resourceCmd{
+			Name:        projectName,
+			Wait:        false,
+			WaitTimeout: time.Second,
+		},
 		DisplayName: "Some Display Name",
-		Wait:        false,
-		WaitTimeout: time.Second,
 	}
 
 	if err := cmd.Run(ctx, apiClient); err != nil {
@@ -51,9 +53,11 @@ func TestProjectsConfigErrors(t *testing.T) {
 		t.Fatal(err)
 	}
 	cmd := projectCmd{
-		Name:        "testproject",
-		Wait:        false,
-		WaitTimeout: time.Second,
+		resourceCmd: resourceCmd{
+			Name:        "testproject",
+			Wait:        false,
+			WaitTimeout: time.Second,
+		},
 	}
 	// there is no kubeconfig so we expect to fail
 	require.Error(t, cmd.Run(ctx, apiClient))

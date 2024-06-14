@@ -21,7 +21,7 @@ const BuildTrigger = "BUILD_TRIGGER"
 // all fields need to be pointers so we can detect if they have been set by
 // the user.
 type applicationCmd struct {
-	Name                     *string           `arg:"" help:"Name of the application."`
+	resourceCmd
 	Git                      *gitConfig        `embed:"" prefix:"git-"`
 	Size                     *string           `help:"Size of the app."`
 	Port                     *int32            `help:"Port the app is listening on."`
@@ -79,16 +79,9 @@ type deployJob struct {
 }
 
 func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
-	// as name is a required arg this should not actually happen when called
-	// through kong. But we still want to handle it in case this is called
-	// directly.
-	if cmd.Name == nil {
-		return fmt.Errorf("name of the app has to be set")
-	}
-
 	app := &apps.Application{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      *cmd.Name,
+			Name:      cmd.Name,
 			Namespace: client.Project,
 		},
 	}

@@ -13,10 +13,12 @@ import (
 
 func TestKeyValueStore(t *testing.T) {
 	cmd := keyValueStoreCmd{
-		Name:        "test",
-		Force:       true,
-		Wait:        false,
-		WaitTimeout: time.Second,
+		resourceCmd: resourceCmd{
+			Name:        "test",
+			Force:       true,
+			Wait:        false,
+			WaitTimeout: time.Second,
+		},
 	}
 
 	keyValueStore := test.KeyValueStore("test", "default", "nine-es34")

@@ -3,7 +3,6 @@ package delete
 import (
 	"context"
 	"fmt"
-	"time"
 
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
@@ -12,10 +11,7 @@ import (
 )
 
 type projectCmd struct {
-	Name        string        `arg:"" help:"Name of the Project."`
-	Force       bool          `default:"false" help:"Do not ask for confirmation of deletion."`
-	Wait        bool          `default:"true" help:"Wait until Project is fully deleted"`
-	WaitTimeout time.Duration `default:"5m" help:"Duration to wait for the deletion. Only relevant if wait is set."`
+	resourceCmd
 }
 
 func (proj *projectCmd) Run(ctx context.Context, client *api.Client) error {

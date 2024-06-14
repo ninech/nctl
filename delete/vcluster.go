@@ -3,7 +3,6 @@ package delete
 import (
 	"context"
 	"fmt"
-	"time"
 
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
@@ -12,10 +11,7 @@ import (
 )
 
 type vclusterCmd struct {
-	Name        string        `arg:"" help:"Name of the vcluster."`
-	Force       bool          `default:"false" help:"Do not ask for confirmation of deletion."`
-	Wait        bool          `default:"true" help:"Wait until vcluster is fully deleted"`
-	WaitTimeout time.Duration `default:"300s" help:"Duration to wait for the deletion. Only relevant if wait is set."`
+	resourceCmd
 }
 
 func (vc *vclusterCmd) Run(ctx context.Context, client *api.Client) error {
