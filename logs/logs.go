@@ -19,7 +19,7 @@ type Cmd struct {
 }
 
 type resourceCmd struct {
-	Name string `arg:"" help:"Name of the resource." default:""`
+	Name string `arg:"" predictor:"resource_name" help:"Name of the resource." default:""`
 }
 
 type logsCmd struct {

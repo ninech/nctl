@@ -106,7 +106,7 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	if !app.SkipRepoAccessCheck {
 		validator := &validation.RepositoryValidator{
 			GitInformationServiceURL: app.GitInformationServiceURL,
-			Token:                    client.Token,
+			Token:                    client.Token(),
 			Debug:                    app.Debug,
 		}
 		if err := validator.Validate(ctx, &newApp.Spec.ForProvider.Git.GitTarget, auth); err != nil {

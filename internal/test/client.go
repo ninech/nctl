@@ -7,6 +7,7 @@ import (
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/auth"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -22,6 +23,7 @@ func SetupClient(initObjs ...client.Object) (*api.Client, error) {
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjs...).Build()
 
 	return &api.Client{
+		Config:    &rest.Config{BearerToken: "fake"},
 		WithWatch: client, Project: "default",
 	}, nil
 }

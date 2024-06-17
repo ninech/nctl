@@ -20,13 +20,14 @@ import (
 	"github.com/ninech/nctl/get"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/logs"
+	"github.com/ninech/nctl/predictor"
 	"github.com/ninech/nctl/update"
 	"github.com/posener/complete"
 	"github.com/willabides/kongplete"
 )
 
 type flags struct {
-	Project        string           `help:"Limit commands to a specific project." short:"p"`
+	Project        string           `predictor:"resource_name" help:"Limit commands to a specific project." short:"p"`
 	APICluster     string           `help:"Context name of the API cluster." default:"nineapis.ch" env:"NCTL_API_CLUSTER"`
 	LogAPIAddress  string           `help:"Address of the deplo.io logging API server." default:"https://logs.deplo.io" env:"NCTL_LOG_ADDR"`
 	LogAPIInsecure bool             `help:"Don't verify TLS connection to the logging API server." hidden:"" default:"false" env:"NCTL_LOG_INSECURE"`
@@ -67,8 +68,24 @@ func main() {
 		kong.BindTo(ctx, (*context.Context)(nil)),
 	)
 
+	resourceNamePredictor := predictor.NewResourceName(func() (*api.Client, error) {
+		// for the resourcePredictor to use the correct APICluster, we need to
+		// call parse already. Note that this won't parse the flag for
+		// completion but it will work for the default and env.
+		_, _ = parser.Parse(os.Args[1:])
+		c, err := api.New(ctx, nctl.APICluster, nctl.Project)
+		if err != nil {
+			return nil, err
+		}
+
+		return c, nil
+	})
+
 	// completion handling
-	kongplete.Complete(parser, kongplete.WithPredictor("file", complete.PredictFiles("*")))
+	kongplete.Complete(parser,
+		kongplete.WithPredictor("file", complete.PredictFiles("*")),
+		kongplete.WithPredictor("resource_name", resourceNamePredictor),
+	)
 
 	kongCtx, err := parser.Parse(os.Args[1:])
 	if err != nil {

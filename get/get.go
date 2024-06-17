@@ -33,7 +33,7 @@ type Cmd struct {
 }
 
 type resourceCmd struct {
-	Name string `arg:"" help:"Name of the resource to get. If omitted all in the project will be listed." default:""`
+	Name string `arg:"" predictor:"resource_name" help:"Name of the resource to get. If omitted all in the project will be listed." default:""`
 }
 
 type output string
