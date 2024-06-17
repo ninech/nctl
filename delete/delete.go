@@ -26,7 +26,7 @@ type Cmd struct {
 }
 
 type resourceCmd struct {
-	Name        string        `arg:"" help:"Name of the resource to delete."`
+	Name        string        `arg:"" predictor:"resource_name" help:"Name of the resource to delete."`
 	Force       bool          `default:"false" help:"Do not ask for confirmation of deletion."`
 	Wait        bool          `default:"true" help:"Wait until resource is fully deleted"`
 	WaitTimeout time.Duration `default:"5m" help:"Duration to wait for the deletion. Only relevant if wait is set."`

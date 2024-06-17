@@ -13,12 +13,14 @@ import (
 	"github.com/ninech/nctl/internal/format"
 )
 
-type clustersCmd struct{}
+type clustersCmd struct {
+	resourceCmd
+}
 
 func (l *clustersCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
 	clusterList := &infrastructure.KubernetesClusterList{}
 
-	if err := get.list(ctx, client, clusterList); err != nil {
+	if err := get.list(ctx, client, clusterList, matchName(l.Name)); err != nil {
 		return err
 	}
 

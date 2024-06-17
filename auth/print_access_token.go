@@ -10,6 +10,6 @@ import (
 type PrintAccessTokenCmd struct{}
 
 func (o *PrintAccessTokenCmd) Run(ctx context.Context, client *api.Client) error {
-	fmt.Println(client.Token)
+	fmt.Println(client.Token())
 	return nil
 }
