@@ -39,9 +39,11 @@ func TestProject(t *testing.T) {
 		testCase := testCase
 		t.Run(name, func(t *testing.T) {
 			cmd := projectCmd{
-				Force: true,
-				Wait:  false,
-				Name:  testCase.name,
+				resourceCmd: resourceCmd{
+					Force: true,
+					Wait:  false,
+					Name:  testCase.name,
+				},
 			}
 
 			apiClient, err := test.SetupClient(testCase.projects...)
@@ -78,9 +80,11 @@ func TestProjectsConfigErrors(t *testing.T) {
 		t.Fatal(err)
 	}
 	cmd := projectCmd{
-		Force: true,
-		Wait:  false,
-		Name:  "test",
+		resourceCmd: resourceCmd{
+			Force: true,
+			Wait:  false,
+			Name:  "test",
+		},
 	}
 	// there is no kubeconfig so we expect to fail
 	require.Error(t, cmd.Run(ctx, apiClient))

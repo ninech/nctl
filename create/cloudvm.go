@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"time"
 
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
@@ -16,7 +15,7 @@ import (
 )
 
 type cloudVMCmd struct {
-	Name                string            `arg:"" default:"" help:"Name of the CloudVM instance. A random name is generated if omitted."`
+	resourceCmd
 	Location            string            `default:"nine-es34" help:"Location where the CloudVM instance is created."`
 	MachineType         string            `default:"" help:"The machine type defines the sizing for a particular CloudVM."`
 	Hostname            string            `default:"" help:"Hostname allows to set the hostname explicitly. If unset, the name of the resource will be used as the hostname. This does not affect the DNS name."`
@@ -28,8 +27,6 @@ type cloudVMCmd struct {
 	PublicKeysFromFiles []string          `default:"" predictor:"file" help:"SSH public key files that can be used to connect to the VM as root. The keys are expected to be in SSH format as defined in RFC4253. Immutable after creation."`
 	CloudConfig         string            `default:"" help:"CloudConfig allows to pass custom cloud config data (https://cloudinit.readthedocs.io/en/latest/topics/format.html#cloud-config-data) to the cloud VM. If a CloudConfig is passed, the PublicKey parameter is ignored. Immutable after creation."`
 	CloudConfigFromFile string            `default:"" predictor:"file" help:"CloudConfig via file. Has precedence over args. CloudConfig allows to pass custom cloud config data (https://cloudinit.readthedocs.io/en/latest/topics/format.html#cloud-config-data) to the cloud VM. If a CloudConfig is passed, the PublicKey parameter is ignored. Immutable after creation."`
-	Wait                bool              `default:"true" help:"Wait until CloudVM is created."`
-	WaitTimeout         time.Duration     `default:"600s" help:"Duration to wait for CloudVM getting ready. Only relevant if --wait is set."`
 }
 
 func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {

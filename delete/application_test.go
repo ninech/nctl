@@ -109,9 +109,11 @@ func TestApplication(t *testing.T) {
 		testCase := testCase
 		t.Run(name, func(t *testing.T) {
 			cmd := applicationCmd{
-				Force: true,
-				Wait:  false,
-				Name:  testCase.name,
+				resourceCmd: resourceCmd{
+					Force: true,
+					Wait:  false,
+					Name:  testCase.name,
+				},
 			}
 
 			scheme, err := api.NewScheme()

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
@@ -13,10 +12,8 @@ import (
 )
 
 type projectCmd struct {
-	Name        string        `arg:"" default:"" help:"Name of the project. A random name is generated if omitted."`
-	DisplayName string        `default:"" help:"Display Name of the project."`
-	Wait        bool          `default:"true" help:"Wait until the project was fully created."`
-	WaitTimeout time.Duration `default:"10m" help:"Duration to wait for project getting ready. Only relevant if wait is set."`
+	resourceCmd
+	DisplayName string `default:"" help:"Display Name of the project."`
 }
 
 func (proj *projectCmd) Run(ctx context.Context, client *api.Client) error {

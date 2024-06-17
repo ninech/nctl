@@ -14,7 +14,7 @@ import (
 )
 
 type cloudVMCmd struct {
-	Name                      string            `arg:"" help:"Name of the CloudVM instance to update."`
+	resourceCmd
 	MachineType               string            `placeholder:"nine-standard-1" help:"The machine type defines the sizing for a particular CloudVM."`
 	Hostname                  string            `placeholder:"" help:"Hostname allows to set the hostname explicitly. If unset, the name of the resource will be used as the hostname. This does not affect the DNS name."`
 	OS                        string            `placeholder:"ubuntu22.04" help:"OS which should be used to boot the VM."`

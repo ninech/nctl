@@ -2,7 +2,6 @@ package create
 
 import (
 	"context"
-	"time"
 
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
@@ -14,15 +13,13 @@ import (
 )
 
 type vclusterCmd struct {
-	Name              string        `arg:"" default:"" help:"Name of the vcluster. A random name is generated if omitted."`
-	Location          string        `default:"nine-es34" help:"Location where the vcluster is created."`
-	KubernetesVersion string        `default:"" help:"Kubernetes version to use. API default will be used if not specified."`
-	MinNodes          int           `default:"1" help:"Minimum amount of nodes."`
-	MaxNodes          int           `default:"1" help:"Maximum amount of nodes."`
-	MachineType       string        `default:"nine-standard-1" help:"Machine type to use for the nodes."`
-	NodePoolName      string        `default:"worker" help:"Name of the default node pool in the vcluster."`
-	Wait              bool          `default:"true" help:"Wait until vcluster is fully created."`
-	WaitTimeout       time.Duration `default:"300s" help:"Duration to wait for vcluster getting ready. Only relevant if wait is set."`
+	resourceCmd
+	Location          string `default:"nine-es34" help:"Location where the vcluster is created."`
+	KubernetesVersion string `default:"" help:"Kubernetes version to use. API default will be used if not specified."`
+	MinNodes          int    `default:"1" help:"Minimum amount of nodes."`
+	MaxNodes          int    `default:"1" help:"Maximum amount of nodes."`
+	MachineType       string `default:"nine-standard-1" help:"Machine type to use for the nodes."`
+	NodePoolName      string `default:"worker" help:"Name of the default node pool in the vcluster."`
 }
 
 func (vc *vclusterCmd) Run(ctx context.Context, client *api.Client) error {

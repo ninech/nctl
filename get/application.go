@@ -15,9 +15,9 @@ import (
 )
 
 type applicationsCmd struct {
-	Name                 string `arg:"" help:"Name of the Application to get. If omitted all in the project will be listed." default:""`
-	BasicAuthCredentials bool   `help:"Show the basic auth credentials of the application."`
-	DNS                  bool   `help:"Show the DNS details for custom hosts."`
+	resourceCmd
+	BasicAuthCredentials bool `help:"Show the basic auth credentials of the application."`
+	DNS                  bool `help:"Show the DNS details for custom hosts."`
 	out                  io.Writer
 }
 

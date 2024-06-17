@@ -3,7 +3,6 @@ package delete
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"k8s.io/apimachinery/pkg/types"
 
@@ -12,10 +11,7 @@ import (
 )
 
 type cloudVMCmd struct {
-	Name        string        `arg:"" help:"Name of the CloudVM resource."`
-	Force       bool          `default:"false" help:"Do not ask for confirmation of deletion."`
-	Wait        bool          `default:"true" help:"Wait until CloudVM is fully deleted."`
-	WaitTimeout time.Duration `default:"300s" help:"Duration to wait for the deletion. Only relevant if wait is set."`
+	resourceCmd
 }
 
 func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {

@@ -13,7 +13,7 @@ import (
 )
 
 type keyValueStoreCmd struct {
-	Name            string                                `arg:"" default:"" help:"Name of the KeyValueStore instance to update."`
+	resourceCmd
 	MemorySize      *string                               `help:"MemorySize configures KeyValueStore to use a specified amount of memory for the data set." placeholder:"1Gi"`
 	MaxMemoryPolicy *storage.KeyValueStoreMaxMemoryPolicy `help:"MaxMemoryPolicy specifies the exact behavior KeyValueStore follows when the maxmemory limit is reached." placeholder:"allkeys-lru"`
 	AllowedCidrs    *[]meta.IPv4CIDR                      `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance." placeholder:"0.0.0.0/0"`

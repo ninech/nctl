@@ -37,7 +37,7 @@ func TestProject(t *testing.T) {
 			orig:    existingProject,
 			project: projectName,
 			cmd: projectCmd{
-				Name:        projectName,
+				resourceCmd: resourceCmd{Name: projectName},
 				DisplayName: ptr.To("some display name"),
 			},
 			checkProject: func(t *testing.T, cmd projectCmd, orig, updated *management.Project) {

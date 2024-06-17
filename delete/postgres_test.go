@@ -13,10 +13,12 @@ import (
 
 func TestPostgres(t *testing.T) {
 	cmd := postgresCmd{
-		Name:        "test",
-		Force:       true,
-		Wait:        false,
-		WaitTimeout: time.Second,
+		resourceCmd: resourceCmd{
+			Name:        "test",
+			Force:       true,
+			Wait:        false,
+			WaitTimeout: time.Second,
+		},
 	}
 
 	postgres := test.Postgres("test", "default", "nine-es34")

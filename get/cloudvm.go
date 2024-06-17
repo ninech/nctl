@@ -11,8 +11,7 @@ import (
 )
 
 type cloudVMCmd struct {
-	Name string `arg:"" help:"Name of the CloudVirtualMachine Instance to get. If omitted all in the project will be listed." default:""`
-
+	resourceCmd
 	out io.Writer
 }
 

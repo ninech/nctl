@@ -12,9 +12,9 @@ import (
 )
 
 type apiServiceAccountsCmd struct {
-	Name            string `arg:"" help:"Name of the API Service Account to get. If omitted all in the project will be listed." default:""`
-	PrintToken      bool   `help:"Print the bearer token of the Account. Requires name to be set." default:"false"`
-	PrintKubeconfig bool   `help:"Print the kubeconfig of the Account. Requires name to be set." default:"false"`
+	resourceCmd
+	PrintToken      bool `help:"Print the bearer token of the Account. Requires name to be set." default:"false"`
+	PrintKubeconfig bool `help:"Print the kubeconfig of the Account. Requires name to be set." default:"false"`
 }
 
 const (

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -20,7 +19,7 @@ import (
 )
 
 type mySQLCmd struct {
-	Name                  string                                 `arg:"" default:"" help:"Name of the MySQL instance. A random name is generated if omitted."`
+	resourceCmd
 	Location              string                                 `placeholder:"${mysql_location_default}" help:"Location where the MySQL instance is created. Available locations are: ${mysql_location_options}"`
 	MachineType           infra.MachineType                      `placeholder:"${mysql_machine_default}" help:"Defines the sizing for a particular MySQL instance. Available types: ${mysql_machine_types}"`
 	AllowedCidrs          []meta.IPv4CIDR                        `placeholder:"0.0.0.0/0" help:"Specifies the IP addresses allowed to connect to the instance." `
@@ -33,8 +32,6 @@ type mySQLCmd struct {
 	MinWordLength         *int                                   `placeholder:"${mysql_min_word_length}" help:"Configures the ft_min_word_len and innodb_ft_min_token_size variables."`
 	TransactionIsolation  storage.MySQLTransactionCharacteristic `placeholder:"${mysql_transaction_isolation}" help:"Configures the transaction_isolation variable."`
 	KeepDailyBackups      *int                                   `placeholder:"${mysql_backup_retention_days}" help:"Number of daily database backups to keep. Note that setting this to 0, backup will be disabled and existing dumps deleted immediately."`
-	Wait                  bool                                   `default:"true" help:"Wait until MySQL instance is created."`
-	WaitTimeout           time.Duration                          `default:"25m" help:"Duration to wait for MySQL getting ready. Only relevant if --wait is set."`
 }
 
 func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {

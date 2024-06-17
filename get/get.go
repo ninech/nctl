@@ -32,6 +32,10 @@ type Cmd struct {
 	opts                []runtimeclient.ListOption
 }
 
+type resourceCmd struct {
+	Name string `arg:"" help:"Name of the resource to get. If omitted all in the project will be listed." default:""`
+}
+
 type output string
 
 const (

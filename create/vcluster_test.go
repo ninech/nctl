@@ -16,8 +16,10 @@ func TestVCluster(t *testing.T) {
 	}
 
 	cmd := vclusterCmd{
-		Wait:        false,
-		WaitTimeout: time.Second,
+		resourceCmd: resourceCmd{
+			Wait:        false,
+			WaitTimeout: time.Second,
+		},
 	}
 
 	cluster := cmd.newCluster("default")

@@ -12,7 +12,7 @@ import (
 )
 
 type projectCmd struct {
-	Name        string  `arg:"" default:"" help:"Name of the project to update."`
+	resourceCmd
 	DisplayName *string `default:"" help:"Display Name of the project."`
 }
 

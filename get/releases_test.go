@@ -130,7 +130,9 @@ func TestReleases(t *testing.T) {
 
 		"all apps, multiple releases, get specific release": {
 			cmd: releasesCmd{
-				Name:            "a4",
+				resourceCmd: resourceCmd{
+					Name: "a4",
+				},
 				ApplicationName: "",
 			},
 			releases: &apps.ReleaseList{
@@ -156,7 +158,9 @@ func TestReleases(t *testing.T) {
 
 		"one apps, multiple releases, get specific release": {
 			cmd: releasesCmd{
-				Name:            "b5",
+				resourceCmd: resourceCmd{
+					Name: "b5",
+				},
 				ApplicationName: "app5",
 			},
 			releases: &apps.ReleaseList{

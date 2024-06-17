@@ -23,7 +23,7 @@ import (
 )
 
 type buildCmd struct {
-	Name            string `arg:"" help:"Name of the Build to get. If omitted all in the project will be listed." default:""`
+	resourceCmd
 	ApplicationName string `short:"a" help:"Name of the Application to get builds for. If omitted all in the project will be listed."`
 	PullImage       bool   `help:"Pull the image of the build. Uses the local docker socket at the env DOCKER_HOST if set."`
 	out             io.Writer

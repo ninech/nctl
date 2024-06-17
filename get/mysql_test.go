@@ -51,7 +51,7 @@ func TestMySQL(t *testing.T) {
 				"test1": {MachineType: infra.MachineType("nine-standard-1")},
 				"test2": {MachineType: infra.MachineType("nine-standard-2")},
 			},
-			get:         mySQLCmd{Name: "test1"},
+			get:         mySQLCmd{resourceCmd: resourceCmd{Name: "test1"}},
 			wantContain: []string{"test1", "nine-standard-1"},
 		},
 		{
@@ -60,7 +60,7 @@ func TestMySQL(t *testing.T) {
 				"test1": {MachineType: infra.MachineType("nine-standard-1")},
 				"test2": {MachineType: infra.MachineType("nine-standard-2")},
 			},
-			get:         mySQLCmd{Name: "test2", PrintPassword: true},
+			get:         mySQLCmd{resourceCmd: resourceCmd{Name: "test2"}, PrintPassword: true},
 			wantContain: []string{"test2-topsecret"},
 		},
 	}

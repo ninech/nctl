@@ -13,10 +13,12 @@ import (
 
 func TestMySQL(t *testing.T) {
 	cmd := mySQLCmd{
-		Name:        "test",
-		Force:       true,
-		Wait:        false,
-		WaitTimeout: time.Second,
+		resourceCmd: resourceCmd{
+			Name:        "test",
+			Force:       true,
+			Wait:        false,
+			WaitTimeout: time.Second,
+		},
 	}
 
 	mysql := test.MySQL("test", "default", "nine-es34")

@@ -7,7 +7,7 @@ import (
 )
 
 type applicationCmd struct {
-	Name string `arg:"" help:"Name of the Application."`
+	resourceCmd
 	logsCmd
 }
 

@@ -10,9 +10,9 @@ import (
 )
 
 type buildCmd struct {
-	Name            string `arg:"" default:"" help:"Name of the Build."`
-	ApplicationName string `short:"a" help:"Name of the application to get build logs for."`
+	resourceCmd
 	logsCmd
+	ApplicationName string `short:"a" help:"Name of the application to get build logs for."`
 }
 
 func (cmd *buildCmd) Run(ctx context.Context, client *api.Client) error {

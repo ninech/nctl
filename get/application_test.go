@@ -241,8 +241,10 @@ dev-second    dev-second    sample-second
 
 			buf := &bytes.Buffer{}
 			cmd := applicationsCmd{
+				resourceCmd: resourceCmd{
+					Name: testCase.name,
+				},
 				out:                  buf,
-				Name:                 testCase.name,
 				BasicAuthCredentials: true,
 			}
 
@@ -385,8 +387,10 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 
 			buf := &bytes.Buffer{}
 			cmd := applicationsCmd{
+				resourceCmd: resourceCmd{
+					Name: testCase.name,
+				},
 				out:                  buf,
-				Name:                 testCase.name,
 				BasicAuthCredentials: false,
 				DNS:                  true,
 			}

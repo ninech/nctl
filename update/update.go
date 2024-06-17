@@ -18,6 +18,10 @@ type Cmd struct {
 	CloudVirtualMachine cloudVMCmd       `cmd:"" group:"infrastructure.nine.ch" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Update a CloudVM."`
 }
 
+type resourceCmd struct {
+	Name string `arg:"" help:"Name of the resource to update."`
+}
+
 type updater struct {
 	mg         resource.Managed
 	client     *api.Client

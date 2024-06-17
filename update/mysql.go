@@ -14,7 +14,7 @@ import (
 )
 
 type mySQLCmd struct {
-	Name                  string                                  `arg:"" default:"" help:"Name of the MySQL instance to update."`
+	resourceCmd
 	MachineType           *infra.MachineType                      `placeholder:"${mysql_machine_default}" help:"Defines the sizing for a particular MySQL instance. Available types: ${mysql_machine_types}"`
 	AllowedCidrs          *[]meta.IPv4CIDR                        `placeholder:"0.0.0.0/0" help:"Specifies the IP addresses allowed to connect to the instance." `
 	SSHKeys               []storage.SSHKey                        `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups."`

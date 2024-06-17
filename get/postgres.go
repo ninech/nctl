@@ -12,9 +12,9 @@ import (
 )
 
 type postgresCmd struct {
-	Name          string `arg:"" help:"Name of the PostgreSQL instance to get. If omitted all in the project will be listed." default:""`
-	PrintPassword bool   `help:"Print the password of the PostgreSQL User. Requires name to be set." xor:"print"`
-	PrintUser     bool   `help:"Print the name of the PostgreSQL User. Requires name to be set." xor:"print"`
+	resourceCmd
+	PrintPassword bool `help:"Print the password of the PostgreSQL User. Requires name to be set." xor:"print"`
+	PrintUser     bool `help:"Print the name of the PostgreSQL User. Requires name to be set." xor:"print"`
 
 	out io.Writer
 }

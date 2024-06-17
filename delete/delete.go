@@ -25,6 +25,13 @@ type Cmd struct {
 	CloudVirtualMachine cloudVMCmd           `cmd:"" group:"infrastructure.nine.ch" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Delete a CloudVM."`
 }
 
+type resourceCmd struct {
+	Name        string        `arg:"" help:"Name of the resource to delete."`
+	Force       bool          `default:"false" help:"Do not ask for confirmation of deletion."`
+	Wait        bool          `default:"true" help:"Wait until resource is fully deleted"`
+	WaitTimeout time.Duration `default:"5m" help:"Duration to wait for the deletion. Only relevant if wait is set."`
+}
+
 // cleanupFunc is called after the resource has been deleted in order to do
 // any sort of cleanups.
 type cleanupFunc func(client *api.Client) error
