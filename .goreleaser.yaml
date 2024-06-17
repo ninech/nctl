@@ -24,6 +24,10 @@ changelog:
       - '^docs:'
       - '^test:'
 
+release:
+  draft: true
+  replace_existing_draft: true
+
 brews:
   - name: nctl
 
