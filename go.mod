@@ -9,7 +9,7 @@ require (
 	github.com/charmbracelet/lipgloss v0.10.0
 	github.com/crossplane/crossplane-runtime v1.15.1
 	github.com/docker/docker v26.1.3+incompatible
-	github.com/fatih/color v1.16.0
+	github.com/fatih/color v1.17.0
 	github.com/gobuffalo/flect v1.0.2
 	github.com/goccy/go-yaml v1.11.3
 	github.com/golang-jwt/jwt v3.2.2+incompatible
