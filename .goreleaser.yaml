@@ -1,3 +1,5 @@
+version: 2
+
 before:
   hooks:
     - go mod tidy
@@ -42,18 +44,18 @@ brews:
     # Default is v1.
     goamd64: v1
 
-    tap:
+    repository:
       owner: ninech
       name: homebrew-taps
       branch: main
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
 
     url_template: "https://github.com/ninech/nctl/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
-    
+
     commit_author:
       name: nine.ch Bot
       email: ninech-bot@users.noreply.github.com
-    
+
     commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
     homepage: "https://github.com/ninech/nctl"
     description: "Interact with Nine API resources."
