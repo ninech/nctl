@@ -73,6 +73,10 @@ func EnvVarsFromMap(env map[string]string) apps.EnvVars {
 }
 
 func UpdateEnvVars(oldEnvs []apps.EnvVar, newEnvs map[string]string, toDelete []string) apps.EnvVars {
+	if len(newEnvs) == 0 && len(toDelete) == 0 {
+		return oldEnvs
+	}
+
 	envMap := map[string]apps.EnvVar{}
 	for _, v := range oldEnvs {
 		envMap[v.Name] = v
