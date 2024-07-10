@@ -45,6 +45,7 @@ type applicationCmd struct {
 	GitInformationServiceURL string            `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
 	SkipRepoAccessCheck      bool              `help:"Skip the git repository access check" default:"false"`
 	Debug                    bool              `help:"Enable debug messages" default:"false"`
+	Language                 string            `help:"Language specifies which language your app is. If left empty, deploio will detect the language automatically. ${enum}" enum:"ruby,php,python,golang,nodejs,static," default:""`
 }
 
 type gitConfig struct {
@@ -282,6 +283,7 @@ func (app *applicationCmd) newApplication(project string) *apps.Application {
 		},
 		Spec: apps.ApplicationSpec{
 			ForProvider: apps.ApplicationParameters{
+				Language: apps.Language(app.Language),
 				Git: apps.ApplicationGitConfig{
 					GitTarget: apps.GitTarget{
 						URL:      app.Git.URL,

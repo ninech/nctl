@@ -37,6 +37,7 @@ type applicationCmd struct {
 	GitInformationServiceURL string            `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
 	SkipRepoAccessCheck      bool              `help:"Skip the git repository access check" default:"false"`
 	Debug                    bool              `help:"Enable debug messages" default:"false"`
+	Language                 *string           `help:"Language specifies which language your app is. If left empty, deploio will detect the language automatically. ${enum}" enum:"ruby,php,python,golang,nodejs,static," default:""`
 }
 
 type gitConfig struct {
@@ -197,6 +198,9 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 	}
 	if cmd.DeployJob != nil {
 		cmd.DeployJob.applyUpdates(&app.Spec.ForProvider.Config)
+	}
+	if cmd.Language != nil {
+		app.Spec.ForProvider.Language = apps.Language(*cmd.Language)
 	}
 
 	var delEnv []string
