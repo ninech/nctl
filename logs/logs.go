@@ -14,8 +14,8 @@ import (
 )
 
 type Cmd struct {
-	Applications applicationCmd `cmd:"" group:"deplo.io" name:"application" aliases:"app" help:"Get deplo.io Application logs. (Beta - requires access)"`
-	Builds       buildCmd       `cmd:"" group:"deplo.io" name:"build" help:"Get deplo.io Build logs. (Beta - requires access)"`
+	Applications applicationCmd `cmd:"" group:"deplo.io" name:"application" aliases:"app" help:"Get deplo.io Application logs."`
+	Builds       buildCmd       `cmd:"" group:"deplo.io" name:"build" help:"Get deplo.io Build logs."`
 }
 
 type resourceCmd struct {
