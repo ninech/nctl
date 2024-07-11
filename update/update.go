@@ -9,8 +9,8 @@ import (
 )
 
 type Cmd struct {
-	Application         applicationCmd   `cmd:"" group:"deplo.io" name:"application" aliases:"app" help:"Update an existing deplo.io Application. (Beta - requires access)"`
-	Config              configCmd        `cmd:"" group:"deplo.io" name:"config"  help:"Update an existing deplo.io Project Configuration. (Beta - requires access)"`
+	Application         applicationCmd   `cmd:"" group:"deplo.io" name:"application" aliases:"app" help:"Update an existing deplo.io Application."`
+	Config              configCmd        `cmd:"" group:"deplo.io" name:"config"  help:"Update an existing deplo.io Project Configuration."`
 	Project             projectCmd       `cmd:"" group:"management.nine.ch" name:"project"  help:"Update an existing Project"`
 	MySQL               mySQLCmd         `cmd:"" group:"storage.nine.ch" name:"mysql" help:"Update an existing MySQL instance."`
 	Postgres            postgresCmd      `cmd:"" group:"storage.nine.ch" name:"postgres" help:"Update an existing PostgreSQL instance."`
