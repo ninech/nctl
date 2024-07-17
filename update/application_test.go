@@ -10,6 +10,7 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/create"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -523,7 +524,9 @@ func TestApplication(t *testing.T) {
 // want to test it in case this ever changes in future kong versions.
 func TestApplicationFlags(t *testing.T) {
 	nilFlags := &applicationCmd{}
-	_, err := kong.Must(nilFlags).Parse([]string{`testname`})
+	vars, err := create.ApplicationKongVars()
+	require.NoError(t, err)
+	_, err = kong.Must(nilFlags, vars).Parse([]string{`testname`})
 	require.NoError(t, err)
 
 	assert.Nil(t, nilFlags.Hosts)
@@ -531,7 +534,7 @@ func TestApplicationFlags(t *testing.T) {
 	assert.Nil(t, nilFlags.BuildEnv)
 
 	emptyFlags := &applicationCmd{}
-	_, err = kong.Must(emptyFlags).Parse([]string{`testname`, `--hosts=""`, `--env=`, `--build-env=`})
+	_, err = kong.Must(emptyFlags, vars).Parse([]string{`testname`, `--hosts=""`, `--env=`, `--build-env=`})
 	require.NoError(t, err)
 
 	assert.NotNil(t, emptyFlags.Hosts)
