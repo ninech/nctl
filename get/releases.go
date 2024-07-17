@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 	"os"
-	"sort"
 	"strconv"
 	"text/tabwriter"
 	"time"
@@ -39,7 +38,7 @@ func (cmd *releasesCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 		return nil
 	}
 
-	orderReleaseList(releaseList)
+	util.OrderReleaseList(releaseList)
 
 	switch get.Output {
 	case full:
@@ -51,23 +50,6 @@ func (cmd *releasesCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 	}
 
 	return nil
-}
-
-func orderReleaseList(releaseList *apps.ReleaseList) {
-	if len(releaseList.Items) <= 1 {
-		return
-	}
-
-	sort.Slice(releaseList.Items, func(i, j int) bool {
-		applicationNameI := releaseList.Items[i].ObjectMeta.Labels[util.ApplicationNameLabel]
-		applicationNameJ := releaseList.Items[j].ObjectMeta.Labels[util.ApplicationNameLabel]
-
-		if applicationNameI != applicationNameJ {
-			return applicationNameI < applicationNameJ
-		}
-
-		return releaseList.Items[i].CreationTimestampNano < releaseList.Items[j].CreationTimestampNano
-	})
 }
 
 func printReleases(releases []apps.Release, get *Cmd, header bool) error {

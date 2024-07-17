@@ -17,6 +17,7 @@ import (
 	"github.com/ninech/nctl/auth"
 	"github.com/ninech/nctl/create"
 	"github.com/ninech/nctl/delete"
+	"github.com/ninech/nctl/exec"
 	"github.com/ninech/nctl/get"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/logs"
@@ -44,6 +45,7 @@ type rootCommand struct {
 	Delete      delete.Cmd                   `cmd:"" help:"Delete resource."`
 	Logs        logs.Cmd                     `cmd:"" help:"Get logs of resource."`
 	Update      update.Cmd                   `cmd:"" help:"Update resource."`
+	Exec        exec.Cmd                     `cmd:"" help:"Execute a command."`
 }
 
 var version = "dev"
