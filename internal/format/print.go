@@ -53,6 +53,10 @@ func PrintFailuref(icon, format string, a ...any) {
 	fmt.Print(FailureMessagef(icon, format, a...) + "\n")
 }
 
+func PrintWarningf(msg string, a ...any) {
+	fmt.Printf(color.YellowString("Warning: ")+msg, a...)
+}
+
 // Confirmf prints a confirm dialog using format and then waits until prompt
 // is confirmed or denied. Only y and yes are accepted for confirmation.
 func Confirmf(format string, a ...any) (bool, error) {

@@ -11,6 +11,7 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/api/validation"
+	"github.com/ninech/nctl/internal/format"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -38,6 +39,7 @@ type applicationCmd struct {
 	SkipRepoAccessCheck      bool              `help:"Skip the git repository access check" default:"false"`
 	Debug                    bool              `help:"Enable debug messages" default:"false"`
 	Language                 *string           `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static,ruby-heroku," default:""`
+	DockerfileBuild          dockerfileBuild   `embed:""`
 }
 
 type gitConfig struct {
@@ -77,6 +79,11 @@ type deployJob struct {
 	Name    *string        `help:"Name of the deploy job. The deployment will only continue if the job finished successfully." placeholder:"release"`
 	Retries *int32         `help:"How many times the job will be restarted on failure." placeholder:"${app_default_deploy_job_retries}"`
 	Timeout *time.Duration `help:"Timeout of the job." placeholder:"${app_default_deploy_job_timeout}"`
+}
+
+type dockerfileBuild struct {
+	Path         *string `name:"dockerfile-path" help:"${app_dockerfile_path_help}" placeholder:"."`
+	BuildContext *string `name:"dockerfile-build-context" help:"${app_dockerfile_build_context_help}" placeholder:"."`
 }
 
 func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
@@ -223,6 +230,16 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 		buildDelEnv = *cmd.DeleteBuildEnv
 	}
 	app.Spec.ForProvider.BuildEnv = util.UpdateEnvVars(app.Spec.ForProvider.BuildEnv, buildEnv, buildDelEnv)
+
+	if cmd.DockerfileBuild.Path != nil {
+		app.Spec.ForProvider.DockerfileBuild.DockerfilePath = *cmd.DockerfileBuild.Path
+		warnIfDockerfileNotEnabled(app, "path")
+	}
+
+	if cmd.DockerfileBuild.BuildContext != nil {
+		app.Spec.ForProvider.DockerfileBuild.BuildContext = *cmd.DockerfileBuild.BuildContext
+		warnIfDockerfileNotEnabled(app, "build context")
+	}
 }
 
 func (job deployJob) applyUpdates(cfg *apps.Config) {
@@ -252,4 +269,10 @@ func ensureDeployJob(cfg *apps.Config) *apps.Config {
 		cfg.DeployJob = &apps.DeployJob{}
 	}
 	return cfg
+}
+
+func warnIfDockerfileNotEnabled(app *apps.Application, flag string) {
+	if !app.Spec.ForProvider.DockerfileBuild.Enabled {
+		format.PrintWarningf("updating %s has no effect as dockefile builds are not enabled on this app\n", flag)
+	}
 }
