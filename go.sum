@@ -591,6 +591,8 @@ github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f/go.mod h1:qRW
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/ninech/apis v0.0.0-20240604065453-1a4b503198d6 h1:pLpF8VsnBVqovY3wGxU8LQO8scEn32Lsc9zoqRY3jbs=
 github.com/ninech/apis v0.0.0-20240604065453-1a4b503198d6/go.mod h1:6lFCwHqvcTFZvJ6zY0rxaPIoKc0CX9sHhtH/nyo/5is=
+github.com/ninech/apis v0.0.0-20240717081804-d2a5202fde72 h1:K0GFWZERwXe35L7SZpHRja8PmufQ3L121rmINRioZ+I=
+github.com/ninech/apis v0.0.0-20240717081804-d2a5202fde72/go.mod h1:6lFCwHqvcTFZvJ6zY0rxaPIoKc0CX9sHhtH/nyo/5is=
 github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
 github.com/oklog/ulid v1.3.1 h1:EGfNDEx6MqHz8B3uNV6QAib1UR2Lm97sHi3ocA6ESJ4=

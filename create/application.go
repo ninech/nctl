@@ -45,7 +45,7 @@ type applicationCmd struct {
 	GitInformationServiceURL string            `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
 	SkipRepoAccessCheck      bool              `help:"Skip the git repository access check" default:"false"`
 	Debug                    bool              `help:"Enable debug messages" default:"false"`
-	Language                 string            `help:"Language specifies which language your app is. If left empty, deploio will detect the language automatically. ${enum}" enum:"ruby,php,python,golang,nodejs,static," default:""`
+	Language                 string            `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static,ruby-heroku," default:""`
 }
 
 type gitConfig struct {
@@ -569,5 +569,8 @@ func ApplicationKongVars() (kong.Vars, error) {
 
 	result["app_default_deploy_job_timeout"] = "5m"
 	result["app_default_deploy_job_retries"] = "3"
+	result["app_language_help"] = "Language specifies which language your app is. " +
+		"If left empty, deploio will detect the language automatically. " +
+		"Note that *-heroku languages are experimental and may be removed in future releases."
 	return result, nil
 }
