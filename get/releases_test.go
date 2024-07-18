@@ -217,7 +217,7 @@ func TestReleases(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			orderReleaseList(releaseList)
+			util.OrderReleaseList(releaseList)
 			releaseNames := []string{}
 			for _, r := range releaseList.Items {
 				releaseNames = append(releaseNames, r.ObjectMeta.Name)
