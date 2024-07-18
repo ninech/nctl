@@ -46,6 +46,7 @@ type applicationCmd struct {
 	SkipRepoAccessCheck      bool              `help:"Skip the git repository access check" default:"false"`
 	Debug                    bool              `help:"Enable debug messages" default:"false"`
 	Language                 string            `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static,ruby-heroku," default:""`
+	DockerfileBuild          dockerfileBuild   `embed:""`
 }
 
 type gitConfig struct {
@@ -63,6 +64,12 @@ type deployJob struct {
 	Name    string        `default:"release" help:"Name of the deploy job. The deployment will only continue if the job finished successfully."`
 	Retries int32         `default:"${app_default_deploy_job_retries}" help:"How many times the job will be restarted on failure. Default is ${app_default_deploy_job_retries} and maximum 5."`
 	Timeout time.Duration `default:"${app_default_deploy_job_timeout}" help:"Timeout of the job. Default is ${app_default_deploy_job_timeout}, minimum is 1 minute and maximum is 30 minutes."`
+}
+
+type dockerfileBuild struct {
+	Enabled      bool   `name:"dockerfile" help:"${app_dockerfile_enable_help}" default:"false"`
+	Path         string `name:"dockerfile-path" help:"${app_dockerfile_path_help}" default:""`
+	BuildContext string `name:"dockerfile-build-context" help:"${app_dockerfile_build_context_help}" default:""`
 }
 
 func (g gitConfig) sshPrivateKey() (*string, error) {
@@ -294,6 +301,11 @@ func (app *applicationCmd) newApplication(project string) *apps.Application {
 				Hosts:    app.Hosts,
 				Config:   app.config(),
 				BuildEnv: util.EnvVarsFromMap(app.BuildEnv),
+				DockerfileBuild: apps.DockerfileBuild{
+					Enabled:        app.DockerfileBuild.Enabled,
+					DockerfilePath: app.DockerfileBuild.Path,
+					BuildContext:   app.DockerfileBuild.BuildContext,
+				},
 			},
 		},
 	}
@@ -572,5 +584,10 @@ func ApplicationKongVars() (kong.Vars, error) {
 	result["app_language_help"] = "Language specifies which language your app is. " +
 		"If left empty, deploio will detect the language automatically. " +
 		"Note that *-heroku languages are experimental and may be removed in future releases."
+	result["app_dockerfile_enable_help"] = "Enable Dockerfile build (Beta) instead of the automatic " +
+		"buildpack detection"
+	result["app_dockerfile_path_help"] = "Specifies the path to the Dockerfile. If left empty a file " +
+		"named Dockerfile will be searched in the application code root directory."
+	result["app_dockerfile_build_context_help"] = "Defines the build context. If left empty, the application code root directory will be used as build context."
 	return result, nil
 }
