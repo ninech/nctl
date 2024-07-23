@@ -22,7 +22,8 @@ import (
 type allCmd struct {
 	out                  io.Writer
 	stdErr               io.Writer
-	IncludeNineResources bool `help:"show resources which are owned by Nine" default:"false"`
+	Kinds                []string `help:"specify the kind of resources which should be listed"`
+	IncludeNineResources bool     `help:"show resources which are owned by Nine" default:"false"`
 }
 
 func (cmd *allCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
@@ -35,7 +36,7 @@ func (cmd *allCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error 
 		return err
 	}
 
-	items, warnings, err := getProjectContent(ctx, client, projectNames(projectList), cmd.IncludeNineResources)
+	items, warnings, err := cmd.getProjectContent(ctx, client, projectNames(projectList))
 	if err != nil {
 		return err
 	}
@@ -70,11 +71,15 @@ func projectNames(projects []management.Project) []string {
 	return result
 }
 
-func getProjectContent(ctx context.Context, client *api.Client, projNames []string, includeNineOwned bool) ([]*unstructured.Unstructured, []string, error) {
+func (cmd *allCmd) getProjectContent(ctx context.Context, client *api.Client, projNames []string) ([]*unstructured.Unstructured, []string, error) {
 	var warnings []string
 	var result []*unstructured.Unstructured
+	listTypes, err := filteredListTypes(client.Scheme(), cmd.Kinds)
+	if err != nil {
+		return nil, nil, err
+	}
 	for _, project := range projNames {
-		for _, listType := range nineListTypes(client.Scheme()) {
+		for _, listType := range listTypes {
 			u := &unstructured.UnstructuredList{}
 			u.SetGroupVersionKind(listType)
 			// if we get any errors during the listing of certain
@@ -89,7 +94,7 @@ func getProjectContent(ctx context.Context, client *api.Client, projNames []stri
 			// filter nine owned resources if needed
 			for _, item := range u.Items {
 				item := item
-				if includeNineOwned {
+				if cmd.IncludeNineResources {
 					result = append(result, &item)
 					continue
 				}
@@ -132,6 +137,26 @@ func printItems(items []*unstructured.Unstructured, get Cmd, out io.Writer, head
 	}
 
 	return w.Flush()
+}
+
+func filteredListTypes(s *runtime.Scheme, kinds []string) ([]schema.GroupVersionKind, error) {
+	result := []schema.GroupVersionKind{}
+	lists := nineListTypes(s)
+	if len(kinds) == 0 {
+		return lists, nil
+	}
+OUTER:
+	for _, kind := range kinds {
+		for _, list := range lists {
+			if !strings.EqualFold(kind+"list", list.GroupKind().Kind) {
+				continue
+			}
+			result = append(result, list)
+			continue OUTER
+		}
+		return []schema.GroupVersionKind{}, fmt.Errorf("kind %s does not seem to be part of any nine.ch API", kind)
+	}
+	return result, nil
 }
 
 func nineListTypes(s *runtime.Scheme) []schema.GroupVersionKind {
