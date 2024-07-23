@@ -31,7 +31,9 @@ func TestAllContent(t *testing.T) {
 		outputFormat         output
 		allProjects          bool
 		includeNineResources bool
+		kinds                []string
 		output               string
+		errorExpected        bool
 	}{
 		"all resources from one project, full format": {
 			projects:     test.Projects(organization, "dev", "staging", "prod"),
@@ -64,16 +66,16 @@ dev    pear      Release        apps.nine.ch
 			objects: []client.Object{
 				testApplication("banana", "dev"), testRelease("pear", "dev"),
 				testApplication("apple", "staging"), testRelease("melon", "staging"),
-				testCluster("organge", "prod"),
+				testCluster("orange", "prod"),
 			},
 			outputFormat: full,
 			allProjects:  true,
-			output: `PROJECT    NAME       KIND                 GROUP
-dev        banana     Application          apps.nine.ch
-dev        pear       Release              apps.nine.ch
-prod       organge    KubernetesCluster    infrastructure.nine.ch
-staging    apple      Application          apps.nine.ch
-staging    melon      Release              apps.nine.ch
+			output: `PROJECT    NAME      KIND                 GROUP
+dev        banana    Application          apps.nine.ch
+dev        pear      Release              apps.nine.ch
+prod       orange    KubernetesCluster    infrastructure.nine.ch
+staging    apple     Application          apps.nine.ch
+staging    melon     Release              apps.nine.ch
 `,
 		},
 		"all projects, no headers format": {
@@ -81,15 +83,15 @@ staging    melon      Release              apps.nine.ch
 			objects: []client.Object{
 				testApplication("banana", "dev"), testRelease("pear", "dev"),
 				testApplication("apple", "staging"), testRelease("melon", "staging"),
-				testCluster("organge", "prod"),
+				testCluster("orange", "prod"),
 			},
 			outputFormat: noHeader,
 			allProjects:  true,
-			output: `dev        banana     Application          apps.nine.ch
-dev        pear       Release              apps.nine.ch
-prod       organge    KubernetesCluster    infrastructure.nine.ch
-staging    apple      Application          apps.nine.ch
-staging    melon      Release              apps.nine.ch
+			output: `dev        banana    Application          apps.nine.ch
+dev        pear      Release              apps.nine.ch
+prod       orange    KubernetesCluster    infrastructure.nine.ch
+staging    apple     Application          apps.nine.ch
+staging    melon     Release              apps.nine.ch
 `,
 		},
 		"empty resources of a specific project, full format": {
@@ -156,6 +158,47 @@ staging    cherry    Release              apps.nine.ch
 staging    melon     Release              apps.nine.ch
 `,
 		},
+		"only certain kind": {
+			projects: test.Projects(organization, "dev", "staging", "prod"),
+			objects: []client.Object{
+				testApplication("banana", "dev"), testRelease("pear", "dev"),
+				testApplication("apple", "staging"), testRelease("melon", "staging"), testRelease("cherry", "staging"),
+				testCluster("orange", "prod"),
+			},
+			outputFormat: full,
+			allProjects:  true,
+			kinds:        []string{"application"},
+			output: `PROJECT    NAME      KIND           GROUP
+dev        banana    Application    apps.nine.ch
+staging    apple     Application    apps.nine.ch
+`,
+		},
+		"multiple certain kinds, no header format": {
+			projects: test.Projects(organization, "dev", "staging", "prod"),
+			objects: []client.Object{
+				testApplication("banana", "dev"), testRelease("pear", "dev"),
+				testApplication("apple", "staging"), testRelease("melon", "staging"), testRelease("cherry", "staging"),
+				testCluster("orange", "prod"),
+				testCluster("dragonfruit", "dev"),
+			},
+			outputFormat: noHeader,
+			allProjects:  true,
+			kinds:        []string{"release", "kubernetescluster"},
+			output: `dev        dragonfruit    KubernetesCluster    infrastructure.nine.ch
+dev        pear           Release              apps.nine.ch
+prod       orange         KubernetesCluster    infrastructure.nine.ch
+staging    cherry         Release              apps.nine.ch
+staging    melon          Release              apps.nine.ch
+`,
+		},
+		"not known kind leads to an error": {
+			projects:      test.Projects(organization, "dev", "staging", "prod"),
+			objects:       []client.Object{},
+			outputFormat:  noHeader,
+			allProjects:   true,
+			kinds:         []string{"jackofalltrades"},
+			errorExpected: true,
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			testCase := testCase
@@ -186,12 +229,15 @@ staging    melon     Release              apps.nine.ch
 			cmd := allCmd{
 				out:                  outputBuffer,
 				IncludeNineResources: testCase.includeNineResources,
+				Kinds:                testCase.kinds,
 			}
 
-			if err := cmd.Run(ctx, apiClient, get); err != nil {
-				t.Fatal(err)
+			err = cmd.Run(ctx, apiClient, get)
+			if testCase.errorExpected {
+				require.Error(t, err)
+				return
 			}
-
+			require.NoError(t, err)
 			assert.Equal(t, testCase.output, outputBuffer.String())
 		})
 	}
