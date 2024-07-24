@@ -2,6 +2,7 @@ package log
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"sort"
@@ -200,7 +201,7 @@ func (c *Client) TailQuery(ctx context.Context, delayFor time.Duration, out outp
 				continue
 			}
 
-			if websocket.IsCloseError(err, websocket.CloseNormalClosure) {
+			if websocket.IsCloseError(err, websocket.CloseNormalClosure) || errors.Is(websocket.ErrCloseSent, err) {
 				return nil
 			}
 
