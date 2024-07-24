@@ -34,19 +34,16 @@ type LogBox struct {
 	results     []Msg
 	quitting    bool
 	spinner     spinner.Model
-	interrupt   chan bool
 }
 
-// New initializes a LogBox. The interrupt channel will be written to on
-// ctrl+c/ctrl+d since it intercepts these.
-func New(height int, waitMessage string, interrupt chan bool) LogBox {
+// New initializes a LogBox.
+func New(height int, waitMessage string) LogBox {
 	s := spinner.New(spinner.WithSpinner(spinner.MiniDot), spinner.WithStyle(lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{})))
 	return LogBox{
 		height:      height,
 		waitMessage: waitMessage,
 		spinner:     s,
 		results:     []Msg{},
-		interrupt:   interrupt,
 	}
 }
 
@@ -56,14 +53,6 @@ func (lb LogBox) Init() tea.Cmd {
 
 func (lb LogBox) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "ctrl+d":
-			lb.interrupt <- true
-			return lb, tea.Quit
-		default:
-			return lb, nil
-		}
 	case Msg:
 		if msg.Done {
 			lb.quitting = true

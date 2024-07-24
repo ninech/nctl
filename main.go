@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/alecthomas/kong"
 
@@ -145,7 +146,7 @@ func main() {
 
 func setupSignalHandler(ctx context.Context, cancel context.CancelFunc) {
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	go func() {
 		defer func() {
 			signal.Stop(c)
