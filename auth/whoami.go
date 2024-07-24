@@ -22,7 +22,7 @@ func (s *WhoAmICmd) Run(ctx context.Context, client *api.Client) error {
 		return err
 	}
 
-	userInfo, err := api.GetUserInfoFromToken(client.Token())
+	userInfo, err := api.GetUserInfoFromToken(client.Token(ctx))
 	if err != nil {
 		return err
 	}

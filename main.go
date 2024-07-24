@@ -76,7 +76,10 @@ func main() {
 		// call parse already. Note that this won't parse the flag for
 		// completion but it will work for the default and env.
 		_, _ = parser.Parse(os.Args[1:])
-		c, err := api.New(ctx, nctl.APICluster, nctl.Project)
+		// the client for the predictor requires a static token in the client config
+		// since dynamic exec config seems to break with some shells during completion.
+		// The exact reason for that is unknown.
+		c, err := api.New(ctx, nctl.APICluster, nctl.Project, api.StaticToken(ctx))
 		if err != nil {
 			return nil, err
 		}
@@ -134,7 +137,7 @@ func main() {
 		return
 	}
 
-	client, err := api.New(ctx, nctl.APICluster, nctl.Project, api.LogClient(nctl.LogAPIAddress, nctl.LogAPIInsecure))
+	client, err := api.New(ctx, nctl.APICluster, nctl.Project, api.LogClient(ctx, nctl.LogAPIAddress, nctl.LogAPIInsecure))
 	if err != nil {
 		fmt.Println(err)
 		fmt.Printf("\nUnable to get API client, are you logged in?\n\nUse `%s` to login.\n", format.Command().Login())
