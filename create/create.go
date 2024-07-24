@@ -60,6 +60,8 @@ type waitStage struct {
 	disableSpinner bool
 	// beforeWait is a hook that is called just before the wait is being run.
 	beforeWait func()
+	// afterWait is a hook that is called after the wait to clean up.
+	afterWait func()
 }
 
 type message struct {
@@ -106,6 +108,10 @@ func (c *creator) createResource(ctx context.Context) error {
 
 func (c *creator) wait(ctx context.Context, stages ...waitStage) error {
 	for _, stage := range stages {
+		if stage.afterWait != nil {
+			defer stage.afterWait()
+		}
+
 		stage.setDefaults(c)
 
 		spinner, err := format.NewSpinner(
@@ -174,7 +180,6 @@ func isWatchError(err error) bool {
 }
 
 func (w *waitStage) wait(ctx context.Context, client *api.Client) error {
-
 	if !w.disableSpinner {
 		_ = w.spinner.Start()
 	}
