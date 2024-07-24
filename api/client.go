@@ -43,12 +43,6 @@ func New(ctx context.Context, apiClusterContext, project string, opts ...ClientO
 		return nil, err
 	}
 
-	token, err := GetTokenFromConfig(ctx, client.Config)
-	if err != nil {
-		return nil, err
-	}
-	client.Config.BearerToken = token
-
 	scheme, err := NewScheme()
 	if err != nil {
 		return nil, err
@@ -72,13 +66,31 @@ func New(ctx context.Context, apiClusterContext, project string, opts ...ClientO
 }
 
 // LogClient sets up a log client connected to the provided address.
-func LogClient(address string, insecure bool) ClientOpt {
+func LogClient(ctx context.Context, address string, insecure bool) ClientOpt {
 	return func(c *Client) error {
-		logClient, err := log.NewClient(address, c.Config.BearerToken, c.Project, insecure)
+		logClient, err := log.NewClient(address, c.Token(ctx), c.Project, insecure)
 		if err != nil {
 			return fmt.Errorf("unable to create log client: %w", err)
 		}
 		c.Log = logClient
+		return nil
+	}
+}
+
+// StaticToken configures the client to get a bearer token once and then set it
+// statically in the client config. This means the client will not automatically
+// renew the token when it expires.
+func StaticToken(ctx context.Context) ClientOpt {
+	return func(c *Client) error {
+		c.Config.BearerToken = c.Token(ctx)
+		tokenClient, err := runtimeclient.NewWithWatch(c.Config, runtimeclient.Options{
+			Scheme: c.Scheme(),
+		})
+		if err != nil {
+			return err
+		}
+		c.WithWatch = tokenClient
+
 		return nil
 	}
 }
@@ -136,12 +148,17 @@ func (c *Client) GetConnectionSecret(ctx context.Context, mg resource.Managed) (
 	return secret, nil
 }
 
-func (c *Client) Token() string {
+func (c *Client) Token(ctx context.Context) string {
 	if c.Config == nil {
 		return ""
 	}
 
-	return c.Config.BearerToken
+	token, err := GetTokenFromConfig(ctx, c.Config)
+	if err != nil {
+		return ""
+	}
+
+	return token
 }
 
 func LoadingRules() (*clientcmd.ClientConfigLoadingRules, error) {

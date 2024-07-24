@@ -119,7 +119,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		if !cmd.SkipRepoAccessCheck {
 			validator := &validation.RepositoryValidator{
 				GitInformationServiceURL: cmd.GitInformationServiceURL,
-				Token:                    client.Token(),
+				Token:                    client.Token(ctx),
 				Debug:                    cmd.Debug,
 			}
 

@@ -92,7 +92,7 @@ func pullImage(ctx context.Context, apiClient *api.Client, build *apps.Build) er
 	registryAuth, err := registry.EncodeAuthConfig(registry.AuthConfig{
 		// technically the username does not matter, it just needs to be set to something
 		Username: "registry",
-		Password: apiClient.Token(),
+		Password: apiClient.Token(ctx),
 	})
 	if err != nil {
 		return err
