@@ -218,11 +218,17 @@ func (w *waitStage) watch(ctx context.Context, client *api.Client) error {
 				return nil
 			}
 		case <-ctx.Done():
-			msg := "timeout waiting for %s"
-			w.spinner.StopFailMessage(format.ProgressMessagef("", msg, w.kind))
-			_ = w.spinner.StopFail()
+			switch ctx.Err() {
+			case context.DeadlineExceeded:
+				msg := "timeout waiting for %s"
+				w.spinner.StopFailMessage(format.ProgressMessagef("", msg, w.kind))
+				_ = w.spinner.StopFail()
 
-			return fmt.Errorf(msg, w.kind)
+				return fmt.Errorf(msg, w.kind)
+			case context.Canceled:
+				_ = w.spinner.StopFail()
+				return nil
+			}
 		}
 	}
 }

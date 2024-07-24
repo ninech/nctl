@@ -147,11 +147,17 @@ func (d *deleter) waitForDeletion(ctx context.Context, client *api.Client) error
 				return fmt.Errorf("unable to get %s %q: %w", d.kind, d.mg.GetName(), err)
 			}
 		case <-ctx.Done():
-			msg := "timeout waiting for %s"
-			spinner.StopFailMessage(format.ProgressMessagef("", msg, d.kind))
-			_ = spinner.StopFail()
+			switch ctx.Err() {
+			case context.DeadlineExceeded:
+				msg := "timeout waiting for %s"
+				spinner.StopFailMessage(format.ProgressMessagef("", msg, d.kind))
+				_ = spinner.StopFail()
 
-			return fmt.Errorf("timeout waiting for %s", d.kind)
+				return fmt.Errorf(msg, d.kind)
+			case context.Canceled:
+				_ = spinner.StopFail()
+				return nil
+			}
 		}
 	}
 }
