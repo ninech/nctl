@@ -199,6 +199,19 @@ staging    melon          Release              apps.nine.ch
 			kinds:         []string{"jackofalltrades"},
 			errorExpected: true,
 		},
+		"excluded list kinds are not shown": {
+			projects: test.Projects(organization, "dev"),
+			objects: []client.Object{
+				testApplication("banana", "dev"), testRelease("pear", "dev"),
+				testClusterData(),
+			},
+			outputFormat: full,
+			allProjects:  true,
+			output: `PROJECT    NAME      KIND           GROUP
+dev        banana    Application    apps.nine.ch
+dev        pear      Release        apps.nine.ch
+`,
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			testCase := testCase
@@ -282,5 +295,24 @@ func testCluster(name, project string) *infra.KubernetesCluster {
 			APIVersion: infra.SchemeGroupVersion.String(),
 		},
 		Spec: infra.KubernetesClusterSpec{},
+	}
+}
+
+func testClusterData() *infra.ClusterData {
+	return &infra.ClusterData{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test",
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       infra.ClusterDataKind,
+			APIVersion: infra.SchemeGroupVersion.String(),
+		},
+		Spec: infra.ClusterDataSpec{
+			ForProvider: infra.ClusterDataParameters{
+				ClusterReference: meta.Reference{
+					Name: "test",
+				},
+			},
+		},
 	}
 }

@@ -9,10 +9,12 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	management "github.com/ninech/apis/management/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -86,7 +88,9 @@ func (cmd *allCmd) getProjectContent(ctx context.Context, client *api.Client, pr
 			// types we handle them as warnings to be able to
 			// return as many resources as we can
 			if err := client.List(ctx, u, runtimeclient.InNamespace(project)); err != nil {
-				warnings = append(warnings, err.Error())
+				if !kerrors.IsForbidden(err) {
+					warnings = append(warnings, err.Error())
+				}
 				continue
 			}
 			// we convert to a list of pointers so that we can
@@ -159,10 +163,23 @@ OUTER:
 	return result, nil
 }
 
+func excludeListType(gvk schema.GroupVersionKind) bool {
+	// ClusterData is a non-namespaced resource and used to allow
+	// connecting to deplo.io application replicas.
+	if strings.EqualFold(gvk.Kind, infrastructure.ClusterDataKind+"list") &&
+		strings.EqualFold(gvk.Group, infrastructure.Group) {
+		return true
+	}
+	return false
+}
+
 func nineListTypes(s *runtime.Scheme) []schema.GroupVersionKind {
 	var lists []schema.GroupVersionKind
 	for gvk := range s.AllKnownTypes() {
 		if !strings.HasSuffix(strings.ToLower(gvk.Kind), "list") {
+			continue
+		}
+		if excludeListType(gvk) {
 			continue
 		}
 		if strings.HasSuffix(strings.ToLower(gvk.Group), "nine.ch") {
