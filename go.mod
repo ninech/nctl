@@ -34,8 +34,8 @@ require (
 	golang.org/x/crypto v0.25.0
 	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8
 	gotest.tools v2.2.0+incompatible
-	k8s.io/api v0.30.1
-	k8s.io/apimachinery v0.30.1
+	k8s.io/api v0.30.3
+	k8s.io/apimachinery v0.30.3
 	k8s.io/client-go v0.30.1
 	k8s.io/kubectl v0.29.0
 	k8s.io/utils v0.0.0-20240310230437-4693a0247e57
