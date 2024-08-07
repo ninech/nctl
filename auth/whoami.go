@@ -33,7 +33,7 @@ func (s *WhoAmICmd) Run(ctx context.Context, client *api.Client) error {
 }
 
 func printUserInfo(userInfo *api.UserInfo, cfg *Config) {
-	fmt.Printf("You are currenlty logged in the with the following account: %q\n", userInfo.User)
+	fmt.Printf("You are currently logged in the with the following account: %q\n", userInfo.User)
 
 	fmt.Printf("Your current organization: %q\n", cfg.Organization)
 
