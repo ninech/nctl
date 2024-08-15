@@ -400,7 +400,7 @@ func waitForBuildFinish(ctx context.Context, app *apps.Application, logClient *l
 
 			go func() {
 				if _, err := p.Run(); err != nil {
-					if !errors.Is(tea.ErrProgramKilled, err) {
+					if !errors.Is(err, tea.ErrProgramKilled) {
 						fmt.Fprintf(os.Stderr, "error running tea program: %s", err)
 					}
 				}

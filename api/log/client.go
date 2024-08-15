@@ -201,7 +201,7 @@ func (c *Client) TailQuery(ctx context.Context, delayFor time.Duration, out outp
 				continue
 			}
 
-			if websocket.IsCloseError(err, websocket.CloseNormalClosure) || errors.Is(websocket.ErrCloseSent, err) {
+			if websocket.IsCloseError(err, websocket.CloseNormalClosure) || errors.Is(err, websocket.ErrCloseSent) {
 				return nil
 			}
 

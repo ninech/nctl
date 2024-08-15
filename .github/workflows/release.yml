@@ -23,7 +23,7 @@ jobs:
       - name: setup go
         uses: actions/setup-go@v5
         with:
-          go-version: stable
+          go-version: '1.22'
       - run: git config --global url.https://$GH_ACCESS_TOKEN@github.com/.insteadOf https://github.com/
       - name: Define goreleaser flags
         run: test -n "$(git tag --points-at HEAD)" || echo "GORELEASER_FLAGS=--snapshot" >> $GITHUB_ENV
