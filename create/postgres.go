@@ -102,14 +102,14 @@ func (cmd *postgresCmd) newPostgres(namespace string) *storage.Postgres {
 // ApplicationKongVars returns all variables which are used in the application
 // create command
 func PostgresKongVars() kong.Vars {
-	vmTypes := make([]string, len(infra.MachineTypes))
-	for i, machineType := range infra.MachineTypes {
+	vmTypes := make([]string, len(storage.PostgresMachineTypes))
+	for i, machineType := range storage.PostgresMachineTypes {
 		vmTypes[i] = string(machineType)
 	}
 
 	result := make(kong.Vars)
 	result["postgres_machine_types"] = strings.Join(vmTypes, ", ")
-	result["postgres_machine_default"] = string(infra.MachineTypes[0])
+	result["postgres_machine_default"] = string(storage.PostgresMachineTypeDefault)
 	result["postgres_location_options"] = strings.Join(storage.PostgresLocationOptions, ", ")
 	result["postgres_location_default"] = string(storage.PostgresLocationDefault)
 	result["postgres_version_default"] = string(storage.PostgresVersionDefault)
