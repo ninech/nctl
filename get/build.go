@@ -93,7 +93,7 @@ func pullImage(ctx context.Context, apiClient *api.Client, build *apps.Build) er
 		value = dockerAPIVersion
 	}
 
-	cli, err := client.NewClientWithOpts(client.WithVersion(value))
+	cli, err := client.NewClientWithOpts(client.WithVersion(value), client.FromEnv)
 	if err != nil {
 		return err
 	}
