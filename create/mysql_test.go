@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	infra "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
@@ -43,8 +42,8 @@ func TestMySQL(t *testing.T) {
 		},
 		{
 			name:   "machineType",
-			create: mySQLCmd{MachineType: infra.MachineType("nine-standard-1")},
-			want:   storage.MySQLParameters{MachineType: infra.MachineType("nine-standard-1")},
+			create: mySQLCmd{MachineType: storage.MySQLMachineTypeDefault},
+			want:   storage.MySQLParameters{MachineType: storage.MySQLMachineTypeDefault},
 		},
 		{
 			name:   "sshKeys",

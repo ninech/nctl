@@ -114,14 +114,14 @@ func (cmd *mySQLCmd) newMySQL(namespace string) *storage.MySQL {
 // ApplicationKongVars returns all variables which are used in the application
 // create command
 func MySQLKongVars() kong.Vars {
-	vmTypes := make([]string, len(infra.MachineTypes))
-	for i, machineType := range infra.MachineTypes {
+	vmTypes := make([]string, len(storage.MySQLMachineTypes))
+	for i, machineType := range storage.MySQLMachineTypes {
 		vmTypes[i] = string(machineType)
 	}
 
 	result := make(kong.Vars)
 	result["mysql_machine_types"] = strings.Join(vmTypes, ", ")
-	result["mysql_machine_default"] = string(infra.MachineTypes[0])
+	result["mysql_machine_default"] = string(storage.MySQLMachineTypeDefault)
 	result["mysql_location_options"] = strings.Join(storage.MySQLLocationOptions, ", ")
 	result["mysql_location_default"] = string(storage.MySQLLocationDefault)
 	result["mysql_user"] = string(storage.MySQLUser)
