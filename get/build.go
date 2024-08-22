@@ -22,6 +22,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/duration"
 )
 
+const (
+	dockerAPIVersion = "1.42"
+)
+
 type buildCmd struct {
 	resourceCmd
 	ApplicationName string `short:"a" help:"Name of the Application to get builds for. If omitted all in the project will be listed."`
@@ -84,7 +88,7 @@ func printBuild(builds []apps.Build, get *Cmd, out io.Writer, header bool) error
 }
 
 func pullImage(ctx context.Context, apiClient *api.Client, build *apps.Build) error {
-	cli, err := client.NewClientWithOpts(client.FromEnv)
+	cli, err := client.NewClientWithOpts(client.WithVersion(dockerAPIVersion), client.FromEnv)
 	if err != nil {
 		return err
 	}
