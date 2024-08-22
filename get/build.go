@@ -88,12 +88,7 @@ func printBuild(builds []apps.Build, get *Cmd, out io.Writer, header bool) error
 }
 
 func pullImage(ctx context.Context, apiClient *api.Client, build *apps.Build) error {
-	value, exists := os.LookupEnv("DOCKER_API_VERSION")
-	if !exists {
-		value = dockerAPIVersion
-	}
-
-	cli, err := client.NewClientWithOpts(client.WithVersion(value), client.FromEnv)
+	cli, err := client.NewClientWithOpts(client.WithVersion(dockerAPIVersion), client.FromEnv)
 	if err != nil {
 		return err
 	}
