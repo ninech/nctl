@@ -27,14 +27,14 @@ func TestMySQL(t *testing.T) {
 		},
 		{
 			name:   "increase-machineType",
-			update: mySQLCmd{MachineType: ptr.To(infra.MachineType("nine-standard-1"))},
-			want:   storage.MySQLParameters{MachineType: infra.MachineType("nine-standard-1")},
+			update: mySQLCmd{MachineType: ptr.To(infra.MachineType("nine-db-prod-s"))},
+			want:   storage.MySQLParameters{MachineType: infra.MachineType("nine-db-prod-s")},
 		},
 		{
 			name:   "decrease-machineType",
-			create: storage.MySQLParameters{MachineType: infra.MachineType("nine-standard-2")},
-			update: mySQLCmd{MachineType: ptr.To(infra.MachineType("nine-standard-1"))},
-			want:   storage.MySQLParameters{MachineType: infra.MachineType("nine-standard-1")},
+			create: storage.MySQLParameters{MachineType: infra.MachineType("nine-db-prod-m")},
+			update: mySQLCmd{MachineType: ptr.To(infra.MachineType("nine-db-prod-s"))},
+			want:   storage.MySQLParameters{MachineType: infra.MachineType("nine-db-prod-s")},
 		},
 		{
 			name:   "sqlMode-no-mode-set-initially",
@@ -91,8 +91,8 @@ func TestMySQL(t *testing.T) {
 		{
 			name:   "multi-update",
 			create: storage.MySQLParameters{AllowedCIDRs: []meta.IPv4CIDR{"0.0.0.0/0"}},
-			update: mySQLCmd{MachineType: ptr.To(infra.MachineType("nine-standard-1"))},
-			want:   storage.MySQLParameters{MachineType: infra.MachineType("nine-standard-1"), AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
+			update: mySQLCmd{MachineType: ptr.To(infra.MachineType("nine-db-prod-s"))},
+			want:   storage.MySQLParameters{MachineType: infra.MachineType("nine-db-prod-s"), AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
 		},
 	}
 	for _, tt := range tests {
