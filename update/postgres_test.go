@@ -27,14 +27,14 @@ func TestPostgres(t *testing.T) {
 		},
 		{
 			name:   "increase-machineType",
-			update: postgresCmd{MachineType: ptr.To(infra.MachineType("nine-standard-1"))},
-			want:   storage.PostgresParameters{MachineType: infra.MachineType("nine-standard-1")},
+			update: postgresCmd{MachineType: ptr.To(infra.MachineType("nine-db-prod-s"))},
+			want:   storage.PostgresParameters{MachineType: infra.MachineType("nine-db-prod-s")},
 		},
 		{
 			name:   "decrease-machineType",
-			create: storage.PostgresParameters{MachineType: infra.MachineType("nine-standard-2")},
-			update: postgresCmd{MachineType: ptr.To(infra.MachineType("nine-standard-1"))},
-			want:   storage.PostgresParameters{MachineType: infra.MachineType("nine-standard-1")},
+			create: storage.PostgresParameters{MachineType: infra.MachineType("nine-db-prod-m")},
+			update: postgresCmd{MachineType: ptr.To(infra.MachineType("nine-db-prod-s"))},
+			want:   storage.PostgresParameters{MachineType: infra.MachineType("nine-db-prod-s")},
 		},
 		{
 			name:   "sshKeys",
@@ -60,8 +60,8 @@ func TestPostgres(t *testing.T) {
 		{
 			name:   "multi-update",
 			create: storage.PostgresParameters{AllowedCIDRs: []meta.IPv4CIDR{"0.0.0.0/0"}},
-			update: postgresCmd{MachineType: ptr.To(infra.MachineType("nine-standard-1"))},
-			want:   storage.PostgresParameters{MachineType: infra.MachineType("nine-standard-1"), AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
+			update: postgresCmd{MachineType: ptr.To(infra.MachineType("nine-db-prod-s"))},
+			want:   storage.PostgresParameters{MachineType: infra.MachineType("nine-db-prod-s"), AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
 		},
 	}
 	for _, tt := range tests {

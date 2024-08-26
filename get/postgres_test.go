@@ -33,32 +33,32 @@ func TestPostgres(t *testing.T) {
 		},
 		{
 			name:        "single",
-			instances:   map[string]storage.PostgresParameters{"test": {MachineType: infra.MachineType("nine-standard-1")}},
-			wantContain: []string{"nine-standard-1"},
+			instances:   map[string]storage.PostgresParameters{"test": {MachineType: infra.MachineType("nine-db-prod-s")}},
+			wantContain: []string{"nine-db-prod-s"},
 		},
 		{
 			name: "multiple",
 			instances: map[string]storage.PostgresParameters{
-				"test1": {MachineType: infra.MachineType("nine-standard-1")},
-				"test2": {MachineType: infra.MachineType("nine-standard-2")},
-				"test3": {MachineType: infra.MachineType("nine-standard-4")},
+				"test1": {MachineType: infra.MachineType("nine-db-prod-s")},
+				"test2": {MachineType: infra.MachineType("nine-db-prod-m")},
+				"test3": {MachineType: infra.MachineType("nine-db-prod-l")},
 			},
-			wantContain: []string{"nine-standard-1", "nine-standard-2", "test3"},
+			wantContain: []string{"nine-db-prod-s", "nine-db-prod-m", "test3"},
 		},
 		{
 			name: "get-by-name",
 			instances: map[string]storage.PostgresParameters{
-				"test1": {MachineType: infra.MachineType("nine-standard-1")},
-				"test2": {MachineType: infra.MachineType("nine-standard-2")},
+				"test1": {MachineType: infra.MachineType("nine-db-prod-s")},
+				"test2": {MachineType: infra.MachineType("nine-db-prod-m")},
 			},
 			get:         postgresCmd{resourceCmd: resourceCmd{Name: "test1"}},
-			wantContain: []string{"test1", "nine-standard-1"},
+			wantContain: []string{"test1", "nine-db-prod-s"},
 		},
 		{
 			name: "show-password",
 			instances: map[string]storage.PostgresParameters{
-				"test1": {MachineType: infra.MachineType("nine-standard-1")},
-				"test2": {MachineType: infra.MachineType("nine-standard-2")},
+				"test1": {MachineType: infra.MachineType("nine-db-prod-s")},
+				"test2": {MachineType: infra.MachineType("nine-db-prod-m")},
 			},
 			get:         postgresCmd{resourceCmd: resourceCmd{Name: "test2"}, PrintPassword: true},
 			wantContain: []string{"test2-topsecret"},
