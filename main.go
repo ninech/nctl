@@ -75,7 +75,10 @@ func main() {
 		// for the resourcePredictor to use the correct APICluster, we need to
 		// call parse already. Note that this won't parse the flag for
 		// completion but it will work for the default and env.
-		_, _ = parser.Parse(os.Args[1:])
+		_, err = parser.Parse(os.Args[1:])
+		if err != nil {
+			return nil, err
+		}
 		// the client for the predictor requires a static token in the client config
 		// since dynamic exec config seems to break with some shells during completion.
 		// The exact reason for that is unknown.
