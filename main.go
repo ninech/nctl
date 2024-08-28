@@ -30,7 +30,7 @@ import (
 
 type flags struct {
 	Project        string           `predictor:"resource_name" help:"Limit commands to a specific project." short:"p"`
-	APICluster     string           `help:"Context name of the API cluster." default:"nineapis.ch" env:"NCTL_API_CLUSTER"`
+	APICluster     string           `help:"Context name of the API cluster." default:"${api_cluster}" env:"NCTL_API_CLUSTER"`
 	LogAPIAddress  string           `help:"Address of the deplo.io logging API server." default:"https://logs.deplo.io" env:"NCTL_LOG_ADDR"`
 	LogAPIInsecure bool             `help:"Don't verify TLS connection to the logging API server." hidden:"" default:"false" env:"NCTL_LOG_INSECURE"`
 	Version        kong.VersionFlag `name:"version" help:"Print version information and quit."`
@@ -49,7 +49,10 @@ type rootCommand struct {
 	Exec        exec.Cmd                     `cmd:"" help:"Execute a command."`
 }
 
-var version = "dev"
+const (
+	version           = "dev"
+	defaultAPICluster = "nineapis.ch"
+)
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -72,17 +75,14 @@ func main() {
 	)
 
 	resourceNamePredictor := predictor.NewResourceName(func() (*api.Client, error) {
-		// for the resourcePredictor to use the correct APICluster, we need to
-		// call parse already. Note that this won't parse the flag for
-		// completion but it will work for the default and env.
-		_, err = parser.Parse(os.Args[1:])
-		if err != nil {
-			return nil, err
-		}
 		// the client for the predictor requires a static token in the client config
 		// since dynamic exec config seems to break with some shells during completion.
 		// The exact reason for that is unknown.
-		c, err := api.New(ctx, nctl.APICluster, nctl.Project, api.StaticToken(ctx))
+		apiCluster := defaultAPICluster
+		if v, ok := os.LookupEnv("NCTL_API_CLUSTER"); ok {
+			apiCluster = v
+		}
+		c, err := api.New(ctx, apiCluster, "", api.StaticToken(ctx))
 		if err != nil {
 			return nil, err
 		}
@@ -171,6 +171,7 @@ func setupSignalHandler(ctx context.Context, cancel context.CancelFunc) {
 func kongVariables() (kong.Vars, error) {
 	result := make(kong.Vars)
 	result["version"] = version
+	result["api_cluster"] = defaultAPICluster
 	appCreateKongVars, err := create.ApplicationKongVars()
 	if err != nil {
 		return nil, fmt.Errorf("error on application create kong vars: %w", err)
