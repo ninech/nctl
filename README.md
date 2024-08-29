@@ -20,8 +20,8 @@ brew install ninech/taps/nctl
 
 # Debian/Ubuntu
 echo "deb [trusted=yes] https://repo.nine.ch/deb/ /" | sudo tee /etc/apt/sources.list.d/repo.nine.ch.list
-apt-get update
-apt-get install nctl
+sudo apt-get update
+sudo apt-get install nctl
 
 # Fedora/RHEL
 cat <<EOF > /etc/yum.repos.d/repo.nine.ch.repo
