@@ -12,6 +12,7 @@ import (
 
 	"github.com/alecthomas/kong"
 
+	completion "github.com/jotaen/kong-completion"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/apply"
@@ -25,7 +26,6 @@ import (
 	"github.com/ninech/nctl/predictor"
 	"github.com/ninech/nctl/update"
 	"github.com/posener/complete"
-	"github.com/willabides/kongplete"
 )
 
 type flags struct {
@@ -38,15 +38,15 @@ type flags struct {
 
 type rootCommand struct {
 	flags
-	Get         get.Cmd                      `cmd:"" help:"Get resource."`
-	Auth        auth.Cmd                     `cmd:"" help:"Authenticate with resource."`
-	Completions kongplete.InstallCompletions `cmd:"" help:"Print shell completions."`
-	Create      create.Cmd                   `cmd:"" help:"Create resource."`
-	Apply       apply.Cmd                    `cmd:"" help:"Apply resource."`
-	Delete      delete.Cmd                   `cmd:"" help:"Delete resource."`
-	Logs        logs.Cmd                     `cmd:"" help:"Get logs of resource."`
-	Update      update.Cmd                   `cmd:"" help:"Update resource."`
-	Exec        exec.Cmd                     `cmd:"" help:"Execute a command."`
+	Get         get.Cmd               `cmd:"" help:"Get resource."`
+	Auth        auth.Cmd              `cmd:"" help:"Authenticate with resource."`
+	Completions completion.Completion `cmd:"" help:"Print shell completions."`
+	Create      create.Cmd            `cmd:"" help:"Create resource."`
+	Apply       apply.Cmd             `cmd:"" help:"Apply resource."`
+	Delete      delete.Cmd            `cmd:"" help:"Delete resource."`
+	Logs        logs.Cmd              `cmd:"" help:"Get logs of resource."`
+	Update      update.Cmd            `cmd:"" help:"Update resource."`
+	Exec        exec.Cmd              `cmd:"" help:"Execute a command."`
 }
 
 const (
@@ -91,9 +91,10 @@ func main() {
 	})
 
 	// completion handling
-	kongplete.Complete(parser,
-		kongplete.WithPredictor("file", complete.PredictFiles("*")),
-		kongplete.WithPredictor("resource_name", resourceNamePredictor),
+	completion.Register(
+		parser,
+		completion.WithPredictor("file", complete.PredictFiles("*")),
+		completion.WithPredictor("resource_name", resourceNamePredictor),
 	)
 
 	kongCtx, err := parser.Parse(os.Args[1:])
