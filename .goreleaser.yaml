@@ -30,6 +30,11 @@ release:
   draft: true
   replace_existing_draft: true
 
+archives:
+  - format_overrides:
+      - goos: windows
+        format: zip
+
 brews:
   - name: nctl
 
