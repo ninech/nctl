@@ -21,6 +21,7 @@ require (
 	github.com/grafana/loki v1.6.2-0.20240110103520-24fa648893d1
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/int128/kubelogin v1.28.1
+	github.com/jotaen/kong-completion v0.0.6
 	github.com/lucasepe/codename v0.2.1-0.20230220151621-5e31bf1e775f
 	github.com/mattn/go-isatty v0.0.20
 	github.com/moby/moby v27.1.1+incompatible
@@ -30,7 +31,6 @@ require (
 	github.com/prometheus/common v0.55.0
 	github.com/stretchr/testify v1.9.0
 	github.com/theckman/yacspin v0.13.12
-	github.com/willabides/kongplete v0.4.0
 	golang.org/x/crypto v0.25.0
 	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8
 	gotest.tools v2.2.0+incompatible
