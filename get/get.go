@@ -113,21 +113,19 @@ func (cmd *Cmd) list(ctx context.Context, client *api.Client, list runtimeclient
 	return nil
 }
 
-// writeHeader writes the header row, prepending the project row if
-// cmd.AllProjects is set.
+// writeHeader writes the header row, prepending the always shown project
 func (cmd *Cmd) writeHeader(w io.Writer, headings ...string) {
-	if cmd.AllProjects {
-		headings = append([]string{"PROJECT"}, headings...)
-	}
-	cmd.writeTabRow(w, "", headings...)
+	cmd.writeTabRow(w, "PROJECT", headings...)
 }
 
-// writeTabRow writes a row to w, prepending the project if
-// cmd.AllProjects is set and the project is not empty.
+// writeTabRow writes a row to w, prepending the passed project
 func (cmd *Cmd) writeTabRow(w io.Writer, project string, row ...string) {
-	if cmd.AllProjects && len(project) != 0 {
-		row = append([]string{project}, row...)
+	if project == "" {
+		// if the project is empty, the content should just be a "tab"
+		// so that the structure will be contained
+		project = "\t"
 	}
+	row = append([]string{project}, row...)
 
 	switch length := len(row); length {
 	case 0:
