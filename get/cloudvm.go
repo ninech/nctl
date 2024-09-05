@@ -49,7 +49,7 @@ func (cmd *cloudVMCmd) printCloudVirtualMachineInstances(list []infrastructure.C
 	}
 
 	for _, cloudvm := range list {
-		get.writeTabRow(w, cloudvm.Namespace, cloudvm.Name, cloudvm.Status.AtProvider.FQDN, string(cloudvm.Status.AtProvider.PowerState), cloudvm.Status.AtProvider.IPAddress)
+		get.writeTabRow(w, cloudvm.Namespace, "\t"+cloudvm.Name, cloudvm.Status.AtProvider.FQDN, string(cloudvm.Status.AtProvider.PowerState), cloudvm.Status.AtProvider.IPAddress)
 	}
 
 	return w.Flush()

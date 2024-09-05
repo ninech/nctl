@@ -72,7 +72,7 @@ func printApplication(apps []apps.Application, get *Cmd, out io.Writer, header b
 		verifiedHosts := append(util.VerifiedAppHosts(&app), app.Status.AtProvider.CNAMETarget)
 		unverifiedHosts := util.UnverifiedAppHosts(&app)
 
-		get.writeTabRow(w, app.Namespace, app.Name, join(verifiedHosts), join(unverifiedHosts))
+		get.writeTabRow(w, app.Namespace, "\t"+app.Name, join(verifiedHosts), join(unverifiedHosts))
 	}
 
 	return w.Flush()

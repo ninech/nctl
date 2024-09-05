@@ -77,18 +77,14 @@ func (cmd *Cmd) list(ctx context.Context, client *api.Client, list runtimeclient
 // writeHeader writes the header row, prepending the project row if
 // cmd.AllProjects is set.
 func (cmd *Cmd) writeHeader(w io.Writer, headings ...string) {
-	if cmd.AllProjects {
-		headings = append([]string{"PROJECT"}, headings...)
-	}
+	headings = append([]string{"PROJECT"}, headings...)
 	cmd.writeTabRow(w, "", headings...)
 }
 
 // writeTabRow writes a row to w, prepending the project if
 // cmd.AllProjects is set and the project is not empty.
 func (cmd *Cmd) writeTabRow(w io.Writer, project string, row ...string) {
-	if cmd.AllProjects && len(project) != 0 {
-		row = append([]string{project}, row...)
-	}
+	row = append([]string{project}, row...)
 
 	switch length := len(row); length {
 	case 0:
@@ -98,7 +94,7 @@ func (cmd *Cmd) writeTabRow(w io.Writer, project string, row ...string) {
 	default:
 		fmt.Fprintf(w, "%s", row[0])
 		for _, r := range row[1:] {
-			fmt.Fprintf(w, "\t%s", r)
+			fmt.Fprintf(w, "%s\t", r)
 		}
 		fmt.Fprint(w, "\n")
 	}

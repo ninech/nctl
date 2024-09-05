@@ -78,7 +78,7 @@ func printBuild(builds []apps.Build, get *Cmd, out io.Writer, header bool) error
 	}
 
 	for _, build := range builds {
-		get.writeTabRow(w, build.Namespace, build.Name,
+		get.writeTabRow(w, build.Namespace, "\t"+build.Name,
 			build.Labels[util.ApplicationNameLabel],
 			string(build.Status.AtProvider.BuildStatus),
 			duration.HumanDuration(time.Since(build.CreationTimestamp.Time)))

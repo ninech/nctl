@@ -137,7 +137,7 @@ func printItems(items []*unstructured.Unstructured, get Cmd, out io.Writer, head
 		get.writeHeader(w, "NAME", "KIND", "GROUP")
 	}
 	for _, item := range items {
-		get.writeTabRow(w, item.GetNamespace(), item.GetName(), item.GroupVersionKind().Kind, item.GroupVersionKind().Group)
+		get.writeTabRow(w, item.GetNamespace(), "\t"+item.GetName(), item.GroupVersionKind().Kind, item.GroupVersionKind().Group)
 	}
 
 	return w.Flush()

@@ -80,7 +80,7 @@ func printReleases(releases []apps.Release, get *Cmd, header bool) error {
 		get.writeTabRow(
 			w,
 			r.ObjectMeta.Namespace,
-			r.ObjectMeta.Name,
+			"\t"+r.ObjectMeta.Name,
 			r.Spec.ForProvider.Build.Name,
 			r.ObjectMeta.Labels[util.ApplicationNameLabel],
 			string(r.Spec.ForProvider.Config.Size),

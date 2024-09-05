@@ -68,7 +68,7 @@ func (asa *apiServiceAccountsCmd) print(sas []iam.APIServiceAccount, get *Cmd, h
 	}
 
 	for _, sa := range sas {
-		get.writeTabRow(w, sa.Namespace, sa.Name, string(sa.Spec.ForProvider.Role))
+		get.writeTabRow(w, sa.Namespace, "\t"+sa.Name, string(sa.Spec.ForProvider.Role))
 	}
 
 	return w.Flush()
