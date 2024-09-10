@@ -31,7 +31,7 @@ func TestProject(t *testing.T) {
 			projects:     test.Projects(organization, "dev", "staging", "prod"),
 			displayNames: []string{"Development", "", "Production"},
 			outputFormat: full,
-			output: `NAME       DISPLAY NAME
+			output: `PROJECT    DISPLAY NAME
 dev        Development
 prod       Production
 staging    <none>
@@ -49,7 +49,7 @@ staging    <none>
 			projects:     test.Projects(organization, "dev", "staging", "prod"),
 			outputFormat: full,
 			allProjects:  true,
-			output: `NAME       DISPLAY NAME
+			output: `PROJECT    DISPLAY NAME
 dev        <none>
 prod       <none>
 staging    <none>
@@ -69,8 +69,8 @@ staging    <none>
 			projects:     test.Projects(organization, "dev", "staging"),
 			name:         "dev",
 			outputFormat: full,
-			output: `NAME    DISPLAY NAME
-dev     <none>
+			output: `PROJECT    DISPLAY NAME
+dev        <none>
 `,
 		},
 		"specific project requested, but does not exist": {
