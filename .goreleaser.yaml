@@ -31,7 +31,11 @@ release:
   replace_existing_draft: true
 
 archives:
-  - format_overrides:
+  - files:
+      - LICENSE
+      - README.md
+      - completions/*
+    format_overrides:
       - goos: windows
         format: zip
 
@@ -66,13 +70,10 @@ brews:
     description: "Interact with Nine API resources."
     license: "Apache 2.0"
 
-    post_install: |
-      File.write "nctl.bash", system("nctl", "completions", "-c", "bash")
-      File.write "nctl.zsh", system("nctl", "completions", "-c", "zsh")
-      File.write "nctl.fish", system("nctl", "completions", "-c", "fish")
-      bash_completion.install "nctl.bash"
-      zsh_completion.install "nctl.zsh"
-      fish_completion.install "nctl.fish"
+    extra_install: |
+      bash_completion.install "completions/nctl.bash" => "nctl"
+      zsh_completion.install "completions/nctl.zsh" => "_nctl"
+      fish_completion.install "completions/nctl.fish"
 
     # Setting this will prevent goreleaser to actually try to commit the updated
     # formula - instead, the formula file will be stored on the dist folder only,
