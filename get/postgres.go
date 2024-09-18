@@ -13,8 +13,9 @@ import (
 
 type postgresCmd struct {
 	resourceCmd
-	PrintPassword bool `help:"Print the password of the PostgreSQL User. Requires name to be set." xor:"print"`
-	PrintUser     bool `help:"Print the name of the PostgreSQL User. Requires name to be set." xor:"print"`
+	PrintPassword         bool `help:"Print the password of the PostgreSQL User. Requires name to be set." xor:"print"`
+	PrintUser             bool `help:"Print the name of the PostgreSQL User. Requires name to be set." xor:"print"`
+	PrintConnectionString bool `help:"Print the connection string of the PostgreSQL instance. Requires name to be set." xor:"print"`
 
 	out io.Writer
 }
@@ -28,14 +29,16 @@ func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 	}
 
 	postgresList := &storage.PostgresList{}
-
 	if err := get.list(ctx, client, postgresList, matchName(cmd.Name)); err != nil {
 		return err
 	}
-
 	if len(postgresList.Items) == 0 {
 		printEmptyMessage(cmd.out, storage.PostgresKind, client.Project)
 		return nil
+	}
+
+	if cmd.Name != "" && cmd.PrintConnectionString {
+		return cmd.printConnectionString(ctx, client, &postgresList.Items[0])
 	}
 
 	if cmd.Name != "" && cmd.PrintPassword {
@@ -75,5 +78,22 @@ func (cmd *postgresCmd) printPassword(ctx context.Context, client *api.Client, p
 	}
 
 	fmt.Fprintln(cmd.out, pw)
+	return nil
+}
+
+// printConnectionString according to the PostgreSQL documentation:
+// https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING
+func (cmd *postgresCmd) printConnectionString(ctx context.Context, client *api.Client, pg *storage.Postgres) error {
+	pw, err := getConnectionSecret(ctx, client, storage.PostgresUser, pg)
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintf(cmd.out, "postgres://%s:%s@%s",
+		storage.PostgresUser,
+		pw,
+		pg.Status.AtProvider.FQDN,
+	)
+
 	return nil
 }
