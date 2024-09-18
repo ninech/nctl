@@ -16,7 +16,7 @@ import (
 type postgresCmd struct {
 	resourceCmd
 	MachineType      *infra.MachineType `placeholder:"${postgres_machine_default}" help:"Defines the sizing for a particular PostgreSQL instance. Available types: ${postgres_machine_types}"`
-	AllowedCidrs     *[]meta.IPv4CIDR   `placeholder:"0.0.0.0/0" help:"Specifies the IP addresses allowed to connect to the instance." `
+	AllowedCidrs     *[]meta.IPv4CIDR   `placeholder:"203.0.113.1/32" help:"Specifies the IP addresses allowed to connect to the instance." `
 	SSHKeys          []storage.SSHKey   `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups."`
 	SSHKeysFile      string             `help:"Path to a file containing a list of SSH public keys (see above), separated by newlines."`
 	KeepDailyBackups *int               `placeholder:"${postgres_backup_retention_days}" help:"Number of daily database backups to keep. Note that setting this to 0, backup will be disabled and existing dumps deleted immediately."`
