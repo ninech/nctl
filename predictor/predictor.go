@@ -31,21 +31,25 @@ var argResourceMap = map[string]string{
 }
 
 type Resource struct {
-	client *api.Client
+	clientCreator func() (*api.Client, error)
+	client        *api.Client
 }
 
 func NewResourceName(clientCreator func() (*api.Client, error)) *Resource {
-	c, err := clientCreator()
-	if err != nil {
-		return &Resource{}
+	return &Resource{
+		clientCreator: clientCreator,
 	}
-
-	return &Resource{client: c}
 }
 
 func (r *Resource) Predict(args complete.Args) []string {
-	if r.client == nil {
+	if r.clientCreator == nil {
 		return []string{}
+	}
+	if r.client == nil {
+		var err error
+		if r.client, err = r.clientCreator(); err != nil {
+			return []string{}
+		}
 	}
 
 	u := &unstructured.UnstructuredList{}
