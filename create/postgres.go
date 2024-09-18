@@ -25,7 +25,7 @@ type postgresCmd struct {
 	AllowedCidrs     []meta.IPv4CIDR         `placeholder:"0.0.0.0/0" help:"Specifies the IP addresses allowed to connect to the instance." `
 	SSHKeys          []storage.SSHKey        `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups."`
 	SSHKeysFile      string                  `help:"Path to a file containing a list of SSH public keys (see above), separated by newlines."`
-	PostgresVersion  storage.PostgresVersion `placeholder:"${postgres_version_default}" help:"Release version with which the PostgreSQL instance is created"`
+	PostgresVersion  storage.PostgresVersion `placeholder:"${postgres_version_default}" help:"Release version with which the PostgreSQL instance is created. Available versions: ${postgres_versions}"`
 	KeepDailyBackups *int                    `placeholder:"${postgres_backup_retention_days}" help:"Number of daily database backups to keep. Note that setting this to 0, backup will be disabled and existing dumps deleted immediately."`
 }
 
@@ -102,19 +102,23 @@ func (cmd *postgresCmd) newPostgres(namespace string) *storage.Postgres {
 // ApplicationKongVars returns all variables which are used in the application
 // create command
 func PostgresKongVars() kong.Vars {
-	vmTypes := make([]string, len(storage.PostgresMachineTypes))
-	for i, machineType := range storage.PostgresMachineTypes {
-		vmTypes[i] = string(machineType)
-	}
-
 	result := make(kong.Vars)
-	result["postgres_machine_types"] = strings.Join(vmTypes, ", ")
+	result["postgres_machine_types"] = strings.Join(stringSlice(storage.PostgresMachineTypes), ", ")
 	result["postgres_machine_default"] = string(storage.PostgresMachineTypeDefault)
 	result["postgres_location_options"] = strings.Join(storage.PostgresLocationOptions, ", ")
 	result["postgres_location_default"] = string(storage.PostgresLocationDefault)
 	result["postgres_version_default"] = string(storage.PostgresVersionDefault)
+	result["postgres_versions"] = strings.Join(stringSlice(storage.PostgresVersions), ", ")
 	result["postgres_user"] = storage.PostgresUser
 	result["postgres_backup_retention_days"] = fmt.Sprintf("%d", storage.PostgresBackupRetentionDaysDefault)
 
 	return result
+}
+
+func stringSlice[K ~string](elems []K) []string {
+	s := make([]string, 0, len(elems))
+	for _, elem := range elems {
+		s = append(s, string(elem))
+	}
+	return s
 }
