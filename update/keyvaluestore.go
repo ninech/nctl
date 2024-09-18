@@ -16,7 +16,7 @@ type keyValueStoreCmd struct {
 	resourceCmd
 	MemorySize      *string                               `help:"MemorySize configures KeyValueStore to use a specified amount of memory for the data set." placeholder:"1Gi"`
 	MaxMemoryPolicy *storage.KeyValueStoreMaxMemoryPolicy `help:"MaxMemoryPolicy specifies the exact behavior KeyValueStore follows when the maxmemory limit is reached." placeholder:"allkeys-lru"`
-	AllowedCidrs    *[]meta.IPv4CIDR                      `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance." placeholder:"0.0.0.0/0"`
+	AllowedCidrs    *[]meta.IPv4CIDR                      `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance." placeholder:"203.0.113.1/32"`
 }
 
 func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client) error {
