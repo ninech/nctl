@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"strings"
 	"syscall"
 
@@ -50,8 +51,13 @@ type rootCommand struct {
 }
 
 const (
-	version           = "dev"
 	defaultAPICluster = "nineapis.ch"
+)
+
+var (
+	version string
+	commit  string
+	date    string
 )
 
 func main() {
@@ -171,7 +177,7 @@ func setupSignalHandler(ctx context.Context, cancel context.CancelFunc) {
 // checks for variables which would overwrite already existing ones.
 func kongVariables() (kong.Vars, error) {
 	result := make(kong.Vars)
-	result["version"] = version
+	result["version"] = fmt.Sprintf("%s (commit: %s, date: %s)", version, commit, date)
 	result["api_cluster"] = defaultAPICluster
 	appCreateKongVars, err := create.ApplicationKongVars()
 	if err != nil {
@@ -196,4 +202,24 @@ func merge(existing kong.Vars, withs ...kong.Vars) error {
 	}
 
 	return nil
+}
+
+func init() {
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return
+	}
+
+	if version == "" {
+		version = info.Main.Version
+	}
+
+	for _, kv := range info.Settings {
+		switch kv.Key {
+		case "vcs.revision":
+			commit = kv.Value
+		case "vcs.time":
+			date = kv.Value
+		}
+	}
 }
