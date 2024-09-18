@@ -13,8 +13,9 @@ import (
 
 type mySQLCmd struct {
 	resourceCmd
-	PrintPassword bool `help:"Print the password of the MySQL User. Requires name to be set." xor:"print"`
-	PrintUser     bool `help:"Print the name of the MySQL User. Requires name to be set." xor:"print"`
+	PrintPassword         bool `help:"Print the password of the MySQL User. Requires name to be set." xor:"print"`
+	PrintUser             bool `help:"Print the name of the MySQL User. Requires name to be set." xor:"print"`
+	PrintConnectionString bool `help:"Print the connection string of the MySQL instance. Requires name to be set." xor:"print"`
 
 	out io.Writer
 }
@@ -28,14 +29,16 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client, get *Cmd) erro
 	}
 
 	mysqlList := &storage.MySQLList{}
-
 	if err := get.list(ctx, client, mysqlList, matchName(cmd.Name)); err != nil {
 		return err
 	}
-
 	if len(mysqlList.Items) == 0 {
 		printEmptyMessage(cmd.out, storage.MySQLKind, client.Project)
 		return nil
+	}
+
+	if cmd.Name != "" && cmd.PrintConnectionString {
+		return cmd.printConnectionString(ctx, client, &mysqlList.Items[0])
 	}
 
 	if cmd.Name != "" && cmd.PrintPassword {
@@ -75,5 +78,22 @@ func (cmd *mySQLCmd) printPassword(ctx context.Context, client *api.Client, mysq
 	}
 
 	fmt.Fprintln(cmd.out, pw)
+	return nil
+}
+
+// printConnectionString according to the MySQL documentation:
+// https://dev.mysql.com/doc/refman/8.4/en/connecting-using-uri-or-key-value-pairs.html#connecting-using-uri
+func (cmd *mySQLCmd) printConnectionString(ctx context.Context, client *api.Client, mysql *storage.MySQL) error {
+	pw, err := getConnectionSecret(ctx, client, storage.MySQLUser, mysql)
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintf(cmd.out, "mysql://%s:%s@%s",
+		storage.MySQLUser,
+		pw,
+		mysql.Status.AtProvider.FQDN,
+	)
+
 	return nil
 }
