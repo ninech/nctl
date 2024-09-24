@@ -177,7 +177,7 @@ func setupSignalHandler(ctx context.Context, cancel context.CancelFunc) {
 // checks for variables which would overwrite already existing ones.
 func kongVariables() (kong.Vars, error) {
 	result := make(kong.Vars)
-	result["version"] = fmt.Sprintf("%s (commit: %s, date: %s)", version, commit, date)
+	result["version"] = versionOutput(version, commit, date)
 	result["api_cluster"] = defaultAPICluster
 	appCreateKongVars, err := create.ApplicationKongVars()
 	if err != nil {
@@ -188,6 +188,21 @@ func kongVariables() (kong.Vars, error) {
 	}
 
 	return result, nil
+}
+
+func versionOutput(version, commit, date string) string {
+	var extra []string
+
+	if commit != "" {
+		extra = append(extra, "commit: "+commit)
+	}
+	if date != "" {
+		extra = append(extra, "date: "+date)
+	}
+	if len(extra) > 0 {
+		return fmt.Sprintf("%s (%s)", version, strings.Join(extra, ", "))
+	}
+	return version
 }
 
 func merge(existing kong.Vars, withs ...kong.Vars) error {
