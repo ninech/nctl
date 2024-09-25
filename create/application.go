@@ -28,6 +28,8 @@ import (
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const logPrintTimeout = 10 * time.Second
+
 // note: when adding/changing fields here also make sure to carry it over to
 // update/application.go.
 type applicationCmd struct {
@@ -188,13 +190,15 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		waitForBuildFinish(appWaitCtx, newApp, client.Log),
 		waitForRelease(newApp),
 	); err != nil {
+		printCtx, cancel := context.WithTimeout(context.Background(), logPrintTimeout)
+		defer cancel()
 		if buildErr, ok := err.(buildError); ok {
-			if err := buildErr.printMessage(appWaitCtx, client); err != nil {
+			if err := buildErr.printMessage(printCtx, client); err != nil {
 				return fmt.Errorf("%s: %w", buildErr, err)
 			}
 		}
 		if releaseErr, ok := err.(releaseError); ok {
-			if err := releaseErr.printMessage(appWaitCtx, client); err != nil {
+			if err := releaseErr.printMessage(printCtx, client); err != nil {
 				return fmt.Errorf("%s: %w", releaseErr, err)
 			}
 		}
@@ -437,8 +441,9 @@ type releaseError struct {
 }
 
 func (r releaseError) Error() string {
-	if r.release.Status.AtProvider.DeployJobStatus.Status == "" {
-		switch r.release.Status.AtProvider.DeployJobStatus.Reason {
+	deployJobStatus := r.release.Status.AtProvider.DeployJobStatus
+	if deployJobStatus != nil && deployJobStatus.Status == "" {
+		switch deployJobStatus.Reason {
 		case apps.DeployJobProcessReasonBackoff:
 			return "deploy job has failed after all retries."
 		case apps.DeployJobProcessReasonTimeout:
