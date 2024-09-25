@@ -68,7 +68,7 @@ func New(ctx context.Context, apiClusterContext, project string, opts ...ClientO
 // LogClient sets up a log client connected to the provided address.
 func LogClient(ctx context.Context, address string, insecure bool) ClientOpt {
 	return func(c *Client) error {
-		logClient, err := log.NewClient(address, c.Token(ctx), c.Project, insecure)
+		logClient, err := log.NewClient(address, func(ctx context.Context) string { return c.Token(ctx) }, c.Project, insecure)
 		if err != nil {
 			return fmt.Errorf("unable to create log client: %w", err)
 		}

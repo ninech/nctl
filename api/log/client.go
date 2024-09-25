@@ -21,7 +21,10 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
+type tokenFunc func(ctx context.Context) string
+
 type Client struct {
+	bearerTokenFunc tokenFunc
 	logclient.Client
 	StdOut output.LogOutput
 }
@@ -38,7 +41,7 @@ type Query struct {
 }
 
 // NewClient returns a new log API client.
-func NewClient(address, token, orgID string, insecure bool) (*Client, error) {
+func NewClient(address string, tokenFunc tokenFunc, orgID string, insecure bool) (*Client, error) {
 	out, err := StdOut("default")
 	if err != nil {
 		return nil, err
@@ -50,12 +53,12 @@ func NewClient(address, token, orgID string, insecure bool) (*Client, error) {
 	}
 
 	return &Client{
-		StdOut: out,
+		bearerTokenFunc: tokenFunc,
+		StdOut:          out,
 		Client: &logclient.DefaultClient{
-			Address:     address,
-			BearerToken: token,
-			OrgID:       orgID,
-			TLSConfig:   tls,
+			Address:   address,
+			OrgID:     orgID,
+			TLSConfig: tls,
 		},
 	}, nil
 }
@@ -82,14 +85,30 @@ func StdOut(mode string) (output.LogOutput, error) {
 	return out, nil
 }
 
-// QueryRange queries logs within a specific time range.
+func (c *Client) refreshToken(ctx context.Context) {
+	if c.bearerTokenFunc == nil {
+		return
+	}
+	if defaultClient, is := c.Client.(*logclient.DefaultClient); is {
+		defaultClient.BearerToken = c.bearerTokenFunc(ctx)
+	}
+}
+
+// QueryRange queries logs within a specific time range and prints the result.
 func (c *Client) QueryRange(ctx context.Context, out output.LogOutput, q Query) error {
+	c.refreshToken(ctx)
 	resp, err := c.Client.QueryRange(q.QueryString, q.Limit, q.Start, q.End, q.Direction, q.Step, q.Interval, q.Quiet)
 	if err != nil {
 		return err
 	}
 
 	return printResult(resp.Data.Result, out)
+}
+
+// QueryRangeResponse queries logs within a specific time range and returns the response.
+func (c *Client) QueryRangeResponse(ctx context.Context, q Query) (*loghttp.QueryResponse, error) {
+	c.refreshToken(ctx)
+	return c.Client.QueryRange(q.QueryString, q.Limit, q.Start, q.End, q.Direction, q.Step, q.Interval, q.Quiet)
 }
 
 // QueryRangeWithRetry queries logs within a specific time range with a retry
@@ -108,7 +127,7 @@ func (c *Client) QueryRangeWithRetry(ctx context.Context, out output.LogOutput, 
 			return true
 		},
 		func() error {
-			resp, err := c.Client.QueryRange(q.QueryString, q.Limit, q.Start, q.End, q.Direction, q.Step, q.Interval, q.Quiet)
+			resp, err := c.QueryRangeResponse(ctx, q)
 			if err != nil {
 				return err
 			}
@@ -122,6 +141,12 @@ func (c *Client) QueryRangeWithRetry(ctx context.Context, out output.LogOutput, 
 
 			return printResult(resp.Data.Result, out)
 		})
+}
+
+// LiveTailQueryConn does a live tailing with a specific query.
+func (c *Client) LiveTailQueryConn(ctx context.Context, queryStr string, delayFor time.Duration, limit int, start time.Time, quiet bool) (*websocket.Conn, error) {
+	c.refreshToken(ctx)
+	return c.Client.LiveTailQueryConn(queryStr, delayFor, limit, start, quiet)
 }
 
 func printResult(value loghttp.ResultValue, out output.LogOutput) error {
@@ -151,7 +176,7 @@ func printStream(streams loghttp.Streams, out output.LogOutput) {
 // This has been adapted from https://github.com/grafana/loki/blob/v2.8.2/pkg/logcli/query/tail.go#L22
 // as it directly prints out messages using builtin log, which we don't want.
 func (c *Client) TailQuery(ctx context.Context, delayFor time.Duration, out output.LogOutput, q Query) error {
-	conn, err := c.LiveTailQueryConn(q.QueryString, delayFor, q.Limit, q.Start, q.Quiet)
+	conn, err := c.LiveTailQueryConn(ctx, q.QueryString, delayFor, q.Limit, q.Start, q.Quiet)
 	if err != nil {
 		return fmt.Errorf("tailing logs failed: %w", err)
 	}
@@ -186,11 +211,10 @@ func (c *Client) TailQuery(ctx context.Context, delayFor time.Duration, out outp
 				})
 
 				for backoff.Ongoing() {
-					conn, err = c.LiveTailQueryConn(q.QueryString, delayFor, q.Limit, lastReceivedTimestamp, q.Quiet)
+					conn, err = c.LiveTailQueryConn(ctx, q.QueryString, delayFor, q.Limit, lastReceivedTimestamp, q.Quiet)
 					if err == nil {
 						break
 					}
-
 					backoff.Wait()
 				}
 
