@@ -125,4 +125,17 @@ publishers:
     dir: "{{ dir .ArtifactPath }}"
     cmd: curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_TOKEN }}@push.fury.io/ninedev/
 
+env:
+  - KO_DOCKER_REPO=ghcr.io/{{ .Env.GITHUB_REPOSITORY }}
+kos:
+  - base_image: alpine
+    bare: true
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    tags:
+      - latest
+      - "{{.Tag}}"
+    creation_time: "{{.CommitTimestamp}}"
+
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
