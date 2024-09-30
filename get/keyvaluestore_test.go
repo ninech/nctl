@@ -7,66 +7,140 @@ import (
 	"testing"
 
 	storage "github.com/ninech/apis/storage/v1alpha1"
-	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestKeyValueStore(t *testing.T) {
+	ctx := context.Background()
+
+	type kvsInstance struct {
+		name    string
+		project string
+		memSize *storage.KeyValueStoreMemorySize
+	}
+
 	tests := []struct {
-		name        string
-		instances   map[string]storage.KeyValueStoreParameters
-		get         keyValueStoreCmd
-		out         output
-		wantContain []string
-		wantErr     bool
+		name          string
+		instances     []kvsInstance
+		get           keyValueStoreCmd
+		out           output
+		inAllProjects bool
+		wantContain   []string
+		wantLines     int
+		wantErr       bool
 	}{
-		{"simple", map[string]storage.KeyValueStoreParameters{}, keyValueStoreCmd{}, full, []string{"no KeyValueStores found"}, false},
 		{
-			"single",
-			map[string]storage.KeyValueStoreParameters{"test": {MemorySize: &storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("1G")}}},
-			keyValueStoreCmd{},
-			full,
-			[]string{"1G"},
-			false,
+			name:        "simple",
+			get:         keyValueStoreCmd{},
+			out:         full,
+			wantContain: []string{"no KeyValueStores found"},
+			wantLines:   1,
 		},
 		{
-			"multiple",
-			map[string]storage.KeyValueStoreParameters{
-				"test1": {MemorySize: &storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("1G")}},
-				"test2": {MemorySize: &storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("2G")}},
-				"test3": {MemorySize: &storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("3G")}},
+			name: "single",
+			instances: []kvsInstance{
+				{
+					name:    "test",
+					project: test.DefaultProject,
+					memSize: kvsMem("1G"),
+				},
 			},
-			keyValueStoreCmd{},
-			full,
-			[]string{"1G", "2G", "test3"},
-			false,
+			get:         keyValueStoreCmd{},
+			out:         full,
+			wantContain: []string{"1G"},
+			wantLines:   2, // header + result
 		},
 		{
-			"name",
-			map[string]storage.KeyValueStoreParameters{
-				"test1": {MemorySize: &storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("1G")}},
-				"test2": {MemorySize: &storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("2G")}},
+			name: "multiple in same project",
+			instances: []kvsInstance{
+				{
+					name:    "test1",
+					project: test.DefaultProject,
+					memSize: kvsMem("1G"),
+				},
+				{
+					name:    "test2",
+					project: test.DefaultProject,
+					memSize: kvsMem("2G"),
+				},
+				{
+					name:    "test3",
+					project: test.DefaultProject,
+					memSize: kvsMem("3G"),
+				},
 			},
-			keyValueStoreCmd{resourceCmd: resourceCmd{Name: "test1"}},
-			full,
-			[]string{"test1", "1G"},
-			false,
+			get:         keyValueStoreCmd{},
+			out:         full,
+			wantContain: []string{"1G", "2G", "test3"},
+			wantLines:   4, // header + result
 		},
 		{
-			"password",
-			map[string]storage.KeyValueStoreParameters{
-				"test1": {MemorySize: &storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("1G")}},
-				"test2": {MemorySize: &storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("2G")}},
+			name: "get specific instance",
+			instances: []kvsInstance{
+				{
+					name:    "test1",
+					project: test.DefaultProject,
+					memSize: kvsMem("1G"),
+				},
+				{
+					name:    "test2",
+					project: test.DefaultProject,
+					memSize: kvsMem("2G"),
+				},
 			},
-			keyValueStoreCmd{resourceCmd: resourceCmd{Name: "test2"}, PrintToken: true},
-			full,
-			[]string{"test2-topsecret"},
-			false,
+			get:         keyValueStoreCmd{resourceCmd: resourceCmd{Name: "test1"}},
+			out:         full,
+			wantContain: []string{"test1", "1G"},
+			wantLines:   2, // header + result
+		},
+		{
+			name: "multiple instances in multiple projects",
+			instances: []kvsInstance{
+				{
+					name:    "test1",
+					project: test.DefaultProject,
+					memSize: kvsMem("1G"),
+				},
+				{
+					name:    "test2",
+					project: "dev",
+					memSize: kvsMem("2G"),
+				},
+				{
+					name:    "prod1",
+					project: "prod",
+					memSize: kvsMem("3G"),
+				},
+			},
+			get:           keyValueStoreCmd{},
+			out:           full,
+			wantContain:   []string{"test1", "test2", "prod1"},
+			wantLines:     4,
+			inAllProjects: true,
+		},
+		{
+			name: "get password",
+			instances: []kvsInstance{
+				{
+					name:    "test1",
+					project: test.DefaultProject,
+					memSize: kvsMem("1G"),
+				},
+				{
+					name:    "test2",
+					project: test.DefaultProject,
+					memSize: kvsMem("2G"),
+				},
+			},
+			get:         keyValueStoreCmd{resourceCmd: resourceCmd{Name: "test2"}, PrintToken: true},
+			out:         full,
+			wantContain: []string{"test2-topsecret"},
+			wantLines:   1, // print token does not print any header line
 		},
 	}
 	for _, tt := range tests {
@@ -74,15 +148,10 @@ func TestKeyValueStore(t *testing.T) {
 			buf := &bytes.Buffer{}
 			tt.get.out = buf
 
-			scheme, err := api.NewScheme()
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			objects := []client.Object{}
-			for name, instance := range tt.instances {
-				created := test.KeyValueStore(name, "default", "nine-es34")
-				created.Spec.ForProvider = instance
+			for _, instance := range tt.instances {
+				created := test.KeyValueStore(instance.name, instance.project, "nine-es34")
+				created.Spec.ForProvider.MemorySize = instance.memSize
 				objects = append(objects, created)
 				objects = append(objects, &corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
@@ -92,17 +161,15 @@ func TestKeyValueStore(t *testing.T) {
 					Data: map[string][]byte{"default": []byte(created.GetWriteConnectionSecretToReference().Name + "-topsecret")},
 				})
 			}
+			apiClient, err := test.SetupClient(
+				test.WithProjectsFromResources(objects...),
+				test.WithObjects(objects...),
+				test.WithNameIndexFor(&storage.KeyValueStore{}),
+				test.WithKubeconfig(t),
+			)
+			require.NoError(t, err)
 
-			client := fake.NewClientBuilder().
-				WithScheme(scheme).
-				WithIndex(&storage.KeyValueStore{}, "metadata.name", func(o client.Object) []string {
-					return []string{o.GetName()}
-				}).
-				WithObjects(objects...).Build()
-			apiClient := &api.Client{WithWatch: client, Project: "default"}
-			ctx := context.Background()
-
-			if err := tt.get.Run(ctx, apiClient, &Cmd{Output: tt.out}); (err != nil) != tt.wantErr {
+			if err := tt.get.Run(ctx, apiClient, &Cmd{Output: tt.out, AllProjects: tt.inAllProjects}); (err != nil) != tt.wantErr {
 				t.Errorf("keyValueStoreCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if tt.wantErr {
@@ -114,6 +181,14 @@ func TestKeyValueStore(t *testing.T) {
 					t.Errorf("keyValueStoreCmd.Run() did not contain %q, out = %q", tt.wantContain, buf.String())
 				}
 			}
+			if test.CountLines(buf.String()) != tt.wantLines {
+				t.Errorf("expected the output to have %d lines, but found %d", tt.wantLines, test.CountLines(buf.String()))
+				t.Log(buf.String())
+			}
 		})
 	}
+}
+
+func kvsMem(mem string) *storage.KeyValueStoreMemorySize {
+	return &storage.KeyValueStoreMemorySize{Quantity: resource.MustParse(mem)}
 }

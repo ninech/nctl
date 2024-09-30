@@ -10,14 +10,17 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/test"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 func TestPostgres(t *testing.T) {
+	ctx := context.Background()
+
 	tests := []struct {
 		name             string
 		create           postgresCmd
@@ -72,17 +75,12 @@ func TestPostgres(t *testing.T) {
 			tt.create.Wait = false
 			tt.create.WaitTimeout = time.Second
 
-			scheme, err := api.NewScheme()
-			if err != nil {
-				t.Fatal(err)
-			}
-			builder := fake.NewClientBuilder().WithScheme(scheme)
+			opts := []test.ClientSetupOption{}
 			if tt.interceptorFuncs != nil {
-				builder = builder.WithInterceptorFuncs(*tt.interceptorFuncs)
+				opts = append(opts, test.WithInterceptorFuncs(*tt.interceptorFuncs))
 			}
-			postgresClient := builder.Build()
-			apiClient := &api.Client{WithWatch: postgresClient, Project: "default"}
-			ctx := context.Background()
+			apiClient, err := test.SetupClient(opts...)
+			require.NoError(t, err)
 
 			if err := tt.create.Run(ctx, apiClient); (err != nil) != tt.wantErr {
 				t.Errorf("postgresCmd.Run() error = %v, wantErr %v", err, tt.wantErr)

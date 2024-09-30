@@ -16,7 +16,7 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	const project = "some-project"
+	const project = test.DefaultProject
 
 	initialSize := test.AppMicro
 
@@ -40,13 +40,11 @@ func TestConfig(t *testing.T) {
 
 	cases := map[string]struct {
 		orig        *apps.ProjectConfig
-		project     string
 		cmd         configCmd
 		checkConfig func(t *testing.T, cmd configCmd, orig, updated *apps.ProjectConfig)
 	}{
 		"change port": {
-			orig:    existingConfig,
-			project: project,
+			orig: existingConfig,
 			cmd: configCmd{
 				Port: ptr.To(int32(1234)),
 			},
@@ -55,8 +53,7 @@ func TestConfig(t *testing.T) {
 			},
 		},
 		"port is unchanged when updating unrelated field": {
-			orig:    existingConfig,
-			project: project,
+			orig: existingConfig,
 			cmd: configCmd{
 				Size: ptr.To("newsize"),
 			},
@@ -66,8 +63,7 @@ func TestConfig(t *testing.T) {
 			},
 		},
 		"update basic auth": {
-			orig:    existingConfig,
-			project: project,
+			orig: existingConfig,
 			cmd: configCmd{
 				BasicAuth: ptr.To(true),
 			},
@@ -76,8 +72,7 @@ func TestConfig(t *testing.T) {
 			},
 		},
 		"all fields update": {
-			orig:    existingConfig,
-			project: project,
+			orig: existingConfig,
 			cmd: configCmd{
 				Size:      ptr.To("newsize"),
 				Port:      ptr.To(int32(1000)),
@@ -107,14 +102,14 @@ func TestConfig(t *testing.T) {
 		tc := tc
 
 		t.Run(name, func(t *testing.T) {
-			apiClient, err := test.SetupClient(tc.orig)
+			apiClient, err := test.SetupClient(
+				test.WithObjects(tc.orig),
+			)
 			if err != nil {
 				t.Fatal(err)
 			}
-			apiClient.Project = tc.project
 
 			ctx := context.Background()
-
 			if err := tc.cmd.Run(ctx, apiClient); err != nil {
 				t.Fatal(err)
 			}

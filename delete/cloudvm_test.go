@@ -8,11 +8,12 @@ import (
 	"github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
+	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestCloudVM(t *testing.T) {
+	ctx := context.Background()
 	cmd := cloudVMCmd{
 		resourceCmd: resourceCmd{
 			Name:        "test",
@@ -22,15 +23,10 @@ func TestCloudVM(t *testing.T) {
 		},
 	}
 
-	cloudvm := test.CloudVirtualMachine("test", "default", "nine-es34", v1alpha1.VirtualMachinePowerState("on"))
+	cloudvm := test.CloudVirtualMachine("test", test.DefaultProject, "nine-es34", v1alpha1.VirtualMachinePowerState("on"))
 
-	scheme, err := api.NewScheme()
-	if err != nil {
-		t.Fatal(err)
-	}
-	client := fake.NewClientBuilder().WithScheme(scheme).Build()
-	apiClient := &api.Client{WithWatch: client, Project: "default"}
-	ctx := context.Background()
+	apiClient, err := test.SetupClient()
+	require.NoError(t, err)
 
 	if err := apiClient.Create(ctx, cloudvm); err != nil {
 		t.Fatalf("cloudvm create error, got: %s", err)

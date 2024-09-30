@@ -9,16 +9,15 @@ import (
 	"github.com/google/uuid"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
-	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const (
-	project = "default"
+	project = test.DefaultProject
 )
 
 func TestApplicationReplicaSelection(t *testing.T) {
@@ -26,8 +25,6 @@ func TestApplicationReplicaSelection(t *testing.T) {
 		firstApp, secondApp = "first-app", "second-app"
 	)
 	ctx := context.Background()
-	scheme, err := api.NewScheme()
-	require.NoError(t, err)
 
 	for name, testCase := range map[string]struct {
 		application string
@@ -278,17 +275,14 @@ func TestApplicationReplicaSelection(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			client := fake.NewClientBuilder().
-				WithScheme(scheme).
-				WithIndex(&apps.Release{}, "metadata.name", func(o client.Object) []string {
-					return []string{o.GetName()}
-				}).
-				WithLists(
-					&apps.ReleaseList{
-						Items: addCreationTimestamp(testCase.releases),
-					},
-				).Build()
-			apiClient := &api.Client{WithWatch: client, Project: project}
+			apiClient, err := test.SetupClient(
+				test.WithKubeconfig(t),
+				test.WithNameIndexFor(&apps.Release{}),
+				test.WithObjects(addCreationTimestamp(testCase.releases)...),
+				test.WithDefaultProject(project),
+			)
+			require.NoError(t, err)
+
 			cmd := applicationCmd{resourceCmd: resourceCmd{Name: testCase.application}}
 			replica, buildType, err := cmd.getReplica(ctx, apiClient)
 			if testCase.expectError {
@@ -340,10 +334,16 @@ func newRelease(
 // addCreationTimestamp adds a creation timestamp to each release with 1 second
 // difference between each release. The last release in the slice will be the
 // most current
-func addCreationTimestamp(releases []apps.Release) []apps.Release {
+func addCreationTimestamp(releases []apps.Release) []client.Object {
 	baseTime := time.Now().Add(-1 * time.Hour)
 	for i := range releases {
 		releases[i].CreationTimestampNano = baseTime.Add(time.Duration(i) * time.Second).UnixNano()
 	}
-	return releases
+	objs := make([]client.Object, len(releases))
+	for i, rel := range releases {
+		rel := rel
+		objs[i] = &rel
+	}
+
+	return objs
 }

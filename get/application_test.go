@@ -7,7 +7,6 @@ import (
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
-	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/assert"
@@ -15,14 +14,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestApplication(t *testing.T) {
 	app := apps.Application{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
-			Namespace: "default",
+			Namespace: test.DefaultProject,
 		},
 		Spec: apps.ApplicationSpec{},
 	}
@@ -33,20 +31,14 @@ func TestApplication(t *testing.T) {
 		Output: full,
 	}
 
-	scheme, err := api.NewScheme()
-	if err != nil {
-		t.Fatal(err)
-	}
+	apiClient, err := test.SetupClient(
+		test.WithNameIndexFor(&apps.Application{}),
+		test.WithObjects(&app, &app2),
+		test.WithKubeconfig(t),
+	)
+	require.NoError(t, err)
 
-	client := fake.NewClientBuilder().
-		WithScheme(scheme).
-		WithIndex(&apps.Application{}, "metadata.name", func(o client.Object) []string {
-			return []string{o.GetName()}
-		}).
-		WithObjects(&app, &app2).Build()
-	apiClient := &api.Client{WithWatch: client, Project: "default"}
 	ctx := context.Background()
-
 	buf := &bytes.Buffer{}
 	cmd := applicationsCmd{
 		out:                  buf,
@@ -57,7 +49,7 @@ func TestApplication(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, 3, test.CountLines(buf.String()))
+	assert.Equal(t, 3, test.CountLines(buf.String()), buf.String())
 	buf.Reset()
 
 	cmd.Name = app.Name
@@ -225,19 +217,15 @@ dev-second    dev-second    sample-second
 				Output:      testCase.outputFormat,
 				AllProjects: testCase.project == "",
 			}
-			scheme, err := api.NewScheme()
-			if err != nil {
-				t.Fatal(err)
-			}
 
-			client := fake.NewClientBuilder().
-				WithScheme(scheme).
-				WithIndex(&apps.Application{}, "metadata.name", func(o client.Object) []string {
-					return []string{o.GetName()}
-				}).
-				WithObjects(testCase.resources...).
-				Build()
-			apiClient := &api.Client{WithWatch: client, Project: testCase.project}
+			apiClient, err := test.SetupClient(
+				test.WithProjectsFromResources(testCase.resources...),
+				test.WithObjects(testCase.resources...),
+				test.WithKubeconfig(t),
+				test.WithDefaultProject(testCase.project),
+				test.WithNameIndexFor(&apps.Application{}),
+			)
+			require.NoError(t, err)
 
 			buf := &bytes.Buffer{}
 			cmd := applicationsCmd{
@@ -371,19 +359,13 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 				Output:      testCase.outputFormat,
 				AllProjects: testCase.project == "",
 			}
-			scheme, err := api.NewScheme()
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			client := fake.NewClientBuilder().
-				WithScheme(scheme).
-				WithIndex(&apps.Application{}, "metadata.name", func(o client.Object) []string {
-					return []string{o.GetName()}
-				}).
-				WithObjects(testCase.apps...).
-				Build()
-			apiClient := &api.Client{WithWatch: client, Project: testCase.project}
+			apiClient, err := test.SetupClient(
+				test.WithProjectsFromResources(testCase.apps...),
+				test.WithObjects(testCase.apps...),
+				test.WithKubeconfig(t),
+				test.WithDefaultProject(testCase.project),
+			)
+			require.NoError(t, err)
 
 			buf := &bytes.Buffer{}
 			cmd := applicationsCmd{

@@ -8,60 +8,131 @@ import (
 
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
-	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestPostgres(t *testing.T) {
+	ctx := context.Background()
+
+	type postgresInstance struct {
+		name        string
+		project     string
+		machineType infra.MachineType
+	}
+
 	tests := []struct {
 		name      string
-		instances map[string]storage.PostgresParameters
+		instances []postgresInstance
 		get       postgresCmd
 		// out defines the output format and will bet set to "full" if
 		// not given
-		out         output
-		wantContain []string
-		wantErr     bool
+		out           output
+		wantContain   []string
+		wantLines     int
+		inAllProjects bool
+		wantErr       bool
 	}{
 		{
 			name:        "simple",
 			wantContain: []string{"no Postgres found"},
+			wantLines:   1,
 		},
 		{
-			name:        "single",
-			instances:   map[string]storage.PostgresParameters{"test": {MachineType: infra.MachineType("nine-db-prod-s")}},
+			name: "single instance in project",
+			instances: []postgresInstance{
+				{
+					name:        "test",
+					project:     test.DefaultProject,
+					machineType: machineType("nine-db-prod-s"),
+				},
+			},
 			wantContain: []string{"nine-db-prod-s"},
+			wantLines:   2, // header + result
 		},
 		{
-			name: "multiple",
-			instances: map[string]storage.PostgresParameters{
-				"test1": {MachineType: infra.MachineType("nine-db-prod-s")},
-				"test2": {MachineType: infra.MachineType("nine-db-prod-m")},
-				"test3": {MachineType: infra.MachineType("nine-db-prod-l")},
+			name: "multiple instances in one project",
+			instances: []postgresInstance{
+				{
+					name:        "test1",
+					project:     test.DefaultProject,
+					machineType: machineType("nine-db-prod-s"),
+				},
+				{
+					name:        "test2",
+					project:     test.DefaultProject,
+					machineType: machineType("nine-db-prod-m"),
+				},
+				{
+					name:        "test3",
+					project:     test.DefaultProject,
+					machineType: machineType("nine-db-prod-l"),
+				},
 			},
 			wantContain: []string{"nine-db-prod-s", "nine-db-prod-m", "test3"},
+			wantLines:   4, // header + result
+		},
+		{
+			name: "multiple instances in multiple projects",
+			instances: []postgresInstance{
+				{
+					name:        "test1",
+					project:     test.DefaultProject,
+					machineType: machineType("nine-db-prod-s"),
+				},
+				{
+					name:        "test2",
+					project:     "dev",
+					machineType: machineType("nine-db-prod-m"),
+				},
+				{
+					name:        "test3",
+					project:     "testing",
+					machineType: machineType("nine-db-prod-l"),
+				},
+			},
+			wantContain:   []string{"test1", "test2", "test3"},
+			inAllProjects: true,
+			wantLines:     4, // header + result
 		},
 		{
 			name: "get-by-name",
-			instances: map[string]storage.PostgresParameters{
-				"test1": {MachineType: infra.MachineType("nine-db-prod-s")},
-				"test2": {MachineType: infra.MachineType("nine-db-prod-m")},
+			instances: []postgresInstance{
+				{
+					name:        "test1",
+					project:     test.DefaultProject,
+					machineType: machineType("nine-db-prod-s"),
+				},
+				{
+					name:        "test2",
+					project:     test.DefaultProject,
+					machineType: machineType("nine-db-prod-m"),
+				},
 			},
 			get:         postgresCmd{resourceCmd: resourceCmd{Name: "test1"}},
 			wantContain: []string{"test1", "nine-db-prod-s"},
+			wantLines:   2,
 		},
 		{
 			name: "show-password",
-			instances: map[string]storage.PostgresParameters{
-				"test1": {MachineType: infra.MachineType("nine-db-prod-s")},
-				"test2": {MachineType: infra.MachineType("nine-db-prod-m")},
+			instances: []postgresInstance{
+				{
+					name:        "test1",
+					project:     test.DefaultProject,
+					machineType: machineType("nine-db-prod-s"),
+				},
+				{
+					name:        "test2",
+					project:     test.DefaultProject,
+					machineType: machineType("nine-db-prod-m"),
+				},
 			},
 			get:         postgresCmd{resourceCmd: resourceCmd{Name: "test2"}, PrintPassword: true},
 			wantContain: []string{"test2-topsecret"},
+			wantLines:   1, // no header in this case
 		},
 	}
 	for _, tt := range tests {
@@ -69,15 +140,10 @@ func TestPostgres(t *testing.T) {
 			buf := &bytes.Buffer{}
 			tt.get.out = buf
 
-			scheme, err := api.NewScheme()
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			objects := []client.Object{}
-			for name, instance := range tt.instances {
-				created := test.Postgres(name, "default", "nine-es34")
-				created.Spec.ForProvider = instance
+			for _, instance := range tt.instances {
+				created := test.Postgres(instance.name, instance.project, "nine-es34")
+				created.Spec.ForProvider.MachineType = instance.machineType
 				objects = append(objects, created, &corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      created.GetWriteConnectionSecretToReference().Name,
@@ -86,20 +152,18 @@ func TestPostgres(t *testing.T) {
 					Data: map[string][]byte{storage.PostgresUser: []byte(created.GetWriteConnectionSecretToReference().Name + "-topsecret")},
 				})
 			}
-
-			client := fake.NewClientBuilder().
-				WithScheme(scheme).
-				WithIndex(&storage.Postgres{}, "metadata.name", func(o client.Object) []string {
-					return []string{o.GetName()}
-				}).
-				WithObjects(objects...).Build()
-			apiClient := &api.Client{WithWatch: client, Project: "default"}
-			ctx := context.Background()
+			apiClient, err := test.SetupClient(
+				test.WithProjectsFromResources(objects...),
+				test.WithObjects(objects...),
+				test.WithNameIndexFor(&storage.Postgres{}),
+				test.WithKubeconfig(t),
+			)
+			require.NoError(t, err)
 
 			if tt.out == "" {
 				tt.out = full
 			}
-			if err := tt.get.Run(ctx, apiClient, &Cmd{Output: tt.out}); (err != nil) != tt.wantErr {
+			if err := tt.get.Run(ctx, apiClient, &Cmd{Output: tt.out, AllProjects: tt.inAllProjects}); (err != nil) != tt.wantErr {
 				t.Errorf("postgresCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if tt.wantErr {
@@ -110,6 +174,10 @@ func TestPostgres(t *testing.T) {
 				if !strings.Contains(buf.String(), substr) {
 					t.Errorf("postgresCmd.Run() did not contain %q, out = %q", tt.wantContain, buf.String())
 				}
+			}
+			if test.CountLines(buf.String()) != tt.wantLines {
+				t.Errorf("expected the output to have %d lines, but found %d", tt.wantLines, test.CountLines(buf.String()))
+				t.Log(buf.String())
 			}
 		})
 	}

@@ -5,12 +5,16 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"reflect"
+	"slices"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/gobuffalo/flect"
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/auth"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/conversion"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -69,9 +73,43 @@ func (cmd *Cmd) list(ctx context.Context, client *api.Client, list runtimeclient
 
 	if !cmd.AllProjects {
 		cmd.opts = append(cmd.opts, runtimeclient.InNamespace(client.Project))
+		return client.List(ctx, list, cmd.opts...)
+	}
+	// we want to search in all projects, so we need to get them first...
+	projects, err := projects(ctx, client, "")
+	if err != nil {
+		return fmt.Errorf("error when searching for projects: %w", err)
+	}
+	// we now need a bit of reflection code from the apimachinery package
+	// as the ObjectList interface provides no way to get or set the items
+	// directly
+
+	// we need to get a pointer to the items field of the list and turn it
+	// into a reflect value so that we can change the items.
+	itemsPtr, err := meta.GetItemsPtr(list)
+	if err != nil {
+		return err
+	}
+	items, err := conversion.EnforcePtr(itemsPtr)
+	if err != nil {
+		return err
 	}
 
-	return client.List(ctx, list, cmd.opts...)
+	for _, proj := range projects {
+		// we ensured the list is a pointer type above, so we don't
+		// need to do this again here
+		tempOpts := slices.Clone(cmd.opts)
+		tempList := reflect.New(reflect.TypeOf(list).Elem()).Interface().(runtimeclient.ObjectList)
+		if err := client.List(ctx, tempList, append(tempOpts, runtimeclient.InNamespace(proj.Name))...); err != nil {
+			return fmt.Errorf("error when searching in project %s: %w", proj.Name, err)
+		}
+		tempListItems := reflect.ValueOf(tempList).Elem().FieldByName("Items")
+		for i := 0; i < tempListItems.Len(); i++ {
+			items.Set(reflect.Append(items, tempListItems.Index(i)))
+		}
+	}
+
+	return nil
 }
 
 // writeHeader writes the header row, prepending the project row if

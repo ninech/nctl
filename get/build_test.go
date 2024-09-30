@@ -6,15 +6,14 @@ import (
 	"testing"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
-	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestBuild(t *testing.T) {
+	ctx := context.Background()
 	build := apps.Build{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       apps.BuildKind,
@@ -22,7 +21,7 @@ func TestBuild(t *testing.T) {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
-			Namespace: "default",
+			Namespace: test.DefaultProject,
 		},
 		Spec: apps.BuildSpec{},
 	}
@@ -33,19 +32,11 @@ func TestBuild(t *testing.T) {
 		Output: full,
 	}
 
-	scheme, err := api.NewScheme()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	client := fake.NewClientBuilder().
-		WithScheme(scheme).
-		WithIndex(&apps.Build{}, "metadata.name", func(o client.Object) []string {
-			return []string{o.GetName()}
-		}).
-		WithObjects(&build, &build2).Build()
-	apiClient := &api.Client{WithWatch: client, Project: "default"}
-	ctx := context.Background()
+	apiClient, err := test.SetupClient(
+		test.WithNameIndexFor(&apps.Build{}),
+		test.WithObjects(&build, &build2),
+	)
+	require.NoError(t, err)
 
 	buf := &bytes.Buffer{}
 	cmd := buildCmd{

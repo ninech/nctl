@@ -9,42 +9,55 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/test"
+	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestKeyValueStore(t *testing.T) {
+	ctx := context.Background()
 	tests := []struct {
 		name    string
 		create  keyValueStoreCmd
 		want    storage.KeyValueStoreParameters
 		wantErr bool
 	}{
-		{"simple", keyValueStoreCmd{}, storage.KeyValueStoreParameters{}, false},
 		{
-			"memorySize",
-			keyValueStoreCmd{MemorySize: "1G"},
-			storage.KeyValueStoreParameters{MemorySize: &storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("1G")}},
-			false,
+			name: "simple",
 		},
 		{
-			"maxMemoryPolicy",
-			keyValueStoreCmd{MaxMemoryPolicy: storage.KeyValueStoreMaxMemoryPolicy("noeviction")},
-			storage.KeyValueStoreParameters{MaxMemoryPolicy: storage.KeyValueStoreMaxMemoryPolicy("noeviction")},
-			false,
+			name:   "memorySize",
+			create: keyValueStoreCmd{MemorySize: "1G"},
+			want: storage.KeyValueStoreParameters{
+				MemorySize: &storage.KeyValueStoreMemorySize{
+					Quantity: resource.MustParse("1G"),
+				},
+			},
 		},
 		{
-			"allowedCIDRs",
-			keyValueStoreCmd{AllowedCidrs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
-			storage.KeyValueStoreParameters{AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
-			false,
+			name: "maxMemoryPolicy",
+			create: keyValueStoreCmd{
+				MaxMemoryPolicy: storage.KeyValueStoreMaxMemoryPolicy("noeviction"),
+			},
+			want: storage.KeyValueStoreParameters{
+				MaxMemoryPolicy: storage.KeyValueStoreMaxMemoryPolicy("noeviction"),
+			},
 		},
 		{
-			"invalid",
-			keyValueStoreCmd{MemorySize: "invalid"},
-			storage.KeyValueStoreParameters{},
-			true,
+			name: "allowedCIDRs",
+			create: keyValueStoreCmd{
+				AllowedCidrs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")},
+			},
+			want: storage.KeyValueStoreParameters{
+				AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")},
+			},
+		},
+		{
+			name:    "invalid",
+			create:  keyValueStoreCmd{MemorySize: "invalid"},
+			want:    storage.KeyValueStoreParameters{},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
@@ -53,13 +66,8 @@ func TestKeyValueStore(t *testing.T) {
 			tt.create.Wait = false
 			tt.create.WaitTimeout = time.Second
 
-			scheme, err := api.NewScheme()
-			if err != nil {
-				t.Fatal(err)
-			}
-			client := fake.NewClientBuilder().WithScheme(scheme).Build()
-			apiClient := &api.Client{WithWatch: client, Project: "default"}
-			ctx := context.Background()
+			apiClient, err := test.SetupClient()
+			require.NoError(t, err)
 
 			if err := tt.create.Run(ctx, apiClient); (err != nil) != tt.wantErr {
 				t.Errorf("keyValueStoreCmd.Run() error = %v, wantErr %v", err, tt.wantErr)

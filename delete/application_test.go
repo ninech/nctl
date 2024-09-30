@@ -8,15 +8,16 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestApplication(t *testing.T) {
+	ctx := context.Background()
 	project := "evilcorp"
 	for name, testCase := range map[string]struct {
 		testObjects    testObjectList
@@ -116,15 +117,13 @@ func TestApplication(t *testing.T) {
 				},
 			}
 
-			scheme, err := api.NewScheme()
+			apiClient, err := test.SetupClient(
+				test.WithDefaultProject(project),
+				test.WithProjectsFromResources(testCase.testObjects.clientObjects()...),
+				test.WithObjects(testCase.testObjects.clientObjects()...),
+			)
 			require.NoError(t, err)
 
-			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(
-				testCase.testObjects.clientObjects()...,
-			).Build()
-			apiClient := &api.Client{WithWatch: client, Project: project}
-
-			ctx := context.Background()
 			err = cmd.Run(ctx, apiClient)
 			if testCase.errorExpected {
 				require.Error(t, err)

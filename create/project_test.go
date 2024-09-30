@@ -14,15 +14,17 @@ import (
 )
 
 func TestProjects(t *testing.T) {
+	const existsAlready = "exists-already"
 	ctx := context.Background()
 	projectName, organization := "testproject", "evilcorp"
-	apiClient, err := test.SetupClient()
+	apiClient, err := test.SetupClient(
+		test.WithOrganization("evilcorp"),
+		test.WithKubeconfig(t),
+		test.WithProjects(existsAlready),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	kubeconfig, err := test.CreateTestKubeconfig(apiClient, organization)
-	require.NoError(t, err)
-	defer os.Remove(kubeconfig)
 
 	cmd := projectCmd{
 		resourceCmd: resourceCmd{
@@ -43,6 +45,12 @@ func TestProjects(t *testing.T) {
 		&management.Project{},
 	); err != nil {
 		t.Fatalf("expected project %q to exist, got: %s", "testproject", err)
+	}
+
+	// test if the command errors out if the project already exists
+	cmd.resourceCmd.Name = existsAlready
+	if err := cmd.Run(ctx, apiClient); err == nil {
+		t.Fatal("expected an error as project already exists, but got none")
 	}
 }
 

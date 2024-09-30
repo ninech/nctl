@@ -6,15 +6,12 @@ import (
 	"time"
 
 	"github.com/ninech/nctl/api"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"github.com/ninech/nctl/internal/test"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAPIServiceAccount(t *testing.T) {
-	scheme, err := api.NewScheme()
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	ctx := context.Background()
 	cmd := apiServiceAccountCmd{
 		resourceCmd: resourceCmd{
 			Name:        "test",
@@ -26,9 +23,8 @@ func TestAPIServiceAccount(t *testing.T) {
 	asa := cmd.newAPIServiceAccount("default")
 	asa.Name = "test"
 
-	client := fake.NewClientBuilder().WithScheme(scheme).Build()
-	apiClient := &api.Client{WithWatch: client, Project: "default"}
-	ctx := context.Background()
+	apiClient, err := test.SetupClient()
+	require.NoError(t, err)
 
 	if err := cmd.Run(ctx, apiClient); err != nil {
 		t.Fatal(err)

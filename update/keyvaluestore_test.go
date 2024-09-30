@@ -9,13 +9,13 @@ import (
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
+	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestKeyValueStore(t *testing.T) {
+	ctx := context.Background()
 	tests := []struct {
 		name    string
 		create  storage.KeyValueStoreParameters
@@ -23,74 +23,87 @@ func TestKeyValueStore(t *testing.T) {
 		want    storage.KeyValueStoreParameters
 		wantErr bool
 	}{
-		{"simple", storage.KeyValueStoreParameters{}, keyValueStoreCmd{}, storage.KeyValueStoreParameters{}, false},
 		{
-			"memorySize",
-			storage.KeyValueStoreParameters{},
-			keyValueStoreCmd{MemorySize: ptr.To("1G")},
-			storage.KeyValueStoreParameters{MemorySize: memorySize("1G")},
-			false,
+			name: "simple",
 		},
 		{
-			"memorySize",
-			storage.KeyValueStoreParameters{MemorySize: memorySize("2G")},
-			keyValueStoreCmd{MemorySize: ptr.To("1G")},
-			storage.KeyValueStoreParameters{MemorySize: memorySize("1G")},
-			false,
+			name:   "memorySize upgrade",
+			update: keyValueStoreCmd{MemorySize: ptr.To("1G")},
+			want:   storage.KeyValueStoreParameters{MemorySize: memorySize("1G")},
 		},
 		{
-			"invalid",
-			storage.KeyValueStoreParameters{MemorySize: memorySize("2G")},
-			keyValueStoreCmd{MemorySize: ptr.To("invalid")},
-			storage.KeyValueStoreParameters{MemorySize: memorySize("2G")},
-			true,
+			name:   "memorySize downgrade",
+			create: storage.KeyValueStoreParameters{MemorySize: memorySize("2G")},
+			update: keyValueStoreCmd{MemorySize: ptr.To("1G")},
+			want:   storage.KeyValueStoreParameters{MemorySize: memorySize("1G")},
 		},
 		{
-			"maxMemoryPolicy",
-			storage.KeyValueStoreParameters{},
-			keyValueStoreCmd{MaxMemoryPolicy: ptr.To(storage.KeyValueStoreMaxMemoryPolicy("noeviction"))},
-			storage.KeyValueStoreParameters{MaxMemoryPolicy: storage.KeyValueStoreMaxMemoryPolicy("noeviction")},
-			false,
+			name:    "invalid",
+			create:  storage.KeyValueStoreParameters{MemorySize: memorySize("2G")},
+			update:  keyValueStoreCmd{MemorySize: ptr.To("invalid")},
+			want:    storage.KeyValueStoreParameters{MemorySize: memorySize("2G")},
+			wantErr: true,
 		},
 		{
-			"maxMemoryPolicy",
-			storage.KeyValueStoreParameters{MaxMemoryPolicy: storage.KeyValueStoreMaxMemoryPolicy("allkeys-lfu")},
-			keyValueStoreCmd{MaxMemoryPolicy: ptr.To(storage.KeyValueStoreMaxMemoryPolicy("noeviction"))},
-			storage.KeyValueStoreParameters{MaxMemoryPolicy: storage.KeyValueStoreMaxMemoryPolicy("noeviction")},
-			false,
+			name: "maxMemoryPolicy-to-noeviction",
+			update: keyValueStoreCmd{
+				MaxMemoryPolicy: ptr.To(storage.KeyValueStoreMaxMemoryPolicy("noeviction")),
+			},
+			want: storage.KeyValueStoreParameters{
+				MaxMemoryPolicy: storage.KeyValueStoreMaxMemoryPolicy("noeviction"),
+			},
 		},
 		{
-			"allowedCIDRs",
-			storage.KeyValueStoreParameters{},
-			keyValueStoreCmd{AllowedCidrs: &[]meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
-			storage.KeyValueStoreParameters{AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
-			false,
+			name: "maxMemoryPolicy-from-allkeys-lfu-to-noeviction",
+			create: storage.KeyValueStoreParameters{
+				MaxMemoryPolicy: storage.KeyValueStoreMaxMemoryPolicy("allkeys-lfu"),
+			},
+			update: keyValueStoreCmd{
+				MaxMemoryPolicy: ptr.To(storage.KeyValueStoreMaxMemoryPolicy("noeviction")),
+			},
+			want: storage.KeyValueStoreParameters{
+				MaxMemoryPolicy: storage.KeyValueStoreMaxMemoryPolicy("noeviction"),
+			},
 		},
 		{
-			"allowedCIDRs",
-			storage.KeyValueStoreParameters{AllowedCIDRs: []meta.IPv4CIDR{"192.168.0.1/24"}},
-			keyValueStoreCmd{AllowedCidrs: &[]meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
-			storage.KeyValueStoreParameters{AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
-			false,
+			name: "allowedCIDRs",
+			update: keyValueStoreCmd{
+				AllowedCidrs: &[]meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")},
+			},
+			want: storage.KeyValueStoreParameters{
+				AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")},
+			},
 		},
 		{
-			"allowedCIDRs",
-			storage.KeyValueStoreParameters{AllowedCIDRs: []meta.IPv4CIDR{"0.0.0.0/0"}},
-			keyValueStoreCmd{MemorySize: ptr.To("1G")},
-			storage.KeyValueStoreParameters{MemorySize: memorySize("1G"), AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
-			false,
+			name: "allowedCIDRs-from-local-to-all-allowed",
+			create: storage.KeyValueStoreParameters{
+				AllowedCIDRs: []meta.IPv4CIDR{"192.168.0.1/24"},
+			},
+			update: keyValueStoreCmd{
+				AllowedCidrs: &[]meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")},
+			},
+			want: storage.KeyValueStoreParameters{
+				AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")},
+			},
+		},
+		{
+			name: "update-memory-size-when-allowedCIDRs-are-set",
+			create: storage.KeyValueStoreParameters{
+				AllowedCIDRs: []meta.IPv4CIDR{"0.0.0.0/0"},
+			},
+			update: keyValueStoreCmd{MemorySize: ptr.To("1G")},
+			want: storage.KeyValueStoreParameters{
+				MemorySize:   memorySize("1G"),
+				AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")},
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.update.Name = "test-" + t.Name()
 
-			scheme, err := api.NewScheme()
-			if err != nil {
-				t.Fatal(err)
-			}
-			apiClient := &api.Client{WithWatch: fake.NewClientBuilder().WithScheme(scheme).Build(), Project: "default"}
-			ctx := context.Background()
+			apiClient, err := test.SetupClient()
+			require.NoError(t, err)
 
 			created := test.KeyValueStore(tt.update.Name, apiClient.Project, "nine-es34")
 			created.Spec.ForProvider = tt.create
@@ -101,11 +114,11 @@ func TestKeyValueStore(t *testing.T) {
 				t.Fatalf("expected keyvaluestore to exist, got: %s", err)
 			}
 
-			updated := &storage.KeyValueStore{ObjectMeta: metav1.ObjectMeta{Name: created.Name, Namespace: created.Namespace}}
+			updated := &storage.KeyValueStore{}
 			if err := tt.update.Run(ctx, apiClient); (err != nil) != tt.wantErr {
 				t.Errorf("keyValueStoreCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if err := apiClient.Get(ctx, api.ObjectName(updated), updated); err != nil {
+			if err := apiClient.Get(ctx, api.ObjectName(created), updated); err != nil {
 				t.Fatalf("expected keyvaluestore to exist, got: %s", err)
 			}
 
