@@ -12,7 +12,8 @@ import (
 	"github.com/gobuffalo/flect"
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/auth"
+	"github.com/ninech/nctl/api/config"
+	"github.com/ninech/nctl/api/util"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/conversion"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -161,10 +162,10 @@ func defaultOut(out io.Writer) io.Writer {
 // projects returns either all existing projects or only the specific project
 // identified by the "onlyName" parameter
 func projects(ctx context.Context, client *api.Client, onlyName string) ([]management.Project, error) {
-	cfg, err := auth.ReadConfig(client.KubeconfigPath, client.KubeconfigContext)
+	cfg, err := config.ReadExtension(client.KubeconfigPath, client.KubeconfigContext)
 	if err != nil {
-		if auth.IsConfigNotFoundError(err) {
-			return nil, auth.ReloginNeeded(err)
+		if config.IsExtensionNotFoundError(err) {
+			return nil, util.ReloginNeeded(err)
 		}
 		return nil, err
 	}

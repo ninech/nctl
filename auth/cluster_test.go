@@ -9,6 +9,7 @@ import (
 
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 
@@ -53,7 +54,7 @@ func TestClusterCmd(t *testing.T) {
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cluster).Build()
 
 	// we run without the execPlugin, that would be something for an e2e test
-	cmd := &ClusterCmd{Name: ContextName(cluster), ExecPlugin: false}
+	cmd := &ClusterCmd{Name: config.ContextName(cluster), ExecPlugin: false}
 	if err := cmd.Run(context.TODO(), &api.Client{WithWatch: client, KubeconfigPath: kubeconfig.Name()}); err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +70,7 @@ func TestClusterCmd(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	checkConfig(t, merged, 2, ContextName(cluster))
+	checkConfig(t, merged, 2, config.ContextName(cluster))
 }
 
 func newCluster() *infrastructure.KubernetesCluster {

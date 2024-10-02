@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/config"
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/internal/format"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -130,7 +131,7 @@ func newAPIConfig(apiURL, issuerURL *url.URL, command, clientID string, opts ...
 		opt(cfg)
 	}
 
-	extension, err := NewConfig(cfg.organization).ToObject()
+	extension, err := config.NewExtension(cfg.organization).ToObject()
 	if err != nil {
 		return nil, err
 	}
@@ -232,4 +233,18 @@ func login(ctx context.Context, newConfig *clientcmdapi.Config, kubeconfigPath, 
 	format.PrintSuccessf("🚀", loginMessage)
 
 	return nil
+}
+
+func mergeKubeConfig(from, to *clientcmdapi.Config) {
+	for k, v := range from.Clusters {
+		to.Clusters[k] = v
+	}
+
+	for k, v := range from.AuthInfos {
+		to.AuthInfos[k] = v
+	}
+
+	for k, v := range from.Contexts {
+		to.Contexts[k] = v
+	}
 }

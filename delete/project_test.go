@@ -7,7 +7,7 @@ import (
 
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/auth"
+	"github.com/ninech/nctl/api/config"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -94,7 +94,7 @@ func TestProjectsConfigErrors(t *testing.T) {
 	kubeconfig, err := test.CreateTestKubeconfig(apiClient, "")
 	require.NoError(t, err)
 	defer os.Remove(kubeconfig)
-	require.ErrorIs(t, cmd.Run(ctx, apiClient), auth.ErrConfigNotFound)
+	require.ErrorIs(t, cmd.Run(ctx, apiClient), config.ErrExtensionNotFound)
 }
 
 // errorCheck defaults the given errCheck function if it is nil. The returned

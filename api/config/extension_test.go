@@ -1,9 +1,8 @@
-package auth
+package config
 
 import (
 	"testing"
 
-	"github.com/ninech/nctl/api/util"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/clientcmd"
@@ -12,7 +11,7 @@ import (
 
 func TestConfigParsing(t *testing.T) {
 	contextName := "test"
-	cfg := NewConfig("evilcorp")
+	cfg := NewExtension("evilcorp")
 	objectCfg, err := cfg.ToObject()
 	require.NoError(t, err)
 	for name, testCase := range map[string]struct {
@@ -23,7 +22,7 @@ func TestConfigParsing(t *testing.T) {
 			kubeconfig: func() clientcmdapi.Config {
 				kubeCfg := testKubeconfig(contextName)
 				kubeCfg.Contexts[contextName].Extensions = map[string]runtime.Object{
-					util.NctlName: objectCfg,
+					NctlExtensionContext: objectCfg,
 				}
 				return kubeCfg
 			}(),
@@ -49,7 +48,7 @@ func TestConfigParsing(t *testing.T) {
 			content, err := clientcmd.Write(testCase.kubeconfig)
 			require.NoError(t, err)
 
-			parsedCfg, err := readConfig(content, contextName)
+			parsedCfg, err := readExtension(content, contextName)
 			if testCase.errorExpected {
 				require.Error(t, err)
 				return

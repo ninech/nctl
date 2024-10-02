@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/config"
+	"github.com/ninech/nctl/api/util"
 )
 
 type WhoAmICmd struct {
@@ -14,10 +16,10 @@ type WhoAmICmd struct {
 }
 
 func (s *WhoAmICmd) Run(ctx context.Context, client *api.Client) error {
-	cfg, err := ReadConfig(client.KubeconfigPath, client.KubeconfigContext)
+	cfg, err := config.ReadExtension(client.KubeconfigPath, client.KubeconfigContext)
 	if err != nil {
-		if IsConfigNotFoundError(err) {
-			return ReloginNeeded(err)
+		if config.IsExtensionNotFoundError(err) {
+			return util.ReloginNeeded(err)
 		}
 		return err
 	}
@@ -32,7 +34,7 @@ func (s *WhoAmICmd) Run(ctx context.Context, client *api.Client) error {
 	return nil
 }
 
-func printUserInfo(userInfo *api.UserInfo, cfg *Config) {
+func printUserInfo(userInfo *api.UserInfo, cfg *config.Extension) {
 	fmt.Printf("You are currently logged in the with the following account: %q\n", userInfo.User)
 
 	fmt.Printf("Your current organization: %q\n", cfg.Organization)

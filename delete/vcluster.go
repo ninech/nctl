@@ -6,7 +6,7 @@ import (
 
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/auth"
+	"github.com/ninech/nctl/api/config"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -25,12 +25,12 @@ func (vc *vclusterCmd) Run(ctx context.Context, client *api.Client) error {
 	}
 
 	if cluster.Spec.ForProvider.VCluster == nil {
-		return fmt.Errorf("supplied cluster %q is not a vcluster", auth.ContextName(cluster))
+		return fmt.Errorf("supplied cluster %q is not a vcluster", config.ContextName(cluster))
 	}
 
 	d := newDeleter(cluster, "vcluster", cleanup(
 		func(client *api.Client) error {
-			return auth.RemoveClusterFromKubeConfig(client, auth.ContextName(cluster))
+			return config.RemoveClusterFromKubeConfig(client.KubeconfigPath, config.ContextName(cluster))
 		}))
 
 	if err := d.deleteResource(ctx, client, vc.WaitTimeout, vc.Wait, vc.Force); err != nil {

@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/config"
 	"github.com/ninech/nctl/api/util"
-	"github.com/ninech/nctl/auth"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -192,7 +192,7 @@ func namespace(name string) *corev1.Namespace {
 func CreateTestKubeconfig(client *api.Client, organization string) (string, error) {
 	var extensions map[string]runtime.Object
 	if organization != "" {
-		cfg := auth.NewConfig(organization)
+		cfg := config.NewExtension(organization)
 		cfgObject, err := cfg.ToObject()
 		if err != nil {
 			return "", err

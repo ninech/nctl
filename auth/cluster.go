@@ -10,6 +10,7 @@ import (
 
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/config"
 	"github.com/ninech/nctl/api/util"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -60,7 +61,7 @@ func (a *ClusterCmd) Run(ctx context.Context, client *api.Client) error {
 		issuerURL,
 		command,
 		cluster.Status.AtProvider.OIDCClientID,
-		overrideName(ContextName(cluster)),
+		overrideName(config.ContextName(cluster)),
 		setCACert(caCert),
 	)
 	if err != nil {
@@ -109,8 +110,4 @@ func clusterName(name, project string) (types.NamespacedName, error) {
 	}
 
 	return types.NamespacedName{Name: name, Namespace: project}, nil
-}
-
-func ContextName(cluster *infrastructure.KubernetesCluster) string {
-	return fmt.Sprintf("%s/%s", cluster.Name, cluster.Namespace)
 }
