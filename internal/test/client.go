@@ -21,6 +21,7 @@ import (
 
 const (
 	DefaultProject = "default"
+	FakeJWTToken   = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJPbmxpbmUgSldUIEJ1aWxkZXIiLCJpYXQiOjE2ODk2ODkwMDMsImV4cCI6NTE5MjQzMTUwMCwiYXVkIjoid3d3LmV4YW1wbGUuY29tIiwic3ViIjoianJvY2tldEBleGFtcGxlLmNvbSIsImVtYWlsIjoianJvY2tldEBleGFtcGxlLmNvbSIsImdyb3VwcyI6WyIvQ3VzdG9tZXJzL3Rlc3QiLCIvQ3VzdG9tZXJzL2JsYSJdfQ.N6pD8DsPhTK5_Eoy83UNiPNMJ5lbvULdEouDSLE3yak"
 )
 
 type clientSetup struct {
@@ -156,7 +157,7 @@ func SetupClient(opts ...ClientSetupOption) (*api.Client, error) {
 	client := clientBuilder.Build()
 
 	c := &api.Client{
-		Config:    &rest.Config{BearerToken: "fake"},
+		Config:    &rest.Config{BearerToken: FakeJWTToken},
 		WithWatch: client, Project: setup.defaultProject,
 	}
 

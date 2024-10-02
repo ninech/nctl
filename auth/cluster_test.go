@@ -8,12 +8,11 @@ import (
 	"testing"
 
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
-	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
+	"github.com/ninech/nctl/internal/test"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
-
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const existingKubeconfig = `
@@ -43,19 +42,16 @@ func TestClusterCmd(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// prepare a fake client with some static objects (a KubernetesCluster and
-	// a Secret) that the cluster cmd expects.
-	scheme, err := api.NewScheme()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	cluster := newCluster()
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cluster).Build()
+	apiClient, err := test.SetupClient(
+		test.WithObjects(cluster),
+	)
+	require.NoError(t, err)
+	apiClient.KubeconfigPath = kubeconfig.Name()
 
 	// we run without the execPlugin, that would be something for an e2e test
 	cmd := &ClusterCmd{Name: config.ContextName(cluster), ExecPlugin: false}
-	if err := cmd.Run(context.TODO(), &api.Client{WithWatch: client, KubeconfigPath: kubeconfig.Name()}); err != nil {
+	if err := cmd.Run(context.TODO(), apiClient); err != nil {
 		t.Fatal(err)
 	}
 
