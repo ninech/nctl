@@ -3,7 +3,6 @@ package get
 import (
 	"context"
 	"io"
-	"os"
 	"strconv"
 	"text/tabwriter"
 	"time"
@@ -22,8 +21,9 @@ type releasesCmd struct {
 }
 
 func (cmd *releasesCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
-	releaseList := &apps.ReleaseList{}
+	cmd.out = defaultOut(cmd.out)
 
+	releaseList := &apps.ReleaseList{}
 	opts := []listOpt{matchName(cmd.Name)}
 	if len(cmd.ApplicationName) != 0 {
 		opts = append(opts, matchLabel(util.ApplicationNameLabel, cmd.ApplicationName))
@@ -42,9 +42,9 @@ func (cmd *releasesCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 
 	switch get.Output {
 	case full:
-		return printReleases(releaseList.Items, get, true)
+		return cmd.printReleases(releaseList.Items, get, true)
 	case noHeader:
-		return printReleases(releaseList.Items, get, false)
+		return cmd.printReleases(releaseList.Items, get, false)
 	case yamlOut:
 		return format.PrettyPrintObjects(releaseList.GetItems(), format.PrintOpts{Out: defaultOut(cmd.out)})
 	}
@@ -52,8 +52,8 @@ func (cmd *releasesCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 	return nil
 }
 
-func printReleases(releases []apps.Release, get *Cmd, header bool) error {
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
+func (cmd *releasesCmd) printReleases(releases []apps.Release, get *Cmd, header bool) error {
+	w := tabwriter.NewWriter(cmd.out, 0, 0, 4, ' ', 0)
 
 	if header {
 		get.writeHeader(

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/config"
 )
 
 type SetProjectCmd struct {
@@ -11,5 +12,5 @@ type SetProjectCmd struct {
 }
 
 func (s *SetProjectCmd) Run(ctx context.Context, client *api.Client) error {
-	return SetContextProject(client.KubeconfigPath, client.KubeconfigContext, s.Name)
+	return config.SetContextProject(client.KubeconfigPath, client.KubeconfigContext, s.Name)
 }

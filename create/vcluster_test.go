@@ -6,26 +6,23 @@ import (
 	"time"
 
 	"github.com/ninech/nctl/api"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"github.com/ninech/nctl/internal/test"
+	"github.com/stretchr/testify/require"
 )
 
 func TestVCluster(t *testing.T) {
-	scheme, err := api.NewScheme()
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	ctx := context.Background()
 	cmd := vclusterCmd{
 		resourceCmd: resourceCmd{
+			Name:        "falcon",
 			Wait:        false,
 			WaitTimeout: time.Second,
 		},
 	}
 
-	cluster := cmd.newCluster("default")
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cluster).Build()
-	apiClient := &api.Client{WithWatch: client, Project: "default"}
-	ctx := context.Background()
+	cluster := cmd.newCluster(test.DefaultProject)
+	apiClient, err := test.SetupClient()
+	require.NoError(t, err)
 
 	if err := cmd.Run(ctx, apiClient); err != nil {
 		t.Fatal(err)

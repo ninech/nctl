@@ -7,41 +7,107 @@ import (
 	"testing"
 
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
-	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
+	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestCloudVM(t *testing.T) {
+	type cvmInstance struct {
+		name       string
+		project    string
+		powerState infrastructure.VirtualMachinePowerState
+	}
+	ctx := context.Background()
 	tests := []struct {
-		name        string
-		instances   map[string]infrastructure.CloudVirtualMachineParameters
-		get         cloudVMCmd
-		out         output
-		wantContain []string
-		wantErr     bool
+		name          string
+		instances     []cvmInstance
+		get           cloudVMCmd
+		out           output
+		inAllProjects bool
+		wantContain   []string
+		wantLines     int
+		wantErr       bool
 	}{
-		{"simple", map[string]infrastructure.CloudVirtualMachineParameters{}, cloudVMCmd{}, full, []string{"no CloudVirtualMachines found in project default\n"}, false},
 		{
-			"single",
-			map[string]infrastructure.CloudVirtualMachineParameters{"test": {PowerState: infrastructure.VirtualMachinePowerState("on")}},
-			cloudVMCmd{},
-			full,
-			[]string{"on"},
-			false,
+			name:        "simple",
+			get:         cloudVMCmd{},
+			out:         full,
+			wantContain: []string{"no CloudVirtualMachines found in project default\n"},
+			wantLines:   1,
 		},
 		{
-			"multiple",
-			map[string]infrastructure.CloudVirtualMachineParameters{
-				"test1": {PowerState: infrastructure.VirtualMachinePowerState("on")},
-				"test2": {PowerState: infrastructure.VirtualMachinePowerState("off")},
-				"test3": {PowerState: infrastructure.VirtualMachinePowerState("shutdown")},
+			name: "single",
+			instances: []cvmInstance{
+				{
+					name:       "test",
+					project:    test.DefaultProject,
+					powerState: infrastructure.VirtualMachinePowerState("on"),
+				},
 			},
-			cloudVMCmd{},
-			full,
-			[]string{"on", "off", "shutdown"},
-			false,
+			get:         cloudVMCmd{},
+			out:         full,
+			wantContain: []string{"on"},
+			wantLines:   2, // header + result
+		},
+		{
+			name: "multiple in one project",
+			instances: []cvmInstance{
+				{
+					name:       "test1",
+					project:    test.DefaultProject,
+					powerState: infrastructure.VirtualMachinePowerState("on"),
+				},
+				{
+					name:       "test2",
+					project:    test.DefaultProject,
+					powerState: infrastructure.VirtualMachinePowerState("off"),
+				},
+				{
+					name:       "test3",
+					project:    test.DefaultProject,
+					powerState: infrastructure.VirtualMachinePowerState("shutdown"),
+				},
+			},
+			get:         cloudVMCmd{},
+			out:         full,
+			wantContain: []string{"on", "off", "shutdown"},
+			wantLines:   4,
+		},
+		{
+			name: "not existing cloudVM",
+			instances: []cvmInstance{
+				{
+					name:       "test",
+					project:    test.DefaultProject,
+					powerState: infrastructure.VirtualMachinePowerState("on"),
+				},
+			},
+			get: cloudVMCmd{
+				resourceCmd: resourceCmd{Name: "test2"},
+			},
+			out:         full,
+			wantContain: []string{"no CloudVirtualMachines found in project default\n"},
+			wantLines:   1,
+		},
+		{
+			name: "multiple in all projects",
+			instances: []cvmInstance{
+				{
+					name:       "test",
+					project:    test.DefaultProject,
+					powerState: infrastructure.VirtualMachinePowerState("on"),
+				},
+				{
+					name:       "dev",
+					project:    "dev",
+					powerState: infrastructure.VirtualMachinePowerState("on"),
+				},
+			},
+			get:           cloudVMCmd{},
+			out:           noHeader,
+			inAllProjects: true,
+			wantLines:     2,
 		},
 	}
 	for _, tt := range tests {
@@ -49,30 +115,23 @@ func TestCloudVM(t *testing.T) {
 			buf := &bytes.Buffer{}
 			tt.get.out = buf
 
-			scheme, err := api.NewScheme()
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			objects := []client.Object{}
-			for name, instance := range tt.instances {
-				created := test.CloudVirtualMachine(name, "default", "nine-es34", instance.PowerState)
-				created.Spec.ForProvider = instance
-				created.Status.AtProvider.PowerState = instance.PowerState
+			for _, cvm := range tt.instances {
+				created := test.CloudVirtualMachine(cvm.name, cvm.project, "nine-es34", cvm.powerState)
+				created.Status.AtProvider.PowerState = cvm.powerState
 				objects = append(objects, created)
 			}
+			apiClient, err := test.SetupClient(
+				test.WithProjectsFromResources(objects...),
+				test.WithObjects(objects...),
+				test.WithNameIndexFor(&infrastructure.CloudVirtualMachine{}),
+				test.WithKubeconfig(t),
+			)
+			require.NoError(t, err)
 
-			client := fake.NewClientBuilder().
-				WithScheme(scheme).
-				WithIndex(&infrastructure.CloudVirtualMachine{}, "metadata.name", func(o client.Object) []string {
-					return []string{o.GetName()}
-				}).
-				WithObjects(objects...).Build()
-			apiClient := &api.Client{WithWatch: client, Project: "default"}
-			ctx := context.Background()
-
-			if err := tt.get.Run(ctx, apiClient, &Cmd{Output: tt.out}); (err != nil) != tt.wantErr {
+			if err := tt.get.Run(ctx, apiClient, &Cmd{Output: tt.out, AllProjects: tt.inAllProjects}); (err != nil) != tt.wantErr {
 				t.Errorf("cloudVMCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
+				t.Log(buf.String())
 			}
 			if tt.wantErr {
 				return
@@ -82,6 +141,9 @@ func TestCloudVM(t *testing.T) {
 				if !strings.Contains(buf.String(), substr) {
 					t.Errorf("cloudVMCmd.Run() did not contain %q, out = %q", tt.wantContain, buf.String())
 				}
+			}
+			if test.CountLines(buf.String()) != tt.wantLines {
+				t.Errorf("expected the output to have %d lines, but found %d", tt.wantLines, test.CountLines(buf.String()))
 			}
 		})
 	}

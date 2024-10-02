@@ -6,6 +6,7 @@ import (
 
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/format"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -41,4 +42,14 @@ func NewBasicAuthFromSecret(ctx context.Context, secret meta.Reference, client *
 		string(basicAuthSecret.Data[BasicAuthUsernameKey]),
 		string(basicAuthSecret.Data[BasicAuthPasswordKey]),
 	}, nil
+}
+
+// ReloginNeeded returns an error which outputs the given err with a message
+// saying that a re-login is needed.
+func ReloginNeeded(err error) error {
+	return fmt.Errorf(
+		"%w, please re-login by executing %q",
+		err,
+		format.Command().Login(),
+	)
 }

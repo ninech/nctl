@@ -6,7 +6,8 @@ import (
 
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/auth"
+	"github.com/ninech/nctl/api/config"
+	"github.com/ninech/nctl/api/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -18,10 +19,10 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client) error {
 	ctx, cancel := context.WithTimeout(ctx, proj.WaitTimeout)
 	defer cancel()
 
-	cfg, err := auth.ReadConfig(client.KubeconfigPath, client.KubeconfigContext)
+	cfg, err := config.ReadExtension(client.KubeconfigPath, client.KubeconfigContext)
 	if err != nil {
-		if auth.IsConfigNotFoundError(err) {
-			return auth.ReloginNeeded(err)
+		if config.IsExtensionNotFoundError(err) {
+			return util.ReloginNeeded(err)
 		}
 		return err
 	}

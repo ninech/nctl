@@ -8,12 +8,13 @@ import (
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestCloudVM(t *testing.T) {
+	ctx := context.Background()
 	tests := []struct {
 		name    string
 		create  infrastructure.CloudVirtualMachineParameters
@@ -21,32 +22,31 @@ func TestCloudVM(t *testing.T) {
 		want    infrastructure.CloudVirtualMachineParameters
 		wantErr bool
 	}{
-		{"simple", infrastructure.CloudVirtualMachineParameters{}, cloudVMCmd{}, infrastructure.CloudVirtualMachineParameters{}, false},
 		{
-			"hostname",
-			infrastructure.CloudVirtualMachineParameters{},
-			cloudVMCmd{Hostname: "a"},
-			infrastructure.CloudVirtualMachineParameters{Hostname: "a"},
-			false,
+			name: "simple",
 		},
 		{
-			"turn on",
-			infrastructure.CloudVirtualMachineParameters{PowerState: infrastructure.VirtualMachinePowerState("off")},
-			cloudVMCmd{On: ptr.To(bool(true))},
-			infrastructure.CloudVirtualMachineParameters{PowerState: infrastructure.VirtualMachinePowerState("on")},
-			false,
+			name:   "hostname",
+			update: cloudVMCmd{Hostname: "a"},
+			want:   infrastructure.CloudVirtualMachineParameters{Hostname: "a"},
+		},
+		{
+			name: "turn on",
+			create: infrastructure.CloudVirtualMachineParameters{
+				PowerState: infrastructure.VirtualMachinePowerState("off"),
+			},
+			update: cloudVMCmd{On: ptr.To(bool(true))},
+			want: infrastructure.CloudVirtualMachineParameters{
+				PowerState: infrastructure.VirtualMachinePowerState("on"),
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.update.Name = "test-" + t.Name()
 
-			scheme, err := api.NewScheme()
-			if err != nil {
-				t.Fatal(err)
-			}
-			apiClient := &api.Client{WithWatch: fake.NewClientBuilder().WithScheme(scheme).Build(), Project: "default"}
-			ctx := context.Background()
+			apiClient, err := test.SetupClient()
+			require.NoError(t, err)
 
 			created := test.CloudVirtualMachine(tt.update.Name, apiClient.Project, "nine-es34", tt.create.PowerState)
 			created.Spec.ForProvider = tt.create

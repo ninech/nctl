@@ -7,19 +7,14 @@ import (
 
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	iam "github.com/ninech/apis/iam/v1alpha1"
-	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/test"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestCreate(t *testing.T) {
-	scheme, err := api.NewScheme()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	asa := &iam.APIServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
@@ -35,8 +30,8 @@ func TestCreate(t *testing.T) {
 		},
 	}
 
-	client := fake.NewClientBuilder().WithScheme(scheme).Build()
-	apiClient := &api.Client{WithWatch: client, Project: "default"}
+	apiClient, err := test.SetupClient()
+	require.NoError(t, err)
 	c := newCreator(apiClient, asa, "apiserviceaccount")
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)

@@ -8,30 +8,43 @@ import (
 
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/test"
+	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestCloudVM(t *testing.T) {
+	ctx := context.Background()
+
 	tests := []struct {
 		name    string
 		create  cloudVMCmd
 		want    infrastructure.CloudVirtualMachineParameters
 		wantErr bool
 	}{
-		{"simple", cloudVMCmd{}, infrastructure.CloudVirtualMachineParameters{}, false},
 		{
-			"disks",
-			cloudVMCmd{Disks: map[string]string{"a": "1Gi"}},
-			infrastructure.CloudVirtualMachineParameters{Disks: []infrastructure.Disk{{Name: "a", Size: resource.MustParse("1Gi")}}},
-			false,
+			name: "simple",
 		},
 		{
-			"bootDisk",
-			cloudVMCmd{BootDiskSize: "1Gi"},
-			infrastructure.CloudVirtualMachineParameters{BootDisk: &infrastructure.Disk{Name: "root", Size: resource.MustParse("1Gi")}},
-			false,
+			name: "disks",
+			create: cloudVMCmd{
+				Disks: map[string]string{"a": "1Gi"},
+			},
+			want: infrastructure.CloudVirtualMachineParameters{
+				Disks: []infrastructure.Disk{
+					{Name: "a", Size: resource.MustParse("1Gi")},
+				},
+			},
+		},
+		{
+			name:   "bootDisk",
+			create: cloudVMCmd{BootDiskSize: "1Gi"},
+			want: infrastructure.CloudVirtualMachineParameters{
+				BootDisk: &infrastructure.Disk{
+					Name: "root", Size: resource.MustParse("1Gi"),
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -40,13 +53,8 @@ func TestCloudVM(t *testing.T) {
 			tt.create.Wait = false
 			tt.create.WaitTimeout = time.Second
 
-			scheme, err := api.NewScheme()
-			if err != nil {
-				t.Fatal(err)
-			}
-			client := fake.NewClientBuilder().WithScheme(scheme).Build()
-			apiClient := &api.Client{WithWatch: client, Project: "default"}
-			ctx := context.Background()
+			apiClient, err := test.SetupClient()
+			require.NoError(t, err)
 
 			if err := tt.create.Run(ctx, apiClient); (err != nil) != tt.wantErr {
 				t.Errorf("cloudVMCmd.Run() error = %v, wantErr %v", err, tt.wantErr)

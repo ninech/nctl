@@ -7,28 +7,27 @@ import (
 
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/auth"
+	"github.com/ninech/nctl/api/config"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestProject(t *testing.T) {
 	organization := "evilcorp"
 	for name, testCase := range map[string]struct {
-		projects      []client.Object
+		projects      []string
 		name          string
 		errorExpected bool
 		errorCheck    func(err error) bool
 	}{
 		"happy path": {
-			projects:      test.Projects(organization, "dev", "staging"),
+			projects:      []string{"dev", "staging"},
 			name:          "dev",
 			errorExpected: false,
 		},
 		"project does not exist": {
-			projects:      test.Projects(organization, "staging"),
+			projects:      []string{"staging"},
 			name:          "dev",
 			errorExpected: true,
 			errorCheck: func(err error) bool {
@@ -46,11 +45,12 @@ func TestProject(t *testing.T) {
 				},
 			}
 
-			apiClient, err := test.SetupClient(testCase.projects...)
+			apiClient, err := test.SetupClient(
+				test.WithOrganization(organization),
+				test.WithProjects(testCase.projects...),
+				test.WithKubeconfig(t),
+			)
 			require.NoError(t, err)
-			kubeconfig, err := test.CreateTestKubeconfig(apiClient, organization)
-			require.NoError(t, err)
-			defer os.Remove(kubeconfig)
 
 			ctx := context.Background()
 			err = cmd.Run(ctx, apiClient)
@@ -94,7 +94,7 @@ func TestProjectsConfigErrors(t *testing.T) {
 	kubeconfig, err := test.CreateTestKubeconfig(apiClient, "")
 	require.NoError(t, err)
 	defer os.Remove(kubeconfig)
-	require.ErrorIs(t, cmd.Run(ctx, apiClient), auth.ErrConfigNotFound)
+	require.ErrorIs(t, cmd.Run(ctx, apiClient), config.ErrExtensionNotFound)
 }
 
 // errorCheck defaults the given errCheck function if it is nil. The returned

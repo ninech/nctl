@@ -8,10 +8,10 @@ import (
 
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	iam "github.com/ninech/apis/iam/v1alpha1"
-	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/test"
+	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const (
@@ -56,15 +56,9 @@ spec: {}
 )
 
 func TestFile(t *testing.T) {
-	scheme, err := api.NewScheme()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	client := fake.NewClientBuilder().WithScheme(scheme).Build()
-	apiClient := &api.Client{WithWatch: client, Project: "default"}
-
 	ctx := context.Background()
+	apiClient, err := test.SetupClient()
+	require.NoError(t, err)
 
 	tests := map[string]struct {
 		name              string

@@ -28,12 +28,14 @@ func TestProjectConfig(t *testing.T) {
 		Wait:  false,
 	}
 
-	apiClient, err := test.SetupClient(cfg)
+	apiClient, err := test.SetupClient(
+		test.WithProjects(project),
+		test.WithDefaultProject(project),
+		test.WithObjects(cfg),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	apiClient.Project = project
-
 	ctx := context.Background()
 
 	if err := cmd.Run(ctx, apiClient); err != nil {

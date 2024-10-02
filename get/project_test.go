@@ -7,13 +7,11 @@ import (
 	"testing"
 
 	management "github.com/ninech/apis/management/v1alpha1"
-	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/auth"
+	"github.com/ninech/nctl/api/config"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestProject(t *testing.T) {
@@ -96,11 +94,6 @@ dev     <none>
 				AllProjects: testCase.allProjects,
 			}
 
-			scheme, err := api.NewScheme()
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			projects := testCase.projects
 			for i, proj := range projects {
 				if len(projects) != len(testCase.displayNames) {
@@ -108,20 +101,13 @@ dev     <none>
 				}
 				proj.(*management.Project).Spec.DisplayName = testCase.displayNames[i]
 			}
-
-			client := fake.NewClientBuilder().
-				WithScheme(scheme).
-				WithIndex(&management.Project{}, "metadata.name", func(o client.Object) []string {
-					return []string{o.GetName()}
-				}).
-				WithObjects(testCase.projects...).Build()
-
-			// we set the project in the client to show that setting it
-			// doesn't affect listing of projects
-			apiClient := &api.Client{WithWatch: client, Project: "default"}
-			kubeconfig, err := test.CreateTestKubeconfig(apiClient, organization)
+			apiClient, err := test.SetupClient(
+				test.WithObjects(projects...),
+				test.WithKubeconfig(t),
+				test.WithNameIndexFor(&management.Project{}),
+				test.WithOrganization(organization),
+			)
 			require.NoError(t, err)
-			defer os.Remove(kubeconfig)
 
 			buf := &bytes.Buffer{}
 			cmd := projectCmd{
@@ -162,5 +148,5 @@ func TestProjectsConfigErrors(t *testing.T) {
 	kubeconfig, err := test.CreateTestKubeconfig(apiClient, "")
 	require.NoError(t, err)
 	defer os.Remove(kubeconfig)
-	require.ErrorIs(t, cmd.Run(ctx, apiClient, get), auth.ErrConfigNotFound)
+	require.ErrorIs(t, cmd.Run(ctx, apiClient, get), config.ErrExtensionNotFound)
 }

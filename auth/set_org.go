@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/config"
 )
 
 type SetOrgCmd struct {
@@ -19,5 +20,5 @@ func (s *SetOrgCmd) Run(ctx context.Context, client *api.Client) error {
 		return whoamicmd.Run(ctx, client)
 	}
 
-	return SetContextOrganization(client.KubeconfigPath, client.KubeconfigContext, s.Organization)
+	return config.SetContextOrganization(client.KubeconfigPath, client.KubeconfigContext, s.Organization)
 }

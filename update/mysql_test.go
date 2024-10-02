@@ -10,11 +10,12 @@ import (
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
+	"github.com/stretchr/testify/require"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestMySQL(t *testing.T) {
+	ctx := context.Background()
 	tests := []struct {
 		name    string
 		create  storage.MySQLParameters
@@ -99,12 +100,8 @@ func TestMySQL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.update.Name = "test-" + t.Name()
 
-			scheme, err := api.NewScheme()
-			if err != nil {
-				t.Fatal(err)
-			}
-			apiClient := &api.Client{WithWatch: fake.NewClientBuilder().WithScheme(scheme).Build(), Project: "default"}
-			ctx := context.Background()
+			apiClient, err := test.SetupClient()
+			require.NoError(t, err)
 
 			created := test.MySQL(tt.update.Name, apiClient.Project, "nine-es34")
 			created.Spec.ForProvider = tt.create

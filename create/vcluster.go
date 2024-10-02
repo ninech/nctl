@@ -7,6 +7,7 @@ import (
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/config"
 	"github.com/ninech/nctl/auth"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -48,7 +49,7 @@ func (vc *vclusterCmd) Run(ctx context.Context, client *api.Client) error {
 		return err
 	}
 
-	clustercmd := auth.ClusterCmd{Name: auth.ContextName(cluster), ExecPlugin: true}
+	clustercmd := auth.ClusterCmd{Name: config.ContextName(cluster), ExecPlugin: true}
 	return clustercmd.Run(ctx, client)
 }
 

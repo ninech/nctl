@@ -8,18 +8,15 @@ import (
 	"path"
 	"testing"
 
+	"github.com/ninech/nctl/internal/test"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-)
-
-const (
-	FakeJWTToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJPbmxpbmUgSldUIEJ1aWxkZXIiLCJpYXQiOjE2ODk2ODkwMDMsImV4cCI6NTE5MjQzMTUwMCwiYXVkIjoid3d3LmV4YW1wbGUuY29tIiwic3ViIjoianJvY2tldEBleGFtcGxlLmNvbSIsImVtYWlsIjoianJvY2tldEBleGFtcGxlLmNvbSIsImdyb3VwcyI6WyIvQ3VzdG9tZXJzL3Rlc3QiLCIvQ3VzdG9tZXJzL2JsYSJdfQ.N6pD8DsPhTK5_Eoy83UNiPNMJ5lbvULdEouDSLE3yak"
 )
 
 type fakeTokenGetter struct{}
 
 func (f *fakeTokenGetter) GetTokenString(ctx context.Context, issuerURL, clientID string, usePKCE bool) (string, error) {
-	return FakeJWTToken, nil
+	return test.FakeJWTToken, nil
 }
 
 func TestLoginCmd(t *testing.T) {
@@ -70,7 +67,7 @@ func TestLoginStaticToken(t *testing.T) {
 	os.Setenv(clientcmd.RecommendedConfigPathEnvVar, kubeconfig.Name())
 
 	apiHost := "api.example.org"
-	token := FakeJWTToken
+	token := test.FakeJWTToken
 
 	cmd := &LoginCmd{APIURL: "https://" + apiHost, APIToken: token, Organization: "test"}
 	tk := &fakeTokenGetter{}

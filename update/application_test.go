@@ -8,7 +8,6 @@ import (
 
 	"github.com/alecthomas/kong"
 	apps "github.com/ninech/apis/apps/v1alpha1"
-	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/create"
 	"github.com/ninech/nctl/internal/test"
@@ -18,15 +17,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestApplication(t *testing.T) {
-	scheme, err := api.NewScheme()
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	ctx := context.Background()
 	initialSize := apps.ApplicationSize("micro")
 
 	dummyRSAKey, err := test.GenerateRSAPrivateKey()
@@ -41,7 +35,7 @@ func TestApplication(t *testing.T) {
 	existingApp := &apps.Application{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "some-name",
-			Namespace: "default",
+			Namespace: test.DefaultProject,
 		},
 		Spec: apps.ApplicationSpec{
 			ForProvider: apps.ApplicationParameters{
@@ -486,9 +480,10 @@ func TestApplication(t *testing.T) {
 			if tc.gitAuth != nil {
 				objects = append(objects, tc.gitAuth.Secret(tc.orig))
 			}
-			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(objects...).Build()
-			apiClient := &api.Client{WithWatch: client, Project: "default"}
-			ctx := context.Background()
+			apiClient, err := test.SetupClient(
+				test.WithObjects(objects...),
+			)
+			require.NoError(t, err)
 
 			if err := tc.cmd.Run(ctx, apiClient); err != nil {
 				if tc.errorExpected {

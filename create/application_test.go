@@ -476,7 +476,7 @@ func TestApplicationWait(t *testing.T) {
 		BasicAuth:           ptr.To(true),
 		SkipRepoAccessCheck: true,
 	}
-	project := "default"
+	project := test.DefaultProject
 
 	build := &apps.Build{
 		ObjectMeta: metav1.ObjectMeta{
@@ -519,7 +519,7 @@ func TestApplicationWait(t *testing.T) {
 	release2 := *release
 	release2.Name = release2.Name + "-1"
 
-	apiClient, err := test.SetupClient(build, &build2, release, &release2, basicAuth)
+	apiClient, err := test.SetupClient(test.WithObjects(build, &build2, release, &release2, basicAuth))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -617,7 +617,7 @@ func TestApplicationBuildFail(t *testing.T) {
 		},
 		SkipRepoAccessCheck: true,
 	}
-	project := "default"
+	project := test.DefaultProject
 
 	build := &apps.Build{
 		ObjectMeta: metav1.ObjectMeta{
@@ -629,7 +629,7 @@ func TestApplicationBuildFail(t *testing.T) {
 		},
 	}
 
-	client, err := test.SetupClient(build)
+	client, err := test.SetupClient(test.WithObjects(build))
 	if err != nil {
 		t.Fatal(err)
 	}
