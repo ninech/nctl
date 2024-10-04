@@ -20,14 +20,7 @@ type configsCmd struct {
 
 func (cmd *configsCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
 	projectConfigList := &apps.ProjectConfigList{}
-
-	var opts []listOpt
-
-	if !get.AllProjects {
-		opts = []listOpt{matchName(client.Project)}
-	}
-
-	if err := get.list(ctx, client, projectConfigList, opts...); err != nil {
+	if err := get.list(ctx, client, projectConfigList); err != nil {
 		return err
 	}
 

@@ -17,6 +17,7 @@ import (
 )
 
 func TestApplication(t *testing.T) {
+	const otherProject = "my-pretty-other-project"
 	app := apps.Application{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
@@ -27,13 +28,18 @@ func TestApplication(t *testing.T) {
 	app2 := app
 	app2.Name = app2.Name + "-2"
 
+	app3 := app
+	app3.Name = app.Name + "-3"
+	app3.Namespace = otherProject
+
 	get := &Cmd{
 		Output: full,
 	}
 
 	apiClient, err := test.SetupClient(
 		test.WithNameIndexFor(&apps.Application{}),
-		test.WithObjects(&app, &app2),
+		test.WithProjectsFromResources(&app, &app2, &app3),
+		test.WithObjects(&app, &app2, &app3),
 		test.WithKubeconfig(t),
 	)
 	require.NoError(t, err)
@@ -66,6 +72,14 @@ func TestApplication(t *testing.T) {
 	}
 
 	assert.Equal(t, 1, test.CountLines(buf.String()))
+
+	// app3 is in a different project and we want to check if a hint gets
+	// displayed along the error that it was not found
+	cmd.Name = app3.Name
+	buf.Reset()
+	err = cmd.Run(ctx, apiClient, get)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), otherProject, err.Error())
 }
 
 func TestApplicationCredentials(t *testing.T) {
