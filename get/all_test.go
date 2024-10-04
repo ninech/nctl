@@ -106,7 +106,7 @@ staging    melon     Release              apps.nine.ch
 			objects:      []client.Object{},
 			outputFormat: full,
 			allProjects:  true,
-			output:       "no Resources found\n",
+			output:       "no Resources found in any project\n",
 		},
 		"filter nine resources, no headers format": {
 			projects: test.Projects(organization, "dev", "staging", "prod"),

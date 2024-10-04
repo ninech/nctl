@@ -28,7 +28,7 @@ func (cmd *applicationsCmd) Run(ctx context.Context, client *api.Client, get *Cm
 	}
 
 	if len(appList.Items) == 0 {
-		printEmptyMessage(cmd.out, apps.ApplicationKind, client.Project)
+		get.printEmptyMessage(cmd.out, apps.ApplicationKind, client.Project)
 		return nil
 	}
 

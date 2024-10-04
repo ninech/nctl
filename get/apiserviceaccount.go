@@ -30,7 +30,7 @@ func (asa *apiServiceAccountsCmd) Run(ctx context.Context, client *api.Client, g
 	}
 
 	if len(asaList.Items) == 0 {
-		printEmptyMessage(os.Stdout, iam.APIServiceAccountKind, client.Project)
+		get.printEmptyMessage(os.Stdout, iam.APIServiceAccountKind, client.Project)
 		return nil
 	}
 

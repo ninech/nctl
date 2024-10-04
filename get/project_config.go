@@ -25,7 +25,7 @@ func (cmd *configsCmd) Run(ctx context.Context, client *api.Client, get *Cmd) er
 	}
 
 	if len(projectConfigList.Items) == 0 {
-		printEmptyMessage(cmd.out, apps.ProjectConfigKind, client.Project)
+		get.printEmptyMessage(cmd.out, apps.ProjectConfigKind, client.Project)
 		return nil
 	}
 

@@ -24,7 +24,7 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 	}
 
 	if len(projectList) == 0 {
-		printEmptyMessage(proj.out, management.ProjectKind, "")
+		get.printEmptyMessage(proj.out, management.ProjectKind, "")
 		return nil
 	}
 

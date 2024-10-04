@@ -224,7 +224,11 @@ func (cmd *Cmd) writeTabRow(w io.Writer, project string, row ...string) {
 	}
 }
 
-func printEmptyMessage(out io.Writer, kind, project string) {
+func (cmd *Cmd) printEmptyMessage(out io.Writer, kind, project string) {
+	if cmd.AllProjects {
+		fmt.Fprintf(defaultOut(out), "no %s found in any project\n", flect.Pluralize(kind))
+		return
+	}
 	if project == "" {
 		fmt.Fprintf(defaultOut(out), "no %s found\n", flect.Pluralize(kind))
 		return

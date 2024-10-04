@@ -34,7 +34,7 @@ func (cmd *releasesCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 	}
 
 	if len(releaseList.Items) == 0 {
-		printEmptyMessage(cmd.out, apps.ReleaseKind, client.Project)
+		get.printEmptyMessage(cmd.out, apps.ReleaseKind, client.Project)
 		return nil
 	}
 

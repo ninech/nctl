@@ -25,7 +25,7 @@ func (l *clustersCmd) Run(ctx context.Context, client *api.Client, get *Cmd) err
 	}
 
 	if len(clusterList.Items) == 0 {
-		printEmptyMessage(os.Stdout, infrastructure.KubernetesClusterKind, client.Project)
+		get.printEmptyMessage(os.Stdout, infrastructure.KubernetesClusterKind, client.Project)
 		return nil
 	}
 
