@@ -17,6 +17,7 @@ import (
 )
 
 func TestApplication(t *testing.T) {
+	const otherProject = "my-pretty-other-project"
 	app := apps.Application{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
@@ -27,13 +28,18 @@ func TestApplication(t *testing.T) {
 	app2 := app
 	app2.Name = app2.Name + "-2"
 
+	app3 := app
+	app3.Name = app.Name + "-3"
+	app3.Namespace = otherProject
+
 	get := &Cmd{
 		Output: full,
 	}
 
 	apiClient, err := test.SetupClient(
 		test.WithNameIndexFor(&apps.Application{}),
-		test.WithObjects(&app, &app2),
+		test.WithProjectsFromResources(&app, &app2, &app3),
+		test.WithObjects(&app, &app2, &app3),
 		test.WithKubeconfig(t),
 	)
 	require.NoError(t, err)
@@ -66,6 +72,14 @@ func TestApplication(t *testing.T) {
 	}
 
 	assert.Equal(t, 1, test.CountLines(buf.String()))
+
+	// app3 is in a different project and we want to check if a hint gets
+	// displayed along the error that it was not found
+	cmd.Name = app3.Name
+	buf.Reset()
+	err = cmd.Run(ctx, apiClient, get)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), otherProject, err.Error())
 }
 
 func TestApplicationCredentials(t *testing.T) {
@@ -122,8 +136,8 @@ func TestApplicationCredentials(t *testing.T) {
 			},
 			outputFormat: full,
 			project:      "dev",
-			output: `NAME    USERNAME    PASSWORD
-dev     dev         sample
+			output: `PROJECT    NAME    USERNAME    PASSWORD
+dev        dev     dev         sample
 `,
 		},
 		"basic auth configured in one app and all apps in the project requested, no header format": {
@@ -140,7 +154,7 @@ dev     dev         sample
 			},
 			project:      "dev",
 			outputFormat: noHeader,
-			output:       "dev    dev    sample\n",
+			output:       "dev    dev    dev    sample\n",
 		},
 		"basic auth configured in one app and all apps in the project requested, yaml format": {
 			resources: []client.Object{
@@ -181,9 +195,9 @@ dev     dev         sample
 			},
 			outputFormat: full,
 			project:      "dev",
-			output: `NAME          USERNAME      PASSWORD
-dev           dev           sample
-dev-second    dev-second    sample-second
+			output: `PROJECT    NAME          USERNAME      PASSWORD
+dev        dev           dev           sample
+dev        dev-second    dev-second    sample-second
 `,
 		},
 		"multiple apps in different projects and all apps requested, yaml format": {
@@ -271,8 +285,8 @@ func TestApplicationDNS(t *testing.T) {
 			},
 			outputFormat: full,
 			project:      "dev",
-			output: `NAME             TXT RECORD       DNS TARGET
-no-txt-record    <not set yet>    <not set yet>
+			output: `PROJECT    NAME             TXT RECORD       DNS TARGET
+dev        no-txt-record    <not set yet>    <not set yet>
 
 Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup custom hosts
 `,
@@ -288,8 +302,8 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 			},
 			outputFormat: full,
 			project:      "dev",
-			output: `NAME      TXT RECORD                                      DNS TARGET
-sample    deploio-site-verification=sample-dev-3ksdk23    sample.3ksdk23.deploio.app
+			output: `PROJECT    NAME      TXT RECORD                                      DNS TARGET
+dev        sample    deploio-site-verification=sample-dev-3ksdk23    sample.3ksdk23.deploio.app
 
 Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup custom hosts
 `,
@@ -305,7 +319,7 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 			},
 			outputFormat: noHeader,
 			project:      "dev",
-			output: `sample    deploio-site-verification=sample-dev-3ksdk23    sample.3ksdk23.deploio.app
+			output: `dev    sample    deploio-site-verification=sample-dev-3ksdk23    sample.3ksdk23.deploio.app
 
 Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup custom hosts
 `,

@@ -86,9 +86,8 @@ func TestCloudVM(t *testing.T) {
 			get: cloudVMCmd{
 				resourceCmd: resourceCmd{Name: "test2"},
 			},
-			out:         full,
-			wantContain: []string{"no CloudVirtualMachines found in project default\n"},
-			wantLines:   1,
+			out:     full,
+			wantErr: true,
 		},
 		{
 			name: "multiple in all projects",

@@ -28,7 +28,7 @@ func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client, get *C
 	}
 
 	if len(keyValueStoreList.Items) == 0 {
-		printEmptyMessage(cmd.out, storage.KeyValueStoreKind, client.Project)
+		get.printEmptyMessage(cmd.out, storage.KeyValueStoreKind, client.Project)
 		return nil
 	}
 

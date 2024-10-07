@@ -48,7 +48,7 @@ func (cmd *allCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error 
 	}
 
 	if len(items) == 0 {
-		printEmptyMessage(cmd.out, "Resource", projectName)
+		get.printEmptyMessage(cmd.out, "Resource", projectName)
 		return nil
 	}
 

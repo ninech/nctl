@@ -25,7 +25,7 @@ func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client, get *Cmd) er
 	}
 
 	if len(cloudVMList.Items) == 0 {
-		printEmptyMessage(cmd.out, infrastructure.CloudVirtualMachineKind, client.Project)
+		get.printEmptyMessage(cmd.out, infrastructure.CloudVirtualMachineKind, client.Project)
 		return nil
 	}
 

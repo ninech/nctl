@@ -24,7 +24,7 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 	}
 
 	if len(projectList) == 0 {
-		printEmptyMessage(proj.out, management.ProjectKind, "")
+		get.printEmptyMessage(proj.out, management.ProjectKind, "")
 		return nil
 	}
 
@@ -61,7 +61,7 @@ func printProject(projects []management.Project, get Cmd, out io.Writer, header 
 	// for projects
 	if header {
 		get.AllProjects = false
-		get.writeHeader(w, "NAME", "DISPLAY NAME")
+		get.writeHeader(w, "DISPLAY NAME")
 	}
 
 	for _, proj := range projects {
@@ -69,7 +69,7 @@ func printProject(projects []management.Project, get Cmd, out io.Writer, header 
 		if len(displayName) == 0 {
 			displayName = util.NoneText
 		}
-		get.writeTabRow(w, "", proj.Name, displayName)
+		get.writeTabRow(w, proj.Name, displayName)
 	}
 
 	return w.Flush()

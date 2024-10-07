@@ -33,7 +33,7 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client, get *Cmd) erro
 		return err
 	}
 	if len(mysqlList.Items) == 0 {
-		printEmptyMessage(cmd.out, storage.MySQLKind, client.Project)
+		get.printEmptyMessage(cmd.out, storage.MySQLKind, client.Project)
 		return nil
 	}
 

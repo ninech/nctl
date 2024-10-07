@@ -33,7 +33,7 @@ func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 		return err
 	}
 	if len(postgresList.Items) == 0 {
-		printEmptyMessage(cmd.out, storage.PostgresKind, client.Project)
+		get.printEmptyMessage(cmd.out, storage.PostgresKind, client.Project)
 		return nil
 	}
 

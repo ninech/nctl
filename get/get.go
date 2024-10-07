@@ -2,11 +2,13 @@ package get
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"reflect"
 	"slices"
+	"strings"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/gobuffalo/flect"
@@ -35,6 +37,7 @@ type Cmd struct {
 	All                 allCmd                `cmd:"" name:"all" help:"Get project content"`
 	CloudVirtualMachine cloudVMCmd            `cmd:"" group:"infrastructure.nine.ch" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Get a CloudVM."`
 	opts                []runtimeclient.ListOption
+	searchForName       string
 }
 
 type resourceCmd struct {
@@ -55,9 +58,11 @@ type listOpt func(cmd *Cmd)
 func matchName(name string) listOpt {
 	return func(cmd *Cmd) {
 		if len(name) == 0 {
+			cmd.searchForName = ""
 			return
 		}
 		cmd.opts = append(cmd.opts, runtimeclient.MatchingFields{"metadata.name": name})
+		cmd.searchForName = name
 	}
 }
 
@@ -67,26 +72,33 @@ func matchLabel(k, v string) listOpt {
 	}
 }
 
+func (cmd *Cmd) namedResourceNotFound(project string, foundInProjects ...string) error {
+	if cmd.AllProjects {
+		return fmt.Errorf("resource %q was not found in any project", cmd.searchForName)
+	}
+	errorMessage := fmt.Sprintf("resource %q was not found in project %s", cmd.searchForName, project)
+	if len(foundInProjects) > 0 {
+		errorMessage = errorMessage + fmt.Sprintf(
+			", but it was found in project(s): %s. "+
+				"Maybe you want to use the '--project' flag to specify one of these projects?",
+			strings.Join(foundInProjects, " ,"),
+		)
+	}
+	return errors.New(errorMessage)
+}
+
 func (cmd *Cmd) list(ctx context.Context, client *api.Client, list runtimeclient.ObjectList, opts ...listOpt) error {
 	for _, opt := range opts {
 		opt(cmd)
 	}
 
-	if !cmd.AllProjects {
-		cmd.opts = append(cmd.opts, runtimeclient.InNamespace(client.Project))
-		return client.List(ctx, list, cmd.opts...)
-	}
-	// we want to search in all projects, so we need to get them first...
-	projects, err := projects(ctx, client, "")
-	if err != nil {
-		return fmt.Errorf("error when searching for projects: %w", err)
-	}
 	// we now need a bit of reflection code from the apimachinery package
-	// as the ObjectList interface provides no way to get or set the items
-	// directly
+	// as the ObjectList interface provides no way to get or set the list
+	// items directly.
 
 	// we need to get a pointer to the items field of the list and turn it
-	// into a reflect value so that we can change the items.
+	// into a reflect value so that we can change the items in case we want
+	// to search in all projects.
 	itemsPtr, err := meta.GetItemsPtr(list)
 	if err != nil {
 		return err
@@ -96,10 +108,37 @@ func (cmd *Cmd) list(ctx context.Context, client *api.Client, list runtimeclient
 		return err
 	}
 
+	if !cmd.AllProjects {
+		// here a special logic applies. We are searching in the
+		// current set project. If we are searching for a specific
+		// named object and did not find it in the current set project,
+		// we are searching in all projects for it. If we found it in
+		// another project, we return an error saying that we found the
+		// named object somewhere else.
+
+		cmd.opts = append(cmd.opts, runtimeclient.InNamespace(client.Project))
+		if err := client.List(ctx, list, cmd.opts...); err != nil {
+			return err
+		}
+		// if we did not search for a specific named object or we
+		// actually found the object we were searching for in the
+		// current project, we can stop here. If we were not able to
+		// find it, we need to search in all projects for it.
+		if cmd.searchForName == "" || items.Len() > 0 {
+			return nil
+		}
+	}
+	// we want to search in all projects, so we need to get them first...
+	projects, err := projects(ctx, client, "")
+	if err != nil {
+		return fmt.Errorf("error when searching for projects: %w", err)
+	}
+
 	for _, proj := range projects {
-		// we ensured the list is a pointer type above, so we don't
-		// need to do this again here
 		tempOpts := slices.Clone(cmd.opts)
+		// we ensured the list is a pointer type and that is has an
+		// 'Items' field which is a slice above, so we don't need to do
+		// this again here and instead use the reflect functions directly.
 		tempList := reflect.New(reflect.TypeOf(list).Elem()).Interface().(runtimeclient.ObjectList)
 		if err := client.List(ctx, tempList, append(tempOpts, runtimeclient.InNamespace(proj.Name))...); err != nil {
 			return fmt.Errorf("error when searching in project %s: %w", proj.Name, err)
@@ -110,24 +149,66 @@ func (cmd *Cmd) list(ctx context.Context, client *api.Client, list runtimeclient
 		}
 	}
 
-	return nil
-}
+	// if the user did not search for a specific named resource we can already
+	// quit as this case should not throw an error if no item could be
+	// found
+	if cmd.searchForName == "" {
+		return nil
+	}
 
-// writeHeader writes the header row, prepending the project row if
-// cmd.AllProjects is set.
-func (cmd *Cmd) writeHeader(w io.Writer, headings ...string) {
+	// we can now be sure that the user searched for a named object in
+	// either the current project or in all projects.
+	if items.Len() == 0 {
+		// we did not find the named object in any project. We return
+		// an error here so that the command can be exited with a
+		// non-zero code.
+		return cmd.namedResourceNotFound(client.Project)
+	}
+	// if the user searched in all projects for a specific resource and
+	// something was found, we can already return with no error.
 	if cmd.AllProjects {
-		headings = append([]string{"PROJECT"}, headings...)
+		return nil
 	}
-	cmd.writeTabRow(w, "", headings...)
+	// we found the named object at least in one different project,
+	// so we return a hint to the user to search in these projects
+	var identifiedProjects []string
+	for i := 0; i < items.Len(); i++ {
+		// the "Items" field of a list type is a slice of types and not
+		// a slice of pointer types (e.g. "[]corev1.Pod" and not
+		// "[]*corev1.Pod"), but the clientruntime.Object interface is
+		// implemented on pointer types (e.g. *corev1.Pod). So we need
+		// to convert.
+		if !items.Index(i).CanAddr() {
+			// if the type of the "Items" slice is a pointer type
+			// already, something is odd as this normally isn't the
+			// case. We ignore the item in this case.
+			continue
+		}
+		obj, isRuntimeClientObj := items.Index(i).Addr().Interface().(runtimeclient.Object)
+		if !isRuntimeClientObj {
+			// very unlikely case: the items of the list did not
+			// implement runtimeclient.Object. As we can not get
+			// the project of the object, we just ignore it.
+			continue
+		}
+		identifiedProjects = append(identifiedProjects, obj.GetNamespace())
+	}
+	return cmd.namedResourceNotFound(client.Project, identifiedProjects...)
 }
 
-// writeTabRow writes a row to w, prepending the project if
-// cmd.AllProjects is set and the project is not empty.
+// writeHeader writes the header row, prepending the always shown project
+func (cmd *Cmd) writeHeader(w io.Writer, headings ...string) {
+	cmd.writeTabRow(w, "PROJECT", headings...)
+}
+
+// writeTabRow writes a row to w, prepending the passed project
 func (cmd *Cmd) writeTabRow(w io.Writer, project string, row ...string) {
-	if cmd.AllProjects && len(project) != 0 {
-		row = append([]string{project}, row...)
+	if project == "" {
+		// if the project is empty, the content should just be a "tab"
+		// so that the structure will be contained
+		project = "\t"
 	}
+	row = append([]string{project}, row...)
 
 	switch length := len(row); length {
 	case 0:
@@ -143,7 +224,11 @@ func (cmd *Cmd) writeTabRow(w io.Writer, project string, row ...string) {
 	}
 }
 
-func printEmptyMessage(out io.Writer, kind, project string) {
+func (cmd *Cmd) printEmptyMessage(out io.Writer, kind, project string) {
+	if cmd.AllProjects {
+		fmt.Fprintf(defaultOut(out), "no %s found in any project\n", flect.Pluralize(kind))
+		return
+	}
 	if project == "" {
 		fmt.Fprintf(defaultOut(out), "no %s found\n", flect.Pluralize(kind))
 		return

@@ -23,13 +23,12 @@ type applicationsCmd struct {
 
 func (cmd *applicationsCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
 	appList := &apps.ApplicationList{}
-
 	if err := get.list(ctx, client, appList, matchName(cmd.Name)); err != nil {
 		return err
 	}
 
 	if len(appList.Items) == 0 {
-		printEmptyMessage(cmd.out, apps.ApplicationKind, client.Project)
+		get.printEmptyMessage(cmd.out, apps.ApplicationKind, client.Project)
 		return nil
 	}
 

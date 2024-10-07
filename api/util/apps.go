@@ -40,6 +40,8 @@ func UnverifiedAppHosts(app *apps.Application) []string {
 	return uniqueStrings(unverifiedHosts)
 }
 
+// uniqueStrings removes duplicates from the given source string slice and
+// returns it cleaned
 func uniqueStrings(source []string) []string {
 	unique := make(map[string]bool, len(source))
 	us := make([]string, len(unique))
