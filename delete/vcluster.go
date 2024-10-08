@@ -7,6 +7,7 @@ import (
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
+	"github.com/ninech/nctl/internal/format"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -30,7 +31,10 @@ func (vc *vclusterCmd) Run(ctx context.Context, client *api.Client) error {
 
 	d := newDeleter(cluster, "vcluster", cleanup(
 		func(client *api.Client) error {
-			return config.RemoveClusterFromKubeConfig(client.KubeconfigPath, config.ContextName(cluster))
+			if err := config.RemoveClusterFromKubeConfig(client.KubeconfigPath, config.ContextName(cluster)); err != nil {
+				format.PrintWarningf("unable to remove cluster from kubeconfig: %s\n", err)
+			}
+			return nil
 		}))
 
 	if err := d.deleteResource(ctx, client, vc.WaitTimeout, vc.Wait, vc.Force); err != nil {
