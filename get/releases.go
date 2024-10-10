@@ -38,7 +38,7 @@ func (cmd *releasesCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 		return nil
 	}
 
-	util.OrderReleaseList(releaseList)
+	util.OrderReleaseList(releaseList, true)
 
 	switch get.Output {
 	case full:

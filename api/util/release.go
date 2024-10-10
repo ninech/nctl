@@ -6,9 +6,10 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 )
 
-// OrderReleaseList orders the given list of releases, moving the latest
-// release to the beginning of the list
-func OrderReleaseList(releaseList *apps.ReleaseList) {
+// OrderReleaseList orders the given list of releases first by name and then by
+// creation timestamp latest to oldest. Reverse reverses the order by creation
+// timestamp to oldest to latest.
+func OrderReleaseList(releaseList *apps.ReleaseList, reverse bool) {
 	if len(releaseList.Items) <= 1 {
 		return
 	}
@@ -21,6 +22,9 @@ func OrderReleaseList(releaseList *apps.ReleaseList) {
 			return applicationNameI < applicationNameJ
 		}
 
-		return releaseList.Items[i].CreationTimestampNano < releaseList.Items[j].CreationTimestampNano
+		if reverse {
+			return releaseList.Items[i].CreationTimestampNano < releaseList.Items[j].CreationTimestampNano
+		}
+		return releaseList.Items[i].CreationTimestampNano > releaseList.Items[j].CreationTimestampNano
 	})
 }
