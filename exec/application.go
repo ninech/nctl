@@ -99,7 +99,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client, exec *Cm
 }
 
 func latestAvailableRelease(releases *apps.ReleaseList) *apps.Release {
-	util.OrderReleaseList(releases)
+	util.OrderReleaseList(releases, false)
 	for _, release := range releases.Items {
 		if release.Status.AtProvider.ReleaseStatus == apps.ReleaseProcessStatusAvailable {
 			return &release
