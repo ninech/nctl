@@ -14,6 +14,7 @@ import (
 	"github.com/goccy/go-yaml/printer"
 	"github.com/mattn/go-isatty"
 	"github.com/theckman/yacspin"
+	res "k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -26,6 +27,12 @@ const (
 )
 
 var spinnerCharset = yacspin.CharSets[24]
+
+func init() {
+	yaml.RegisterCustomMarshaler[*res.Quantity](func(res *res.Quantity) ([]byte, error) {
+		return res.MarshalJSON()
+	})
+}
 
 // ProgressMessagef is a formatted message for use with a spinner.Suffix. An
 // icon can be added which is displayed at the end of the message.
