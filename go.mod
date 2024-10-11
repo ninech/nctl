@@ -26,7 +26,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20
 	github.com/moby/moby v27.1.1+incompatible
 	github.com/moby/term v0.5.0
-	github.com/ninech/apis v0.0.0-20240918081833-57655d99d868
+	github.com/ninech/apis v0.0.0-20241014111010-322e555390a0
 	github.com/posener/complete v1.2.3
 	github.com/prometheus/common v0.55.0
 	github.com/stretchr/testify v1.9.0
@@ -38,6 +38,7 @@ require (
 	k8s.io/apimachinery v0.31.0
 	k8s.io/client-go v0.30.1
 	k8s.io/kubectl v0.29.0
+	k8s.io/metrics v0.29.0
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
 	sigs.k8s.io/controller-runtime v0.18.4
 )

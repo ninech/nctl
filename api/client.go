@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"os/user"
@@ -9,6 +10,8 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/ninech/apis"
+	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
+	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api/log"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -159,6 +162,28 @@ func (c *Client) Token(ctx context.Context) string {
 	}
 
 	return token
+}
+
+func (c *Client) DeploioRuntimeClient(ctx context.Context, scheme *runtime.Scheme) (runtimeclient.Client, error) {
+	cfg, err := c.DeploioRuntimeConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return runtimeclient.New(cfg, runtimeclient.Options{Scheme: scheme})
+}
+
+func (c *Client) DeploioRuntimeConfig(ctx context.Context) (*rest.Config, error) {
+	config := rest.CopyConfig(c.Config)
+	deploioClusterData := &infrastructure.ClusterData{}
+	if err := c.Get(ctx, types.NamespacedName{Name: meta.ClusterDataDeploioName}, deploioClusterData); err != nil {
+		return nil, fmt.Errorf("can not gather deplo.io cluster connection details: %w", err)
+	}
+	config.Host = deploioClusterData.Status.AtProvider.APIEndpoint
+	var err error
+	if config.CAData, err = base64.StdEncoding.DecodeString(deploioClusterData.Status.AtProvider.APICACert); err != nil {
+		return nil, fmt.Errorf("can not decode deplo.io cluster CA certificate: %w", err)
+	}
+	return config, nil
 }
 
 func LoadingRules() (*clientcmd.ClientConfigLoadingRules, error) {

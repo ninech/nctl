@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"text/tabwriter"
 
@@ -12,6 +13,10 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/internal/format"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/runtime"
+	metricsv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
 type applicationsCmd struct {
@@ -55,9 +60,23 @@ func (cmd *applicationsCmd) Run(ctx context.Context, client *api.Client, get *Cm
 		return printApplication(appList.Items, get, defaultOut(cmd.out), false)
 	case yamlOut:
 		return format.PrettyPrintObjects(appList.GetItems(), format.PrintOpts{Out: defaultOut(cmd.out)})
+	case stats:
+		return cmd.printStats(ctx, client, appList.Items, get, defaultOut(cmd.out))
 	}
 
 	return nil
+}
+
+func (cmd *applicationsCmd) Help() string {
+	return "To get an overview of the app and replica usage, use the flag '-o stats':\n" +
+		"\tREPLICA: The name of the app replica.\n" +
+		"\tSTATUS: Current status of the replica.\n" +
+		"\tCPU: Current CPU usage in millicores (1000m is a full CPU core).\n" +
+		"\tCPU%: Current CPU usage relative to the app size. This can be over 100% as Deploio allows bursting.\n" +
+		"\tMEMORY: Current Memory usage in MiB.\n" +
+		"\tMEMORY%: Current Memory relative to the app size. This can be over 100% as Deploio allows bursting.\n" +
+		"\tRESTARTS: The amount of times the replica has been restarted.\n" +
+		"\tLASTEXITCODE: The exit code the last time the replica restarted. This can give an indication on why the replica is restarting."
 }
 
 func printApplication(apps []apps.Application, get *Cmd, out io.Writer, header bool) error {
@@ -162,4 +181,109 @@ func printDNSDetailsTabRow(items []util.DNSDetail, get *Cmd, out io.Writer) erro
 	fmt.Fprintf(out, "\nVisit %s to see instructions on how to setup custom hosts\n", util.DNSSetupURL)
 
 	return nil
+}
+
+func (cmd *applicationsCmd) printStats(ctx context.Context, c *api.Client, appList []apps.Application, get *Cmd, out io.Writer) error {
+	scheme := runtime.NewScheme()
+	if err := metricsv1beta1.AddToScheme(scheme); err != nil {
+		return err
+	}
+
+	runtimeClient, err := c.DeploioRuntimeClient(ctx, scheme)
+	if err != nil {
+		return err
+	}
+	w := tabwriter.NewWriter(out, 0, 0, 3, ' ', 0)
+	get.writeHeader(w, "NAME", "REPLICA", "STATUS", "CPU", "CPU%", "MEMORY", "MEMORY%", "RESTARTS", "LASTEXITCODE")
+
+	for _, app := range appList {
+		replicas, err := util.ApplicationReplicas(ctx, c, api.ObjectName(&app))
+		if err != nil {
+			format.PrintWarningf("unable to get replicas for app %s\n", c.Name(app.Name))
+			continue
+		}
+
+		if len(replicas) == 0 {
+			continue
+		}
+
+		for _, replica := range replicas {
+			podMetrics := metricsv1beta1.PodMetrics{}
+			if err := runtimeClient.Get(ctx, api.NamespacedName(replica.ReplicaName, app.Namespace), &podMetrics); err != nil {
+				format.PrintWarningf("unable to get metrics for replica %s\n", replica.ReplicaName)
+			}
+
+			appResources := apps.AppResources[app.Status.AtProvider.Size]
+			// We expect exactly one container, fall back to [util.NoneText] if that's
+			// not the case. The container might simply not have any metrics yet.
+			cpuUsage, cpuPercentage := util.NoneText, util.NoneText
+			memoryUsage, memoryPercentage := util.NoneText, util.NoneText
+			if len(podMetrics.Containers) == 1 {
+				cpu := podMetrics.Containers[0].Usage[corev1.ResourceCPU]
+				cpuUsage = formatQuantity(corev1.ResourceCPU, cpu)
+				cpuPercentage = formatPercentage(cpu.MilliValue(), appResources.Cpu().MilliValue())
+				memory := podMetrics.Containers[0].Usage[corev1.ResourceMemory]
+				memoryUsage = formatQuantity(corev1.ResourceMemory, memory)
+				memoryPercentage = formatPercentage(memory.MilliValue(), appResources.Memory().MilliValue())
+			}
+
+			get.writeTabRow(
+				w, c.Project, app.Name,
+				replica.ReplicaName,
+				string(replica.Status),
+				cpuUsage,
+				cpuPercentage,
+				memoryUsage,
+				memoryPercentage,
+				formatRestartCount(replica),
+				formatExitCode(replica),
+			)
+		}
+	}
+	return w.Flush()
+}
+
+// formatQuantity formats cpu/memory into human readable form. Adapted from
+// https://github.com/kubernetes/kubectl/blob/v0.31.1/pkg/metricsutil/metrics_printer.go#L209
+func formatQuantity(resourceType corev1.ResourceName, quantity resource.Quantity) string {
+	switch resourceType {
+	case corev1.ResourceCPU:
+		return fmt.Sprintf("%vm", quantity.MilliValue())
+	case corev1.ResourceMemory:
+		return fmt.Sprintf("%vMiB", quantity.Value()/toMiB(1))
+	default:
+		return fmt.Sprintf("%v", quantity.Value())
+	}
+}
+
+func formatPercentage(val, total int64) string {
+	if total == 0 {
+		return util.NoneText
+	}
+	return fmt.Sprintf("%.1f", float64(val)/float64(total)*100) + "%"
+}
+
+func toMiB(val int64) int64 {
+	return val * 1024 * 1024
+}
+
+func formatExitCode(replica apps.ReplicaObservation) string {
+	lastExitCode := util.NoneText
+
+	if replica.LastExitCode != nil {
+		lastExitCode = strconv.Itoa(int(*replica.LastExitCode))
+		// not exactly guaranteed but 137 is usually caused by the OOM killer
+		if *replica.LastExitCode == 137 {
+			lastExitCode = lastExitCode + " (Out of memory)"
+		}
+	}
+	return lastExitCode
+}
+
+func formatRestartCount(replica apps.ReplicaObservation) string {
+	restartCount := util.NoneText
+	if replica.RestartCount != nil {
+		restartCount = strconv.Itoa(int(*replica.RestartCount))
+	}
+	return restartCount
 }

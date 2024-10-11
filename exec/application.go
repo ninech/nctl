@@ -5,22 +5,16 @@ import (
 	"fmt"
 	"io"
 
-	b64 "encoding/base64"
-
 	dockerterm "github.com/moby/term"
 	apps "github.com/ninech/apis/apps/v1alpha1"
-	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
-	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/kubectl/pkg/scheme"
 	"k8s.io/kubectl/pkg/util/term"
-	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -63,7 +57,7 @@ func (ac applicationCmd) Help() string {
   # Get output from running the 'date' command in an application replica.
   nctl exec app myapp -- date
 
-  # Use redirection to execute a comand.
+  # Use redirection to execute a command.
   echo date | nctl exec app myapp
 
   # In certain situations it might be needed to not redirect stdin. This can be
@@ -77,7 +71,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client, exec *Cm
 	if err != nil {
 		return fmt.Errorf("error when searching for replica to connect: %w", err)
 	}
-	config, err := deploioRestConfig(ctx, client)
+	config, err := client.DeploioRuntimeConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("can not create deplo.io cluster rest config: %w", err)
 	}
@@ -98,46 +92,23 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client, exec *Cm
 		})
 }
 
-func latestAvailableRelease(releases *apps.ReleaseList) *apps.Release {
-	util.OrderReleaseList(releases, false)
-	for _, release := range releases.Items {
-		if release.Status.AtProvider.ReleaseStatus == apps.ReleaseProcessStatusAvailable {
-			return &release
-		}
-	}
-	return nil
-}
-
 // getReplica finds a replica of the latest available release
 func (cmd *applicationCmd) getReplica(ctx context.Context, client *api.Client) (string, appBuildType, error) {
-	releases := &apps.ReleaseList{}
-	if err := client.List(
-		ctx,
-		releases,
-		runtimeclient.InNamespace(client.Project),
-		runtimeclient.MatchingLabels{util.ApplicationNameLabel: cmd.Name},
-	); err != nil {
+	release, err := util.ApplicationLatestAvailableRelease(ctx, client, client.Name(cmd.Name))
+	if err != nil {
 		return "", "", err
 	}
-
-	if len(releases.Items) == 0 {
-		return "", "", fmt.Errorf("no releases found for application %s", cmd.Name)
-	}
-	latestAvailableRelease := latestAvailableRelease(releases)
-	if latestAvailableRelease == nil {
-		return "", "", fmt.Errorf("no ready release found for application %s", cmd.Name)
-	}
 	buildType := appBuildTypeBuildpack
-	if latestAvailableRelease.Spec.ForProvider.DockerfileBuild {
+	if release.Spec.ForProvider.DockerfileBuild {
 		buildType = appBuildTypeDockerfile
 	}
-	if len(latestAvailableRelease.Status.AtProvider.ReplicaObservation) == 0 {
-		return "", buildType, fmt.Errorf("no replica information found for release %s", latestAvailableRelease.Name)
+	if len(release.Status.AtProvider.ReplicaObservation) == 0 {
+		return "", buildType, fmt.Errorf("no replica information found for release %s", release.Name)
 	}
-	if replica := readyReplica(latestAvailableRelease.Status.AtProvider.ReplicaObservation); replica != "" {
+	if replica := readyReplica(release.Status.AtProvider.ReplicaObservation); replica != "" {
 		return replica, buildType, nil
 	}
-	return "", buildType, fmt.Errorf("no ready replica found for release %s", latestAvailableRelease.Name)
+	return "", buildType, fmt.Errorf("no ready replica found for release %s", release.Name)
 }
 
 func readyReplica(replicaObs []apps.ReplicaObservation) string {
@@ -219,20 +190,6 @@ func executeRemoteCommand(ctx context.Context, params remoteCommandParameters) e
 
 	}
 	return tty.Safe(fn)
-}
-
-func deploioRestConfig(ctx context.Context, client *api.Client) (*rest.Config, error) {
-	config := rest.CopyConfig(client.Config)
-	deploioClusterData := &infrastructure.ClusterData{}
-	if err := client.Get(ctx, types.NamespacedName{Name: meta.ClusterDataDeploioName}, deploioClusterData); err != nil {
-		return nil, fmt.Errorf("can not gather deplo.io cluster connection details: %w", err)
-	}
-	config.Host = deploioClusterData.Status.AtProvider.APIEndpoint
-	var err error
-	if config.CAData, err = b64.StdEncoding.DecodeString(deploioClusterData.Status.AtProvider.APICACert); err != nil {
-		return nil, fmt.Errorf("can not decode deplo.io cluster CA certificate: %w", err)
-	}
-	return config, nil
 }
 
 func replicaCommand(buildType appBuildType, command []string) []string {
