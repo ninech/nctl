@@ -46,7 +46,7 @@ type applicationCmd struct {
 	GitInformationServiceURL string            `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
 	SkipRepoAccessCheck      bool              `help:"Skip the git repository access check" default:"false"`
 	Debug                    bool              `help:"Enable debug messages" default:"false"`
-	Language                 string            `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static,ruby-heroku," default:""`
+	Language                 string            `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static," default:""`
 	DockerfileBuild          dockerfileBuild   `embed:""`
 }
 
@@ -576,8 +576,7 @@ func ApplicationKongVars() (kong.Vars, error) {
 	result["app_default_deploy_job_timeout"] = "5m"
 	result["app_default_deploy_job_retries"] = "3"
 	result["app_language_help"] = "Language specifies which language your app is. " +
-		"If left empty, deploio will detect the language automatically. " +
-		"Note that *-heroku languages are experimental and may be removed in future releases."
+		"If left empty, deploio will detect the language automatically. "
 	result["app_dockerfile_enable_help"] = "Enable Dockerfile build (Beta) instead of the automatic " +
 		"buildpack detection"
 	result["app_dockerfile_path_help"] = "Specifies the path to the Dockerfile. If left empty a file " +
