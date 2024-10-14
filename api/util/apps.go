@@ -11,7 +11,9 @@ import (
 	"github.com/ninech/nctl/api"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -299,4 +301,45 @@ func ValidatePEM(content string) (*string, error) {
 		return nil, fmt.Errorf("no valid PEM formatted data found")
 	}
 	return &content, nil
+}
+
+func ApplicationLatestAvailableRelease(ctx context.Context, client *api.Client, app types.NamespacedName) (*apps.Release, error) {
+	releases := &apps.ReleaseList{}
+	if err := client.List(
+		ctx,
+		releases,
+		runtimeclient.InNamespace(app.Namespace),
+		runtimeclient.MatchingLabels{ApplicationNameLabel: app.Name},
+	); err != nil {
+		return nil, err
+	}
+
+	if len(releases.Items) == 0 {
+		return nil, fmt.Errorf("no releases found for application %s", app.Name)
+	}
+	release := latestAvailableRelease(releases)
+	if release == nil {
+		return nil, fmt.Errorf("no ready release found for application %s", app.Name)
+	}
+
+	return release, nil
+}
+
+func ApplicationReplicas(ctx context.Context, client *api.Client, app types.NamespacedName) ([]apps.ReplicaObservation, error) {
+	release, err := ApplicationLatestAvailableRelease(ctx, client, app)
+	if err != nil {
+		return nil, err
+	}
+
+	return release.Status.AtProvider.ReplicaObservation, nil
+}
+
+func latestAvailableRelease(releases *apps.ReleaseList) *apps.Release {
+	OrderReleaseList(releases, false)
+	for _, release := range releases.Items {
+		if release.Status.AtProvider.ReleaseStatus == apps.ReleaseProcessStatusAvailable {
+			return &release
+		}
+	}
+	return nil
 }
