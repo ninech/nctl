@@ -43,6 +43,7 @@ type applicationCmd struct {
 	Env                      map[string]string `help:"Environment variables which are passed to the app at runtime."`
 	BuildEnv                 map[string]string `help:"Environment variables which are passed to the app build process."`
 	DeployJob                deployJob         `embed:"" prefix:"deploy-job-"`
+	WorkerJob                workerJob         `embed:"" prefix:"worker-job-"`
 	GitInformationServiceURL string            `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
 	SkipRepoAccessCheck      bool              `help:"Skip the git repository access check" default:"false"`
 	Debug                    bool              `help:"Enable debug messages" default:"false"`
@@ -65,6 +66,12 @@ type deployJob struct {
 	Name    string        `default:"release" help:"Name of the deploy job. The deployment will only continue if the job finished successfully."`
 	Retries int32         `default:"${app_default_deploy_job_retries}" help:"How many times the job will be restarted on failure. Default is ${app_default_deploy_job_retries} and maximum 5."`
 	Timeout time.Duration `default:"${app_default_deploy_job_timeout}" help:"Timeout of the job. Default is ${app_default_deploy_job_timeout}, minimum is 1 minute and maximum is 30 minutes."`
+}
+
+type workerJob struct {
+	Command string  `help:"Command to execute to start the worker." placeholder:"\"bundle exec sidekiq\""`
+	Name    string  `help:"Name of the worker job to add." placeholder:"worker-1"`
+	Size    *string `help:"Size of the worker (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
 }
 
 type dockerfileBuild struct {
@@ -271,6 +278,20 @@ func (app *applicationCmd) config() apps.Config {
 		Env:             util.EnvVarsFromMap(app.Env),
 		DeployJob:       deployJob,
 	}
+
+	if len(app.WorkerJob.Command) != 0 && len(app.WorkerJob.Name) != 0 {
+		workerJob := apps.WorkerJob{
+			Job: apps.Job{
+				Name:    app.WorkerJob.Name,
+				Command: app.WorkerJob.Command,
+			},
+		}
+		if app.WorkerJob.Size != nil {
+			workerJob.Size = ptr.To(apps.ApplicationSize(*app.WorkerJob.Size))
+		}
+		config.WorkerJobs = append(config.WorkerJobs, workerJob)
+	}
+
 	if app.Size != nil {
 		config.Size = apps.ApplicationSize(*app.Size)
 	}

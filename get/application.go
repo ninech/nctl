@@ -83,14 +83,19 @@ func printApplication(apps []apps.Application, get *Cmd, out io.Writer, header b
 	w := tabwriter.NewWriter(out, 0, 0, 4, ' ', 0)
 
 	if header {
-		get.writeHeader(w, "NAME", "HOSTS", "UNVERIFIED_HOSTS")
+		get.writeHeader(w, "NAME", "REPLICAS", "WORKERJOBS", "HOSTS", "UNVERIFIEDHOSTS")
 	}
 
 	for _, app := range apps {
 		verifiedHosts := append(util.VerifiedAppHosts(&app), app.Status.AtProvider.CNAMETarget)
 		unverifiedHosts := util.UnverifiedAppHosts(&app)
+		replicas := 0
+		if app.Status.AtProvider.Replicas != nil {
+			replicas = int(*app.Status.AtProvider.Replicas)
+		}
+		workerJobs := fmt.Sprintf("%d", len(app.Status.AtProvider.WorkerJobs))
 
-		get.writeTabRow(w, app.Namespace, app.Name, join(verifiedHosts), join(unverifiedHosts))
+		get.writeTabRow(w, app.Namespace, app.Name, fmt.Sprintf("%d", replicas), workerJobs, join(verifiedHosts), join(unverifiedHosts))
 	}
 
 	return w.Flush()
@@ -152,7 +157,7 @@ func gatherCredentials(ctx context.Context, items []apps.Application, c *api.Cli
 
 func join(list []string) string {
 	if len(list) == 0 {
-		return "none"
+		return util.NoneText
 	}
 	return strings.Join(list, ",")
 }
@@ -197,17 +202,19 @@ func (cmd *applicationsCmd) printStats(ctx context.Context, c *api.Client, appLi
 	get.writeHeader(w, "NAME", "REPLICA", "STATUS", "CPU", "CPU%", "MEMORY", "MEMORY%", "RESTARTS", "LASTEXITCODE")
 
 	for _, app := range appList {
-		replicas, err := util.ApplicationReplicas(ctx, c, api.ObjectName(&app))
+		rel, err := util.ApplicationLatestAvailableRelease(ctx, c, api.ObjectName(&app))
 		if err != nil {
 			format.PrintWarningf("unable to get replicas for app %s\n", c.Name(app.Name))
 			continue
 		}
 
-		if len(replicas) == 0 {
-			continue
+		replicas := rel.Status.AtProvider.ReplicaObservation
+		workers := []apps.ReplicaObservation{}
+		for _, wjs := range rel.Status.AtProvider.WorkerJobStatus {
+			workers = append(workers, wjs.ReplicaObservation...)
 		}
 
-		for _, replica := range replicas {
+		for _, replica := range append(replicas, workers...) {
 			podMetrics := metricsv1beta1.PodMetrics{}
 			if err := runtimeClient.Get(ctx, api.NamespacedName(replica.ReplicaName, app.Namespace), &podMetrics); err != nil {
 				format.PrintWarningf("unable to get metrics for replica %s\n", replica.ReplicaName)
