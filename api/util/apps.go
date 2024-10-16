@@ -325,15 +325,6 @@ func ApplicationLatestAvailableRelease(ctx context.Context, client *api.Client, 
 	return release, nil
 }
 
-func ApplicationReplicas(ctx context.Context, client *api.Client, app types.NamespacedName) ([]apps.ReplicaObservation, error) {
-	release, err := ApplicationLatestAvailableRelease(ctx, client, app)
-	if err != nil {
-		return nil, err
-	}
-
-	return release.Status.AtProvider.ReplicaObservation, nil
-}
-
 func latestAvailableRelease(releases *apps.ReleaseList) *apps.Release {
 	OrderReleaseList(releases, false)
 	for _, release := range releases.Items {
