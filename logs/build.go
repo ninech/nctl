@@ -35,7 +35,7 @@ func (cmd *buildCmd) Run(ctx context.Context, client *api.Client) error {
 		}, client.Project)
 	}
 
-	return cmd.logsCmd.Run(ctx, client, query)
+	return cmd.logsCmd.Run(ctx, client, query, "build")
 }
 
 const (

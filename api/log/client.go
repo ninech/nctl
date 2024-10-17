@@ -76,7 +76,7 @@ func Mode(m string) string {
 // StdOut sets up an stdout log output with the specified mode.
 func StdOut(mode string) (output.LogOutput, error) {
 	out, err := output.NewLogOutput(os.Stdout, mode, &output.LogOutputOptions{
-		NoLabels: true, ColoredOutput: true, Timezone: time.Local,
+		NoLabels: false, ColoredOutput: true, Timezone: time.Local,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create log output: %s", err)
@@ -159,16 +159,23 @@ func printResult(value loghttp.ResultValue, out output.LogOutput) error {
 	return nil
 }
 
+type labelEntry struct {
+	loghttp.Entry
+	labels loghttp.LabelSet
+}
+
 func printStream(streams loghttp.Streams, out output.LogOutput) {
-	allEntries := []loghttp.Entry{}
+	sortedEntries := []labelEntry{}
 	for _, s := range streams {
-		allEntries = append(allEntries, s.Entries...)
+		for _, entry := range s.Entries {
+			sortedEntries = append(sortedEntries, labelEntry{Entry: entry, labels: s.Labels})
+		}
 	}
 
-	sort.Slice(allEntries, func(i, j int) bool { return allEntries[i].Timestamp.Before(allEntries[j].Timestamp) })
+	sort.Slice(sortedEntries, func(i, j int) bool { return sortedEntries[i].Timestamp.Before(sortedEntries[j].Timestamp) })
 
-	for _, e := range allEntries {
-		out.FormatAndPrintln(e.Timestamp, nil, 0, e.Line)
+	for _, e := range sortedEntries {
+		out.FormatAndPrintln(e.Timestamp, e.labels, 0, e.Line)
 	}
 }
 
@@ -189,10 +196,10 @@ func (c *Client) TailQuery(ctx context.Context, delayFor time.Duration, out outp
 		_ = conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 	}()
 
-	tailResponse := new(loghttp.TailResponse)
 	lastReceivedTimestamp := q.Start
 
 	for {
+		tailResponse := new(loghttp.TailResponse)
 		err := unmarshal.ReadTailResponseJSON(tailResponse, conn)
 		if err != nil {
 			// Check if the websocket connection closed unexpectedly. If so, retry.

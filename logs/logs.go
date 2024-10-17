@@ -23,18 +23,19 @@ type resourceCmd struct {
 }
 
 type logsCmd struct {
-	Follow bool          `help:"Follow the logs by live tailing." short:"f"`
-	Lines  int           `help:"Amount of lines to output" default:"20" short:"l"`
-	Since  time.Duration `help:"Duration how long to look back for logs" short:"s" default:"60m"`
-	Output string        `help:"Configures the log output format. ${enum}" short:"o" enum:"default,json" default:"default"`
-	out    output.LogOutput
+	Follow   bool          `help:"Follow the logs by live tailing." short:"f"`
+	Lines    int           `help:"Amount of lines to output" default:"20" short:"l"`
+	Since    time.Duration `help:"Duration how long to look back for logs" short:"s" default:"60m"`
+	Output   string        `help:"Configures the log output format. ${enum}" short:"o" enum:"default,json" default:"default"`
+	NoLabels bool          `help:"disable labels in log output"`
+	out      output.LogOutput
 }
 
 const (
 	phaseLabel = "phase"
 )
 
-func (cmd *logsCmd) Run(ctx context.Context, client *api.Client, queryString string) error {
+func (cmd *logsCmd) Run(ctx context.Context, client *api.Client, queryString string, labels ...string) error {
 	query := log.Query{
 		QueryString: queryString,
 		Limit:       cmd.Lines,
@@ -44,7 +45,7 @@ func (cmd *logsCmd) Run(ctx context.Context, client *api.Client, queryString str
 		Quiet:       true,
 	}
 
-	out, err := log.StdOut(log.Mode(cmd.Output))
+	out, err := log.NewStdOut(log.Mode(cmd.Output), cmd.NoLabels, labels...)
 	if err != nil {
 		return err
 	}

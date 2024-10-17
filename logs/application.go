@@ -12,7 +12,7 @@ type applicationCmd struct {
 }
 
 func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
-	return cmd.logsCmd.Run(ctx, client, ApplicationQuery(cmd.Name, client.Project))
+	return cmd.logsCmd.Run(ctx, client, ApplicationQuery(cmd.Name, client.Project), "release", "worker_job", "deploy_job")
 }
 
 const (
