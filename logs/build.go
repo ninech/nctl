@@ -29,24 +29,20 @@ func (cmd *buildCmd) Run(ctx context.Context, client *api.Client) error {
 
 	query := BuildQuery(cmd.Name, client.Project)
 	if len(cmd.ApplicationName) != 0 {
-		query = queryString(map[string]string{
-			appLabel:   cmd.ApplicationName,
-			phaseLabel: buildPhase,
-		}, client.Project)
+		query = BuildsOfAppQuery(cmd.ApplicationName, client.Project)
 	}
 
-	return cmd.logsCmd.Run(ctx, client, query)
+	return cmd.logsCmd.Run(ctx, client, query, apps.LogLabelBuild)
 }
 
-const (
-	buildLabel = "build"
-	buildPhase = "build"
-)
-
 func BuildQuery(name, project string) string {
-	return queryString(map[string]string{buildLabel: name, phaseLabel: buildPhase}, project)
+	return buildQuery(inProject(project), queryExpr(opEquals, apps.LogLabelBuild, name))
 }
 
 func BuildsOfAppQuery(name, project string) string {
-	return queryString(map[string]string{appLabel: name, phaseLabel: buildPhase}, project)
+	return buildQuery(
+		inProject(project),
+		queryExpr(opEquals, apps.LogLabelApplication, name),
+		queryExpr(opNotEquals, apps.LogLabelBuild, ""),
+	)
 }

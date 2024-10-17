@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/grafana/loki/pkg/logcli/output"
+	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/log"
 	"github.com/ninech/nctl/internal/test"
@@ -105,9 +106,9 @@ func TestRun(t *testing.T) {
 	}
 }
 
-func TestQueryString(t *testing.T) {
+func TestMatchLabels(t *testing.T) {
 	assert.Equal(t,
-		queryString(map[string]string{appLabel: "some-app", phaseLabel: "some-phase"}, "default"),
-		`{app="some-app",namespace="default",phase="some-phase"}`,
+		buildQuery(queryExpr(opEquals, apps.LogLabelApplication, "some-app"), inProject("default")),
+		`{app="some-app",namespace="default"}`,
 	)
 }

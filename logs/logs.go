@@ -3,7 +3,6 @@ package logs
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strings"
 	"time"
 
@@ -23,18 +22,15 @@ type resourceCmd struct {
 }
 
 type logsCmd struct {
-	Follow bool          `help:"Follow the logs by live tailing." short:"f"`
-	Lines  int           `help:"Amount of lines to output" default:"20" short:"l"`
-	Since  time.Duration `help:"Duration how long to look back for logs" short:"s" default:"60m"`
-	Output string        `help:"Configures the log output format. ${enum}" short:"o" enum:"default,json" default:"default"`
-	out    output.LogOutput
+	Follow   bool          `help:"Follow the logs by live tailing." short:"f"`
+	Lines    int           `help:"Amount of lines to output" default:"50" short:"l"`
+	Since    time.Duration `help:"Duration how long to look back for logs" short:"s" default:"24h"`
+	Output   string        `help:"Configures the log output format. ${enum}" short:"o" enum:"default,json" default:"default"`
+	NoLabels bool          `help:"disable labels in log output"`
+	out      output.LogOutput
 }
 
-const (
-	phaseLabel = "phase"
-)
-
-func (cmd *logsCmd) Run(ctx context.Context, client *api.Client, queryString string) error {
+func (cmd *logsCmd) Run(ctx context.Context, client *api.Client, queryString string, labels ...string) error {
 	query := log.Query{
 		QueryString: queryString,
 		Limit:       cmd.Lines,
@@ -44,7 +40,7 @@ func (cmd *logsCmd) Run(ctx context.Context, client *api.Client, queryString str
 		Quiet:       true,
 	}
 
-	out, err := log.StdOut(log.Mode(cmd.Output))
+	out, err := log.NewStdOut(log.Mode(cmd.Output), cmd.NoLabels, labels...)
 	if err != nil {
 		return err
 	}
@@ -60,17 +56,21 @@ func (cmd *logsCmd) Run(ctx context.Context, client *api.Client, queryString str
 	return client.Log.QueryRange(ctx, out, query)
 }
 
-// queryString can take a set of labels (key, value) to query logs for. The
-// namespace label will always be included and takes on the value of the
-// project.
-func queryString(labels map[string]string, project string) string {
-	pairs := []string{}
+type queryOperator string
 
-	labels["namespace"] = project
-	for k, v := range labels {
-		pairs = append(pairs, fmt.Sprintf(`%s="%s"`, k, v))
-	}
-	sort.Strings(pairs)
+const (
+	opEquals    queryOperator = "="
+	opNotEquals queryOperator = "!="
+)
 
-	return "{" + strings.Join(pairs, ",") + "}"
+func queryExpr(operator queryOperator, key, value string) string {
+	return fmt.Sprintf(`%s%s"%s"`, key, operator, value)
+}
+
+func buildQuery(expr ...string) string {
+	return "{" + strings.Join(expr, ",") + "}"
+}
+
+func inProject(project string) string {
+	return queryExpr(opEquals, "namespace", project)
 }
