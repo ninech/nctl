@@ -42,9 +42,10 @@ type remoteCommandParameters struct {
 
 type applicationCmd struct {
 	resourceCmd
-	Stdin   bool     `name:"stdin" short:"i" help:"Pass stdin to the application" default:"true"`
-	Tty     bool     `name:"tty" short:"t" help:"Stdin is a TTY" default:"true"`
-	Command []string `arg:"" help:"command to execute" optional:""`
+	Stdin     bool     `name:"stdin" short:"i" help:"Pass stdin to the application" default:"true"`
+	Tty       bool     `name:"tty" short:"t" help:"Stdin is a TTY" default:"true"`
+	WorkerJob string   `name:"worker-job" short:"w" help:"Exec into worker job by name"`
+	Command   []string `arg:"" help:"command to execute" optional:""`
 }
 
 // Help displays examples for the application exec command
@@ -102,10 +103,25 @@ func (cmd *applicationCmd) getReplica(ctx context.Context, client *api.Client) (
 	if release.Spec.ForProvider.DockerfileBuild {
 		buildType = appBuildTypeDockerfile
 	}
-	if len(release.Status.AtProvider.ReplicaObservation) == 0 {
+	replicaObs := release.Status.AtProvider.ReplicaObservation
+
+	if cmd.WorkerJob != "" {
+		found := false
+		for _, wj := range release.Status.AtProvider.WorkerJobStatus {
+			if wj.Name == cmd.WorkerJob {
+				found = true
+				replicaObs = wj.ReplicaObservation
+			}
+		}
+		if !found {
+			return "", buildType, fmt.Errorf("worker job %q not found", cmd.WorkerJob)
+		}
+	}
+
+	if len(replicaObs) == 0 {
 		return "", buildType, fmt.Errorf("no replica information found for release %s", release.Name)
 	}
-	if replica := readyReplica(release.Status.AtProvider.ReplicaObservation); replica != "" {
+	if replica := readyReplica(replicaObs); replica != "" {
 		return replica, buildType, nil
 	}
 	return "", buildType, fmt.Errorf("no ready replica found for release %s", release.Name)
