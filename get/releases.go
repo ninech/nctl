@@ -63,6 +63,7 @@ func (cmd *releasesCmd) printReleases(releases []apps.Release, get *Cmd, header 
 			"APPLICATION",
 			"SIZE",
 			"REPLICAS",
+			"WORKERJOBS",
 			"STATUS",
 			"AGE",
 		)
@@ -76,6 +77,7 @@ func (cmd *releasesCmd) printReleases(releases []apps.Release, get *Cmd, header 
 		if r.Spec.ForProvider.Config.Replicas != nil {
 			replicas = strconv.Itoa(int(*r.Spec.ForProvider.Config.Replicas))
 		}
+		workerJobs := strconv.Itoa(len(r.Spec.ForProvider.Config.WorkerJobs))
 
 		get.writeTabRow(
 			w,
@@ -85,6 +87,7 @@ func (cmd *releasesCmd) printReleases(releases []apps.Release, get *Cmd, header 
 			r.ObjectMeta.Labels[util.ApplicationNameLabel],
 			string(r.Spec.ForProvider.Config.Size),
 			replicas,
+			workerJobs,
 			string(r.Status.AtProvider.ReleaseStatus),
 			duration.HumanDuration(time.Since(r.ObjectMeta.CreationTimestamp.Time)),
 		)
