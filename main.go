@@ -13,6 +13,8 @@ import (
 
 	"github.com/alecthomas/kong"
 
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+
 	completion "github.com/jotaen/kong-completion"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
@@ -154,7 +156,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	kongCtx.FatalIfErrorf(kongCtx.Run(ctx, client))
+	err = kongCtx.Run(ctx, client)
+	if err != nil {
+		if k8serrors.IsForbidden(err) {
+			fmt.Println("nctl: Permission denied: are you part of the org?	")
+			
+		}else{
+			kongCtx.FatalIfErrorf(kongCtx.Run(ctx, client))
+		}
+	}
+
 }
 
 func setupSignalHandler(ctx context.Context, cancel context.CancelFunc) {
