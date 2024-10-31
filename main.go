@@ -13,6 +13,8 @@ import (
 
 	"github.com/alecthomas/kong"
 
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+
 	completion "github.com/jotaen/kong-completion"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
@@ -34,6 +36,7 @@ type flags struct {
 	APICluster     string           `help:"Context name of the API cluster." default:"${api_cluster}" env:"NCTL_API_CLUSTER" hidden:""`
 	LogAPIAddress  string           `help:"Address of the deplo.io logging API server." default:"https://logs.deplo.io" env:"NCTL_LOG_ADDR" hidden:""`
 	LogAPIInsecure bool             `help:"Don't verify TLS connection to the logging API server." hidden:"" default:"false" env:"NCTL_LOG_INSECURE"`
+	Verbose        bool 			`help:"Show verbose messages."`
 	Version        kong.VersionFlag `name:"version" help:"Print version information and quit."`
 }
 
@@ -154,7 +157,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	kongCtx.FatalIfErrorf(kongCtx.Run(ctx, client))
+	err = kongCtx.Run(ctx, client)
+	if err != nil {
+		if k8serrors.IsForbidden(err) && !nctl.Verbose {
+			err = errors.New("permission denied: are you part of the organization?")
+		}
+		kongCtx.FatalIfErrorf(err)
+	}
+
 }
 
 func setupSignalHandler(ctx context.Context, cancel context.CancelFunc) {
