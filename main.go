@@ -36,6 +36,7 @@ type flags struct {
 	APICluster     string           `help:"Context name of the API cluster." default:"${api_cluster}" env:"NCTL_API_CLUSTER"`
 	LogAPIAddress  string           `help:"Address of the deplo.io logging API server." default:"https://logs.deplo.io" env:"NCTL_LOG_ADDR"`
 	LogAPIInsecure bool             `help:"Don't verify TLS connection to the logging API server." hidden:"" default:"false" env:"NCTL_LOG_INSECURE"`
+	Verbose        bool 			`help:"Show detailed error message."`
 	Version        kong.VersionFlag `name:"version" help:"Print version information and quit."`
 }
 
@@ -158,9 +159,8 @@ func main() {
 
 	err = kongCtx.Run(ctx, client)
 	if err != nil {
-		if k8serrors.IsForbidden(err) {
-			kongCtx.Fatalf("Permission denied: are you part of the org?")
-			
+		if k8serrors.IsForbidden(err) && !nctl.Verbose {
+			kongCtx.Fatalf("Permission denied: are you part of the organization?\nuse --verbose to see detailed error")
 		}else{
 			kongCtx.FatalIfErrorf(err)
 		}
