@@ -160,7 +160,7 @@ func main() {
 	err = kongCtx.Run(ctx, client)
 	if err != nil {
 		if k8serrors.IsForbidden(err) && !nctl.Verbose {
-			err = errors.New("Permission denied: are you part of the organization?")
+			err = errors.New("permission denied: are you part of the organization?")
 		}
 		kongCtx.FatalIfErrorf(err)
 	}
