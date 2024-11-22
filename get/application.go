@@ -202,7 +202,7 @@ func (cmd *applicationsCmd) printStats(ctx context.Context, c *api.Client, appLi
 	get.writeHeader(w, "NAME", "REPLICA", "STATUS", "CPU", "CPU%", "MEMORY", "MEMORY%", "RESTARTS", "LASTEXITCODE")
 
 	for _, app := range appList {
-		rel, err := util.ApplicationLatestAvailableRelease(ctx, c, api.ObjectName(&app))
+		rel, err := util.ApplicationLatestRelease(ctx, c, api.ObjectName(&app))
 		if err != nil {
 			format.PrintWarningf("unable to get replicas for app %s\n", c.Name(app.Name))
 			continue
