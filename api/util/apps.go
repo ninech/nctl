@@ -304,6 +304,41 @@ func ValidatePEM(content string) (*string, error) {
 }
 
 func ApplicationLatestAvailableRelease(ctx context.Context, client *api.Client, app types.NamespacedName) (*apps.Release, error) {
+	releases, err := appReleases(ctx, client, app)
+	if err != nil {
+		return nil, err
+	}
+
+	release := latestAvailableRelease(releases)
+	if release == nil {
+		return nil, fmt.Errorf("no ready release found for application %s", app.Name)
+	}
+
+	return release, nil
+}
+
+// ApplicationLatestRelease returns the latest release of an app, prioritizing
+// available releases and if no available release is found just the latest
+// progressing or failed release.
+func ApplicationLatestRelease(ctx context.Context, client *api.Client, app types.NamespacedName) (*apps.Release, error) {
+	releases, err := appReleases(ctx, client, app)
+	if err != nil {
+		return nil, err
+	}
+
+	release := latestAvailableRelease(releases)
+	if release == nil {
+		// in case no release is available, we just return the latest release in
+		// the list.
+		return &releases.Items[0], nil
+	}
+
+	return release, nil
+}
+
+// appReleases returns a release list of an app. If the returned error is nil,
+// the release list is guaranteed to have at least one item.
+func appReleases(ctx context.Context, client *api.Client, app types.NamespacedName) (*apps.ReleaseList, error) {
 	releases := &apps.ReleaseList{}
 	if err := client.List(
 		ctx,
@@ -317,12 +352,7 @@ func ApplicationLatestAvailableRelease(ctx context.Context, client *api.Client, 
 	if len(releases.Items) == 0 {
 		return nil, fmt.Errorf("no releases found for application %s", app.Name)
 	}
-	release := latestAvailableRelease(releases)
-	if release == nil {
-		return nil, fmt.Errorf("no ready release found for application %s", app.Name)
-	}
-
-	return release, nil
+	return releases, nil
 }
 
 func latestAvailableRelease(releases *apps.ReleaseList) *apps.Release {
