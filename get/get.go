@@ -24,6 +24,7 @@ import (
 type Cmd struct {
 	Output              output                `help:"Configures list output. ${enum}" short:"o" enum:"full,no-header,contexts,yaml,stats" default:"full"`
 	AllProjects         bool                  `help:"apply the get over all projects." short:"A"`
+	AllNamespaces       bool                  `help:"apply the get over all namespaces." hidden:""`
 	Clusters            clustersCmd           `cmd:"" group:"infrastructure.nine.ch" aliases:"cluster,vcluster" help:"Get Kubernetes Clusters."`
 	APIServiceAccounts  apiServiceAccountsCmd `cmd:"" group:"iam.nine.ch" name:"apiserviceaccounts" aliases:"asa" help:"Get API Service Accounts."`
 	Projects            projectCmd            `cmd:"" group:"management.nine.ch" name:"projects" aliases:"proj" help:"Get Projects."`
@@ -91,6 +92,13 @@ func (cmd *Cmd) namedResourceNotFound(project string, foundInProjects ...string)
 func (cmd *Cmd) list(ctx context.Context, client *api.Client, list runtimeclient.ObjectList, opts ...listOpt) error {
 	for _, opt := range opts {
 		opt(cmd)
+	}
+
+	if cmd.AllNamespaces {
+		if err := client.List(ctx, list, cmd.opts...); err != nil {
+			return fmt.Errorf("error when listing across all namespaces: %w", err)
+		}
+		return nil
 	}
 
 	// we now need a bit of reflection code from the apimachinery package
