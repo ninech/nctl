@@ -20,9 +20,11 @@ import (
 const (
 	appBuildTypeBuildpack  appBuildType = "buildpack"
 	appBuildTypeDockerfile appBuildType = "dockerfile"
-	buildpackEntrypoint                 = "launcher"
-	defaultShellBuildpack               = "/bin/bash"
-	defaultShellDockerfile              = "/bin/sh"
+	// the launcher binary helps in setting up the application expected
+	// environment
+	buildpackEntrypoint    = "/cnb/lifecycle/launcher"
+	defaultShellBuildpack  = "/bin/bash"
+	defaultShellDockerfile = "/bin/sh"
 )
 
 // appBuildType describes the way how the app was build (buildpack/dockerfile)
