@@ -1,7 +1,7 @@
 package exec
 
 type Cmd struct {
-	Application applicationCmd `cmd:"" group:"deplo.io" aliases:"app" name:"application" help:"Execute a command or shell in a deplo.io application."`
+	Application applicationCmd `cmd:"" group:"deplo.io" aliases:"app,application" name:"application" help:"Execute a command or shell in a deplo.io application."`
 }
 
 type resourceCmd struct {

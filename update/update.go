@@ -9,7 +9,7 @@ import (
 )
 
 type Cmd struct {
-	Application         applicationCmd   `cmd:"" group:"deplo.io" name:"application" aliases:"app" help:"Update an existing deplo.io Application."`
+	Application         applicationCmd   `cmd:"" group:"deplo.io" name:"application" aliases:"app,application" help:"Update an existing deplo.io Application."`
 	Config              configCmd        `cmd:"" group:"deplo.io" name:"config"  help:"Update an existing deplo.io Project Configuration."`
 	Project             projectCmd       `cmd:"" group:"management.nine.ch" name:"project"  help:"Update an existing Project"`
 	MySQL               mySQLCmd         `cmd:"" group:"storage.nine.ch" name:"mysql" help:"Update an existing MySQL instance."`
