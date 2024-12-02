@@ -26,7 +26,7 @@ type Cmd struct {
 	APIServiceAccount   apiServiceAccountCmd `cmd:"" group:"iam.nine.ch" name:"apiserviceaccount" aliases:"asa" help:"Create a new API Service Account."`
 	Project             projectCmd           `cmd:"" group:"management.nine.ch" name:"project" help:"Create a new project."`
 	Config              configCmd            `cmd:"" group:"deplo.io" name:"config"  help:"Create a new deplo.io Project Configuration."`
-	Application         applicationCmd       `cmd:"" group:"deplo.io" name:"application" aliases:"app" help:"Create a new deplo.io Application."`
+	Application         applicationCmd       `cmd:"" group:"deplo.io" name:"application" aliases:"app,application" help:"Create a new deplo.io Application."`
 	MySQL               mySQLCmd             `cmd:"" group:"storage.nine.ch" name:"mysql" help:"Create a new MySQL instance."`
 	Postgres            postgresCmd          `cmd:"" group:"storage.nine.ch" name:"postgres" help:"Create a new PostgreSQL instance."`
 	KeyValueStore       keyValueStoreCmd     `cmd:"" group:"storage.nine.ch" name:"keyvaluestore" aliases:"kvs" help:"Create a new KeyValueStore instance"`

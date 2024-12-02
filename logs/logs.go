@@ -13,7 +13,7 @@ import (
 )
 
 type Cmd struct {
-	Applications applicationCmd `cmd:"" group:"deplo.io" name:"application" aliases:"app" help:"Get deplo.io Application logs."`
+	Applications applicationCmd `cmd:"" group:"deplo.io" name:"application" aliases:"app,application" help:"Get deplo.io Application logs."`
 	Builds       buildCmd       `cmd:"" group:"deplo.io" name:"build" help:"Get deplo.io Build logs."`
 }
 
