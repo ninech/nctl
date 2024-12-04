@@ -76,7 +76,7 @@ func Mode(m string) string {
 // StdOut sets up an stdout log output with the specified mode.
 func StdOut(mode string) (output.LogOutput, error) {
 	out, err := output.NewLogOutput(os.Stdout, mode, &output.LogOutputOptions{
-		NoLabels: false, ColoredOutput: true, Timezone: time.Local,
+		NoLabels: true, ColoredOutput: true, Timezone: time.Local,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create log output: %s", err)
