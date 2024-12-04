@@ -9,7 +9,6 @@ import (
 	"github.com/gobuffalo/flect"
 	"github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/api/config"
 	"github.com/posener/complete"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -61,11 +60,11 @@ func (r *Resource) Predict(args complete.Args) []string {
 	ns := r.client.Project
 	// if we're looking for projects, we need to use the org as the namespace
 	if u.GetObjectKind().GroupVersionKind().Kind == reflect.TypeOf(v1alpha1.ProjectList{}).Name() {
-		cfg, err := config.ReadExtension(r.client.KubeconfigPath, r.client.KubeconfigContext)
+		org, err := r.client.Organization()
 		if err != nil {
 			return []string{}
 		}
-		ns = cfg.Organization
+		ns = org
 	}
 
 	if err := r.client.List(ctx, u, client.InNamespace(ns)); err != nil {

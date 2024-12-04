@@ -7,8 +7,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/api/config"
-	"github.com/ninech/nctl/api/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -18,18 +16,15 @@ type projectCmd struct {
 }
 
 func (cmd *projectCmd) Run(ctx context.Context, client *api.Client) error {
-	cfg, err := config.ReadExtension(client.KubeconfigPath, client.KubeconfigContext)
+	org, err := client.Organization()
 	if err != nil {
-		if config.IsExtensionNotFoundError(err) {
-			return util.ReloginNeeded(err)
-		}
 		return err
 	}
 
 	project := &management.Project{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cmd.Name,
-			Namespace: cfg.Organization,
+			Namespace: org,
 		},
 	}
 
