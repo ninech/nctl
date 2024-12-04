@@ -2,9 +2,12 @@ package auth
 
 import (
 	"context"
+	"fmt"
+	"slices"
 
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
+	"github.com/ninech/nctl/internal/format"
 )
 
 type SetOrgCmd struct {
@@ -20,5 +23,19 @@ func (s *SetOrgCmd) Run(ctx context.Context, client *api.Client) error {
 		return whoamicmd.Run(ctx, client)
 	}
 
-	return config.SetContextOrganization(client.KubeconfigPath, client.KubeconfigContext, s.Organization)
+	userInfo, err := api.GetUserInfoFromToken(client.Token(ctx))
+	if err != nil {
+		return err
+	}
+
+	if err := config.SetContextOrganization(client.KubeconfigPath, client.KubeconfigContext, s.Organization); err != nil {
+		return err
+	}
+
+	if !slices.Contains(userInfo.Orgs, s.Organization) {
+		format.PrintWarningf("%s is not in list of available Organizations, you might not have access to all resources.\n", s.Organization)
+	}
+
+	fmt.Println(format.SuccessMessagef("📝", "set active Organization to %s", s.Organization))
+	return nil
 }
