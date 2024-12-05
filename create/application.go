@@ -449,6 +449,7 @@ func waitForBuildFinish(ctx context.Context, app *apps.Application, logClient *l
 			case buildStatusError:
 				fallthrough
 			case buildStatusUnknown:
+				p.Send(logbox.Msg{Done: true})
 				return false, buildError{build: build}
 			}
 
