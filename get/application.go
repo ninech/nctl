@@ -235,7 +235,7 @@ func (cmd *applicationsCmd) printStats(ctx context.Context, c *api.Client, appLi
 			}
 
 			get.writeTabRow(
-				w, c.Project, app.Name,
+				w, app.Namespace, app.Name,
 				replica.ReplicaName,
 				string(replica.Status),
 				cpuUsage,
