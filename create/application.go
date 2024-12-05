@@ -449,6 +449,7 @@ func waitForBuildFinish(ctx context.Context, app *apps.Application, logClient *l
 			case buildStatusError:
 				fallthrough
 			case buildStatusUnknown:
+				p.Send(logbox.Msg{Done: true})
 				return false, buildError{build: build}
 			}
 
@@ -538,15 +539,19 @@ func printUnverifiedHostsMessage(app *apps.Application) {
 }
 
 func printBuildLogs(ctx context.Context, client *api.Client, build *apps.Build) error {
-	return client.Log.QueryRangeWithRetry(
-		ctx, client.Log.StdOut,
+	tailCtx, cancel := context.WithTimeout(ctx, errorTailTimeout)
+	defer cancel()
+	return client.Log.TailQuery(
+		tailCtx, 0, client.Log.StdOut,
 		errorLogQuery(logs.BuildQuery(build.Name, build.Namespace)),
 	)
 }
 
 func printReleaseLogs(ctx context.Context, client *api.Client, release *apps.Release) error {
-	return client.Log.QueryRangeWithRetry(
-		ctx, client.Log.StdOut,
+	tailCtx, cancel := context.WithTimeout(ctx, errorTailTimeout)
+	defer cancel()
+	return client.Log.TailQuery(
+		tailCtx, 0, client.Log.StdOut,
 		errorLogQuery(logs.ApplicationQuery(release.Labels[util.ApplicationNameLabel], release.Namespace)),
 	)
 }
@@ -560,10 +565,14 @@ func printCredentials(basicAuth *util.BasicAuth) {
 	)
 }
 
-// we print the last 20 lines of the log. In most cases this should be
+// we print the last 40 lines of the log. In most cases this should be
 // enough to give a hint about the problem but we might need to tweak this
 // value a bit in the future.
-const errorLogLines = 20
+const errorLogLines = 40
+
+// when we print error logs, we want to tail the log for a bit as new data might
+// still be coming in even after the build/release already has failed.
+const errorTailTimeout = 5 * time.Second
 
 func errorLogQuery(queryString string) log.Query {
 	return log.Query{
