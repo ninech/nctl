@@ -6,8 +6,6 @@ import (
 
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/api/config"
-	"github.com/ninech/nctl/api/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -19,11 +17,8 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client) error {
 	ctx, cancel := context.WithTimeout(ctx, proj.WaitTimeout)
 	defer cancel()
 
-	cfg, err := config.ReadExtension(client.KubeconfigPath, client.KubeconfigContext)
+	org, err := client.Organization()
 	if err != nil {
-		if config.IsExtensionNotFoundError(err) {
-			return util.ReloginNeeded(err)
-		}
 		return err
 	}
 
@@ -31,16 +26,16 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client) error {
 		&management.Project{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      proj.Name,
-				Namespace: cfg.Organization,
+				Namespace: org,
 			},
 		},
 		management.ProjectKind,
-		prompt(projectDeletePrompt(cfg.Organization)),
+		prompt(projectDeletePrompt(org)),
 	)
 
 	// we need to overwrite the namespace as projects are always in the
 	// main organization namespace
-	client.Project = cfg.Organization
+	client.Project = org
 
 	if err := d.deleteResource(ctx, client, proj.WaitTimeout, proj.Wait, proj.Force); err != nil {
 		return fmt.Errorf("error while deleting %s: %w", management.ProjectKind, err)

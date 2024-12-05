@@ -12,7 +12,9 @@ import (
 	"github.com/ninech/apis"
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
+	"github.com/ninech/nctl/api/config"
 	"github.com/ninech/nctl/api/log"
+	"github.com/ninech/nctl/internal/format"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -184,6 +186,28 @@ func (c *Client) DeploioRuntimeConfig(ctx context.Context) (*rest.Config, error)
 		return nil, fmt.Errorf("can not decode deplo.io cluster CA certificate: %w", err)
 	}
 	return config, nil
+}
+
+func (c *Client) Organization() (string, error) {
+	cfg, err := config.ReadExtension(c.KubeconfigPath, c.KubeconfigContext)
+	if err != nil {
+		if config.IsExtensionNotFoundError(err) {
+			return "", reloginNeeded(err)
+		}
+		return "", err
+	}
+
+	return cfg.Organization, nil
+}
+
+// reloginNeeded returns an error which outputs the given err with a message
+// saying that a re-login is needed.
+func reloginNeeded(err error) error {
+	return fmt.Errorf(
+		"%w, please re-login by executing %q",
+		err,
+		format.Command().Login(),
+	)
 }
 
 func LoadingRules() (*clientcmd.ClientConfigLoadingRules, error) {
