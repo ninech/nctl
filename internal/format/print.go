@@ -193,11 +193,7 @@ func getPrinter(out io.Writer) (printer.Printer, error) {
 	p := printer.Printer{
 		LineNumber: false,
 	}
-	f, isFile := out.(*os.File)
-	if !isFile {
-		return p, nil
-	}
-	if isatty.IsTerminal(f.Fd()) || isatty.IsCygwinTerminal(f.Fd()) {
+	if IsInteractiveEnvironment(out) {
 		p.Bool = printerProperty(&printer.Property{
 			Prefix: format(color.FgHiMagenta),
 			Suffix: format(color.Reset),
@@ -216,6 +212,14 @@ func getPrinter(out io.Writer) (printer.Printer, error) {
 		})
 	}
 	return p, nil
+}
+
+func IsInteractiveEnvironment(out io.Writer) bool {
+	f, isFile := out.(*os.File)
+	if !isFile {
+		return false
+	}
+	return isatty.IsTerminal(f.Fd()) || isatty.IsCygwinTerminal(f.Fd())
 }
 
 // stripObj removes some fields which simply add clutter to the yaml output.
