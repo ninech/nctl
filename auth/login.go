@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -17,12 +18,15 @@ import (
 )
 
 type LoginCmd struct {
-	APIURL       string `help:"The URL of the Nine API" default:"https://nineapis.ch" env:"NCTL_API_URL" name:"api-url"`
-	APIToken     string `help:"Use a static API token instead of using an OIDC login. You need to specify the --organization parameter as well." env:"NCTL_API_TOKEN"`
-	Organization string `help:"The name of your organization to use when providing an API token. This parameter is only used when providing a API token. This parameter needs to be set if you use --api-token." env:"NCTL_ORGANIZATION"`
-	IssuerURL    string `help:"Issuer URL is the OIDC issuer URL of the API." default:"https://auth.nine.ch/auth/realms/pub"`
-	ClientID     string `help:"Client ID is the OIDC client ID of the API." default:"nineapis.ch-f178254"`
+	APIURL                      string `help:"The URL of the Nine API" default:"https://nineapis.ch" env:"NCTL_API_URL" name:"api-url"`
+	APIToken                    string `help:"Use a static API token instead of using an OIDC login. You need to specify the --organization parameter as well." env:"NCTL_API_TOKEN"`
+	Organization                string `help:"The name of your organization to use when providing an API token. This parameter is only used when providing a API token. This parameter needs to be set if you use --api-token." env:"NCTL_ORGANIZATION"`
+	IssuerURL                   string `help:"Issuer URL is the OIDC issuer URL of the API." default:"https://auth.nine.ch/auth/realms/pub"`
+	ClientID                    string `help:"Client ID is the OIDC client ID of the API." default:"nineapis.ch-f178254"`
+	ForceInteractiveEnvOverride bool   `help:"Used for internal purposes only. Set to true to force interactive environment explicit override. Set to false to fall back to automatic interactivity detection." default:"false" hidden:""`
 }
+
+const ErrNonInteractiveEnvironmentEmptyToken = "a static API token is required in non-interactive environments"
 
 func (l *LoginCmd) Run(ctx context.Context, command string, tk api.TokenGetter) error {
 	apiURL, err := url.Parse(l.APIURL)
@@ -56,6 +60,10 @@ func (l *LoginCmd) Run(ctx context.Context, command string, tk api.TokenGetter) 
 		}
 
 		return login(ctx, cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(l.Organization))
+	}
+
+	if !l.ForceInteractiveEnvOverride && !format.IsInteractiveEnvironment(os.Stdout) {
+		return errors.New(ErrNonInteractiveEnvironmentEmptyToken)
 	}
 
 	usePKCE := true
