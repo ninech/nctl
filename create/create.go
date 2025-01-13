@@ -102,7 +102,7 @@ func (c *creator) createResource(ctx context.Context) error {
 		return fmt.Errorf("unable to create %s %q: %w", c.kind, c.mg.GetName(), err)
 	}
 
-	format.PrintSuccessf("🏗", "created %s %q", c.kind, c.mg.GetName())
+	format.PrintSuccessf("🏗", "created %s %q in project %q", c.kind, c.mg.GetName(), c.mg.GetNamespace())
 	return nil
 }
 
