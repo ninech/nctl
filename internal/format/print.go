@@ -40,14 +40,30 @@ func ProgressMessagef(icon, format string, a ...any) string {
 	return fmt.Sprintf(" %s %s", fmt.Sprintf(format, a...), icon)
 }
 
+// ProgressMessage is a formatted message for use with a spinner.Suffix. An
+// icon can be added which is displayed at the end of the message.
+func ProgressMessage(icon, message string) string {
+	return fmt.Sprintf(" %s %s", message, icon)
+}
+
 // SuccessMessagef is a formatted message for indicating a successful step.
 func SuccessMessagef(icon, format string, a ...any) string {
 	return fmt.Sprintf(" %s %s %s", SuccessChar, fmt.Sprintf(format, a...), icon)
 }
 
+// SuccessMessage returns a message for indicating a successful step.
+func SuccessMessage(icon, message string) string {
+	return fmt.Sprintf(" %s %s %s", SuccessChar, message, icon)
+}
+
 // PrintSuccessf prints a success message.
 func PrintSuccessf(icon, format string, a ...any) {
 	fmt.Print(SuccessMessagef(icon, format, a...) + "\n")
+}
+
+// PrintSuccess prints a success message.
+func PrintSuccess(icon, message string) {
+	fmt.Print(SuccessMessage(icon, message) + "\n")
 }
 
 // FailureMessagef is a formatted message for indicating a failed step.
@@ -64,12 +80,13 @@ func PrintWarningf(msg string, a ...any) {
 	fmt.Printf(color.YellowString("Warning: ")+msg, a...)
 }
 
-// Confirmf prints a confirm dialog using format and then waits until prompt
-// is confirmed or denied. Only y and yes are accepted for confirmation.
-func Confirmf(format string, a ...any) (bool, error) {
+// Confirm prints a confirm dialog using the supplied message and then waits
+// until prompt is confirmed or denied. Only y and yes are accepted for
+// confirmation.
+func Confirm(message string) (bool, error) {
 	var input string
 
-	fmt.Printf("%s [y|n]: ", fmt.Sprintf(format, a...))
+	fmt.Printf("%s [y|n]: ", message)
 	_, err := fmt.Scanln(&input)
 	if err != nil {
 		return false, err
@@ -80,6 +97,12 @@ func Confirmf(format string, a ...any) (bool, error) {
 		return true, nil
 	}
 	return false, nil
+}
+
+// Confirmf prints a confirm dialog using format and then waits until prompt
+// is confirmed or denied. Only y and yes are accepted for confirmation.
+func Confirmf(format string, a ...any) (bool, error) {
+	return Confirm(fmt.Sprintf(format, a...))
 }
 
 // NewSpinner returns a new spinner with the default config

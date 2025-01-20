@@ -82,7 +82,7 @@ func (m *message) progress() string {
 		return ""
 	}
 
-	return format.ProgressMessagef(m.icon, m.text)
+	return format.ProgressMessage(m.icon, m.text)
 }
 
 func (m *message) printSuccess() {
@@ -90,7 +90,7 @@ func (m *message) printSuccess() {
 		return
 	}
 
-	format.PrintSuccessf(m.icon, m.text)
+	format.PrintSuccess(m.icon, m.text)
 }
 
 func newCreator(client *api.Client, mg resource.Managed, resourceName string) *creator {
