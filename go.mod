@@ -24,7 +24,7 @@ require (
 	github.com/jotaen/kong-completion v0.0.6
 	github.com/lucasepe/codename v0.2.1-0.20230220151621-5e31bf1e775f
 	github.com/mattn/go-isatty v0.0.20
-	github.com/moby/moby v27.1.1+incompatible
+	github.com/moby/moby v27.5.0+incompatible
 	github.com/moby/term v0.5.0
 	github.com/ninech/apis v0.0.0-20250120083942-90d315ad8c32
 	github.com/posener/complete v1.2.3
