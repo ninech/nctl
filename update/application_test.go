@@ -186,6 +186,18 @@ func TestApplication(t *testing.T) {
 				assert.NotEmpty(t, updated.Spec.ForProvider.Config.Env)
 			},
 		},
+		"change basic auth password": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
+				ChangeBasicAuthPassword: ptr.To(true),
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				assert.NotNil(t, updated.Spec.ForProvider.BasicAuthPasswordChange)
+			},
+		},
 		"git auth update user/pass": {
 			orig: existingApp,
 			gitAuth: &util.GitAuth{

@@ -30,6 +30,7 @@ type applicationCmd struct {
 	Replicas                 *int32            `help:"Amount of replicas of the running app."`
 	Hosts                    *[]string         `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
 	BasicAuth                *bool             `help:"Enable/Disable basic authentication for the application."`
+	ChangeBasicAuthPassword  *bool             `help:"Generate a new basic auth password."`
 	Env                      map[string]string `help:"Environment variables which are passed to the app at runtime."`
 	DeleteEnv                *[]string         `help:"Runtime environment variables names which are to be deleted."`
 	BuildEnv                 map[string]string `help:"Environment variables names which are passed to the app build process."`
@@ -211,6 +212,9 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 	}
 	if cmd.BasicAuth != nil {
 		app.Spec.ForProvider.Config.EnableBasicAuth = cmd.BasicAuth
+	}
+	if cmd.ChangeBasicAuthPassword != nil {
+		app.Spec.ForProvider.BasicAuthPasswordChange = ptr.To(metav1.Now())
 	}
 	if cmd.DeployJob != nil {
 		cmd.DeployJob.applyUpdates(&app.Spec.ForProvider.Config)
