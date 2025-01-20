@@ -95,7 +95,7 @@ func (d *deleter) deleteResource(ctx context.Context, client *api.Client, waitTi
 	}
 
 	if !force {
-		ok, err := format.Confirmf(d.prompt(d.kind, d.mg.GetName()))
+		ok, err := format.Confirm(d.prompt(d.kind, d.mg.GetName()))
 		if err != nil {
 			return err
 		}

@@ -245,7 +245,7 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 }
 
 func spinnerMessage(msg, icon string, sleepTime time.Duration) error {
-	fullMsg := format.ProgressMessagef(icon, msg)
+	fullMsg := format.ProgressMessage(icon, msg)
 	spinner, err := format.NewSpinner(fullMsg, fullMsg)
 	if err != nil {
 		return err

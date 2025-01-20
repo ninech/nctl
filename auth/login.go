@@ -238,7 +238,7 @@ func login(ctx context.Context, newConfig *clientcmdapi.Config, kubeconfigPath, 
 	if strings.TrimSpace(userName) != "" {
 		loginMessage = fmt.Sprintf("logged into cluster %s as %s", newConfig.CurrentContext, userName)
 	}
-	format.PrintSuccessf("🚀", loginMessage)
+	format.PrintSuccess("🚀", loginMessage)
 
 	return nil
 }
