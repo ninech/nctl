@@ -23,6 +23,7 @@ import (
 	"github.com/ninech/nctl/logs"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/utils/ptr"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -223,9 +224,14 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	fmt.Printf("\nYour application %q is now available at:\n  https://%s\n\n", newApp.Name, newApp.Status.AtProvider.CNAMETarget)
 	printUnverifiedHostsMessage(newApp)
 
-	if newApp.Status.AtProvider.BasicAuthSecret == nil {
+	basicAuthEnabled, err := latestReleaseHasBasicAuthEnabled(ctx, client, newApp)
+	if err != nil {
+		return fmt.Errorf("error when checking for basic-auth credentials: %w", err)
+	}
+	if !basicAuthEnabled {
 		return nil
 	}
+
 	basicAuth, err := util.NewBasicAuthFromSecret(
 		ctx,
 		newApp.Status.AtProvider.BasicAuthSecret.InNamespace(newApp),
@@ -513,6 +519,24 @@ func waitForRelease(app *apps.Application) waitStage {
 			return false, nil
 		},
 	}
+}
+
+func latestReleaseHasBasicAuthEnabled(ctx context.Context, c runtimeclient.Reader, app *apps.Application) (bool, error) {
+	if app.Status.AtProvider.LatestRelease == "" {
+		return false, errors.New("can not find latest release")
+	}
+	release := &apps.Release{}
+	if err := c.Get(ctx, types.NamespacedName{Name: app.Status.AtProvider.LatestRelease, Namespace: app.Namespace}, release); err != nil {
+		return false, err
+	}
+	if release.Spec.ForProvider.Configuration == nil {
+		return false, nil
+	}
+	config := release.Spec.ForProvider.Configuration
+	if config.EnableBasicAuth == nil {
+		return false, nil
+	}
+	return config.EnableBasicAuth.Value, nil
 }
 
 func printUnverifiedHostsMessage(app *apps.Application) {
