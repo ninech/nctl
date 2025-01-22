@@ -496,6 +496,15 @@ func TestApplicationWait(t *testing.T) {
 				util.ApplicationNameLabel: cmd.Name,
 			},
 		},
+		Spec: apps.ReleaseSpec{
+			ForProvider: apps.ReleaseParameters{
+				Configuration: &apps.FieldOriginConfig{
+					EnableBasicAuth: &apps.OriginBool{
+						Value: true,
+					},
+				},
+			},
+		},
 	}
 
 	// we are also creating a basic auth secret
@@ -558,6 +567,7 @@ func TestApplicationWait(t *testing.T) {
 				app.Status.AtProvider.Hosts = []apps.VerificationStatus{{Name: "host.example.org"}}
 				app.Status.AtProvider.CNAMETarget = "some.target.example.org"
 				app.Status.AtProvider.BasicAuthSecret = &meta.LocalReference{Name: basicAuth.Name}
+				app.Status.AtProvider.LatestRelease = release2.Name
 				if err := apiClient.Update(ctx, app); err != nil {
 					errors <- err
 				}
