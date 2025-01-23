@@ -39,6 +39,10 @@ yay --version
 yay -S nctl-bin
 ```
 
+For Windows users, nctl is also built for arm64 and amd64. You can download the
+latest exe file from the [releases](https://github.com/ninech/nctl/releases) and
+install it.
+
 ## Getting started
 
 * login to the API using `nctl auth login`
