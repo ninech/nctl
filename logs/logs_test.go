@@ -9,11 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grafana/loki/pkg/logcli/output"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/log"
-	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,8 +30,9 @@ func TestRun(t *testing.T) {
 	ctx := context.Background()
 
 	cases := map[string]struct {
-		cmd           logsCmd
-		expectedLines int
+		cmd                 logsCmd
+		expectedLines       int
+		expectedErrContains string
 	}{
 		"line limit": {
 			cmd: logsCmd{
@@ -65,15 +64,40 @@ func TestRun(t *testing.T) {
 			},
 			expectedLines: len(lines),
 		},
+		"exceeds retention": {
+			cmd: logsCmd{
+				Output: "default",
+				Lines:  len(lines),
+				Since:  logRetention * 2,
+			},
+			expectedErrContains: "the logs requested exceed the retention period",
+		},
+		"from/to flags override since": {
+			cmd: logsCmd{
+				Output: "default",
+				Lines:  len(lines),
+				Since:  logRetention * 2,
+				From:   time.Now().Add(-time.Hour),
+				To:     time.Now(),
+			},
+			expectedLines: len(lines),
+		},
+		"from flag alone overrides since": {
+			cmd: logsCmd{
+				Output: "default",
+				Lines:  len(lines),
+				Since:  logRetention * 2,
+				From:   time.Now().Add(-time.Hour),
+			},
+			expectedLines: len(lines),
+		},
 	}
 
 	for name, tc := range cases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
 			var buf bytes.Buffer
-			out, err := output.NewLogOutput(&buf, log.Mode(tc.cmd.Output), &output.LogOutputOptions{
-				NoLabels: true, ColoredOutput: false, Timezone: time.Local,
-			})
+			out, err := log.NewOutput(&buf, log.Mode(tc.cmd.Output), true)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -81,11 +105,15 @@ func TestRun(t *testing.T) {
 			tc.cmd.out = out
 
 			if err := tc.cmd.Run(ctx, apiClient, ApplicationQuery("app-name", "app-ns")); err != nil {
-				t.Fatal(err)
+				if tc.expectedErrContains != "" {
+					assert.ErrorContains(t, err, tc.expectedErrContains)
+				} else {
+					assert.NoError(t, err)
+				}
 			}
 
 			if tc.expectedLines != 0 {
-				assert.Equal(t, test.CountLines(buf.String()), tc.expectedLines)
+				assert.Equal(t, out.LineCount(), tc.expectedLines)
 			}
 
 			if tc.cmd.Output == "json" {
