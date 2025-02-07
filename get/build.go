@@ -36,9 +36,9 @@ type buildCmd struct {
 func (cmd *buildCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
 	buildList := &apps.BuildList{}
 
-	opts := []listOpt{matchName(cmd.Name)}
+	opts := []api.ListOpt{api.MatchName(cmd.Name)}
 	if len(cmd.ApplicationName) != 0 {
-		opts = append(opts, matchLabel(util.ApplicationNameLabel, cmd.ApplicationName))
+		opts = append(opts, api.MatchLabel(util.ApplicationNameLabel, cmd.ApplicationName))
 	}
 
 	if err := get.list(ctx, client, buildList, opts...); err != nil {

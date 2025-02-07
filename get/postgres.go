@@ -29,7 +29,7 @@ func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 	}
 
 	postgresList := &storage.PostgresList{}
-	if err := get.list(ctx, client, postgresList, matchName(cmd.Name)); err != nil {
+	if err := get.list(ctx, client, postgresList, api.MatchName(cmd.Name)); err != nil {
 		return err
 	}
 	if len(postgresList.Items) == 0 {

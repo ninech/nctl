@@ -24,9 +24,9 @@ func (cmd *releasesCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 	cmd.out = defaultOut(cmd.out)
 
 	releaseList := &apps.ReleaseList{}
-	opts := []listOpt{matchName(cmd.Name)}
+	opts := []api.ListOpt{api.MatchName(cmd.Name)}
 	if len(cmd.ApplicationName) != 0 {
-		opts = append(opts, matchLabel(util.ApplicationNameLabel, cmd.ApplicationName))
+		opts = append(opts, api.MatchLabel(util.ApplicationNameLabel, cmd.ApplicationName))
 	}
 
 	if err := get.list(ctx, client, releaseList, opts...); err != nil {

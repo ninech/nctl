@@ -20,7 +20,7 @@ func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client, get *Cmd) er
 
 	cloudVMList := &infrastructure.CloudVirtualMachineList{}
 
-	if err := get.list(ctx, client, cloudVMList, matchName(cmd.Name)); err != nil {
+	if err := get.list(ctx, client, cloudVMList, api.MatchName(cmd.Name)); err != nil {
 		return err
 	}
 

@@ -29,7 +29,7 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client, get *Cmd) erro
 	}
 
 	mysqlList := &storage.MySQLList{}
-	if err := get.list(ctx, client, mysqlList, matchName(cmd.Name)); err != nil {
+	if err := get.list(ctx, client, mysqlList, api.MatchName(cmd.Name)); err != nil {
 		return err
 	}
 	if len(mysqlList.Items) == 0 {

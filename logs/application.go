@@ -18,16 +18,14 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	if cmd.Name == "" {
 		return errors.New("please specify an application name")
 	}
-
-	app := &apps.Application{}
-	if err := client.Get(ctx, api.NamespacedName(cmd.Name, client.Project), app); err != nil {
+	if err := client.GetObject(ctx, cmd.Name, &apps.Application{}); err != nil {
 		return err
 	}
 
 	return cmd.logsCmd.Run(ctx, client, buildQuery(append(
 		cmd.Type.queryExpressions(),
 		inProject(client.Project),
-		queryExpr(opEquals, apps.LogLabelApplication, app.Name))...),
+		queryExpr(opEquals, apps.LogLabelApplication, cmd.Name))...),
 		apps.LogLabelBuild, apps.LogLabelReplica, apps.LogLabelWorkerJob, apps.LogLabelDeployJob,
 	)
 }

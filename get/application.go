@@ -28,7 +28,7 @@ type applicationsCmd struct {
 
 func (cmd *applicationsCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
 	appList := &apps.ApplicationList{}
-	if err := get.list(ctx, client, appList, matchName(cmd.Name)); err != nil {
+	if err := get.list(ctx, client, appList, api.MatchName(cmd.Name)); err != nil {
 		return err
 	}
 

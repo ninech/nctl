@@ -25,7 +25,7 @@ const (
 func (asa *apiServiceAccountsCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
 	asaList := &iam.APIServiceAccountList{}
 
-	if err := get.list(ctx, client, asaList, matchName(asa.Name)); err != nil {
+	if err := get.list(ctx, client, asaList, api.MatchName(asa.Name)); err != nil {
 		return err
 	}
 

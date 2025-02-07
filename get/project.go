@@ -18,7 +18,7 @@ type projectCmd struct {
 }
 
 func (proj *projectCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
-	projectList, err := projects(ctx, client, proj.Name)
+	projectList, err := client.Projects(ctx, proj.Name)
 	if err != nil {
 		return err
 	}
