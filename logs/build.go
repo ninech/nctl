@@ -3,6 +3,7 @@ package logs
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
@@ -23,6 +24,12 @@ func (cmd *buildCmd) Run(ctx context.Context, client *api.Client) error {
 	if cmd.Name != "" {
 		if err := client.Get(ctx, api.NamespacedName(cmd.Name, client.Project), build); err != nil {
 			return err
+		}
+		if time.Since(build.CreationTimestamp.Time) > logRetention {
+			return fmt.Errorf(
+				"the logs of the build %s are not available as the build is more than %.f days old",
+				build.Name, logRetention.Hours()/24,
+			)
 		}
 		cmd.Since = time.Since(build.CreationTimestamp.Time)
 	}
