@@ -11,8 +11,9 @@ import (
 )
 
 type filteredOutput struct {
-	out    output.LogOutput
-	labels map[string]struct{}
+	out       output.LogOutput
+	labels    map[string]struct{}
+	lineCount int
 }
 
 func (o *filteredOutput) FormatAndPrintln(ts time.Time, lbls loghttp.LabelSet, maxLabelsLen int, line string) {
@@ -22,14 +23,29 @@ func (o *filteredOutput) FormatAndPrintln(ts time.Time, lbls loghttp.LabelSet, m
 		}
 	}
 	o.out.FormatAndPrintln(ts, lbls, maxLabelsLen, line)
+	o.lineCount++
 }
 
 func (o filteredOutput) WithWriter(w io.Writer) output.LogOutput {
 	return o.out.WithWriter(w)
 }
 
-func NewStdOut(mode string, noLabels bool, labels ...string) (output.LogOutput, error) {
-	out, err := output.NewLogOutput(os.Stdout, mode, &output.LogOutputOptions{
+func (o filteredOutput) LineCount() int {
+	return o.lineCount
+}
+
+type Output interface {
+	output.LogOutput
+	// LineCount returns the amount of lines the output has processed
+	LineCount() int
+}
+
+func NewStdOut(mode string, noLabels bool, labels ...string) (Output, error) {
+	return NewOutput(os.Stdout, mode, noLabels, labels...)
+}
+
+func NewOutput(w io.Writer, mode string, noLabels bool, labels ...string) (Output, error) {
+	out, err := output.NewLogOutput(w, mode, &output.LogOutputOptions{
 		NoLabels: noLabels, ColoredOutput: true, Timezone: time.Local,
 	})
 	if err != nil {

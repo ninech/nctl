@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/alecthomas/kong"
-	"github.com/grafana/loki/pkg/logcli/output"
 	"github.com/grafana/loki/pkg/logproto"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/log"
@@ -30,7 +29,7 @@ type logsCmd struct {
 	To       time.Time     `help:"Ignore since flag and stop looking for logs at this absolute time (RFC3339)" placeholder:"2025-01-01T15:00:00+01:00"`
 	Output   string        `help:"Configures the log output format. ${enum}" short:"o" enum:"default,json" default:"default"`
 	NoLabels bool          `help:"disable labels in log output"`
-	out      output.LogOutput
+	out      log.Output
 }
 
 // 30 days, we hardcode this for now as it's not possible to customize this on
@@ -72,7 +71,14 @@ func (cmd *logsCmd) Run(ctx context.Context, client *api.Client, queryString str
 		return client.Log.TailQuery(ctx, 0, out, query)
 	}
 
-	return client.Log.QueryRange(ctx, out, query)
+	if err := client.Log.QueryRange(ctx, out, query); err != nil {
+		return err
+	}
+	if out.LineCount() == 0 {
+		return fmt.Errorf("no logs found between %s and %s", start.Format(time.RFC3339), end.Format(time.RFC3339))
+	}
+
+	return nil
 }
 
 type queryOperator string

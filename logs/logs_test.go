@@ -9,11 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grafana/loki/pkg/logcli/output"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/log"
-	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -99,9 +97,7 @@ func TestRun(t *testing.T) {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
 			var buf bytes.Buffer
-			out, err := output.NewLogOutput(&buf, log.Mode(tc.cmd.Output), &output.LogOutputOptions{
-				NoLabels: true, ColoredOutput: false, Timezone: time.Local,
-			})
+			out, err := log.NewOutput(&buf, log.Mode(tc.cmd.Output), true)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -117,7 +113,7 @@ func TestRun(t *testing.T) {
 			}
 
 			if tc.expectedLines != 0 {
-				assert.Equal(t, test.CountLines(buf.String()), tc.expectedLines)
+				assert.Equal(t, out.LineCount(), tc.expectedLines)
 			}
 
 			if tc.cmd.Output == "json" {
