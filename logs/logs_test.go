@@ -32,8 +32,9 @@ func TestRun(t *testing.T) {
 	ctx := context.Background()
 
 	cases := map[string]struct {
-		cmd           logsCmd
-		expectedLines int
+		cmd                 logsCmd
+		expectedLines       int
+		expectedErrContains string
 	}{
 		"line limit": {
 			cmd: logsCmd{
@@ -65,6 +66,14 @@ func TestRun(t *testing.T) {
 			},
 			expectedLines: len(lines),
 		},
+		"exceeds retention": {
+			cmd: logsCmd{
+				Output: "default",
+				Lines:  len(lines),
+				Since:  logRetention * 2,
+			},
+			expectedErrContains: "the logs requested exceed the retention period",
+		},
 	}
 
 	for name, tc := range cases {
@@ -81,7 +90,11 @@ func TestRun(t *testing.T) {
 			tc.cmd.out = out
 
 			if err := tc.cmd.Run(ctx, apiClient, ApplicationQuery("app-name", "app-ns")); err != nil {
-				t.Fatal(err)
+				if tc.expectedErrContains != "" {
+					assert.ErrorContains(t, err, tc.expectedErrContains)
+				} else {
+					assert.NoError(t, err)
+				}
 			}
 
 			if tc.expectedLines != 0 {

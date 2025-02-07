@@ -36,7 +36,7 @@ type flags struct {
 	APICluster     string           `help:"Context name of the API cluster." default:"${api_cluster}" env:"NCTL_API_CLUSTER" hidden:""`
 	LogAPIAddress  string           `help:"Address of the deplo.io logging API server." default:"https://logs.deplo.io" env:"NCTL_LOG_ADDR" hidden:""`
 	LogAPIInsecure bool             `help:"Don't verify TLS connection to the logging API server." hidden:"" default:"false" env:"NCTL_LOG_INSECURE"`
-	Verbose        bool 			`help:"Show verbose messages."`
+	Verbose        bool             `help:"Show verbose messages."`
 	Version        kong.VersionFlag `name:"version" help:"Print version information and quit."`
 }
 
@@ -193,7 +193,7 @@ func kongVariables() (kong.Vars, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error on application create kong vars: %w", err)
 	}
-	if err := merge(result, appCreateKongVars, create.MySQLKongVars(), create.PostgresKongVars()); err != nil {
+	if err := merge(result, appCreateKongVars, create.MySQLKongVars(), create.PostgresKongVars(), logs.KongVars()); err != nil {
 		return nil, fmt.Errorf("error when merging kong variables: %w", err)
 	}
 

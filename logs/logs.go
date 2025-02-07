@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/alecthomas/kong"
 	"github.com/grafana/loki/pkg/logcli/output"
 	"github.com/grafana/loki/pkg/logproto"
 	"github.com/ninech/nctl/api"
@@ -24,13 +25,21 @@ type resourceCmd struct {
 type logsCmd struct {
 	Follow   bool          `help:"Follow the logs by live tailing." short:"f"`
 	Lines    int           `help:"Amount of lines to output" default:"50" short:"l"`
-	Since    time.Duration `help:"Duration how long to look back for logs" short:"s" default:"24h"`
+	Since    time.Duration `help:"Duration how long to look back for logs" short:"s" default:"${log_retention}"`
 	Output   string        `help:"Configures the log output format. ${enum}" short:"o" enum:"default,json" default:"default"`
 	NoLabels bool          `help:"disable labels in log output"`
 	out      output.LogOutput
 }
 
+// 30 days, we hardcode this for now as it's not possible to customize this on
+// deplo.io. We'll need to revisit this if we ever make this configurable.
+var logRetention = time.Duration(time.Hour * 24 * 30)
+
 func (cmd *logsCmd) Run(ctx context.Context, client *api.Client, queryString string, labels ...string) error {
+	if cmd.Since > logRetention {
+		return fmt.Errorf("the logs requested exceed the retention period of %.f days", logRetention.Hours()/24)
+	}
+
 	query := log.Query{
 		QueryString: queryString,
 		Limit:       cmd.Lines,
@@ -73,4 +82,11 @@ func buildQuery(expr ...string) string {
 
 func inProject(project string) string {
 	return queryExpr(opEquals, "namespace", project)
+}
+
+// KongVars returns all variables which are used in the logs commands
+func KongVars() kong.Vars {
+	result := make(kong.Vars)
+	result["log_retention"] = logRetention.String()
+	return result
 }
