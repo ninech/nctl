@@ -26,6 +26,8 @@ type logsCmd struct {
 	Follow   bool          `help:"Follow the logs by live tailing." short:"f"`
 	Lines    int           `help:"Amount of lines to output" default:"50" short:"l"`
 	Since    time.Duration `help:"Duration how long to look back for logs" short:"s" default:"${log_retention}"`
+	From     time.Time     `help:"Ignore since flag and start looking for logs at this absolute time (RFC3339)" placeholder:"2025-01-01T14:00:00+01:00"`
+	To       time.Time     `help:"Ignore since flag and stop looking for logs at this absolute time (RFC3339)" placeholder:"2025-01-01T15:00:00+01:00"`
 	Output   string        `help:"Configures the log output format. ${enum}" short:"o" enum:"default,json" default:"default"`
 	NoLabels bool          `help:"disable labels in log output"`
 	out      output.LogOutput
@@ -36,15 +38,23 @@ type logsCmd struct {
 var logRetention = time.Duration(time.Hour * 24 * 30)
 
 func (cmd *logsCmd) Run(ctx context.Context, client *api.Client, queryString string, labels ...string) error {
-	if cmd.Since > logRetention {
+	now := time.Now()
+	start, end := now.Add(-cmd.Since), now
+	if !cmd.From.IsZero() {
+		start = cmd.From
+	}
+	if !cmd.To.IsZero() {
+		end = cmd.To
+	}
+	if now.Sub(start) > logRetention {
 		return fmt.Errorf("the logs requested exceed the retention period of %.f days", logRetention.Hours()/24)
 	}
 
 	query := log.Query{
 		QueryString: queryString,
 		Limit:       cmd.Lines,
-		Start:       time.Now().Add(-cmd.Since),
-		End:         time.Now(),
+		Start:       start,
+		End:         end,
 		Direction:   logproto.BACKWARD,
 		Quiet:       true,
 	}

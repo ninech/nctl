@@ -74,6 +74,25 @@ func TestRun(t *testing.T) {
 			},
 			expectedErrContains: "the logs requested exceed the retention period",
 		},
+		"from/to flags override since": {
+			cmd: logsCmd{
+				Output: "default",
+				Lines:  len(lines),
+				Since:  logRetention * 2,
+				From:   time.Now().Add(-time.Hour),
+				To:     time.Now(),
+			},
+			expectedLines: len(lines),
+		},
+		"from flag alone overrides since": {
+			cmd: logsCmd{
+				Output: "default",
+				Lines:  len(lines),
+				Since:  logRetention * 2,
+				From:   time.Now().Add(-time.Hour),
+			},
+			expectedLines: len(lines),
+		},
 	}
 
 	for name, tc := range cases {
