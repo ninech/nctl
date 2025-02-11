@@ -33,7 +33,7 @@ func (cmd *allCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error 
 	if get.AllProjects {
 		projectName = ""
 	}
-	projectList, err := projects(ctx, client, projectName)
+	projectList, err := client.Projects(ctx, projectName)
 	if err != nil {
 		return err
 	}

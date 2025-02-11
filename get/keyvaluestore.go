@@ -23,7 +23,7 @@ func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client, get *C
 
 	keyValueStoreList := &storage.KeyValueStoreList{}
 
-	if err := get.list(ctx, client, keyValueStoreList, matchName(cmd.Name)); err != nil {
+	if err := get.list(ctx, client, keyValueStoreList, api.MatchName(cmd.Name)); err != nil {
 		return err
 	}
 

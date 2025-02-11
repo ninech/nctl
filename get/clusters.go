@@ -20,7 +20,7 @@ type clustersCmd struct {
 func (l *clustersCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
 	clusterList := &infrastructure.KubernetesClusterList{}
 
-	if err := get.list(ctx, client, clusterList, matchName(l.Name)); err != nil {
+	if err := get.list(ctx, client, clusterList, api.MatchName(l.Name)); err != nil {
 		return err
 	}
 
