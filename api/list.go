@@ -1,6 +1,7 @@
 package api
 
 import (
+	"time"
 	"sync"
 	"context"
 	"errors"
@@ -135,10 +136,11 @@ func (c *Client) ListObjects(ctx context.Context, list runtimeclient.ObjectList,
 
 
 	fmt.Printf("%T\n", projects)
+	start := time.Now()
 	for _, proj := range projects {
 		tempOpts := slices.Clone(opts.clientListOptions)
 		go func() {
-			fmt.Printf("   %s Start\n", proj.Name)
+			fmt.Printf("   %s Start (%s)\n", proj.Name, time.Now().Sub(start))
 			defer wg.Done()
 			// we ensured the list is a pointer type and that is has an
 			// 'Items' field which is a slice above, so we don't need to do
@@ -150,7 +152,7 @@ func (c *Client) ListObjects(ctx context.Context, list runtimeclient.ObjectList,
 			}
 			tempListItems := reflect.ValueOf(tempList).Elem().FieldByName("Items")
 			ch <- tempListItems
-			fmt.Printf("   %s Done\n", proj.Name)
+			fmt.Printf("   %s Done (%s)\n", proj.Name, time.Now().Sub(start))
 		}()
 	}
 
