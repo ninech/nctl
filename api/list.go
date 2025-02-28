@@ -1,6 +1,7 @@
 package api
 
 import (
+	"sync"
 	"context"
 	"errors"
 	"fmt"
@@ -67,10 +68,12 @@ func (opts *ListOpts) namedResourceNotFound(project string, foundInProjects ...s
 	return errors.New(errorMessage)
 }
 
+
 // ListObjects lists objects in the current client project with some
 // ux-improvements like hinting when a resource has been found in a different
 // project of the same organization.
 func (c *Client) ListObjects(ctx context.Context, list runtimeclient.ObjectList, options ...ListOpt) error {
+	fmt.Println("api.list.ListObjects")
 	opts := &ListOpts{}
 	for _, opt := range options {
 		opt(opts)
@@ -125,19 +128,38 @@ func (c *Client) ListObjects(ctx context.Context, list runtimeclient.ObjectList,
 		return fmt.Errorf("error when searching for projects: %w", err)
 	}
 
+	projectsSize := len(projects)
+	var wg sync.WaitGroup
+	wg.Add(projectsSize)
+	ch := make(chan reflect.Value, projectsSize)
+
+
+	fmt.Printf("%T\n", projects)
 	for _, proj := range projects {
 		tempOpts := slices.Clone(opts.clientListOptions)
-		// we ensured the list is a pointer type and that is has an
-		// 'Items' field which is a slice above, so we don't need to do
-		// this again here and instead use the reflect functions directly.
-		tempList := reflect.New(reflect.TypeOf(list).Elem()).Interface().(runtimeclient.ObjectList)
-		tempList.GetObjectKind().SetGroupVersionKind(list.GetObjectKind().GroupVersionKind())
-		if err := c.List(ctx, tempList, append(tempOpts, runtimeclient.InNamespace(proj.Name))...); err != nil {
-			return fmt.Errorf("error when searching in project %s: %w", proj.Name, err)
-		}
-		tempListItems := reflect.ValueOf(tempList).Elem().FieldByName("Items")
-		for i := 0; i < tempListItems.Len(); i++ {
-			items.Set(reflect.Append(items, tempListItems.Index(i)))
+		go func() {
+			fmt.Printf("   %s Start\n", proj.Name)
+			defer wg.Done()
+			// we ensured the list is a pointer type and that is has an
+			// 'Items' field which is a slice above, so we don't need to do
+			// this again here and instead use the reflect functions directly.
+			tempList := reflect.New(reflect.TypeOf(list).Elem()).Interface().(runtimeclient.ObjectList)
+			tempList.GetObjectKind().SetGroupVersionKind(list.GetObjectKind().GroupVersionKind())
+			if err := c.List(ctx, tempList, append(tempOpts, runtimeclient.InNamespace(proj.Name))...); err != nil {
+				return //fmt.Errorf("error when searching in project %s: %w", proj.Name, err)
+			}
+			tempListItems := reflect.ValueOf(tempList).Elem().FieldByName("Items")
+			ch <- tempListItems
+			fmt.Printf("   %s Done\n", proj.Name)
+		}()
+	}
+
+	wg.Wait()
+	close(ch)
+
+	for listItems := range(ch) {
+		for i := 0; i < listItems.Len(); i++ {
+			items.Set(reflect.Append(items, listItems.Index(i)))
 		}
 	}
 
