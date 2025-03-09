@@ -37,7 +37,9 @@ type applicationCmd struct {
 	DeleteBuildEnv           *[]string         `help:"Build environment variables which are to be deleted."`
 	DeployJob                *deployJob        `embed:"" prefix:"deploy-job-"`
 	WorkerJob                *workerJob        `embed:"" prefix:"worker-job-"`
+	ScheduledJob             *scheduledJob     `embed:"" prefix:"scheduled-job-"`
 	DeleteWorkerJob          *string           `help:"Delete a worker job by name"`
+	DeleteScheduledJob       *string           `help:"Delete a scheduled job by name"`
 	RetryBuild               *bool             `help:"Retries build for the application if set to true." placeholder:"false"`
 	GitInformationServiceURL string            `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
 	SkipRepoAccessCheck      bool              `help:"Skip the git repository access check" default:"false"`
@@ -89,6 +91,13 @@ type workerJob struct {
 	Name    *string `help:"Name of the worker job to add." placeholder:"worker-1"`
 	Command *string `help:"Command to execute to start the worker." placeholder:"\"bundle exec sidekiq\""`
 	Size    *string `help:"Size of the worker (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
+}
+
+type scheduledJob struct {
+	Command  *string `help:"Command to execute to start the scheduled job." placeholder:"\"bundle exec sidekiq\""`
+	Name     *string `help:"Name of the scheduled job job to add." placeholder:"scheduled-1"`
+	Size     *string `help:"Size of the scheduled (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
+	Schedule *string `help:"Cron notation string for the scheduled job (defaults to \"* * * * *\")." placeholder:"* * * * *"`
 }
 
 type dockerfileBuild struct {
@@ -225,6 +234,12 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 	if cmd.DeleteWorkerJob != nil {
 		deleteWorkerJob(*cmd.DeleteWorkerJob, &app.Spec.ForProvider.Config)
 	}
+	if cmd.ScheduledJob != nil {
+		cmd.ScheduledJob.applyUpdates(&app.Spec.ForProvider.Config)
+	}
+	if cmd.DeleteScheduledJob != nil {
+		deleteScheduledJob(*cmd.DeleteScheduledJob, &app.Spec.ForProvider.Config)
+	}
 	if cmd.Language != nil {
 		app.Spec.ForProvider.Language = apps.Language(*cmd.Language)
 	}
@@ -334,6 +349,55 @@ func deleteWorkerJob(name string, cfg *apps.Config) {
 		return
 	}
 	cfg.WorkerJobs = newJobs
+}
+
+func (job scheduledJob) applyUpdates(cfg *apps.Config) {
+	if (job.Command != nil || job.Size != nil) && job.Name == nil {
+		format.PrintWarningf("you need to pass a job name to update the command or size\n")
+	}
+	if job.Name == nil {
+		return
+	}
+	found := false
+	for i := range cfg.ScheduledJobs {
+		if cfg.ScheduledJobs[i].Name == *job.Name {
+			found = true
+			if job.Command != nil {
+				cfg.ScheduledJobs[i].Command = *job.Command
+			}
+			if job.Size != nil {
+				cfg.ScheduledJobs[i].Size = ptr.To(apps.ApplicationSize(*job.Size))
+			}
+			if job.Schedule != nil {
+				cfg.ScheduledJobs[i].Schedule = *job.Schedule
+			}
+		}
+	}
+
+	if !found {
+		newJob := apps.ScheduledJob{Job: apps.Job{Name: *job.Name}}
+		if job.Command != nil {
+			newJob.Command = *job.Command
+		}
+		if job.Size != nil {
+			newJob.Size = ptr.To(apps.ApplicationSize(*job.Size))
+		}
+		cfg.ScheduledJobs = append(cfg.ScheduledJobs, newJob)
+	}
+}
+
+func deleteScheduledJob(name string, cfg *apps.Config) {
+	newJobs := []apps.ScheduledJob{}
+	for _, sj := range cfg.ScheduledJobs {
+		if sj.Name != name {
+			newJobs = append(newJobs, sj)
+		}
+	}
+	if len(cfg.ScheduledJobs) == len(newJobs) {
+		format.PrintWarningf("did not find a scheduled job with the name %q\n", name)
+		return
+	}
+	cfg.ScheduledJobs = newJobs
 }
 
 func warnIfDockerfileNotEnabled(app *apps.Application, flag string) {

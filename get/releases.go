@@ -64,6 +64,7 @@ func (cmd *releasesCmd) printReleases(releases []apps.Release, get *Cmd, header 
 			"SIZE",
 			"REPLICAS",
 			"WORKERJOBS",
+			"SCHEDULEDJOBS",
 			"STATUS",
 			"AGE",
 		)
@@ -78,6 +79,7 @@ func (cmd *releasesCmd) printReleases(releases []apps.Release, get *Cmd, header 
 			replicas = strconv.Itoa(int(*r.Spec.ForProvider.Config.Replicas))
 		}
 		workerJobs := strconv.Itoa(len(r.Spec.ForProvider.Config.WorkerJobs))
+		scheduledJobs := strconv.Itoa(len(r.Spec.ForProvider.Config.ScheduledJobs))
 
 		get.writeTabRow(
 			w,
@@ -88,6 +90,7 @@ func (cmd *releasesCmd) printReleases(releases []apps.Release, get *Cmd, header 
 			string(r.Spec.ForProvider.Config.Size),
 			replicas,
 			workerJobs,
+			scheduledJobs,
 			string(r.Status.AtProvider.ReleaseStatus),
 			duration.HumanDuration(time.Since(r.ObjectMeta.CreationTimestamp.Time)),
 		)
