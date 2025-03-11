@@ -94,9 +94,9 @@ type workerJob struct {
 }
 
 type scheduledJob struct {
-	Command  *string `help:"Command to execute to start the scheduled job." placeholder:"\"bundle exec sidekiq\""`
+	Command  *string `help:"Command to execute to start the scheduled job." placeholder:"\"bundle exec rails runner\""`
 	Name     *string `help:"Name of the scheduled job job to add." placeholder:"scheduled-1"`
-	Size     *string `help:"Size of the scheduled (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
+	Size     *string `help:"Size (resources) of the scheduled job (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
 	Schedule *string `help:"Cron notation string for the scheduled job (defaults to \"* * * * *\")." placeholder:"* * * * *"`
 }
 
@@ -312,29 +312,26 @@ func (job workerJob) applyUpdates(cfg *apps.Config) {
 	if job.Name == nil {
 		return
 	}
-	found := false
 	for i := range cfg.WorkerJobs {
 		if cfg.WorkerJobs[i].Name == *job.Name {
-			found = true
 			if job.Command != nil {
 				cfg.WorkerJobs[i].Command = *job.Command
 			}
 			if job.Size != nil {
 				cfg.WorkerJobs[i].Size = ptr.To(apps.ApplicationSize(*job.Size))
 			}
+			return
 		}
 	}
 
-	if !found {
-		newJob := apps.WorkerJob{Job: apps.Job{Name: *job.Name}}
-		if job.Command != nil {
-			newJob.Command = *job.Command
-		}
-		if job.Size != nil {
-			newJob.Size = ptr.To(apps.ApplicationSize(*job.Size))
-		}
-		cfg.WorkerJobs = append(cfg.WorkerJobs, newJob)
+	newJob := apps.WorkerJob{Job: apps.Job{Name: *job.Name}}
+	if job.Command != nil {
+		newJob.Command = *job.Command
 	}
+	if job.Size != nil {
+		newJob.Size = ptr.To(apps.ApplicationSize(*job.Size))
+	}
+	cfg.WorkerJobs = append(cfg.WorkerJobs, newJob)
 }
 
 func deleteWorkerJob(name string, cfg *apps.Config) {
@@ -352,16 +349,13 @@ func deleteWorkerJob(name string, cfg *apps.Config) {
 }
 
 func (job scheduledJob) applyUpdates(cfg *apps.Config) {
-	if (job.Command != nil || job.Size != nil) && job.Name == nil {
-		format.PrintWarningf("you need to pass a job name to update the command or size\n")
-	}
 	if job.Name == nil {
+		format.PrintWarningf("you need to pass a job name to update the command, schedule or size\n")
 		return
 	}
-	found := false
+
 	for i := range cfg.ScheduledJobs {
 		if cfg.ScheduledJobs[i].Name == *job.Name {
-			found = true
 			if job.Command != nil {
 				cfg.ScheduledJobs[i].Command = *job.Command
 			}
@@ -371,19 +365,18 @@ func (job scheduledJob) applyUpdates(cfg *apps.Config) {
 			if job.Schedule != nil {
 				cfg.ScheduledJobs[i].Schedule = *job.Schedule
 			}
+			return
 		}
 	}
 
-	if !found {
-		newJob := apps.ScheduledJob{Job: apps.Job{Name: *job.Name}}
-		if job.Command != nil {
-			newJob.Command = *job.Command
-		}
-		if job.Size != nil {
-			newJob.Size = ptr.To(apps.ApplicationSize(*job.Size))
-		}
-		cfg.ScheduledJobs = append(cfg.ScheduledJobs, newJob)
+	newJob := apps.ScheduledJob{Job: apps.Job{Name: *job.Name}}
+	if job.Command != nil {
+		newJob.Command = *job.Command
 	}
+	if job.Size != nil {
+		newJob.Size = ptr.To(apps.ApplicationSize(*job.Size))
+	}
+	cfg.ScheduledJobs = append(cfg.ScheduledJobs, newJob)
 }
 
 func deleteScheduledJob(name string, cfg *apps.Config) {

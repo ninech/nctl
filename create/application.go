@@ -77,9 +77,9 @@ type workerJob struct {
 }
 
 type scheduledJob struct {
-	Command  string  `help:"Command to execute to start the scheduled job." placeholder:"\"bundle exec sidekiq\""`
+	Command  string  `help:"Command to execute to start the scheduled job." placeholder:"\"bundle exec rails runner\""`
 	Name     string  `help:"Name of the scheduled job job to add." placeholder:"scheduled-1"`
-	Size     *string `help:"Size of the scheduled (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
+	Size     *string `help:"Size (resources) of the scheduled job (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
 	Schedule string  `help:"Cron notation string for the scheduled job (defaults to \"* * * * *\")." placeholder:"* * * * *"`
 }
 
@@ -312,6 +312,7 @@ func (app *applicationCmd) config() apps.Config {
 				Name:    app.ScheduledJob.Name,
 				Command: app.ScheduledJob.Command,
 			},
+			Schedule: app.ScheduledJob.Schedule,
 		}
 		if app.ScheduledJob.Size != nil {
 			scheduledJob.Size = ptr.To(apps.ApplicationSize(*app.ScheduledJob.Size))
