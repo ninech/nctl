@@ -3,7 +3,6 @@ package create
 import (
 	"context"
 	"errors"
-	"reflect"
 	"testing"
 	"time"
 
@@ -114,17 +113,7 @@ func TestMySQL(t *testing.T) {
 				return
 			}
 
-			// we set defaults for the slices
-			if tt.want.AllowedCIDRs == nil {
-				tt.want.AllowedCIDRs = []meta.IPv4CIDR{}
-			}
-			if tt.want.SSHKeys == nil {
-				tt.want.SSHKeys = []storage.SSHKey{}
-			}
-
-			if !reflect.DeepEqual(created.Spec.ForProvider, tt.want) {
-				t.Fatalf("expected mysql.Spec.ForProvider = %+v, got: %+v", created.Spec.ForProvider, tt.want)
-			}
+			require.Equal(t, tt.want, created.Spec.ForProvider)
 		})
 	}
 }

@@ -83,7 +83,7 @@ func printApplication(apps []apps.Application, get *Cmd, out io.Writer, header b
 	w := tabwriter.NewWriter(out, 0, 0, 4, ' ', 0)
 
 	if header {
-		get.writeHeader(w, "NAME", "REPLICAS", "WORKERJOBS", "HOSTS", "UNVERIFIEDHOSTS")
+		get.writeHeader(w, "NAME", "REPLICAS", "WORKERJOBS", "SCHEDULEDJOBS", "HOSTS", "UNVERIFIEDHOSTS")
 	}
 
 	for _, app := range apps {
@@ -94,8 +94,9 @@ func printApplication(apps []apps.Application, get *Cmd, out io.Writer, header b
 			replicas = int(*app.Status.AtProvider.Replicas)
 		}
 		workerJobs := fmt.Sprintf("%d", len(app.Status.AtProvider.WorkerJobs))
+		scheduledJobs := fmt.Sprintf("%d", len(app.Status.AtProvider.ScheduledJobs))
 
-		get.writeTabRow(w, app.Namespace, app.Name, fmt.Sprintf("%d", replicas), workerJobs, join(verifiedHosts), join(unverifiedHosts))
+		get.writeTabRow(w, app.Namespace, app.Name, fmt.Sprintf("%d", replicas), workerJobs, scheduledJobs, join(verifiedHosts), join(unverifiedHosts))
 	}
 
 	return w.Flush()
@@ -212,6 +213,10 @@ func (cmd *applicationsCmd) printStats(ctx context.Context, c *api.Client, appLi
 		workers := []apps.ReplicaObservation{}
 		for _, wjs := range rel.Status.AtProvider.WorkerJobStatus {
 			workers = append(workers, wjs.ReplicaObservation...)
+		}
+
+		for _, sjs := range rel.Status.AtProvider.ScheduledJobStatus {
+			workers = append(workers, sjs.ReplicaObservation...)
 		}
 
 		for _, replica := range append(replicas, workers...) {

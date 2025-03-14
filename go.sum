@@ -597,6 +597,12 @@ github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f/go.mod h1:ZdcZmHo+
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/ninech/apis v0.0.0-20250120083942-90d315ad8c32 h1:0XaOKTYVCIVd+oqG+7Km9j2/hVqkB4U7ySyEw15KvF0=
 github.com/ninech/apis v0.0.0-20250120083942-90d315ad8c32/go.mod h1:6srtlYi3nj8GRxQkbhvSbanIBc9vsoPLFOp5VQzNNhM=
+github.com/ninech/apis v0.0.0-20250304140759-2e6d16e9749f h1:3RXpRcPZKkw2rE7TyuFk8e+tWr8Mhl8bZqTDFm0ybWM=
+github.com/ninech/apis v0.0.0-20250304140759-2e6d16e9749f/go.mod h1:6srtlYi3nj8GRxQkbhvSbanIBc9vsoPLFOp5VQzNNhM=
+github.com/ninech/apis v0.0.0-20250304143335-386c5bf8bc63 h1:B8UqsTldPq5j2kLrkOsi++2jd1b5hk/O+yVrlR+AnVY=
+github.com/ninech/apis v0.0.0-20250304143335-386c5bf8bc63/go.mod h1:6srtlYi3nj8GRxQkbhvSbanIBc9vsoPLFOp5VQzNNhM=
+github.com/ninech/apis v0.0.0-20250305125840-3bc1e01edb09 h1:vihjujYXJAgRSa5VQgtpVkWNRcd3DccVbUn6PliMrgQ=
+github.com/ninech/apis v0.0.0-20250305125840-3bc1e01edb09/go.mod h1:6srtlYi3nj8GRxQkbhvSbanIBc9vsoPLFOp5VQzNNhM=
 github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
 github.com/oklog/ulid v1.3.1 h1:EGfNDEx6MqHz8B3uNV6QAib1UR2Lm97sHi3ocA6ESJ4=

@@ -45,6 +45,7 @@ type applicationCmd struct {
 	BuildEnv                 map[string]string `help:"Environment variables which are passed to the app build process."`
 	DeployJob                deployJob         `embed:"" prefix:"deploy-job-"`
 	WorkerJob                workerJob         `embed:"" prefix:"worker-job-"`
+	ScheduledJob             scheduledJob      `embed:"" prefix:"scheduled-job-"`
 	GitInformationServiceURL string            `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
 	SkipRepoAccessCheck      bool              `help:"Skip the git repository access check" default:"false"`
 	Debug                    bool              `help:"Enable debug messages" default:"false"`
@@ -73,6 +74,13 @@ type workerJob struct {
 	Command string  `help:"Command to execute to start the worker." placeholder:"\"bundle exec sidekiq\""`
 	Name    string  `help:"Name of the worker job to add." placeholder:"worker-1"`
 	Size    *string `help:"Size of the worker (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
+}
+
+type scheduledJob struct {
+	Command  string  `help:"Command to execute to start the scheduled job." placeholder:"\"bundle exec rails runner\""`
+	Name     string  `help:"Name of the scheduled job job to add." placeholder:"scheduled-1"`
+	Size     *string `help:"Size (resources) of the scheduled job (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
+	Schedule string  `help:"Cron notation string for the scheduled job (defaults to \"* * * * *\")." placeholder:"* * * * *"`
 }
 
 type dockerfileBuild struct {
@@ -296,6 +304,20 @@ func (app *applicationCmd) config() apps.Config {
 			workerJob.Size = ptr.To(apps.ApplicationSize(*app.WorkerJob.Size))
 		}
 		config.WorkerJobs = append(config.WorkerJobs, workerJob)
+	}
+
+	if len(app.ScheduledJob.Command) != 0 && len(app.ScheduledJob.Name) != 0 && len(app.ScheduledJob.Schedule) != 0 {
+		scheduledJob := apps.ScheduledJob{
+			Job: apps.Job{
+				Name:    app.ScheduledJob.Name,
+				Command: app.ScheduledJob.Command,
+			},
+			Schedule: app.ScheduledJob.Schedule,
+		}
+		if app.ScheduledJob.Size != nil {
+			scheduledJob.Size = ptr.To(apps.ApplicationSize(*app.ScheduledJob.Size))
+		}
+		config.ScheduledJobs = append(config.ScheduledJobs, scheduledJob)
 	}
 
 	if app.Size != nil {
