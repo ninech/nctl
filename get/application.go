@@ -17,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	metricsv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
+	"k8s.io/utils/ptr"
 )
 
 type applicationsCmd struct {
@@ -189,6 +190,24 @@ func printDNSDetailsTabRow(items []util.DNSDetail, get *Cmd, out io.Writer) erro
 	return nil
 }
 
+func sizeForWorkerJob(release *apps.Release, workerJobName string) *apps.ApplicationSize {
+	for _, wj := range release.Spec.ForProvider.Config.WorkerJobs {
+		if wj.Name == workerJobName {
+			return wj.Size
+		}
+	}
+	return nil
+}
+
+func sizeForScheduledJob(release *apps.Release, scheduledJobName string) *apps.ApplicationSize {
+	for _, sj := range release.Spec.ForProvider.Config.ScheduledJobs {
+		if sj.Name == scheduledJobName {
+			return sj.Size
+		}
+	}
+	return nil
+}
+
 func (cmd *applicationsCmd) printStats(ctx context.Context, c *api.Client, appList []apps.Application, get *Cmd, out io.Writer) error {
 	scheme := runtime.NewScheme()
 	if err := metricsv1beta1.AddToScheme(scheme); err != nil {
@@ -202,30 +221,66 @@ func (cmd *applicationsCmd) printStats(ctx context.Context, c *api.Client, appLi
 	w := tabwriter.NewWriter(out, 0, 0, 3, ' ', 0)
 	get.writeHeader(w, "NAME", "REPLICA", "STATUS", "CPU", "CPU%", "MEMORY", "MEMORY%", "RESTARTS", "LASTEXITCODE")
 
+	type statsObservation struct {
+		name string
+		size apps.ApplicationSize
+		apps.ReplicaObservation
+	}
+
 	for _, app := range appList {
 		rel, err := util.ApplicationLatestRelease(ctx, c, api.ObjectName(&app))
 		if err != nil {
-			format.PrintWarningf("unable to get replicas for app %s\n", c.Name(app.Name))
+			format.PrintWarningf("unable to get latest release for app %s\n", c.Name(app.Name))
 			continue
 		}
 
-		replicas := rel.Status.AtProvider.ReplicaObservation
-		workers := []apps.ReplicaObservation{}
+		var observations []statsObservation
+		appSize := rel.Spec.ForProvider.Config.Size
+
+		// we first gather the normal application replicas
+		for _, appReplica := range rel.Status.AtProvider.ReplicaObservation {
+			observations = append(observations, statsObservation{
+				name:               app.Name,
+				size:               appSize,
+				ReplicaObservation: appReplica,
+			})
+		}
+		// we now handle the worker jobs
 		for _, wjs := range rel.Status.AtProvider.WorkerJobStatus {
-			workers = append(workers, wjs.ReplicaObservation...)
+			wjSize := sizeForWorkerJob(rel, wjs.Name)
+			if wjSize == nil {
+				wjSize = ptr.To(appSize)
+			}
+			for _, replicaObs := range wjs.ReplicaObservation {
+				observations = append(observations, statsObservation{
+					name:               wjs.Name,
+					ReplicaObservation: replicaObs,
+					size:               *wjSize,
+				})
+			}
 		}
-
+		// ..and finally the scheduled jobs
 		for _, sjs := range rel.Status.AtProvider.ScheduledJobStatus {
-			workers = append(workers, sjs.ReplicaObservation...)
+			sjSize := sizeForScheduledJob(rel, sjs.Name)
+			if sjSize == nil {
+				sjSize = ptr.To(appSize)
+			}
+			for _, replicaObs := range sjs.ReplicaObservation {
+				observations = append(observations, statsObservation{
+					name:               sjs.Name,
+					ReplicaObservation: replicaObs,
+					size:               *sjSize,
+				})
+			}
 		}
 
-		for _, replica := range append(replicas, workers...) {
+		for _, statsObservation := range observations {
 			podMetrics := metricsv1beta1.PodMetrics{}
-			if err := runtimeClient.Get(ctx, api.NamespacedName(replica.ReplicaName, app.Namespace), &podMetrics); err != nil {
-				format.PrintWarningf("unable to get metrics for replica %s\n", replica.ReplicaName)
+			if err := runtimeClient.Get(ctx, api.NamespacedName(statsObservation.ReplicaName, app.Namespace), &podMetrics); err != nil {
+				format.PrintWarningf("unable to get metrics for replica %s\n", statsObservation.ReplicaName)
 			}
 
-			appResources := apps.AppResources[app.Status.AtProvider.Size]
+			maxResources := apps.AppResources[statsObservation.size]
 			// We expect exactly one container, fall back to [util.NoneText] if that's
 			// not the case. The container might simply not have any metrics yet.
 			cpuUsage, cpuPercentage := util.NoneText, util.NoneText
@@ -233,22 +288,22 @@ func (cmd *applicationsCmd) printStats(ctx context.Context, c *api.Client, appLi
 			if len(podMetrics.Containers) == 1 {
 				cpu := podMetrics.Containers[0].Usage[corev1.ResourceCPU]
 				cpuUsage = formatQuantity(corev1.ResourceCPU, cpu)
-				cpuPercentage = formatPercentage(cpu.MilliValue(), appResources.Cpu().MilliValue())
+				cpuPercentage = formatPercentage(cpu.MilliValue(), maxResources.Cpu().MilliValue())
 				memory := podMetrics.Containers[0].Usage[corev1.ResourceMemory]
 				memoryUsage = formatQuantity(corev1.ResourceMemory, memory)
-				memoryPercentage = formatPercentage(memory.MilliValue(), appResources.Memory().MilliValue())
+				memoryPercentage = formatPercentage(memory.MilliValue(), maxResources.Memory().MilliValue())
 			}
 
 			get.writeTabRow(
-				w, app.Namespace, app.Name,
-				replica.ReplicaName,
-				string(replica.Status),
+				w, app.Namespace, statsObservation.name,
+				statsObservation.ReplicaName,
+				string(statsObservation.Status),
 				cpuUsage,
 				cpuPercentage,
 				memoryUsage,
 				memoryPercentage,
-				formatRestartCount(replica),
-				formatExitCode(replica),
+				formatRestartCount(statsObservation.ReplicaObservation),
+				formatExitCode(statsObservation.ReplicaObservation),
 			)
 		}
 	}
