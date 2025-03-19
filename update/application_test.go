@@ -142,7 +142,8 @@ func TestApplication(t *testing.T) {
 				assert.Equal(t, *cmd.DeployJob.Name, updated.Spec.ForProvider.Config.DeployJob.Name)
 				assert.Equal(t, *cmd.DeployJob.Timeout, updated.Spec.ForProvider.Config.DeployJob.Timeout.Duration)
 				assert.Equal(t, *cmd.DeployJob.Retries, *updated.Spec.ForProvider.Config.DeployJob.Retries)
-				// RetryBuild should be not set by default:
+				// Retry Release/Build should be not set by default:
+				assert.Nil(t, util.EnvVarByName(updated.Spec.ForProvider.Config.Env, ReleaseTrigger))
 				assert.Nil(t, util.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
 			},
 		},
@@ -357,6 +358,30 @@ func TestApplication(t *testing.T) {
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				assert.Nil(t, updated.Spec.ForProvider.Config.DeployJob)
+			},
+		},
+		"retry release": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
+				RetryRelease: ptr.To(true),
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				assert.NotNil(t, util.EnvVarByName(updated.Spec.ForProvider.Config.Env, ReleaseTrigger))
+			},
+		},
+		"do not retry release": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
+				RetryRelease: ptr.To(false),
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				assert.Nil(t, util.EnvVarByName(updated.Spec.ForProvider.Config.Env, ReleaseTrigger))
 			},
 		},
 		"retry build": {

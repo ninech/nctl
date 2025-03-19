@@ -17,6 +17,9 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+// ReleaseTrigger is used to request a new release for the application.
+const ReleaseTrigger = "RELEASE_TRIGGER"
+
 // BuildTrigger is used to request a retry-build for the application.
 const BuildTrigger = "BUILD_TRIGGER"
 
@@ -40,7 +43,8 @@ type applicationCmd struct {
 	ScheduledJob             *scheduledJob     `embed:"" prefix:"scheduled-job-"`
 	DeleteWorkerJob          *string           `help:"Delete a worker job by name"`
 	DeleteScheduledJob       *string           `help:"Delete a scheduled job by name"`
-	RetryBuild               *bool             `help:"Retries build for the application if set to true." placeholder:"false"`
+	RetryRelease             *bool             `help:"Retries release for the application." placeholder:"false"`
+	RetryBuild               *bool             `help:"Retries build for the application." placeholder:"false"`
 	GitInformationServiceURL string            `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
 	SkipRepoAccessCheck      bool              `help:"Skip the git repository access check" default:"false"`
 	Debug                    bool              `help:"Enable debug messages" default:"false"`
@@ -244,21 +248,26 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 		app.Spec.ForProvider.Language = apps.Language(*cmd.Language)
 	}
 
+	runtimeEnv := make(map[string]string)
+	if cmd.Env != nil {
+		runtimeEnv = cmd.Env
+	}
+	if cmd.RetryRelease != nil && *cmd.RetryRelease {
+		runtimeEnv[ReleaseTrigger] = triggerTimestamp()
+	}
 	var delEnv []string
 	if cmd.DeleteEnv != nil {
 		delEnv = *cmd.DeleteEnv
 	}
-	app.Spec.ForProvider.Config.Env = util.UpdateEnvVars(app.Spec.ForProvider.Config.Env, cmd.Env, delEnv)
+	app.Spec.ForProvider.Config.Env = util.UpdateEnvVars(app.Spec.ForProvider.Config.Env, runtimeEnv, delEnv)
 
 	buildEnv := make(map[string]string)
 	if cmd.BuildEnv != nil {
 		buildEnv = cmd.BuildEnv
 	}
-
 	if cmd.RetryBuild != nil && *cmd.RetryBuild {
-		buildEnv[BuildTrigger] = time.Now().UTC().Format(time.RFC3339)
+		buildEnv[BuildTrigger] = triggerTimestamp()
 	}
-
 	var buildDelEnv []string
 	if cmd.DeleteBuildEnv != nil {
 		buildDelEnv = *cmd.DeleteBuildEnv
@@ -274,6 +283,10 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 		app.Spec.ForProvider.DockerfileBuild.BuildContext = *cmd.DockerfileBuild.BuildContext
 		warnIfDockerfileNotEnabled(app, "build context")
 	}
+}
+
+func triggerTimestamp() string {
+	return time.Now().UTC().Format(time.RFC3339)
 }
 
 func (job deployJob) applyUpdates(cfg *apps.Config) {
