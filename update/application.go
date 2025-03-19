@@ -27,29 +27,33 @@ const BuildTrigger = "BUILD_TRIGGER"
 // the user.
 type applicationCmd struct {
 	resourceCmd
-	Git                      *gitConfig        `embed:"" prefix:"git-"`
-	Size                     *string           `help:"Size of the app."`
-	Port                     *int32            `help:"Port the app is listening on."`
-	Replicas                 *int32            `help:"Amount of replicas of the running app."`
-	Hosts                    *[]string         `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
-	BasicAuth                *bool             `help:"Enable/Disable basic authentication for the application."`
-	ChangeBasicAuthPassword  *bool             `help:"Generate a new basic auth password."`
-	Env                      map[string]string `help:"Environment variables which are passed to the app at runtime."`
-	DeleteEnv                *[]string         `help:"Runtime environment variables names which are to be deleted."`
-	BuildEnv                 map[string]string `help:"Environment variables names which are passed to the app build process."`
-	DeleteBuildEnv           *[]string         `help:"Build environment variables which are to be deleted."`
-	DeployJob                *deployJob        `embed:"" prefix:"deploy-job-"`
-	WorkerJob                *workerJob        `embed:"" prefix:"worker-job-"`
-	ScheduledJob             *scheduledJob     `embed:"" prefix:"scheduled-job-"`
-	DeleteWorkerJob          *string           `help:"Delete a worker job by name"`
-	DeleteScheduledJob       *string           `help:"Delete a scheduled job by name"`
-	RetryRelease             *bool             `help:"Retries release for the application." placeholder:"false"`
-	RetryBuild               *bool             `help:"Retries build for the application." placeholder:"false"`
-	GitInformationServiceURL string            `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
-	SkipRepoAccessCheck      bool              `help:"Skip the git repository access check" default:"false"`
-	Debug                    bool              `help:"Enable debug messages" default:"false"`
-	Language                 *string           `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static,"`
-	DockerfileBuild          dockerfileBuild   `embed:""`
+	Git                     *gitConfig        `embed:"" prefix:"git-"`
+	Size                    *string           `help:"Size of the app."`
+	Port                    *int32            `help:"Port the app is listening on."`
+	Replicas                *int32            `help:"Amount of replicas of the running app."`
+	Hosts                   *[]string         `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
+	BasicAuth               *bool             `help:"Enable/Disable basic authentication for the application."`
+	ChangeBasicAuthPassword *bool             `help:"Generate a new basic auth password."`
+	Env                     map[string]string `help:"Environment variables which are passed to the app at runtime."`
+	DeleteEnv               *[]string         `help:"Runtime environment variables names which are to be deleted."`
+	BuildEnv                map[string]string `help:"Environment variables names which are passed to the app build process."`
+	DeleteBuildEnv          *[]string         `help:"Build environment variables which are to be deleted."`
+	// DeployJob, ScheduledJob and WorkerJob are embedded pointers to
+	// structs. Due to the usage of kong these pointers will never be `nil`.
+	// So checking for `nil` values can not be used to find out if some of
+	// the struct fields have been set.
+	DeployJob                *deployJob      `embed:"" prefix:"deploy-job-"`
+	WorkerJob                *workerJob      `embed:"" prefix:"worker-job-"`
+	ScheduledJob             *scheduledJob   `embed:"" prefix:"scheduled-job-"`
+	DeleteWorkerJob          *string         `help:"Delete a worker job by name"`
+	DeleteScheduledJob       *string         `help:"Delete a scheduled job by name"`
+	RetryRelease             *bool           `help:"Retries release for the application." placeholder:"false"`
+	RetryBuild               *bool           `help:"Retries build for the application if set to true." placeholder:"false"`
+	GitInformationServiceURL string          `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
+	SkipRepoAccessCheck      bool            `help:"Skip the git repository access check" default:"false"`
+	Debug                    bool            `help:"Enable debug messages" default:"false"`
+	Language                 *string         `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static,"`
+	DockerfileBuild          dockerfileBuild `embed:""`
 }
 
 type gitConfig struct {
@@ -97,11 +101,19 @@ type workerJob struct {
 	Size    *string `help:"Size of the worker (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
 }
 
+func (wj workerJob) changesGiven() bool {
+	return wj.Command != nil || wj.Size != nil
+}
+
 type scheduledJob struct {
 	Command  *string `help:"Command to execute to start the scheduled job." placeholder:"\"bundle exec rails runner\""`
 	Name     *string `help:"Name of the scheduled job job to add." placeholder:"scheduled-1"`
 	Size     *string `help:"Size (resources) of the scheduled job (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
 	Schedule *string `help:"Cron notation string for the scheduled job (defaults to \"* * * * *\")." placeholder:"* * * * *"`
+}
+
+func (sj scheduledJob) changesGiven() bool {
+	return sj.Command != nil || sj.Size != nil || sj.Schedule != nil
 }
 
 type dockerfileBuild struct {
@@ -232,13 +244,13 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 	if cmd.DeployJob != nil {
 		cmd.DeployJob.applyUpdates(&app.Spec.ForProvider.Config)
 	}
-	if cmd.WorkerJob != nil {
+	if cmd.WorkerJob != nil && cmd.WorkerJob.changesGiven() {
 		cmd.WorkerJob.applyUpdates(&app.Spec.ForProvider.Config)
 	}
 	if cmd.DeleteWorkerJob != nil {
 		deleteWorkerJob(*cmd.DeleteWorkerJob, &app.Spec.ForProvider.Config)
 	}
-	if cmd.ScheduledJob != nil {
+	if cmd.ScheduledJob != nil && cmd.ScheduledJob.changesGiven() {
 		cmd.ScheduledJob.applyUpdates(&app.Spec.ForProvider.Config)
 	}
 	if cmd.DeleteScheduledJob != nil {
@@ -319,10 +331,8 @@ func ensureDeployJob(cfg *apps.Config) *apps.Config {
 }
 
 func (job workerJob) applyUpdates(cfg *apps.Config) {
-	if (job.Command != nil || job.Size != nil) && job.Name == nil {
-		format.PrintWarningf("you need to pass a job name to update the command or size\n")
-	}
 	if job.Name == nil {
+		format.PrintWarningf("you need to pass a job name to update the command or size\n")
 		return
 	}
 	for i := range cfg.WorkerJobs {
