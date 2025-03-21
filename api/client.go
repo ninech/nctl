@@ -242,6 +242,8 @@ func loadConfigWithContext(apiServerURL string, loader clientcmd.ClientConfigLoa
 	}
 
 	cfg, err := clientConfig.ClientConfig()
+	cfg.QPS = 50
+	cfg.Burst = 100
 	return cfg, ns, err
 }
 
