@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"reflect"
 	"slices"
+	"sort"
 	"strings"
+	"sync"
 
 	management "github.com/ninech/apis/management/v1alpha1"
+	"github.com/ninech/nctl/internal/format"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/conversion"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -125,19 +128,50 @@ func (c *Client) ListObjects(ctx context.Context, list runtimeclient.ObjectList,
 		return fmt.Errorf("error when searching for projects: %w", err)
 	}
 
+	type ProjectItems struct {
+		projectName string
+		items       reflect.Value
+	}
+
+	projectsSize := len(projects)
+	var wg sync.WaitGroup
+	wg.Add(projectsSize)
+	ch := make(chan ProjectItems, projectsSize)
+
 	for _, proj := range projects {
 		tempOpts := slices.Clone(opts.clientListOptions)
-		// we ensured the list is a pointer type and that is has an
-		// 'Items' field which is a slice above, so we don't need to do
-		// this again here and instead use the reflect functions directly.
-		tempList := reflect.New(reflect.TypeOf(list).Elem()).Interface().(runtimeclient.ObjectList)
-		tempList.GetObjectKind().SetGroupVersionKind(list.GetObjectKind().GroupVersionKind())
-		if err := c.List(ctx, tempList, append(tempOpts, runtimeclient.InNamespace(proj.Name))...); err != nil {
-			return fmt.Errorf("error when searching in project %s: %w", proj.Name, err)
-		}
-		tempListItems := reflect.ValueOf(tempList).Elem().FieldByName("Items")
-		for i := 0; i < tempListItems.Len(); i++ {
-			items.Set(reflect.Append(items, tempListItems.Index(i)))
+		go func() {
+			defer wg.Done()
+			// we ensured the list is a pointer type and that is has an
+			// 'Items' field which is a slice above, so we don't need to do
+			// this again here and instead use the reflect functions directly.
+			tempList := reflect.New(reflect.TypeOf(list).Elem()).Interface().(runtimeclient.ObjectList)
+			tempList.GetObjectKind().SetGroupVersionKind(list.GetObjectKind().GroupVersionKind())
+			if err := c.List(ctx, tempList, append(tempOpts, runtimeclient.InNamespace(proj.Name))...); err != nil {
+				format.PrintWarningf("error when searching in project %s: %s", proj.Name, err)
+				return
+			}
+			tempListItems := reflect.ValueOf(tempList).Elem().FieldByName("Items")
+			ch <- ProjectItems{projectName: proj.Name, items: tempListItems}
+		}()
+	}
+
+	wg.Wait()
+	close(ch)
+
+	// Collect and sort by project name
+	collected := make([]ProjectItems, 0, projectsSize)
+	for pi := range ch {
+		collected = append(collected, pi)
+	}
+
+	sort.Slice(collected, func(i, j int) bool {
+		return collected[i].projectName < collected[j].projectName
+	})
+
+	for _, pi := range collected {
+		for i := range pi.items.Len() {
+			items.Set(reflect.Append(items, pi.items.Index(i)))
 		}
 	}
 
