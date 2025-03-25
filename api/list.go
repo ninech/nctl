@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"slices"
+	"sort"
 	"strings"
 	"sync"
 	"log"
@@ -127,10 +128,15 @@ func (c *Client) ListObjects(ctx context.Context, list runtimeclient.ObjectList,
 		return fmt.Errorf("error when searching for projects: %w", err)
 	}
 
+	type ProjectItems struct {
+		projectName string
+		items       reflect.Value
+	}
+
 	projectsSize := len(projects)
 	var wg sync.WaitGroup
 	wg.Add(projectsSize)
-	ch := make(chan reflect.Value, projectsSize)
+	ch := make(chan ProjectItems, projectsSize)
 
 	for _, proj := range projects {
 		tempOpts := slices.Clone(opts.clientListOptions)
@@ -146,16 +152,26 @@ func (c *Client) ListObjects(ctx context.Context, list runtimeclient.ObjectList,
 				return
 			}
 			tempListItems := reflect.ValueOf(tempList).Elem().FieldByName("Items")
-			ch <- tempListItems
+			ch <- ProjectItems{projectName: proj.Name, items: tempListItems}
 		}()
 	}
 
 	wg.Wait()
 	close(ch)
 
-	for listItems := range(ch) {
-		for i := 0; i < listItems.Len(); i++ {
-			items.Set(reflect.Append(items, listItems.Index(i)))
+	// Collect and sort by project name
+	collected := make([]ProjectItems, 0, projectsSize)
+	for pi := range ch {
+		collected = append(collected, pi)
+	}
+
+	sort.Slice(collected, func(i, j int) bool {
+		return collected[i].projectName < collected[j].projectName
+	})
+
+	for _, pi := range collected {
+		for i := range pi.items.Len() {
+			items.Set(reflect.Append(items, pi.items.Index(i)))
 		}
 	}
 
