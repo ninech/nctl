@@ -185,5 +185,5 @@ func TestMySQL(t *testing.T) {
 }
 
 func machineType(name string) infra.MachineType {
-	return infra.MachineType(name)
+	return infra.NewMachineType(name)
 }

@@ -65,7 +65,7 @@ func (cmd *postgresCmd) printPostgresInstances(list []storage.Postgres, get *Cmd
 	}
 
 	for _, postgres := range list {
-		get.writeTabRow(w, postgres.Namespace, postgres.Name, postgres.Status.AtProvider.FQDN, string(postgres.Spec.ForProvider.Location), string(postgres.Spec.ForProvider.MachineType))
+		get.writeTabRow(w, postgres.Namespace, postgres.Name, postgres.Status.AtProvider.FQDN, string(postgres.Spec.ForProvider.Location), postgres.Spec.ForProvider.MachineType.String())
 	}
 
 	return w.Flush()

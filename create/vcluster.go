@@ -81,7 +81,7 @@ func (vc *vclusterCmd) newCluster(project string) *infrastructure.KubernetesClus
 						Name:        vc.NodePoolName,
 						MinNodes:    vc.MinNodes,
 						MaxNodes:    vc.MaxNodes,
-						MachineType: infrastructure.MachineType(vc.MachineType),
+						MachineType: infrastructure.NewMachineType(vc.MachineType),
 					},
 				},
 			},
