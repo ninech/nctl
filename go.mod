@@ -15,6 +15,7 @@ require (
 	github.com/gobuffalo/flect v1.0.2
 	github.com/goccy/go-yaml v1.11.3
 	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.1
 	github.com/grafana/dskit v0.0.0-20240403100540-1435abf0da58
@@ -26,7 +27,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20
 	github.com/moby/moby v27.1.1+incompatible
 	github.com/moby/term v0.5.0
-	github.com/ninech/apis v0.0.0-20250304140759-2e6d16e9749f 
+	github.com/ninech/apis v0.0.0-20250401113742-a1f8f3679676
 	github.com/posener/complete v1.2.3
 	github.com/prometheus/common v0.55.0
 	github.com/stretchr/testify v1.9.0
@@ -41,6 +42,7 @@ require (
 	k8s.io/metrics v0.29.0
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
 	sigs.k8s.io/controller-runtime v0.18.4
+	sigs.k8s.io/yaml v1.4.0
 )
 
 require (
@@ -115,7 +117,6 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.1.2 // indirect
 	github.com/google/gnostic-models v0.6.8 // indirect
-	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/wire v0.6.0 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
@@ -250,5 +251,4 @@ require (
 	sigs.k8s.io/controller-tools v0.14.0 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
-	sigs.k8s.io/yaml v1.4.0 // indirect
 )

@@ -82,7 +82,7 @@ func (cmd *cloudVMCmd) newCloudVM(namespace string) (*infrastructure.CloudVirtua
 			},
 			ForProvider: infrastructure.CloudVirtualMachineParameters{
 				Location:    meta.LocationName(cmd.Location),
-				MachineType: infrastructure.MachineType(cmd.MachineType),
+				MachineType: infrastructure.NewMachineType(cmd.MachineType),
 				Hostname:    cmd.Hostname,
 				PowerState:  infrastructure.VirtualMachinePowerState(cmd.PowerState),
 				OS:          infrastructure.CloudVirtualMachineOS(infrastructure.OperatingSystem(cmd.OS)),

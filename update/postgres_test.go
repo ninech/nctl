@@ -2,9 +2,9 @@ package update
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
@@ -28,14 +28,14 @@ func TestPostgres(t *testing.T) {
 		},
 		{
 			name:   "increase-machineType",
-			update: postgresCmd{MachineType: ptr.To(infra.MachineType("nine-db-prod-s"))},
-			want:   storage.PostgresParameters{MachineType: infra.MachineType("nine-db-prod-s")},
+			update: postgresCmd{MachineType: ptr.To(infra.MachineTypeNineDBS)},
+			want:   storage.PostgresParameters{MachineType: infra.MachineTypeNineDBS},
 		},
 		{
 			name:   "decrease-machineType",
-			create: storage.PostgresParameters{MachineType: infra.MachineType("nine-db-prod-m")},
-			update: postgresCmd{MachineType: ptr.To(infra.MachineType("nine-db-prod-s"))},
-			want:   storage.PostgresParameters{MachineType: infra.MachineType("nine-db-prod-s")},
+			create: storage.PostgresParameters{MachineType: infra.MachineTypeNineDBM},
+			update: postgresCmd{MachineType: ptr.To(infra.MachineTypeNineDBS)},
+			want:   storage.PostgresParameters{MachineType: infra.MachineTypeNineDBS},
 		},
 		{
 			name: "sshKeys",
@@ -69,9 +69,9 @@ func TestPostgres(t *testing.T) {
 		{
 			name:   "multi-update",
 			create: storage.PostgresParameters{AllowedCIDRs: []meta.IPv4CIDR{"0.0.0.0/0"}},
-			update: postgresCmd{MachineType: ptr.To(infra.MachineType("nine-db-prod-s"))},
+			update: postgresCmd{MachineType: ptr.To(infra.MachineTypeNineDBS)},
 			want: storage.PostgresParameters{
-				MachineType:  infra.MachineType("nine-db-prod-s"),
+				MachineType:  infra.MachineTypeNineDBS,
 				AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")},
 			},
 		},
@@ -100,7 +100,7 @@ func TestPostgres(t *testing.T) {
 				t.Fatalf("expected postgres to exist, got: %s", err)
 			}
 
-			if !reflect.DeepEqual(updated.Spec.ForProvider, tt.want) {
+			if !cmp.Equal(updated.Spec.ForProvider, tt.want) {
 				t.Fatalf("expected postgres.Spec.ForProvider = %v, got: %v", updated.Spec.ForProvider, tt.want)
 			}
 		})

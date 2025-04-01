@@ -65,7 +65,7 @@ func (cmd *mySQLCmd) printMySQLInstances(list []storage.MySQL, get *Cmd, header 
 	}
 
 	for _, mysql := range list {
-		get.writeTabRow(w, mysql.Namespace, mysql.Name, mysql.Status.AtProvider.FQDN, string(mysql.Spec.ForProvider.Location), string(mysql.Spec.ForProvider.MachineType))
+		get.writeTabRow(w, mysql.Namespace, mysql.Name, mysql.Status.AtProvider.FQDN, string(mysql.Spec.ForProvider.Location), mysql.Spec.ForProvider.MachineType.String())
 	}
 
 	return w.Flush()
