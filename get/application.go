@@ -125,9 +125,9 @@ func printCredentialsTabRow(creds []appCredentials, get *Cmd, out io.Writer) err
 }
 
 type appCredentials struct {
-	Application string `yaml:"application"`
-	Project     string `yaml:"project"`
-	util.BasicAuth
+	Application    string `json:"application"`
+	Project        string `json:"project"`
+	util.BasicAuth `json:"basicauth"`
 }
 
 func gatherCredentials(ctx context.Context, items []apps.Application, c *api.Client) ([]appCredentials, error) {

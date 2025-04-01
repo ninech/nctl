@@ -261,10 +261,10 @@ func GitAuthSecretName(app *apps.Application) string {
 }
 
 type DNSDetail struct {
-	Application string `yaml:"application"`
-	Project     string `yaml:"project"`
-	TXTRecord   string `yaml:"txtRecord"`
-	CNAMETarget string `yaml:"cnameTarget"`
+	Application string `json:"application"`
+	Project     string `json:"project"`
+	TXTRecord   string `json:"txtRecord"`
+	CNAMETarget string `json:"cnameTarget"`
 }
 
 // GatherDNSDetails retrieves the DNS details of all given applications
