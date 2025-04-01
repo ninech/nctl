@@ -170,7 +170,7 @@ dev        dev     dev         sample
 			},
 			project:      "dev",
 			outputFormat: yamlOut,
-			output:       "application: dev\nproject: dev\nbasicauth:\n  username: dev\n  password: sample\n",
+			output:       "application: dev\nbasicauth:\n  password: sample\n  username: dev\nproject: dev\n",
 		},
 		"multiple apps with basic auth configured and all apps in the project requested": {
 			resources: []client.Object{
@@ -222,7 +222,7 @@ dev        dev-second    dev-second    sample-second
 				),
 			},
 			outputFormat: yamlOut,
-			output:       "application: dev\nproject: dev\nbasicauth:\n  username: dev\n  password: sample\n---\napplication: prod\nproject: prod\nbasicauth:\n  username: prod\n  password: secret\n",
+			output:       "application: dev\nbasicauth:\n  password: sample\n  username: dev\nproject: dev\n---\napplication: prod\nbasicauth:\n  password: secret\n  username: prod\nproject: prod\n",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -364,7 +364,7 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 			},
 			project:      "dev",
 			outputFormat: yamlOut,
-			output:       "application: sample\nproject: dev\ntxtRecord: deploio-site-verification=sample-dev-3ksdk23\ncnameTarget: sample.3ksdk23.deploio.app\n---\napplication: test\nproject: dev\ntxtRecord: deploio-site-verification=test-dev-4ksdk23\ncnameTarget: test.4ksdk23.deploio.app\n",
+			output:       "application: sample\ncnameTarget: sample.3ksdk23.deploio.app\nproject: dev\ntxtRecord: deploio-site-verification=sample-dev-3ksdk23\n---\napplication: test\ncnameTarget: test.4ksdk23.deploio.app\nproject: dev\ntxtRecord: deploio-site-verification=test-dev-4ksdk23\n",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {

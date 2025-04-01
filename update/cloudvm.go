@@ -56,7 +56,7 @@ func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {
 
 func (cmd *cloudVMCmd) applyUpdates(cloudVM *infrastructure.CloudVirtualMachine) error {
 	if cmd.MachineType != "" {
-		cloudVM.Spec.ForProvider.MachineType = infrastructure.MachineType(cmd.MachineType)
+		cloudVM.Spec.ForProvider.MachineType = infrastructure.NewMachineType(cmd.MachineType)
 	}
 
 	if cmd.Hostname != "" {

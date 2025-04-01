@@ -114,14 +114,9 @@ func (cmd *mySQLCmd) newMySQL(namespace string) *storage.MySQL {
 // ApplicationKongVars returns all variables which are used in the application
 // create command
 func MySQLKongVars() kong.Vars {
-	vmTypes := make([]string, len(storage.MySQLMachineTypes))
-	for i, machineType := range storage.MySQLMachineTypes {
-		vmTypes[i] = string(machineType)
-	}
-
 	result := make(kong.Vars)
-	result["mysql_machine_types"] = strings.Join(vmTypes, ", ")
-	result["mysql_machine_default"] = string(storage.MySQLMachineTypeDefault)
+	result["mysql_machine_types"] = strings.Join(mtStringSlice(storage.MySQLMachineTypes), ", ")
+	result["mysql_machine_default"] = storage.MySQLMachineTypeDefault.String()
 	result["mysql_location_options"] = strings.Join(storage.MySQLLocationOptions, ", ")
 	result["mysql_location_default"] = string(storage.MySQLLocationDefault)
 	result["mysql_user"] = string(storage.MySQLUser)
@@ -133,4 +128,12 @@ func MySQLKongVars() kong.Vars {
 	result["mysql_transaction_isolation"] = string(storage.MySQLTransactionIsolationDefault)
 	result["mysql_backup_retention_days"] = fmt.Sprintf("%d", storage.MySQLBackupRetentionDaysDefault)
 	return result
+}
+
+func mtStringSlice(machineTypes []infra.MachineType) []string {
+	types := make([]string, len(machineTypes))
+	for i, machineType := range storage.MySQLMachineTypes {
+		types[i] = machineType.String()
+	}
+	return types
 }

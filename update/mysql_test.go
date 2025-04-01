@@ -2,9 +2,9 @@ package update
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
@@ -28,14 +28,14 @@ func TestMySQL(t *testing.T) {
 		},
 		{
 			name:   "increase-machineType",
-			update: mySQLCmd{MachineType: ptr.To(infra.MachineType("nine-db-prod-s"))},
-			want:   storage.MySQLParameters{MachineType: infra.MachineType("nine-db-prod-s")},
+			update: mySQLCmd{MachineType: ptr.To(infra.MachineTypeNineDBM)},
+			want:   storage.MySQLParameters{MachineType: infra.MachineTypeNineDBM},
 		},
 		{
 			name:   "decrease-machineType",
-			create: storage.MySQLParameters{MachineType: infra.MachineType("nine-db-prod-m")},
-			update: mySQLCmd{MachineType: ptr.To(infra.MachineType("nine-db-prod-s"))},
-			want:   storage.MySQLParameters{MachineType: infra.MachineType("nine-db-prod-s")},
+			create: storage.MySQLParameters{MachineType: infra.MachineTypeNineDBM},
+			update: mySQLCmd{MachineType: ptr.To(infra.MachineTypeNineDBS)},
+			want:   storage.MySQLParameters{MachineType: infra.MachineTypeNineDBS},
 		},
 		{
 			name:   "sqlMode-no-mode-set-initially",
@@ -92,8 +92,8 @@ func TestMySQL(t *testing.T) {
 		{
 			name:   "multi-update",
 			create: storage.MySQLParameters{AllowedCIDRs: []meta.IPv4CIDR{"0.0.0.0/0"}},
-			update: mySQLCmd{MachineType: ptr.To(infra.MachineType("nine-db-prod-s"))},
-			want:   storage.MySQLParameters{MachineType: infra.MachineType("nine-db-prod-s"), AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
+			update: mySQLCmd{MachineType: ptr.To(infra.MachineTypeNineDBS)},
+			want:   storage.MySQLParameters{MachineType: infra.MachineTypeNineDBS, AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
 		},
 	}
 	for _, tt := range tests {
@@ -120,7 +120,7 @@ func TestMySQL(t *testing.T) {
 				t.Fatalf("expected mysql to exist, got: %s", err)
 			}
 
-			if !reflect.DeepEqual(updated.Spec.ForProvider, tt.want) {
+			if !cmp.Equal(updated.Spec.ForProvider, tt.want) {
 				t.Fatalf("expected mysql.Spec.ForProvider = %v, got: %v", updated.Spec.ForProvider, tt.want)
 			}
 		})

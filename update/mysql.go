@@ -57,6 +57,7 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
 
 func (cmd *mySQLCmd) applyUpdates(mysql *storage.MySQL) {
 	if cmd.MachineType != nil {
+		fmt.Println("updating to", cmd.MachineType.String())
 		mysql.Spec.ForProvider.MachineType = *cmd.MachineType
 	}
 	if cmd.AllowedCidrs != nil {

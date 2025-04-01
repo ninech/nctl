@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
@@ -113,7 +114,7 @@ func TestMySQL(t *testing.T) {
 				return
 			}
 
-			require.Equal(t, tt.want, created.Spec.ForProvider)
+			require.True(t, cmp.Equal(tt.want, created.Spec.ForProvider))
 		})
 	}
 }
