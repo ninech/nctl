@@ -17,7 +17,7 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
-	github.com/gorilla/websocket v1.5.1
+	github.com/gorilla/websocket v1.5.3
 	github.com/grafana/dskit v0.0.0-20240403100540-1435abf0da58
 	github.com/grafana/loki v1.6.2-0.20240110103520-24fa648893d1
 	github.com/hashicorp/go-multierror v1.1.1
