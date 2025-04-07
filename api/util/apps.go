@@ -146,18 +146,6 @@ func GitAuthFromApp(ctx context.Context, client *api.Client, app *apps.Applicati
 		return auth, nil
 	}
 
-	if len(app.Spec.ForProvider.Git.Auth.Username) != 0 {
-		auth.Username = &app.Spec.ForProvider.Git.Auth.Username
-	}
-
-	if len(app.Spec.ForProvider.Git.Auth.Password) != 0 {
-		auth.Password = &app.Spec.ForProvider.Git.Auth.Password
-	}
-
-	if len(app.Spec.ForProvider.Git.Auth.SSHPrivateKey) != 0 {
-		auth.SSHPrivateKey = &app.Spec.ForProvider.Git.Auth.SSHPrivateKey
-	}
-
 	if app.Spec.ForProvider.Git.Auth.FromSecret == nil {
 		return auth, nil
 	}
