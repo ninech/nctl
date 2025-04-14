@@ -75,11 +75,12 @@ func (cmd *releasesCmd) printReleases(releases []apps.Release, get *Cmd, header 
 		// by the time a release is created, we should probably still check it.
 
 		replicas := ""
-		if r.Spec.ForProvider.Config.Replicas != nil {
-			replicas = strconv.Itoa(int(*r.Spec.ForProvider.Config.Replicas))
+		cfg := r.Spec.ForProvider.Configuration.WithoutOrigin()
+		if cfg.Replicas != nil {
+			replicas = strconv.Itoa(int(*cfg.Replicas))
 		}
-		workerJobs := strconv.Itoa(len(r.Spec.ForProvider.Config.WorkerJobs))
-		scheduledJobs := strconv.Itoa(len(r.Spec.ForProvider.Config.ScheduledJobs))
+		workerJobs := strconv.Itoa(len(cfg.WorkerJobs))
+		scheduledJobs := strconv.Itoa(len(cfg.ScheduledJobs))
 
 		get.writeTabRow(
 			w,
@@ -87,7 +88,7 @@ func (cmd *releasesCmd) printReleases(releases []apps.Release, get *Cmd, header 
 			r.ObjectMeta.Name,
 			r.Spec.ForProvider.Build.Name,
 			r.ObjectMeta.Labels[util.ApplicationNameLabel],
-			string(r.Spec.ForProvider.Config.Size),
+			string(cfg.Size),
 			replicas,
 			workerJobs,
 			scheduledJobs,
