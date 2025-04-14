@@ -77,10 +77,12 @@ type workerJob struct {
 }
 
 type scheduledJob struct {
-	Command  string  `help:"Command to execute to start the scheduled job." placeholder:"\"bundle exec rails runner\""`
-	Name     string  `help:"Name of the scheduled job job to add." placeholder:"scheduled-1"`
-	Size     *string `help:"Size (resources) of the scheduled job (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
-	Schedule string  `help:"Cron notation string for the scheduled job (defaults to \"* * * * *\")." placeholder:"* * * * *"`
+	Command  string        `help:"Command to execute to start the scheduled job." placeholder:"\"bundle exec rails runner\""`
+	Name     string        `help:"Name of the scheduled job job to add." placeholder:"scheduled-1"`
+	Size     *string       `help:"Size (resources) of the scheduled job (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
+	Schedule string        `help:"Cron notation string for the scheduled job (defaults to \"* * * * *\")." placeholder:"* * * * *"`
+	Retries  int32         `default:"${app_default_scheduled_job_retries}" help:"How many times the job will be restarted on failure. Default is ${app_default_scheduled_job_retries} and maximum 5."`
+	Timeout  time.Duration `default:"${app_default_scheduled_job_timeout}" help:"Timeout of the job. Default is ${app_default_scheduled_job_timeout}, minimum is 1 minute and maximum is 30 minutes."`
 }
 
 type dockerfileBuild struct {
@@ -308,6 +310,10 @@ func (app *applicationCmd) config() apps.Config {
 
 	if len(app.ScheduledJob.Command) != 0 && len(app.ScheduledJob.Name) != 0 && len(app.ScheduledJob.Schedule) != 0 {
 		scheduledJob := apps.ScheduledJob{
+			FiniteJob: apps.FiniteJob{
+				Retries: &app.ScheduledJob.Retries,
+				Timeout: &metav1.Duration{Duration: app.ScheduledJob.Timeout},
+			},
 			Job: apps.Job{
 				Name:    app.ScheduledJob.Name,
 				Command: app.ScheduledJob.Command,
@@ -648,6 +654,8 @@ func ApplicationKongVars() (kong.Vars, error) {
 
 	result["app_default_deploy_job_timeout"] = "5m"
 	result["app_default_deploy_job_retries"] = "3"
+	result["app_default_scheduled_job_timeout"] = "5m"
+	result["app_default_scheduled_job_retries"] = "0"
 	result["app_language_help"] = "Language specifies which language your app is. " +
 		"If left empty, deploio will detect the language automatically. "
 	result["app_dockerfile_enable_help"] = "Enable Dockerfile build (Beta) instead of the automatic " +
