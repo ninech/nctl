@@ -191,7 +191,7 @@ func printDNSDetailsTabRow(items []util.DNSDetail, get *Cmd, out io.Writer) erro
 }
 
 func sizeForWorkerJob(release *apps.Release, workerJobName string) *apps.ApplicationSize {
-	for _, wj := range release.Spec.ForProvider.Config.WorkerJobs {
+	for _, wj := range release.Spec.ForProvider.Configuration.WithoutOrigin().WorkerJobs {
 		if wj.Name == workerJobName {
 			return wj.Size
 		}
@@ -235,7 +235,7 @@ func (cmd *applicationsCmd) printStats(ctx context.Context, c *api.Client, appLi
 		}
 
 		var observations []statsObservation
-		appSize := rel.Spec.ForProvider.Config.Size
+		appSize := rel.Spec.ForProvider.Configuration.WithoutOrigin().Size
 
 		// we first gather the normal application replicas
 		for _, appReplica := range rel.Status.AtProvider.ReplicaObservation {

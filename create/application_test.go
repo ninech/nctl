@@ -498,11 +498,9 @@ func TestApplicationWait(t *testing.T) {
 		},
 		Spec: apps.ReleaseSpec{
 			ForProvider: apps.ReleaseParameters{
-				Configuration: &apps.FieldOriginConfig{
-					EnableBasicAuth: &apps.OriginBool{
-						Value: true,
-					},
-				},
+				Configuration: apps.Config{
+					EnableBasicAuth: ptr.To(true),
+				}.WithOrigin(apps.ConfigOriginApplication),
 			},
 		},
 	}

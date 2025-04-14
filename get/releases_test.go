@@ -229,11 +229,11 @@ func newRelease(
 					Repository: "nginx",
 					Tag:        "stable-alpine",
 				},
-				Config: apps.Config{
+				Configuration: apps.Config{
 					Size:     test.AppMicro,
 					Replicas: ptr.To(int32(1)),
 					Port:     ptr.To(int32(8080)),
-				},
+				}.WithOrigin(apps.ConfigOriginApplication),
 
 				// we always have at least 2 hosts here
 				VerifiedHosts: []string{

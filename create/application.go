@@ -551,9 +551,6 @@ func latestReleaseHasBasicAuthEnabled(ctx context.Context, c runtimeclient.Reade
 	if err := c.Get(ctx, types.NamespacedName{Name: app.Status.AtProvider.LatestRelease, Namespace: app.Namespace}, release); err != nil {
 		return false, err
 	}
-	if release.Spec.ForProvider.Configuration == nil {
-		return false, nil
-	}
 	config := release.Spec.ForProvider.Configuration
 	if config.EnableBasicAuth == nil {
 		return false, nil
