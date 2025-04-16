@@ -85,32 +85,19 @@ func TestApplication(t *testing.T) {
 					SubPath:  "/my/app",
 					Revision: "superbug",
 				},
-				Size:                ptr.To("mini"),
+				baseConfig:          newBaseConfigCmdAllFields(),
 				Hosts:               []string{"custom.example.org", "custom2.example.org"},
-				Port:                ptr.To(int32(1337)),
-				Replicas:            ptr.To(int32(42)),
-				BasicAuth:           ptr.To(false),
-				Env:                 map[string]string{"hello": "world"},
 				BuildEnv:            map[string]string{"BP_GO_TARGETS": "./cmd/web-server"},
-				DeployJob:           deployJob{Command: "date", Name: "print-date", Retries: 2, Timeout: time.Minute},
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				assertBaseConfig(t, cmd.baseConfig, app.Spec.ForProvider.Config)
 				assert.Equal(t, cmd.Name, app.Name)
 				assert.Equal(t, cmd.Git.URL, app.Spec.ForProvider.Git.URL)
 				assert.Equal(t, cmd.Git.SubPath, app.Spec.ForProvider.Git.SubPath)
 				assert.Equal(t, cmd.Git.Revision, app.Spec.ForProvider.Git.Revision)
 				assert.Equal(t, cmd.Hosts, app.Spec.ForProvider.Hosts)
-				assert.Equal(t, apps.ApplicationSize(*cmd.Size), app.Spec.ForProvider.Config.Size)
-				assert.Equal(t, *cmd.Port, *app.Spec.ForProvider.Config.Port)
-				assert.Equal(t, *cmd.Replicas, *app.Spec.ForProvider.Config.Replicas)
-				assert.Equal(t, *cmd.BasicAuth, *app.Spec.ForProvider.Config.EnableBasicAuth)
-				assert.Equal(t, util.EnvVarsFromMap(cmd.Env), app.Spec.ForProvider.Config.Env)
 				assert.Equal(t, util.EnvVarsFromMap(cmd.BuildEnv), app.Spec.ForProvider.BuildEnv)
-				assert.Equal(t, cmd.DeployJob.Command, app.Spec.ForProvider.Config.DeployJob.Command)
-				assert.Equal(t, cmd.DeployJob.Name, app.Spec.ForProvider.Config.DeployJob.Name)
-				assert.Equal(t, cmd.DeployJob.Timeout, app.Spec.ForProvider.Config.DeployJob.Timeout.Duration)
-				assert.Equal(t, cmd.DeployJob.Retries, *app.Spec.ForProvider.Config.DeployJob.Retries)
 				assert.Nil(t, app.Spec.ForProvider.Git.Auth)
 			},
 		},
@@ -120,14 +107,15 @@ func TestApplication(t *testing.T) {
 					Wait: false,
 					Name: "basic-auth",
 				},
-				Size:                ptr.To("mini"),
-				BasicAuth:           ptr.To(true),
+				baseConfig: baseConfig{
+					Size:      ptr.To("mini"),
+					BasicAuth: ptr.To(true),
+				},
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				assertBaseConfig(t, cmd.baseConfig, app.Spec.ForProvider.Config)
 				assert.Equal(t, cmd.Name, app.Name)
-				assert.Equal(t, apps.ApplicationSize(*cmd.Size), app.Spec.ForProvider.Config.Size)
-				assert.Equal(t, *cmd.BasicAuth, *app.Spec.ForProvider.Config.EnableBasicAuth)
 			},
 		},
 		"with user/pass git auth": {
@@ -144,6 +132,7 @@ func TestApplication(t *testing.T) {
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				assertBaseConfig(t, cmd.baseConfig, app.Spec.ForProvider.Config)
 				auth := util.GitAuth{Username: cmd.Git.Username, Password: cmd.Git.Password}
 				authSecret := auth.Secret(app)
 				if err := apiClient.Get(ctx, api.ObjectName(authSecret), authSecret); err != nil {
@@ -165,10 +154,13 @@ func TestApplication(t *testing.T) {
 					Wait: false,
 					Name: "ssh-key-auth",
 				},
-				Size:                ptr.To("mini"),
+				baseConfig: baseConfig{
+					Size: ptr.To("mini"),
+				},
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				assertBaseConfig(t, cmd.baseConfig, app.Spec.ForProvider.Config)
 				auth := util.GitAuth{SSHPrivateKey: cmd.Git.SSHPrivateKey}
 				authSecret := auth.Secret(app)
 				if err := apiClient.Get(ctx, api.ObjectName(authSecret), authSecret); err != nil {
@@ -189,10 +181,13 @@ func TestApplication(t *testing.T) {
 					Wait: false,
 					Name: "ssh-key-auth-ed25519",
 				},
-				Size:                ptr.To("mini"),
+				baseConfig: baseConfig{
+					Size: ptr.To("mini"),
+				},
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				assertBaseConfig(t, cmd.baseConfig, app.Spec.ForProvider.Config)
 				auth := util.GitAuth{SSHPrivateKey: cmd.Git.SSHPrivateKey}
 				authSecret := auth.Secret(app)
 				if err := apiClient.Get(ctx, api.ObjectName(authSecret), authSecret); err != nil {
@@ -213,10 +208,13 @@ func TestApplication(t *testing.T) {
 					Wait: false,
 					Name: "ssh-key-auth-from-file",
 				},
-				Size:                ptr.To("mini"),
+				baseConfig: baseConfig{
+					Size: ptr.To("mini"),
+				},
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				assertBaseConfig(t, cmd.baseConfig, app.Spec.ForProvider.Config)
 				auth := util.GitAuth{SSHPrivateKey: ptr.To("notused")}
 				authSecret := auth.Secret(app)
 				if err := apiClient.Get(ctx, api.ObjectName(authSecret), authSecret); err != nil {
@@ -237,10 +235,13 @@ func TestApplication(t *testing.T) {
 					Wait: false,
 					Name: "ssh-key-auth-from-file-ed25519",
 				},
-				Size:                ptr.To("mini"),
+				baseConfig: baseConfig{
+					Size: ptr.To("mini"),
+				},
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				assertBaseConfig(t, cmd.baseConfig, app.Spec.ForProvider.Config)
 				auth := util.GitAuth{SSHPrivateKey: ptr.To("notused")}
 				authSecret := auth.Secret(app)
 				if err := apiClient.Get(ctx, api.ObjectName(authSecret), authSecret); err != nil {
@@ -261,11 +262,14 @@ func TestApplication(t *testing.T) {
 					Wait: false,
 					Name: "ssh-key-auth-non-valid",
 				},
-				Size:                ptr.To("mini"),
+				baseConfig: baseConfig{
+					Size: ptr.To("mini"),
+				},
 				SkipRepoAccessCheck: true,
 			},
 			errorExpected: true,
 		},
+		// TODO: remove local job validation logic in favor of webhook-based CRD validation
 		"deploy job empty command": {
 			cmd: applicationCmd{
 				Git: gitConfig{
@@ -275,14 +279,17 @@ func TestApplication(t *testing.T) {
 					Wait: false,
 					Name: "deploy-job-empty-command",
 				},
-				Size:                ptr.To("mini"),
-				DeployJob:           deployJob{Command: "", Name: "print-date", Retries: 2, Timeout: time.Minute},
+				baseConfig: baseConfig{
+					Size:      ptr.To("mini"),
+					DeployJob: deployJob{Command: "", Name: "print-date", Retries: 2, Timeout: time.Minute},
+				},
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
-				assert.Nil(t, app.Spec.ForProvider.Config.DeployJob)
+				assertBaseConfig(t, cmd.baseConfig, app.Spec.ForProvider.Config)
 			},
 		},
+		// TODO: remove local job validation logic in favor of webhook-based CRD validation
 		"deploy job empty name": {
 			cmd: applicationCmd{
 				Git: gitConfig{
@@ -292,12 +299,14 @@ func TestApplication(t *testing.T) {
 					Wait: false,
 					Name: "deploy-job-empty-name",
 				},
-				Size:                ptr.To("mini"),
-				DeployJob:           deployJob{Command: "date", Name: "", Retries: 2, Timeout: time.Minute},
+				baseConfig: baseConfig{
+					Size:      ptr.To("mini"),
+					DeployJob: deployJob{Command: "date", Name: "", Retries: 2, Timeout: time.Minute},
+				},
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
-				assert.Nil(t, app.Spec.ForProvider.Config.DeployJob)
+				assertBaseConfig(t, cmd.baseConfig, app.Spec.ForProvider.Config)
 			},
 		},
 		"git-information-service happy path": {
@@ -311,7 +320,9 @@ func TestApplication(t *testing.T) {
 					Wait: false,
 					Name: "git-information-happy-path",
 				},
-				Size: ptr.To("mini"),
+				baseConfig: baseConfig{
+					Size: ptr.To("mini"),
+				},
 			},
 			gitInformationServiceResponse: test.GitInformationServiceResponse{
 				Code: 200,
@@ -328,11 +339,11 @@ func TestApplication(t *testing.T) {
 				},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				assertBaseConfig(t, cmd.baseConfig, app.Spec.ForProvider.Config)
 				assert.Equal(t, cmd.Name, app.Name)
 				assert.Equal(t, cmd.Git.URL, app.Spec.ForProvider.Git.URL)
 				assert.Equal(t, cmd.Git.SubPath, app.Spec.ForProvider.Git.SubPath)
 				assert.Equal(t, cmd.Git.Revision, app.Spec.ForProvider.Git.Revision)
-				assert.Equal(t, apps.ApplicationSize(*cmd.Size), app.Spec.ForProvider.Config.Size)
 				assert.Nil(t, app.Spec.ForProvider.Git.Auth)
 			},
 		},
@@ -347,7 +358,9 @@ func TestApplication(t *testing.T) {
 					Wait: false,
 					Name: "git-information-errors",
 				},
-				Size: ptr.To("mini"),
+				baseConfig: baseConfig{
+					Size: ptr.To("mini"),
+				},
 			},
 			gitInformationServiceResponse: test.GitInformationServiceResponse{
 				Code: 200,
@@ -368,7 +381,9 @@ func TestApplication(t *testing.T) {
 					Wait: false,
 					Name: "git-information-unknown-revision",
 				},
-				Size: ptr.To("mini"),
+				baseConfig: baseConfig{
+					Size: ptr.To("mini"),
+				},
 			},
 			gitInformationServiceResponse: test.GitInformationServiceResponse{
 				Code: 200,
@@ -397,7 +412,9 @@ func TestApplication(t *testing.T) {
 					Wait: false,
 					Name: "git-information-unknown-revision",
 				},
-				Size: ptr.To("mini"),
+				baseConfig: baseConfig{
+					Size: ptr.To("mini"),
+				},
 			},
 			gitInformationServiceResponse: test.GitInformationServiceResponse{
 				Code: 501,
@@ -416,7 +433,9 @@ func TestApplication(t *testing.T) {
 					Wait: false,
 					Name: "git-information-update-url-to-https",
 				},
-				Size: ptr.To("mini"),
+				baseConfig: baseConfig{
+					Size: ptr.To("mini"),
+				},
 			},
 			gitInformationServiceResponse: test.GitInformationServiceResponse{
 				Code: 200,
@@ -432,11 +451,11 @@ func TestApplication(t *testing.T) {
 				},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				assertBaseConfig(t, cmd.baseConfig, app.Spec.ForProvider.Config)
 				assert.Equal(t, cmd.Name, app.Name)
 				assert.Equal(t, "https://github.com/ninech/doesnotexist.git", app.Spec.ForProvider.Git.URL)
 				assert.Equal(t, cmd.Git.SubPath, app.Spec.ForProvider.Git.SubPath)
 				assert.Equal(t, cmd.Git.Revision, app.Spec.ForProvider.Git.Revision)
-				assert.Equal(t, apps.ApplicationSize(*cmd.Size), app.Spec.ForProvider.Config.Size)
 				assert.Nil(t, app.Spec.ForProvider.Git.Auth)
 			},
 		},
@@ -466,6 +485,32 @@ func TestApplication(t *testing.T) {
 	}
 }
 
+func newBaseConfigCmdAllFields() baseConfig {
+	return baseConfig{
+		Size:      ptr.To(string(test.AppMini)),
+		Port:      ptr.To(int32(1337)),
+		Replicas:  ptr.To(int32(42)),
+		BasicAuth: ptr.To(true),
+		Env:       map[string]string{"key1": "val1"},
+		DeployJob: deployJob{
+			Command: "exit 0", Name: "exit",
+			Retries: 1, Timeout: time.Minute * 5,
+		},
+		WorkerJob: workerJob{
+			Name:    "do-stuff-1",
+			Command: "echo stuff1",
+			Size:    ptr.To(string(test.AppStandard1)),
+		},
+		ScheduledJob: scheduledJob{
+			Command:  "sleep 5; date",
+			Name:     "scheduled-1",
+			Size:     ptr.To(string(test.AppStandard1)),
+			Schedule: "* * * * *",
+			Retries:  1, Timeout: time.Minute * 5,
+		},
+	}
+}
+
 func TestApplicationWait(t *testing.T) {
 	cmd := applicationCmd{
 		resourceCmd: resourceCmd{
@@ -473,7 +518,9 @@ func TestApplicationWait(t *testing.T) {
 			WaitTimeout: time.Second * 5,
 			Name:        "some-name",
 		},
-		BasicAuth:           ptr.To(true),
+		baseConfig: baseConfig{
+			BasicAuth: ptr.To(true),
+		},
 		SkipRepoAccessCheck: true,
 	}
 	project := test.DefaultProject

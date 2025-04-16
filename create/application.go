@@ -35,22 +35,25 @@ const logPrintTimeout = 10 * time.Second
 // update/application.go.
 type applicationCmd struct {
 	resourceCmd
+	baseConfig
 	Git                      gitConfig         `embed:"" prefix:"git-"`
-	Size                     *string           `help:"Size of the app (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
-	Port                     *int32            `help:"Port the app is listening on (defaults to ${app_default_port})." placeholder:"${app_default_port}"`
-	Replicas                 *int32            `help:"Amount of replicas of the running app (defaults to ${app_default_replicas})." placeholder:"${app_default_replicas}"`
 	Hosts                    []string          `help:"Host names where the app can be accessed. If empty, the app will just be accessible on a generated host name on the deploio.app domain."`
-	BasicAuth                *bool             `help:"Enable/Disable basic authentication for the app (defaults to ${app_default_basic_auth})." placeholder:"${app_default_basic_auth}"`
-	Env                      map[string]string `help:"Environment variables which are passed to the app at runtime."`
 	BuildEnv                 map[string]string `help:"Environment variables which are passed to the app build process."`
-	DeployJob                deployJob         `embed:"" prefix:"deploy-job-"`
-	WorkerJob                workerJob         `embed:"" prefix:"worker-job-"`
-	ScheduledJob             scheduledJob      `embed:"" prefix:"scheduled-job-"`
 	GitInformationServiceURL string            `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
 	SkipRepoAccessCheck      bool              `help:"Skip the git repository access check" default:"false"`
 	Debug                    bool              `help:"Enable debug messages" default:"false"`
 	Language                 string            `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static," default:""`
 	DockerfileBuild          dockerfileBuild   `embed:""`
+}
+type baseConfig struct {
+	Size         *string           `help:"Size of the app (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
+	Port         *int32            `help:"Port the app is listening on (defaults to ${app_default_port})." placeholder:"${app_default_port}"`
+	Replicas     *int32            `help:"Amount of replicas of the running app (defaults to ${app_default_replicas})." placeholder:"${app_default_replicas}"`
+	BasicAuth    *bool             `help:"Enable/Disable basic authentication for the app (defaults to ${app_default_basic_auth})." placeholder:"${app_default_basic_auth}"`
+	Env          map[string]string `help:"Environment variables which are passed to the app at runtime."`
+	DeployJob    deployJob         `embed:"" prefix:"deploy-job-"`
+	WorkerJob    workerJob         `embed:"" prefix:"worker-job-"`
+	ScheduledJob scheduledJob      `embed:"" prefix:"scheduled-job-"`
 }
 
 type gitConfig struct {
@@ -273,67 +276,75 @@ func spinnerMessage(msg, icon string, sleepTime time.Duration) error {
 	return spinner.Stop()
 }
 
-func (app *applicationCmd) config() apps.Config {
-	var deployJob *apps.DeployJob
-
-	if len(app.DeployJob.Command) != 0 && len(app.DeployJob.Name) != 0 {
-		deployJob = &apps.DeployJob{
+func (job deployJob) applyUpdates(cfg *apps.Config) {
+	if len(job.Command) != 0 && len(job.Name) != 0 {
+		deployJob := &apps.DeployJob{
 			Job: apps.Job{
-				Name:    app.DeployJob.Name,
-				Command: app.DeployJob.Command,
+				Name:    job.Name,
+				Command: job.Command,
 			},
 			FiniteJob: apps.FiniteJob{
-				Retries: ptr.To(app.DeployJob.Retries),
-				Timeout: &metav1.Duration{Duration: app.DeployJob.Timeout},
+				Retries: ptr.To(job.Retries),
+				Timeout: &metav1.Duration{Duration: job.Timeout},
 			},
 		}
+		cfg.DeployJob = deployJob
 	}
+}
 
-	config := apps.Config{
-		EnableBasicAuth: app.BasicAuth,
-		Env:             util.EnvVarsFromMap(app.Env),
-		DeployJob:       deployJob,
-	}
-
-	if len(app.WorkerJob.Command) != 0 && len(app.WorkerJob.Name) != 0 {
+func (job workerJob) applyUpdates(config *apps.Config) {
+	if len(job.Command) != 0 && len(job.Name) != 0 {
 		workerJob := apps.WorkerJob{
 			Job: apps.Job{
-				Name:    app.WorkerJob.Name,
-				Command: app.WorkerJob.Command,
+				Name:    job.Name,
+				Command: job.Command,
 			},
 		}
-		if app.WorkerJob.Size != nil {
-			workerJob.Size = ptr.To(apps.ApplicationSize(*app.WorkerJob.Size))
+		if job.Size != nil {
+			workerJob.Size = ptr.To(apps.ApplicationSize(*job.Size))
 		}
 		config.WorkerJobs = append(config.WorkerJobs, workerJob)
 	}
+}
 
-	if len(app.ScheduledJob.Command) != 0 && len(app.ScheduledJob.Name) != 0 && len(app.ScheduledJob.Schedule) != 0 {
+func (job scheduledJob) applyUpdates(config *apps.Config) {
+	if len(job.Command) != 0 && len(job.Name) != 0 && len(job.Schedule) != 0 {
 		scheduledJob := apps.ScheduledJob{
 			FiniteJob: apps.FiniteJob{
-				Retries: &app.ScheduledJob.Retries,
-				Timeout: &metav1.Duration{Duration: app.ScheduledJob.Timeout},
+				Retries: &job.Retries,
+				Timeout: &metav1.Duration{Duration: job.Timeout},
 			},
 			Job: apps.Job{
-				Name:    app.ScheduledJob.Name,
-				Command: app.ScheduledJob.Command,
+				Name:    job.Name,
+				Command: job.Command,
 			},
-			Schedule: app.ScheduledJob.Schedule,
+			Schedule: job.Schedule,
 		}
-		if app.ScheduledJob.Size != nil {
-			scheduledJob.Size = ptr.To(apps.ApplicationSize(*app.ScheduledJob.Size))
+		if job.Size != nil {
+			scheduledJob.Size = ptr.To(apps.ApplicationSize(*job.Size))
 		}
 		config.ScheduledJobs = append(config.ScheduledJobs, scheduledJob)
 	}
+}
 
-	if app.Size != nil {
-		config.Size = apps.ApplicationSize(*app.Size)
+func newConfig(bc baseConfig) apps.Config {
+	config := apps.Config{
+		EnableBasicAuth: bc.BasicAuth,
+		Env:             util.EnvVarsFromMap(bc.Env),
 	}
-	if app.Port != nil {
-		config.Port = app.Port
+
+	bc.DeployJob.applyUpdates(&config)
+	bc.WorkerJob.applyUpdates(&config)
+	bc.ScheduledJob.applyUpdates(&config)
+
+	if bc.Size != nil {
+		config.Size = apps.ApplicationSize(*bc.Size)
 	}
-	if app.Replicas != nil {
-		config.Replicas = app.Replicas
+	if bc.Port != nil {
+		config.Port = bc.Port
+	}
+	if bc.Replicas != nil {
+		config.Replicas = bc.Replicas
 	}
 	return config
 }
@@ -357,7 +368,7 @@ func (app *applicationCmd) newApplication(project string) *apps.Application {
 					},
 				},
 				Hosts:    app.Hosts,
-				Config:   app.config(),
+				Config:   newConfig(app.baseConfig),
 				BuildEnv: util.EnvVarsFromMap(app.BuildEnv),
 				DockerfileBuild: apps.DockerfileBuild{
 					Enabled:        app.DockerfileBuild.Enabled,
