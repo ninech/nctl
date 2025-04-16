@@ -28,24 +28,29 @@ func TestProjectConfig(t *testing.T) {
 	}{
 		"all fields set": {
 			cmd: configCmd{
-				Size:      string(test.AppMini),
-				Port:      ptr.To(int32(1337)),
-				Replicas:  ptr.To(int32(42)),
-				Env:       &map[string]string{"key1": "val1"},
-				BasicAuth: ptr.To(true),
-				DeployJob: deployJob{
-					Command: "exit 0", Name: "exit",
-					Retries: 1, Timeout: time.Minute * 5,
+				baseConfig: baseConfig{
+					// Size:      string(test.AppMini),
+					Size:     ptr.To(string(test.AppMini)),
+					Port:     ptr.To(int32(1337)),
+					Replicas: ptr.To(int32(42)),
+					// Env:       &map[string]string{"key1": "val1"},Env:
+					Env:       map[string]string{"key1": "val1"},
+					BasicAuth: ptr.To(true),
+					DeployJob: deployJob{
+						Command: "exit 0", Name: "exit",
+						Retries: 1, Timeout: time.Minute * 5,
+					},
+					// TODO: add Worker and ScheduledJob to the test
 				},
 			},
 			project: "namespace-1",
 			checkConfig: func(t *testing.T, cmd configCmd, cfg *apps.ProjectConfig) {
 				assert.Equal(t, apiClient.Project, cfg.Name)
-				assert.Equal(t, apps.ApplicationSize(cmd.Size), cfg.Spec.ForProvider.Config.Size)
+				assert.Equal(t, apps.ApplicationSize(*cmd.Size), cfg.Spec.ForProvider.Config.Size)
 				assert.Equal(t, *cmd.Port, *cfg.Spec.ForProvider.Config.Port)
 				assert.Equal(t, *cmd.Replicas, *cfg.Spec.ForProvider.Config.Replicas)
 				assert.Equal(t, *cmd.BasicAuth, *cfg.Spec.ForProvider.Config.EnableBasicAuth)
-				assert.Equal(t, util.EnvVarsFromMap(*cmd.Env), cfg.Spec.ForProvider.Config.Env)
+				assert.Equal(t, util.EnvVarsFromMap(cmd.Env), cfg.Spec.ForProvider.Config.Env)
 				assert.Equal(t, cmd.DeployJob.Command, cfg.Spec.ForProvider.Config.DeployJob.Command)
 				assert.Equal(t, cmd.DeployJob.Name, cfg.Spec.ForProvider.Config.DeployJob.Name)
 				assert.Equal(t, cmd.DeployJob.Timeout, cfg.Spec.ForProvider.Config.DeployJob.Timeout.Duration)
@@ -54,13 +59,15 @@ func TestProjectConfig(t *testing.T) {
 		},
 		"some fields not set": {
 			cmd: configCmd{
-				Size:     string(test.AppMicro),
-				Replicas: ptr.To(int32(1)),
+				baseConfig: baseConfig{
+					Size:     ptr.To(string(test.AppMicro)),
+					Replicas: ptr.To(int32(1)),
+				},
 			},
 			project: "namespace-2",
 			checkConfig: func(t *testing.T, cmd configCmd, cfg *apps.ProjectConfig) {
 				assert.Equal(t, apiClient.Project, cfg.Name)
-				assert.Equal(t, apps.ApplicationSize(cmd.Size), cfg.Spec.ForProvider.Config.Size)
+				assert.Equal(t, apps.ApplicationSize(*cmd.Size), cfg.Spec.ForProvider.Config.Size)
 				assert.Nil(t, cfg.Spec.ForProvider.Config.Port)
 				assert.Nil(t, cfg.Spec.ForProvider.Config.EnableBasicAuth)
 				assert.Equal(t, *cmd.Replicas, *cfg.Spec.ForProvider.Config.Replicas)
