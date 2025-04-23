@@ -589,6 +589,8 @@ github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f/go.mod h1:ZdcZmHo+
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/ninech/apis v0.0.0-20250414123537-0c072cefe5dc h1:ORI0kIZI0IzlrxRKVQUIQ7goWXxjxEsmnFJ2lOUgXUQ=
 github.com/ninech/apis v0.0.0-20250414123537-0c072cefe5dc/go.mod h1:6srtlYi3nj8GRxQkbhvSbanIBc9vsoPLFOp5VQzNNhM=
+github.com/ninech/apis v0.0.0-20250422123651-106683d37e60 h1:XnH0Xlt5VLPx3N4CSNh7Uo55jj3dscICxsvlL1WUEuY=
+github.com/ninech/apis v0.0.0-20250422123651-106683d37e60/go.mod h1:6srtlYi3nj8GRxQkbhvSbanIBc9vsoPLFOp5VQzNNhM=
 github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
 github.com/oklog/ulid v1.3.1 h1:EGfNDEx6MqHz8B3uNV6QAib1UR2Lm97sHi3ocA6ESJ4=
