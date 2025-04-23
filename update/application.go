@@ -49,6 +49,7 @@ type applicationCmd struct {
 	DeleteScheduledJob       *string         `help:"Delete a scheduled job by name"`
 	RetryRelease             *bool           `help:"Retries release for the application." placeholder:"false"`
 	RetryBuild               *bool           `help:"Retries build for the application if set to true." placeholder:"false"`
+	Pause                    *bool           `help:"Pauses the application if set to true. Stops all costs." placeholder:"false"`
 	GitInformationServiceURL string          `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
 	SkipRepoAccessCheck      bool            `help:"Skip the git repository access check" default:"false"`
 	Debug                    bool            `help:"Enable debug messages" default:"false"`
@@ -287,6 +288,10 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 		buildDelEnv = *cmd.DeleteBuildEnv
 	}
 	app.Spec.ForProvider.BuildEnv = util.UpdateEnvVars(app.Spec.ForProvider.BuildEnv, buildEnv, buildDelEnv)
+
+	if cmd.Pause != nil && *cmd.Pause {
+		app.Spec.ForProvider.Paused = *cmd.Pause
+	}
 
 	if cmd.DockerfileBuild.Path != nil {
 		app.Spec.ForProvider.DockerfileBuild.DockerfilePath = *cmd.DockerfileBuild.Path
