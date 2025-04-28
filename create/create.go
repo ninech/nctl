@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/alecthomas/kong"
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/lucasepe/codename"
@@ -18,6 +19,8 @@ import (
 	"k8s.io/client-go/util/retry"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+type WithKongVars interface{ KongVars() kong.Vars }
 
 type Cmd struct {
 	Filename            string               `short:"f" help:"Create any resource from a yaml or json file." predictor:"file"`
@@ -35,6 +38,12 @@ type Cmd struct {
 
 type resourceCmd struct {
 	Name        string        `arg:"" help:"Name of the new resource. A random name is generated if omitted." default:""`
+	Wait        bool          `default:"true" help:"Wait until resource is fully created."`
+	WaitTimeout time.Duration `default:"30m" help:"Duration to wait for resource getting ready. Only relevant if wait is set."`
+}
+
+// TODO: temp name for quick test
+type resourceCmd2 struct {
 	Wait        bool          `default:"true" help:"Wait until resource is fully created."`
 	WaitTimeout time.Duration `default:"30m" help:"Duration to wait for resource getting ready. Only relevant if wait is set."`
 }
@@ -253,4 +262,21 @@ func getName(name string) string {
 	}
 
 	return codename.Generate(rand.New(rand.NewSource(time.Now().UnixNano())), 0)
+}
+
+func (Cmd) KongVars() kong.Vars {
+	return kong.Vars{
+		"name_predictor": "",
+		"name_help_note": "A random name is generated if omitted.",
+		"name_default":   "",
+
+		// "app_default_size":       "M",
+		// "app_default_port":       "8080",
+		// "app_default_replicas":   "2",
+		// "app_default_basic_auth": "false",
+		// "size_hint":              ` (defaults to "M")`,
+		// "port_hint":              " (defaults to 8080)",
+		// "replicas_hint":          " (defaults to 2)",
+		// "basic_auth_hint":        " (defaults to false)",
+	}
 }

@@ -7,12 +7,14 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type projectCmd struct {
-	resourceCmd
-	DisplayName *string `default:"" help:"Display Name of the project."`
+	common.ProjectCmd
+	// resourceCmd
+	// DisplayName *string `default:"" help:"Display Name of the project."`
 }
 
 func (cmd *projectCmd) Run(ctx context.Context, client *api.Client) error {

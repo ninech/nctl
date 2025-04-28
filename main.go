@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"reflect"
 	"runtime/debug"
 	"strings"
 	"syscall"
@@ -20,6 +21,7 @@ import (
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/apply"
 	"github.com/ninech/nctl/auth"
+	"github.com/ninech/nctl/common"
 	"github.com/ninech/nctl/create"
 	"github.com/ninech/nctl/delete"
 	"github.com/ninech/nctl/exec"
@@ -63,15 +65,39 @@ var (
 	date    string
 )
 
+func varsForRoot(arg string) kong.Vars {
+	var rc rootCommand
+	rt := reflect.TypeOf(rc)
+	for i := 0; i < rt.NumField(); i++ {
+		f := rt.Field(i)
+		if strings.EqualFold(f.Name, arg) {
+			cmdPtr := reflect.New(f.Type).Interface()
+			if v, ok := cmdPtr.(common.WithKongVars); ok {
+				return v.KongVars()
+			}
+		}
+	}
+	return nil
+}
+
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	setupSignalHandler(ctx, cancel)
 
+	var vars kong.Vars
+	if len(os.Args) > 1 {
+		vars = varsForRoot(os.Args[1])
+	}
+
 	kongVars, err := kongVariables()
 	if err != nil {
 		log.Fatal(err)
 	}
+	if err := merge(kongVars, vars); err != nil {
+		log.Fatal(fmt.Errorf("error when merging kong variables: %w", err))
+	}
+
 	nctl := &rootCommand{}
 	parser := kong.Must(
 		nctl,

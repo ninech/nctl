@@ -3,10 +3,13 @@ package update
 import (
 	"context"
 
+	"github.com/alecthomas/kong"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
 )
+
+type WithKongVars interface{ KongVars() kong.Vars }
 
 type Cmd struct {
 	Application         applicationCmd   `cmd:"" group:"deplo.io" name:"application" aliases:"app,application" help:"Update an existing deplo.io Application."`
@@ -50,4 +53,22 @@ func (u *updater) Update(ctx context.Context) error {
 
 	format.PrintSuccessf("⬆️", "updated %s %q", u.kind, u.mg.GetName())
 	return nil
+}
+
+func (Cmd) KongVars() kong.Vars {
+	// blanks cancel both placeholders and hint-suffixes
+	return kong.Vars{
+		"name_predictor": "resource_name",
+		"name_help_note": "",
+		"name_default":   "",
+
+		// "app_default_size":       "",
+		// "app_default_port":       "",
+		// "app_default_replicas":   "",
+		// "app_default_basic_auth": "",
+		// "size_hint":              "",
+		// "port_hint":              "",
+		// "replicas_hint":          "",
+		// "basic_auth_hint":        "",
+	}
 }
