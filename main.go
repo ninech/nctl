@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"reflect"
 	"runtime/debug"
 	"strings"
 	"syscall"
@@ -20,6 +21,7 @@ import (
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/apply"
 	"github.com/ninech/nctl/auth"
+	"github.com/ninech/nctl/common"
 	"github.com/ninech/nctl/create"
 	"github.com/ninech/nctl/delete"
 	"github.com/ninech/nctl/exec"
@@ -63,15 +65,126 @@ var (
 	date    string
 )
 
+func varsForRoot(arg string) kong.Vars {
+	var rc rootCommand
+	rt := reflect.TypeOf(rc)
+	for i := 0; i < rt.NumField(); i++ {
+		f := rt.Field(i)
+		if strings.EqualFold(f.Name, arg) {
+			cmdPtr := reflect.New(f.Type).Interface()
+			if v, ok := cmdPtr.(common.WithKongVars); ok {
+				return v.KongVars()
+			}
+		}
+	}
+	return nil
+}
+
+// TODO: test helper. keep it and move it to internal or remove it
+func DumpKongModel(k *kong.Kong, vars kong.Vars) {
+	fmt.Printf("Vars: %#v\n\n", vars)
+	_ = kong.Visit(k.Model, func(v kong.Visitable, next kong.Next) error {
+		switch x := v.(type) {
+		case *kong.Application:
+			// Application embeds *Node, so x.Node is root
+			fmt.Printf("app  : %s\n", x.Name)
+		case *kong.Node:
+			fmt.Printf("%snode : %s (%v)\n", strings.Repeat("  ", x.Depth()), x.Path(), x.Type)
+		case *kong.Flag:
+			fmt.Printf("      flag --%s  (group %s)\n", x.Name, x.Group)
+		case *kong.Positional:
+			fmt.Printf("      arg  <%s>\n", x.Name)
+		default:
+			// For completeness; normally we won't reach this.
+			fmt.Printf("      %T\n", x)
+		}
+		return next(nil) // keep walking
+	})
+}
+
+// TODO: test helper. keep it and move it to internal or remove it
+func DumpTree(k *kong.Kong) {
+	walk(k.Model.Node, 0) // Application embeds *Node :contentReference[oaicite:0]{index=0}
+}
+
+// recursive walk
+func walk(n *kong.Node, depth int) {
+	indent := strings.Repeat("  ", depth)
+	fmt.Printf("%s- %s (%v)\n", indent, n.Name, n.Type) // node itself
+	for _, f := range n.Flags {
+		fmt.Printf("%s  --%s  %s\n", indent, f.Name, f.Summary())
+	}
+	for _, p := range n.Positional {
+		fmt.Printf("%s  <%s>  %s\n", indent, p.Name, p.Summary())
+	}
+	for _, c := range n.Children {
+		walk(c, depth+1)
+	}
+}
+
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	setupSignalHandler(ctx, cancel)
 
+	var vars kong.Vars
+	if len(os.Args) > 1 {
+		vars = varsForRoot(os.Args[1])
+	}
+
 	kongVars, err := kongVariables()
 	if err != nil {
 		log.Fatal(err)
 	}
+	if err := merge(kongVars, vars); err != nil {
+		log.Fatal(fmt.Errorf("error when merging kong variables: %w", err))
+	}
+
+	// TODO: reflection test for dynamic predictor. Remove it.
+	// createCmdType, err := format.MakeInterpolatedType(create.Cmd{}, kongVars)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// // Build a brand new "root" struct type that mirrors rootCommand, but
+	// // replaces the fieldTypes for Create or Update variants.  We reflect on
+	// // reflect.TypeOf(rootCommand{}), iterate over its fields, and for each
+	// // field and if it's create.Cmd{}s we use createCmdType instead.
+	// // Otherwise, keep f.Type as-is (Get Cmd, Auth Cmd, flags, etc).
+	// origRoot := reflect.TypeOf(rootCommand{})
+	// if origRoot.Kind() == reflect.Ptr {
+	// 	origRoot = origRoot.Elem()
+	// }
+
+	// var rootFields []reflect.StructField
+	// for i := 0; i < origRoot.NumField(); i++ {
+	// 	f := origRoot.Field(i)
+
+	// 	// Decide which Type to use for this field:
+	// 	var newType reflect.Type
+	// 	switch f.Type {
+	// 	case reflect.TypeOf(create.Cmd{}):
+	// 		newType = createCmdType
+	// 	// case reflect.TypeOf(update.Cmd{}):
+	// 	//     newType = updateCmdType
+	// 	default:
+	// 		newType = f.Type
+	// 	}
+	// 	// Reconstruct the StructField with the same Name, Tag, etc., but override Type:
+	// 	rootFields = append(rootFields, reflect.StructField{
+	// 		Name:    f.Name,
+	// 		Type:    newType,
+	// 		Tag:     f.Tag, // keep the original `cmd:"…"  help:"…"`, etc.
+	// 		PkgPath: f.PkgPath,
+	// 	})
+	// }
+	// // Now ask Go for a brand-new struct type whose fields are rootFields:
+	// rootType := reflect.StructOf(rootFields)
+	// // Instantiate a “zero value” of that new type and hand it to Kong.
+	// // Note: reflect.New(rootType) returns a *pointer* to that struct, so .Interface()
+	// // is an interface{} pointing at *<anonymous struct>{…}. Kong.Must will probably
+	// // treat that as “the CLI target” just as if you had used &rootCommand{}.
+	// nctl := reflect.New(rootType).Interface()
+
 	nctl := &rootCommand{}
 	parser := kong.Must(
 		nctl,
@@ -82,6 +195,9 @@ func main() {
 		kongVars,
 		kong.BindTo(ctx, (*context.Context)(nil)),
 	)
+	// TODO: test only. remove it
+	DumpKongModel(parser, kongVars)
+	DumpTree(parser)
 
 	resourceNamePredictor := predictor.NewResourceName(func() (*api.Client, error) {
 		// the client for the predictor requires a static token in the client config
@@ -135,6 +251,12 @@ func main() {
 
 	if strings.HasPrefix(kongCtx.Command(), format.LoginCommand) {
 		tk := &api.DefaultTokenGetter{}
+		// TODO: reflection test for dynamic predictor. Remove tihis comment.
+		// if you use format.MakeInterpolatedType() and nctl := reflect.New(rootType).Interface()
+		// Every nctl.xxx read becomes reflection boiler-plate hell!
+		// You now have to remember to rebuild every command type that contains a templated tag.
+		// Debugging anonymous, runtime-generated types is awkward :/
+		// That's a lot of moving parts just to get one tag (predictor) interpolated.
 		kongCtx.FatalIfErrorf(nctl.Auth.Login.Run(ctx, command, tk))
 		return
 	}

@@ -52,3 +52,5 @@ func TestPlaceholderInterpolationError(t *testing.T) {
 	)
 	require.Error(t, err)
 }
+
+// TODO: test for MakeInterpolatedType

@@ -9,8 +9,10 @@ import (
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
+	"github.com/ninech/nctl/common"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
+	"k8s.io/utils/ptr"
 )
 
 func TestProjects(t *testing.T) {
@@ -27,12 +29,14 @@ func TestProjects(t *testing.T) {
 	}
 
 	cmd := projectCmd{
+		ProjectCmd: common.ProjectCmd{
+			DisplayName: ptr.To("Some Display Name"),
+		},
 		resourceCmd: resourceCmd{
 			Name:        projectName,
 			Wait:        false,
 			WaitTimeout: time.Second,
 		},
-		DisplayName: "Some Display Name",
 	}
 
 	if err := cmd.Run(ctx, apiClient); err != nil {
@@ -48,7 +52,7 @@ func TestProjects(t *testing.T) {
 	}
 
 	// test if the command errors out if the project already exists
-	cmd.resourceCmd.Name = existsAlready
+	cmd.Name = existsAlready
 	if err := cmd.Run(ctx, apiClient); err == nil {
 		t.Fatal("expected an error as project already exists, but got none")
 	}
@@ -61,6 +65,7 @@ func TestProjectsConfigErrors(t *testing.T) {
 		t.Fatal(err)
 	}
 	cmd := projectCmd{
+		ProjectCmd: common.ProjectCmd{},
 		resourceCmd: resourceCmd{
 			Name:        "testproject",
 			Wait:        false,

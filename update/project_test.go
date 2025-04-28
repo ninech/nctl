@@ -6,6 +6,7 @@ import (
 
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/common"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,8 +34,12 @@ func TestProject(t *testing.T) {
 		"all fields update": {
 			orig: existingProject,
 			cmd: projectCmd{
-				resourceCmd: resourceCmd{Name: projectName},
-				DisplayName: ptr.To("some display name"),
+				ProjectCmd: common.ProjectCmd{
+					DisplayName: ptr.To("some Display Name"),
+				},
+				resourceCmd: resourceCmd{
+					Name: projectName,
+				},
 			},
 			checkProject: func(t *testing.T, cmd projectCmd, orig, updated *management.Project) {
 				assert.Equal(t, *cmd.DisplayName, updated.Spec.DisplayName)
