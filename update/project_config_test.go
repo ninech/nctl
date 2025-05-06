@@ -8,6 +8,7 @@ import (
 	"github.com/alecthomas/kong"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/create"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -261,13 +262,15 @@ func TestConfig(t *testing.T) {
 // want to test it in case this ever changes in future kong versions.
 func TestProjectConfigFlags(t *testing.T) {
 	nilFlags := &configCmd{}
-	_, err := kong.Must(nilFlags).Parse([]string{})
+	vars, err := create.ApplicationKongVars()
+	require.NoError(t, err)
+	_, err = kong.Must(nilFlags, vars).Parse([]string{})
 	require.NoError(t, err)
 
 	assert.Nil(t, nilFlags.Env)
 
 	emptyFlags := &configCmd{}
-	_, err = kong.Must(emptyFlags).Parse([]string{`--env=`})
+	_, err = kong.Must(emptyFlags, vars).Parse([]string{`--env=`})
 	require.NoError(t, err)
 
 	assert.NotNil(t, emptyFlags.Env)
