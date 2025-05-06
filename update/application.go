@@ -27,34 +27,38 @@ const BuildTrigger = "BUILD_TRIGGER"
 // the user.
 type applicationCmd struct {
 	resourceCmd
-	Git                     *gitConfig        `embed:"" prefix:"git-"`
-	Size                    *string           `help:"Size of the app."`
-	Port                    *int32            `help:"Port the app is listening on."`
-	Replicas                *int32            `help:"Amount of replicas of the running app."`
-	Hosts                   *[]string         `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
-	BasicAuth               *bool             `help:"Enable/Disable basic authentication for the application."`
-	ChangeBasicAuthPassword *bool             `help:"Generate a new basic auth password."`
-	Env                     map[string]string `help:"Environment variables which are passed to the app at runtime."`
-	DeleteEnv               *[]string         `help:"Runtime environment variables names which are to be deleted."`
-	BuildEnv                map[string]string `help:"Environment variables names which are passed to the app build process."`
-	DeleteBuildEnv          *[]string         `help:"Build environment variables which are to be deleted."`
+	baseConfig
+	Git                      *gitConfig        `embed:"" prefix:"git-"`
+	Hosts                    *[]string         `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
+	ChangeBasicAuthPassword  *bool             `help:"Generate a new basic auth password."`
+	BuildEnv                 map[string]string `help:"Environment variables names which are passed to the app build process."`
+	DeleteBuildEnv           *[]string         `help:"Build environment variables which are to be deleted."`
+	RetryRelease             *bool             `help:"Retries release for the application." placeholder:"false"`
+	RetryBuild               *bool             `help:"Retries build for the application if set to true." placeholder:"false"`
+	Pause                    *bool             `help:"Pauses the application if set to true. Stops all costs." placeholder:"false"`
+	GitInformationServiceURL string            `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
+	SkipRepoAccessCheck      bool              `help:"Skip the git repository access check" default:"false"`
+	Debug                    bool              `help:"Enable debug messages" default:"false"`
+	Language                 *string           `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static,"`
+	DockerfileBuild          dockerfileBuild   `embed:""`
+}
+
+type baseConfig struct {
+	Size      *string           `help:"Size of the app."`
+	Port      *int32            `help:"Port the app is listening on."`
+	Replicas  *int32            `help:"Amount of replicas of the running app."`
+	BasicAuth *bool             `help:"Enable/Disable basic authentication for the application."`
+	Env       map[string]string `help:"Environment variables which are passed to the app at runtime."`
+	DeleteEnv *[]string         `help:"Runtime environment variables names which are to be deleted."`
 	// DeployJob, ScheduledJob and WorkerJob are embedded pointers to
 	// structs. Due to the usage of kong these pointers will never be `nil`.
 	// So checking for `nil` values can not be used to find out if some of
 	// the struct fields have been set.
-	DeployJob                *deployJob      `embed:"" prefix:"deploy-job-"`
-	WorkerJob                *workerJob      `embed:"" prefix:"worker-job-"`
-	ScheduledJob             *scheduledJob   `embed:"" prefix:"scheduled-job-"`
-	DeleteWorkerJob          *string         `help:"Delete a worker job by name"`
-	DeleteScheduledJob       *string         `help:"Delete a scheduled job by name"`
-	RetryRelease             *bool           `help:"Retries release for the application." placeholder:"false"`
-	RetryBuild               *bool           `help:"Retries build for the application if set to true." placeholder:"false"`
-	Pause                    *bool           `help:"Pauses the application if set to true. Stops all costs." placeholder:"false"`
-	GitInformationServiceURL string          `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
-	SkipRepoAccessCheck      bool            `help:"Skip the git repository access check" default:"false"`
-	Debug                    bool            `help:"Enable debug messages" default:"false"`
-	Language                 *string         `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static,"`
-	DockerfileBuild          dockerfileBuild `embed:""`
+	DeployJob          *deployJob    `embed:"" prefix:"deploy-job-"`
+	WorkerJob          *workerJob    `embed:"" prefix:"worker-job-"`
+	ScheduledJob       *scheduledJob `embed:"" prefix:"scheduled-job-"`
+	DeleteWorkerJob    *string       `help:"Delete a worker job by name"`
+	DeleteScheduledJob *string       `help:"Delete a scheduled job by name"`
 }
 
 type gitConfig struct {
@@ -198,15 +202,6 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 			}
 		}
 
-		if app.Spec.ForProvider.Config.DeployJob != nil {
-			configValidator := &validation.ConfigValidator{
-				Config: app.Spec.ForProvider.Config,
-			}
-			if err := configValidator.Validate(); err != nil {
-				return fmt.Errorf("error when validating application config: %w", err)
-			}
-		}
-
 		return nil
 	})
 
@@ -214,6 +209,8 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 }
 
 func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
+	cmd.baseConfig.applyUpdates(&app.Spec.ForProvider.Config)
+
 	if cmd.Git != nil {
 		if cmd.Git.URL != nil {
 			app.Spec.ForProvider.Git.URL = *cmd.Git.URL
@@ -225,56 +222,20 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 			app.Spec.ForProvider.Git.Revision = *cmd.Git.Revision
 		}
 	}
-	if cmd.Size != nil {
-		newSize := apps.ApplicationSize(*cmd.Size)
-		app.Spec.ForProvider.Config.Size = newSize
-	}
-	if cmd.Port != nil {
-		app.Spec.ForProvider.Config.Port = cmd.Port
-	}
-	if cmd.Replicas != nil {
-		app.Spec.ForProvider.Config.Replicas = cmd.Replicas
+	if cmd.RetryRelease != nil && *cmd.RetryRelease {
+		runtimeEnv := make(map[string]string)
+		runtimeEnv[ReleaseTrigger] = triggerTimestamp()
+		app.Spec.ForProvider.Config.Env = util.UpdateEnvVars(app.Spec.ForProvider.Config.Env, runtimeEnv, nil)
 	}
 	if cmd.Hosts != nil {
 		app.Spec.ForProvider.Hosts = *cmd.Hosts
 	}
-	if cmd.BasicAuth != nil {
-		app.Spec.ForProvider.Config.EnableBasicAuth = cmd.BasicAuth
-	}
 	if cmd.ChangeBasicAuthPassword != nil {
 		app.Spec.ForProvider.BasicAuthPasswordChange = ptr.To(metav1.Now())
-	}
-	if cmd.DeployJob != nil {
-		cmd.DeployJob.applyUpdates(&app.Spec.ForProvider.Config)
-	}
-	if cmd.WorkerJob != nil && cmd.WorkerJob.changesGiven() {
-		cmd.WorkerJob.applyUpdates(&app.Spec.ForProvider.Config)
-	}
-	if cmd.DeleteWorkerJob != nil {
-		deleteWorkerJob(*cmd.DeleteWorkerJob, &app.Spec.ForProvider.Config)
-	}
-	if cmd.ScheduledJob != nil && cmd.ScheduledJob.changesGiven() {
-		cmd.ScheduledJob.applyUpdates(&app.Spec.ForProvider.Config)
-	}
-	if cmd.DeleteScheduledJob != nil {
-		deleteScheduledJob(*cmd.DeleteScheduledJob, &app.Spec.ForProvider.Config)
 	}
 	if cmd.Language != nil {
 		app.Spec.ForProvider.Language = apps.Language(*cmd.Language)
 	}
-
-	runtimeEnv := make(map[string]string)
-	if cmd.Env != nil {
-		runtimeEnv = cmd.Env
-	}
-	if cmd.RetryRelease != nil && *cmd.RetryRelease {
-		runtimeEnv[ReleaseTrigger] = triggerTimestamp()
-	}
-	var delEnv []string
-	if cmd.DeleteEnv != nil {
-		delEnv = *cmd.DeleteEnv
-	}
-	app.Spec.ForProvider.Config.Env = util.UpdateEnvVars(app.Spec.ForProvider.Config.Env, runtimeEnv, delEnv)
 
 	buildEnv := make(map[string]string)
 	if cmd.BuildEnv != nil {
@@ -297,10 +258,51 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 		app.Spec.ForProvider.DockerfileBuild.DockerfilePath = *cmd.DockerfileBuild.Path
 		warnIfDockerfileNotEnabled(app, "path")
 	}
-
 	if cmd.DockerfileBuild.BuildContext != nil {
 		app.Spec.ForProvider.DockerfileBuild.BuildContext = *cmd.DockerfileBuild.BuildContext
 		warnIfDockerfileNotEnabled(app, "build context")
+	}
+}
+
+func (bc baseConfig) applyUpdates(config *apps.Config) {
+	if bc.BasicAuth != nil {
+		config.EnableBasicAuth = bc.BasicAuth
+	}
+	runtimeEnv := make(map[string]string)
+	if bc.Env != nil {
+		runtimeEnv = bc.Env
+	}
+	var delEnv []string
+	if bc.DeleteEnv != nil {
+		delEnv = *bc.DeleteEnv
+	}
+	config.Env = util.UpdateEnvVars(config.Env, runtimeEnv, delEnv)
+
+	if bc.DeployJob != nil {
+		bc.DeployJob.applyUpdates(config)
+	}
+	if bc.WorkerJob != nil && bc.WorkerJob.changesGiven() {
+		bc.WorkerJob.applyUpdates(config)
+	}
+	if bc.DeleteWorkerJob != nil {
+		deleteWorkerJob(*bc.DeleteWorkerJob, config)
+	}
+	if bc.ScheduledJob != nil && bc.ScheduledJob.changesGiven() {
+		bc.ScheduledJob.applyUpdates(config)
+	}
+	if bc.DeleteScheduledJob != nil {
+		deleteScheduledJob(*bc.DeleteScheduledJob, config)
+	}
+
+	if bc.Size != nil {
+		newSize := apps.ApplicationSize(*bc.Size)
+		config.Size = newSize
+	}
+	if bc.Port != nil {
+		config.Port = bc.Port
+	}
+	if bc.Replicas != nil {
+		config.Replicas = bc.Replicas
 	}
 }
 
@@ -342,25 +344,23 @@ func (job workerJob) applyUpdates(cfg *apps.Config) {
 		format.PrintWarningf("you need to pass a job name to update the command or size\n")
 		return
 	}
+	applyToJob := func(j *apps.WorkerJob) {
+		if job.Command != nil {
+			j.Command = *job.Command
+		}
+		if job.Size != nil {
+			j.Size = ptr.To(apps.ApplicationSize(*job.Size))
+		}
+	}
 	for i := range cfg.WorkerJobs {
 		if cfg.WorkerJobs[i].Name == *job.Name {
-			if job.Command != nil {
-				cfg.WorkerJobs[i].Command = *job.Command
-			}
-			if job.Size != nil {
-				cfg.WorkerJobs[i].Size = ptr.To(apps.ApplicationSize(*job.Size))
-			}
+			applyToJob(&cfg.WorkerJobs[i])
 			return
 		}
 	}
 
 	newJob := apps.WorkerJob{Job: apps.Job{Name: *job.Name}}
-	if job.Command != nil {
-		newJob.Command = *job.Command
-	}
-	if job.Size != nil {
-		newJob.Size = ptr.To(apps.ApplicationSize(*job.Size))
-	}
+	applyToJob(&newJob)
 	cfg.WorkerJobs = append(cfg.WorkerJobs, newJob)
 }
 
@@ -384,34 +384,32 @@ func (job scheduledJob) applyUpdates(cfg *apps.Config) {
 		return
 	}
 
+	applyToJob := func(j *apps.ScheduledJob) {
+		if job.Command != nil {
+			j.Command = *job.Command
+		}
+		if job.Size != nil {
+			j.Size = ptr.To(apps.ApplicationSize(*job.Size))
+		}
+		if job.Schedule != nil {
+			j.Schedule = *job.Schedule
+		}
+		if job.Retries != nil {
+			j.Retries = job.Retries
+		}
+		if job.Timeout != nil {
+			j.Timeout = &metav1.Duration{Duration: *job.Timeout}
+		}
+	}
 	for i := range cfg.ScheduledJobs {
 		if cfg.ScheduledJobs[i].Name == *job.Name {
-			if job.Command != nil {
-				cfg.ScheduledJobs[i].Command = *job.Command
-			}
-			if job.Size != nil {
-				cfg.ScheduledJobs[i].Size = ptr.To(apps.ApplicationSize(*job.Size))
-			}
-			if job.Schedule != nil {
-				cfg.ScheduledJobs[i].Schedule = *job.Schedule
-			}
-			if job.Retries != nil {
-				cfg.DeployJob.Retries = job.Retries
-			}
-			if job.Timeout != nil {
-				cfg.DeployJob.Timeout = &metav1.Duration{Duration: *job.Timeout}
-			}
+			applyToJob(&cfg.ScheduledJobs[i])
 			return
 		}
 	}
 
 	newJob := apps.ScheduledJob{Job: apps.Job{Name: *job.Name}}
-	if job.Command != nil {
-		newJob.Command = *job.Command
-	}
-	if job.Size != nil {
-		newJob.Size = ptr.To(apps.ApplicationSize(*job.Size))
-	}
+	applyToJob(&newJob)
 	cfg.ScheduledJobs = append(cfg.ScheduledJobs, newJob)
 }
 
