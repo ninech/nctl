@@ -177,15 +177,6 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		}
 	}
 
-	if newApp.Spec.ForProvider.Config.DeployJob != nil {
-		configValidator := &validation.ConfigValidator{
-			Config: newApp.Spec.ForProvider.Config,
-		}
-		if err := configValidator.Validate(); err != nil {
-			return fmt.Errorf("error when validating application config: %w", err)
-		}
-	}
-
 	c := newCreator(client, newApp, strings.ToLower(apps.ApplicationKind))
 	appWaitCtx, cancel := context.WithTimeout(ctx, app.WaitTimeout)
 	defer cancel()

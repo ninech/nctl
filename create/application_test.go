@@ -269,46 +269,6 @@ func TestApplication(t *testing.T) {
 			},
 			errorExpected: true,
 		},
-		// TODO: remove local job validation logic in favor of webhook-based CRD validation
-		"deploy job empty command": {
-			cmd: applicationCmd{
-				Git: gitConfig{
-					URL: "https://github.com/ninech/doesnotexist.git",
-				},
-				resourceCmd: resourceCmd{
-					Wait: false,
-					Name: "deploy-job-empty-command",
-				},
-				baseConfig: baseConfig{
-					Size:      ptr.To("mini"),
-					DeployJob: deployJob{Command: "", Name: "print-date", Retries: 2, Timeout: time.Minute},
-				},
-				SkipRepoAccessCheck: true,
-			},
-			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
-				assertBaseConfig(t, cmd.baseConfig, app.Spec.ForProvider.Config)
-			},
-		},
-		// TODO: remove local job validation logic in favor of webhook-based CRD validation
-		"deploy job empty name": {
-			cmd: applicationCmd{
-				Git: gitConfig{
-					URL: "https://github.com/ninech/doesnotexist.git",
-				},
-				resourceCmd: resourceCmd{
-					Wait: false,
-					Name: "deploy-job-empty-name",
-				},
-				baseConfig: baseConfig{
-					Size:      ptr.To("mini"),
-					DeployJob: deployJob{Command: "date", Name: "", Retries: 2, Timeout: time.Minute},
-				},
-				SkipRepoAccessCheck: true,
-			},
-			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
-				assertBaseConfig(t, cmd.baseConfig, app.Spec.ForProvider.Config)
-			},
-		},
 		"git-information-service happy path": {
 			cmd: applicationCmd{
 				Git: gitConfig{
