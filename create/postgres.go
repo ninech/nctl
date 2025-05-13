@@ -114,11 +114,3 @@ func PostgresKongVars() kong.Vars {
 
 	return result
 }
-
-func stringSlice[K ~string](elems []K) []string {
-	s := make([]string, 0, len(elems))
-	for _, elem := range elems {
-		s = append(s, string(elem))
-	}
-	return s
-}
