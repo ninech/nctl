@@ -142,13 +142,8 @@ func (cmd *cloudVMCmd) newCloudVM(namespace string) (*infrastructure.CloudVirtua
 // ApplicationKongVars returns all variables which are used in the application
 // create command
 func CloudVMKongVars() kong.Vars {
-	osFlavors := make([]string, len(infrastructure.CloudVirtualMachineOperatingSystems))
-	for i, osFlavor := range infrastructure.CloudVirtualMachineOperatingSystems{
-		osFlavors[i] = string(osFlavor)
-	}
-
 	result := make(kong.Vars)
-	result["cloudvm_os_flavors"] = strings.Join(osFlavors, ", ")
+	result["cloudvm_os_flavors"] = strings.Join(stringSlice(infrastructure.CloudVirtualMachineOperatingSystems), ", ")
 
 	return result
 }
