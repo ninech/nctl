@@ -18,7 +18,7 @@ type buildCmd struct {
 
 func (cmd *buildCmd) Run(ctx context.Context, client *api.Client) error {
 	if cmd.Name == "" && cmd.ApplicationName == "" {
-		return errors.New("please specify a build name or an application name to see build logs from")
+		return errors.New("please specify a build name to see its logs")
 	}
 	if cmd.Name != "" {
 		build := &apps.Build{}
