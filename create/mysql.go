@@ -21,7 +21,7 @@ import (
 type mySQLCmd struct {
 	resourceCmd
 	Location              string                                 `placeholder:"${mysql_location_default}" help:"Location where the MySQL instance is created. Available locations are: ${mysql_location_options}"`
-	MachineType           infra.MachineType                      `placeholder:"${mysql_machine_default}" help:"Defines the sizing for a particular MySQL instance. Available types: ${mysql_machine_types}"`
+	MachineType           string                                 `placeholder:"${mysql_machine_default}" help:"Defines the sizing for a particular MySQL instance. Available types: ${mysql_machine_types}"`
 	AllowedCidrs          []meta.IPv4CIDR                        `placeholder:"203.0.113.1/32" help:"Specifies the IP addresses allowed to connect to the instance." `
 	SSHKeys               []storage.SSHKey                       `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups."`
 	SSHKeysFile           string                                 `help:"Path to a file containing a list of SSH public keys (see above), separated by newlines."`
@@ -85,7 +85,7 @@ func (cmd *mySQLCmd) newMySQL(namespace string) *storage.MySQL {
 			},
 			ForProvider: storage.MySQLParameters{
 				Location:     meta.LocationName(cmd.Location),
-				MachineType:  cmd.MachineType,
+				MachineType:  infra.NewMachineType(cmd.MachineType),
 				AllowedCIDRs: []meta.IPv4CIDR{},  // avoid missing parameter error
 				SSHKeys:      []storage.SSHKey{}, // avoid missing parameter error
 				SQLMode:      cmd.SQLMode,

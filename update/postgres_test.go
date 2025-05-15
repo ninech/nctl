@@ -28,13 +28,13 @@ func TestPostgres(t *testing.T) {
 		},
 		{
 			name:   "increase-machineType",
-			update: postgresCmd{MachineType: ptr.To(infra.MachineTypeNineDBS)},
+			update: postgresCmd{MachineType: ptr.To(infra.MachineTypeNineDBS.String())},
 			want:   storage.PostgresParameters{MachineType: infra.MachineTypeNineDBS},
 		},
 		{
 			name:   "decrease-machineType",
 			create: storage.PostgresParameters{MachineType: infra.MachineTypeNineDBM},
-			update: postgresCmd{MachineType: ptr.To(infra.MachineTypeNineDBS)},
+			update: postgresCmd{MachineType: ptr.To(infra.MachineTypeNineDBS.String())},
 			want:   storage.PostgresParameters{MachineType: infra.MachineTypeNineDBS},
 		},
 		{
@@ -69,7 +69,7 @@ func TestPostgres(t *testing.T) {
 		{
 			name:   "multi-update",
 			create: storage.PostgresParameters{AllowedCIDRs: []meta.IPv4CIDR{"0.0.0.0/0"}},
-			update: postgresCmd{MachineType: ptr.To(infra.MachineTypeNineDBS)},
+			update: postgresCmd{MachineType: ptr.To(infra.MachineTypeNineDBS.String())},
 			want: storage.PostgresParameters{
 				MachineType:  infra.MachineTypeNineDBS,
 				AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")},

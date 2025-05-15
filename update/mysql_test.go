@@ -28,13 +28,13 @@ func TestMySQL(t *testing.T) {
 		},
 		{
 			name:   "increase-machineType",
-			update: mySQLCmd{MachineType: ptr.To(infra.MachineTypeNineDBM)},
+			update: mySQLCmd{MachineType: ptr.To(infra.MachineTypeNineDBM.String())},
 			want:   storage.MySQLParameters{MachineType: infra.MachineTypeNineDBM},
 		},
 		{
 			name:   "decrease-machineType",
 			create: storage.MySQLParameters{MachineType: infra.MachineTypeNineDBM},
-			update: mySQLCmd{MachineType: ptr.To(infra.MachineTypeNineDBS)},
+			update: mySQLCmd{MachineType: ptr.To(infra.MachineTypeNineDBS.String())},
 			want:   storage.MySQLParameters{MachineType: infra.MachineTypeNineDBS},
 		},
 		{
@@ -92,7 +92,7 @@ func TestMySQL(t *testing.T) {
 		{
 			name:   "multi-update",
 			create: storage.MySQLParameters{AllowedCIDRs: []meta.IPv4CIDR{"0.0.0.0/0"}},
-			update: mySQLCmd{MachineType: ptr.To(infra.MachineTypeNineDBS)},
+			update: mySQLCmd{MachineType: ptr.To(infra.MachineTypeNineDBS.String())},
 			want:   storage.MySQLParameters{MachineType: infra.MachineTypeNineDBS, AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
 		},
 	}
