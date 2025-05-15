@@ -21,7 +21,7 @@ import (
 type postgresCmd struct {
 	resourceCmd
 	Location         string                  `placeholder:"${postgres_location_default}" help:"Location where the PostgreSQL instance is created. Available locations are: ${postgres_location_options}"`
-	MachineType      infra.MachineType       `placeholder:"${postgres_machine_default}" help:"Defines the sizing for a particular PostgreSQL instance. Available types: ${postgres_machine_types}"`
+	MachineType      string                  `placeholder:"${postgres_machine_default}" help:"Defines the sizing for a particular PostgreSQL instance. Available types: ${postgres_machine_types}"`
 	AllowedCidrs     []meta.IPv4CIDR         `placeholder:"203.0.113.1/32" help:"Specifies the IP addresses allowed to connect to the instance." `
 	SSHKeys          []storage.SSHKey        `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups."`
 	SSHKeysFile      string                  `help:"Path to a file containing a list of SSH public keys (see above), separated by newlines."`
@@ -80,7 +80,7 @@ func (cmd *postgresCmd) newPostgres(namespace string) *storage.Postgres {
 			},
 			ForProvider: storage.PostgresParameters{
 				Location:         meta.LocationName(cmd.Location),
-				MachineType:      cmd.MachineType,
+				MachineType:      infra.NewMachineType(cmd.MachineType),
 				AllowedCIDRs:     []meta.IPv4CIDR{},  // avoid missing parameter error
 				SSHKeys:          []storage.SSHKey{}, // avoid missing parameter error
 				Version:          cmd.PostgresVersion,

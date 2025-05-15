@@ -45,7 +45,7 @@ func TestMySQL(t *testing.T) {
 		},
 		{
 			name:   "machineType",
-			create: mySQLCmd{MachineType: storage.MySQLMachineTypeDefault},
+			create: mySQLCmd{MachineType: storage.MySQLMachineTypeDefault.String()},
 			want:   storage.MySQLParameters{MachineType: storage.MySQLMachineTypeDefault},
 		},
 		{

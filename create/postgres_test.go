@@ -45,7 +45,7 @@ func TestPostgres(t *testing.T) {
 		},
 		{
 			name:   "machineType",
-			create: postgresCmd{MachineType: storage.PostgresMachineTypeDefault},
+			create: postgresCmd{MachineType: storage.PostgresMachineTypeDefault.String()},
 			want:   storage.PostgresParameters{MachineType: storage.PostgresMachineTypeDefault},
 		},
 		{
