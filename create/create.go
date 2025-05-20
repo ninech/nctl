@@ -254,3 +254,11 @@ func getName(name string) string {
 
 	return codename.Generate(rand.New(rand.NewSource(time.Now().UnixNano())), 0)
 }
+
+func stringSlice[K ~string](elems []K) []string {
+	s := make([]string, 0, len(elems))
+	for _, elem := range elems {
+		s = append(s, string(elem))
+	}
+	return s
+}
