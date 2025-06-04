@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
@@ -12,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
+	"github.com/alecthomas/kong"
 )
 
 type cloudVMCmd struct {
@@ -20,7 +22,7 @@ type cloudVMCmd struct {
 	MachineType         string            `default:"" help:"The machine type defines the sizing for a particular CloudVM."`
 	Hostname            string            `default:"" help:"Hostname allows to set the hostname explicitly. If unset, the name of the resource will be used as the hostname. This does not affect the DNS name."`
 	PowerState          string            `default:"on" help:"Specify the initial power state of the CloudVM. Set to off to create "`
-	OS                  string            `default:"" help:"OS which should be used to boot the VM."`
+	OS                  string            `default:"" help:"OS which should be used to boot the VM. Available options: ${cloudvm_os_flavors}"`
 	BootDiskSize        string            `default:"20Gi" help:"Configures the size of the boot disk."`
 	Disks               map[string]string `default:"" help:"Disks specifies which additional disks to mount to the machine."`
 	PublicKeys          []string          `default:"" help:"SSH public keys that can be used to connect to the CloudVM as root. The keys are expected to be in SSH format as defined in RFC4253. Immutable after creation."`
@@ -135,4 +137,13 @@ func (cmd *cloudVMCmd) newCloudVM(namespace string) (*infrastructure.CloudVirtua
 	}
 
 	return cloudVM, nil
+}
+
+// ApplicationKongVars returns all variables which are used in the application
+// create command
+func CloudVMKongVars() kong.Vars {
+	result := make(kong.Vars)
+	result["cloudvm_os_flavors"] = strings.Join(stringSlice(infrastructure.CloudVirtualMachineOperatingSystems), ", ")
+
+	return result
 }
