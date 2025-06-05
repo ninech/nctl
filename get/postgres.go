@@ -52,6 +52,8 @@ func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 		return cmd.printPostgresInstances(postgresList.Items, get, false)
 	case yamlOut:
 		return format.PrettyPrintObjects(postgresList.GetItems(), format.PrintOpts{})
+	case jsonOut:
+		return format.PrettyPrintObjects(postgresList.GetItems(), format.PrintOpts{Format: format.OutputFormatTypeJSON})
 	}
 
 	return nil

@@ -172,6 +172,22 @@ dev        dev     dev         sample
 			outputFormat: yamlOut,
 			output:       "application: dev\nbasicauth:\n  password: sample\n  username: dev\nproject: dev\n",
 		},
+		"basic auth configured in one app and all apps in the project requested, json format": {
+			resources: []client.Object{
+				newBasicAuthApplication("dev", "dev", "sample-basic-auth-secret"),
+				newBasicAuthSecret(
+					"sample-basic-auth-secret",
+					"dev",
+					util.BasicAuth{
+						Username: "dev",
+						Password: "sample",
+					},
+				),
+			},
+			project:      "dev",
+			outputFormat: jsonOut,
+			output:       `[{"application":"dev","project":"dev","basicauth":{"username":"dev","password":"sample"}}]`,
+		},
 		"multiple apps with basic auth configured and all apps in the project requested": {
 			resources: []client.Object{
 				newBasicAuthApplication("dev", "dev", "dev-basic-auth-secret"),
@@ -223,6 +239,30 @@ dev        dev-second    dev-second    sample-second
 			},
 			outputFormat: yamlOut,
 			output:       "application: dev\nbasicauth:\n  password: sample\n  username: dev\nproject: dev\n---\napplication: prod\nbasicauth:\n  password: secret\n  username: prod\nproject: prod\n",
+		},
+		"multiple apps in different projects and all apps requested, json format": {
+			resources: []client.Object{
+				newBasicAuthApplication("dev", "dev", "dev-basic-auth-secret"),
+				newBasicAuthApplication("prod", "prod", "prod-basic-auth-secret"),
+				newBasicAuthSecret(
+					"dev-basic-auth-secret",
+					"dev",
+					util.BasicAuth{
+						Username: "dev",
+						Password: "sample",
+					},
+				),
+				newBasicAuthSecret(
+					"prod-basic-auth-secret",
+					"prod",
+					util.BasicAuth{
+						Username: "prod",
+						Password: "secret",
+					},
+				),
+			},
+			outputFormat: jsonOut,
+			output:       `[{"application":"dev","project":"dev","basicauth":{"username":"dev","password":"sample"}},{"application":"prod","project":"prod","basicauth":{"username":"prod","password":"secret"}}]`,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -365,6 +405,25 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 			project:      "dev",
 			outputFormat: yamlOut,
 			output:       "application: sample\ncnameTarget: sample.3ksdk23.deploio.app\nproject: dev\ntxtRecord: deploio-site-verification=sample-dev-3ksdk23\n---\napplication: test\ncnameTarget: test.4ksdk23.deploio.app\nproject: dev\ntxtRecord: deploio-site-verification=test-dev-4ksdk23\n",
+		},
+		"multiple applications in one project - json format": {
+			apps: []client.Object{
+				newApplicationWithDNS(
+					"sample",
+					"dev",
+					txtRecordContent("sample-dev-3ksdk23"),
+					"sample.3ksdk23.deploio.app",
+				),
+				newApplicationWithDNS(
+					"test",
+					"dev",
+					txtRecordContent("test-dev-4ksdk23"),
+					"test.4ksdk23.deploio.app",
+				),
+			},
+			project:      "dev",
+			outputFormat: jsonOut,
+			output:       `[{"application":"sample","project":"dev","txtRecord":"deploio-site-verification=sample-dev-3ksdk23","cnameTarget":"sample.3ksdk23.deploio.app"},{"application":"test","project":"dev","txtRecord":"deploio-site-verification=test-dev-4ksdk23","cnameTarget":"test.4ksdk23.deploio.app"}]`,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {

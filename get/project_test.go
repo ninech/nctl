@@ -85,6 +85,12 @@ dev        <none>
 			outputFormat: yamlOut,
 			output:       "apiVersion: management.nine.ch/v1alpha1\nkind: Project\nmetadata:\n  creationTimestamp: null\n  name: dev\n  namespace: evilcorp\nspec:\n  isNonProduction: false\nstatus:\n  atProvider: {}\n",
 		},
+		"specific project requested, json output": {
+			projects:     test.Projects(organization, "dev", "staging"),
+			name:         "dev",
+			outputFormat: jsonOut,
+			output:       `[{"kind":"Project","apiVersion":"management.nine.ch/v1alpha1","metadata":{"name":"dev","namespace":"evilcorp","resourceVersion":"999","creationTimestamp":null},"spec":{"isNonProduction":false},"status":{"atProvider":{}}}]`,
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			testCase := testCase

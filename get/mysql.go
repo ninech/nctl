@@ -52,6 +52,8 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client, get *Cmd) erro
 		return cmd.printMySQLInstances(mysqlList.Items, get, false)
 	case yamlOut:
 		return format.PrettyPrintObjects(mysqlList.GetItems(), format.PrintOpts{})
+	case jsonOut:
+		return format.PrettyPrintObjects(mysqlList.GetItems(), format.PrintOpts{Format: format.OutputFormatTypeJSON})
 	}
 
 	return nil

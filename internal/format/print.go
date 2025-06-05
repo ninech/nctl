@@ -1,6 +1,7 @@
 package format
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -18,11 +19,16 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+type OutputFormatType int
+
 const (
 	SuccessChar      = "✓"
 	FailureChar      = "✗"
 	spinnerPrefix    = " "
 	spinnerFrequency = 100 * time.Millisecond
+
+	OutputFormatTypeYAML OutputFormatType = 0
+	OutputFormatTypeJSON OutputFormatType = 1
 )
 
 var spinnerCharset = yacspin.CharSets[24]
@@ -128,6 +134,8 @@ type PrintOpts struct {
 	Out io.Writer
 	// ExcludeAdditional allows to exclude more fields of the object
 	ExcludeAdditional [][]string
+	// format type of the output, e.g. yaml or json
+	Format OutputFormatType
 }
 
 func (p PrintOpts) defaultOut() io.Writer {
@@ -141,16 +149,23 @@ func (p PrintOpts) defaultOut() io.Writer {
 // with some metadata, status and other default fields stripped out. If
 // multiple objects are supplied, they will be divided with a yaml divider.
 func PrettyPrintObjects[T any](objs []T, opts PrintOpts) error {
-	for i, obj := range objs {
-		if err := PrettyPrintObject(obj, opts); err != nil {
+
+	switch opts.Format {
+	case OutputFormatTypeJSON:
+		if err := PrettyPrintObject(objs, opts); err != nil {
 			return err
 		}
-		// if there's another object we print a yaml divider
-		if i != len(objs)-1 {
-			_, _ = fmt.Fprintln(opts.defaultOut(), "---")
+	default:
+		for i, obj := range objs {
+			if err := PrettyPrintObject(obj, opts); err != nil {
+				return err
+			}
+			// if there's another object we print a yaml divider
+			if i != len(objs)-1 {
+				fmt.Fprintln(opts.defaultOut(), "---")
+			}
 		}
 	}
-
 	return nil
 }
 
@@ -185,7 +200,16 @@ func PrettyPrintObject(obj any, opts PrintOpts) error {
 // printResource prints the resource similar to how
 // https://github.com/goccy/go-yaml#ycat does it.
 func printResource(obj any, opts PrintOpts) error {
-	b, err := yaml.Marshal(obj)
+	var b []byte
+	var err error
+
+	switch opts.Format {
+	case OutputFormatTypeJSON:
+		b, err = json.Marshal(obj)
+	default:
+		b, err = yaml.Marshal(obj)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -193,14 +217,21 @@ func printResource(obj any, opts PrintOpts) error {
 	if opts.Out == nil {
 		opts.Out = os.Stdout
 	}
-	p, err := getPrinter(opts.Out)
-	if err != nil {
+
+	switch opts.Format {
+	case OutputFormatTypeJSON:
+		_, err = opts.Out.Write(b)
+		return err
+	default:
+		p, err := getPrinter(opts.Out)
+		if err != nil {
+			return err
+		}
+		output := []byte(p.PrintTokens(lexer.Tokenize(string(b))) + "\n")
+		_, err = opts.Out.Write(output)
 		return err
 	}
 
-	output := []byte(p.PrintTokens(lexer.Tokenize(string(b))) + "\n")
-	_, err = opts.Out.Write(output)
-	return err
 }
 
 // getPrinter returns a printer for printing tokens. It will have color output
