@@ -61,6 +61,8 @@ func (cmd *applicationsCmd) Run(ctx context.Context, client *api.Client, get *Cm
 		return printApplication(appList.Items, get, defaultOut(cmd.out), false)
 	case yamlOut:
 		return format.PrettyPrintObjects(appList.GetItems(), format.PrintOpts{Out: defaultOut(cmd.out)})
+	case jsonOut:
+		return format.PrettyPrintObjects(appList.GetItems(), format.PrintOpts{Out: defaultOut(cmd.out), Format: format.JSONFormat})
 	case stats:
 		return cmd.printStats(ctx, client, appList.Items, get, defaultOut(cmd.out))
 	}

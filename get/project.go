@@ -49,8 +49,16 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 				ExcludeAdditional: projectYamlExcludes(),
 			},
 		)
+	case jsonOut:
+		return format.PrettyPrintObjects(
+			(&management.ProjectList{Items: projectList}).GetItems(),
+			format.PrintOpts{
+				Out:               proj.out,
+				ExcludeAdditional: projectYamlExcludes(),
+				Format:            format.JSONFormat,
+			},
+		)
 	}
-
 	return nil
 }
 

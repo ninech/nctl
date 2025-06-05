@@ -1,6 +1,7 @@
 package format
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -18,11 +19,16 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+type OutputFormatType string
+
 const (
 	SuccessChar      = "✓"
 	FailureChar      = "✗"
 	spinnerPrefix    = " "
 	spinnerFrequency = 100 * time.Millisecond
+
+	YAMLFormat OutputFormatType = "yaml"
+	JSONFormat OutputFormatType = "json"
 )
 
 var spinnerCharset = yacspin.CharSets[24]
@@ -128,6 +134,8 @@ type PrintOpts struct {
 	Out io.Writer
 	// ExcludeAdditional allows to exclude more fields of the object
 	ExcludeAdditional [][]string
+	// format type of the output, e.g. yaml or json
+	Format OutputFormatType
 }
 
 func (p PrintOpts) defaultOut() io.Writer {
@@ -185,7 +193,14 @@ func PrettyPrintObject(obj any, opts PrintOpts) error {
 // printResource prints the resource similar to how
 // https://github.com/goccy/go-yaml#ycat does it.
 func printResource(obj any, opts PrintOpts) error {
-	b, err := yaml.Marshal(obj)
+	var b []byte
+	var err error
+	if opts.Format == JSONFormat {
+		b, err = json.Marshal(obj)
+	} else {
+		b, err = yaml.Marshal(obj)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -193,14 +208,23 @@ func printResource(obj any, opts PrintOpts) error {
 	if opts.Out == nil {
 		opts.Out = os.Stdout
 	}
-	p, err := getPrinter(opts.Out)
-	if err != nil {
+
+	if opts.Format == JSONFormat {
+		_, err = opts.Out.Write(b)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintln(opts.Out)
+	} else {
+		p, err := getPrinter(opts.Out)
+		if err != nil {
+			return err
+		}
+		output := []byte(p.PrintTokens(lexer.Tokenize(string(b))) + "\n")
+		_, err = opts.Out.Write(output)
 		return err
 	}
 
-	output := []byte(p.PrintTokens(lexer.Tokenize(string(b))) + "\n")
-	_, err = opts.Out.Write(output)
-	return err
 }
 
 // getPrinter returns a printer for printing tokens. It will have color output
