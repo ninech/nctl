@@ -60,7 +60,7 @@ func (cmd *allCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error 
 	case yamlOut:
 		return format.PrettyPrintObjects(items, format.PrintOpts{Out: cmd.out})
 	case jsonOut:
-		return format.PrettyPrintObjects(items, format.PrintOpts{Out: cmd.out, Format: format.JSONFormat})
+		return format.PrettyPrintObjects(items, format.PrintOpts{Out: cmd.out, Format: format.OutputFormatTypeJSON})
 	}
 
 	return nil

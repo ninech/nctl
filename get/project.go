@@ -55,7 +55,7 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 			format.PrintOpts{
 				Out:               proj.out,
 				ExcludeAdditional: projectYamlExcludes(),
-				Format:            format.JSONFormat,
+				Format:            format.OutputFormatTypeJSON,
 			},
 		)
 	}

@@ -53,7 +53,7 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client, get *Cmd) erro
 	case yamlOut:
 		return format.PrettyPrintObjects(mysqlList.GetItems(), format.PrintOpts{})
 	case jsonOut:
-		return format.PrettyPrintObjects(mysqlList.GetItems(), format.PrintOpts{Format: format.JSONFormat})
+		return format.PrettyPrintObjects(mysqlList.GetItems(), format.PrintOpts{Format: format.OutputFormatTypeJSON})
 	}
 
 	return nil

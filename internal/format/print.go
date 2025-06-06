@@ -19,7 +19,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-type OutputFormatType string
+type OutputFormatType int
 
 const (
 	SuccessChar      = "✓"
@@ -27,8 +27,8 @@ const (
 	spinnerPrefix    = " "
 	spinnerFrequency = 100 * time.Millisecond
 
-	YAMLFormat OutputFormatType = "yaml"
-	JSONFormat OutputFormatType = "json"
+	OutputFormatTypeYAML OutputFormatType = 0
+	OutputFormatTypeJSON OutputFormatType = 1
 )
 
 var spinnerCharset = yacspin.CharSets[24]
@@ -149,16 +149,23 @@ func (p PrintOpts) defaultOut() io.Writer {
 // with some metadata, status and other default fields stripped out. If
 // multiple objects are supplied, they will be divided with a yaml divider.
 func PrettyPrintObjects[T any](objs []T, opts PrintOpts) error {
-	for i, obj := range objs {
-		if err := PrettyPrintObject(obj, opts); err != nil {
+
+	switch opts.Format {
+	case OutputFormatTypeJSON:
+		if err := PrettyPrintObject(objs, opts); err != nil {
 			return err
 		}
-		// if there's another object we print a yaml divider
-		if i != len(objs)-1 {
-			_, _ = fmt.Fprintln(opts.defaultOut(), "---")
+	default:
+		for i, obj := range objs {
+			if err := PrettyPrintObject(obj, opts); err != nil {
+				return err
+			}
+			// if there's another object we print a yaml divider
+			if i != len(objs)-1 {
+				fmt.Fprintln(opts.defaultOut(), "---")
+			}
 		}
 	}
-
 	return nil
 }
 
@@ -195,7 +202,7 @@ func PrettyPrintObject(obj any, opts PrintOpts) error {
 func printResource(obj any, opts PrintOpts) error {
 	var b []byte
 	var err error
-	if opts.Format == JSONFormat {
+	if opts.Format == OutputFormatTypeJSON {
 		b, err = json.Marshal(obj)
 	} else {
 		b, err = yaml.Marshal(obj)
@@ -209,7 +216,7 @@ func printResource(obj any, opts PrintOpts) error {
 		opts.Out = os.Stdout
 	}
 
-	if opts.Format == JSONFormat {
+	if opts.Format == OutputFormatTypeJSON {
 		_, err = opts.Out.Write(b)
 		return err
 	} else {

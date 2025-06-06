@@ -44,7 +44,7 @@ func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client, get *C
 	case yamlOut:
 		return format.PrettyPrintObjects(keyValueStoreList.GetItems(), format.PrintOpts{})
 	case jsonOut:
-		return format.PrettyPrintObjects(keyValueStoreList.GetItems(), format.PrintOpts{Format: format.JSONFormat})
+		return format.PrettyPrintObjects(keyValueStoreList.GetItems(), format.PrintOpts{Format: format.OutputFormatTypeJSON})
 	}
 
 	return nil
