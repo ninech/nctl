@@ -109,6 +109,9 @@ func printCredentials(creds []appCredentials, get *Cmd, out io.Writer) error {
 	if get.Output == yamlOut {
 		return format.PrettyPrintObjects(creds, format.PrintOpts{Out: out})
 	}
+	if get.Output == jsonOut {
+		return format.PrettyPrintObjects(creds, format.PrintOpts{Out: out, Format: format.JSONFormat})
+	}
 	return printCredentialsTabRow(creds, get, out)
 }
 
@@ -169,6 +172,9 @@ func join(list []string) string {
 func printDNSDetails(items []util.DNSDetail, get *Cmd, out io.Writer) error {
 	if get.Output == yamlOut {
 		return format.PrettyPrintObjects(items, format.PrintOpts{Out: out})
+	}
+	if get.Output == jsonOut {
+		return format.PrettyPrintObjects(items, format.PrintOpts{Out: out, Format: format.JSONFormat})
 	}
 	return printDNSDetailsTabRow(items, get, out)
 }
