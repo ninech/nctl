@@ -42,6 +42,7 @@ const (
 	contexts output = "contexts"
 	yamlOut  output = "yaml"
 	stats    output = "stats"
+	jsonOut  output = "json"
 )
 
 func (cmd *Cmd) list(ctx context.Context, client *api.Client, list runtimeclient.ObjectList, opts ...api.ListOpt) error {

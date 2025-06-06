@@ -211,10 +211,7 @@ func printResource(obj any, opts PrintOpts) error {
 
 	if opts.Format == JSONFormat {
 		_, err = opts.Out.Write(b)
-		if err != nil {
-			return err
-		}
-		fmt.Fprintln(opts.Out)
+		return err
 	} else {
 		p, err := getPrinter(opts.Out)
 		if err != nil {
