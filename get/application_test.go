@@ -423,7 +423,7 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 			},
 			project:      "dev",
 			outputFormat: jsonOut,
-			output:       `[{"application":"sample","cnameTarget":"sample.3ksdk23.deploio.app","project":"dev","txtRecord":"deploio-site-verification=sample-dev-3ksdk23"},{"application":"test","cnameTarget":"test.4ksdk23.deploio.app","project":"dev","txtRecord":"deploio-site-verification=test-dev-4ksdk23"}]`,
+			output:       `[{"application":"sample","project":"dev","txtRecord":"deploio-site-verification=sample-dev-3ksdk23","cnameTarget":"sample.3ksdk23.deploio.app"},{"application":"test","project":"dev","txtRecord":"deploio-site-verification=test-dev-4ksdk23","cnameTarget":"test.4ksdk23.deploio.app"}]`,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
