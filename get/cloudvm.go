@@ -36,6 +36,8 @@ func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client, get *Cmd) er
 		return cmd.printCloudVirtualMachineInstances(cloudVMList.Items, get, false)
 	case yamlOut:
 		return format.PrettyPrintObjects(cloudVMList.GetItems(), format.PrintOpts{})
+	case jsonOut:
+		return format.PrettyPrintObjects(cloudVMList.GetItems(), format.PrintOpts{Format: format.OutputFormatTypeJSON})
 	}
 
 	return nil

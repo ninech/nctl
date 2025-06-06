@@ -13,7 +13,7 @@ import (
 )
 
 type Cmd struct {
-	Output              output                `help:"Configures list output. ${enum}" short:"o" enum:"full,no-header,contexts,yaml,stats" default:"full"`
+	Output              output                `help:"Configures list output. ${enum}" short:"o" enum:"full,no-header,contexts,yaml,stats,json" default:"full"`
 	AllProjects         bool                  `help:"apply the get over all projects." short:"A"`
 	AllNamespaces       bool                  `help:"apply the get over all namespaces." hidden:""`
 	Clusters            clustersCmd           `cmd:"" group:"infrastructure.nine.ch" aliases:"cluster,vcluster" help:"Get Kubernetes Clusters."`
@@ -42,6 +42,7 @@ const (
 	contexts output = "contexts"
 	yamlOut  output = "yaml"
 	stats    output = "stats"
+	jsonOut  output = "json"
 )
 
 func (cmd *Cmd) list(ctx context.Context, client *api.Client, list runtimeclient.ObjectList, opts ...api.ListOpt) error {
