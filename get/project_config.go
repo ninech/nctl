@@ -37,7 +37,7 @@ func (cmd *configsCmd) Run(ctx context.Context, client *api.Client, get *Cmd) er
 	case yamlOut:
 		return format.PrettyPrintObjects(projectConfigList.GetItems(), format.PrintOpts{Out: defaultOut(cmd.out)})
 	case jsonOut:
-		return format.PrettyPrintObjects(projectConfigList.GetItems(), format.PrintOpts{Out: defaultOut(cmd.out), Format: format.JSONFormat})
+		return format.PrettyPrintObjects(projectConfigList.GetItems(), format.PrintOpts{Out: defaultOut(cmd.out), Format: format.OutputFormatTypeJSON})
 	}
 
 	return nil
