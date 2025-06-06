@@ -88,8 +88,8 @@ dev        <none>
 		"specific project requested, json output": {
 			projects:     test.Projects(organization, "dev", "staging"),
 			name:         "dev",
-			outputFormat: jsonOut, // <-- Change output format to jsonOut
-			output:       `{"apiVersion": "management.nine.ch/v1alpha1", "kind": "Project", "metadata": {"creationTimestamp":null,"name":"dev","namespace":"evilcorp"}, "spec": {"isNonProduction":false}, "status": {"atProvider":{}} } `,
+			outputFormat: jsonOut,
+			output:       `{\"kind\":\"Project\",\"apiVersion\":\"management.nine.ch/v1alpha1\",\"metadata\":{\"name\":\"dev\",\"namespace\":\"evilcorp\",\"creationTimestamp\":null},\"spec\":{\"isNonProduction\":false},\"status\":{\"atProvider\":{}}}`,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
