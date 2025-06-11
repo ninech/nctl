@@ -1,0 +1,14 @@
+#:schema https://golangci-lint.run/jsonschema/golangci.jsonschema.json
+version = "2"
+
+[[linters.exclusions.rules]]
+linters = [ "errcheck" ]
+source = "^\\s*defer\\s+"
+
+[[linters.exclusions.rules]]
+linters = [ "errcheck" ]
+source = "^\\s*fmt.*\\s+"
+
+[[linters.exclusions.rules]]
+linters = [ "errcheck" ]
+path = "_test.go"

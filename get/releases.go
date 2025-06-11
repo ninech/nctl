@@ -84,16 +84,16 @@ func (cmd *releasesCmd) printReleases(releases []apps.Release, get *Cmd, header 
 
 		get.writeTabRow(
 			w,
-			r.ObjectMeta.Namespace,
-			r.ObjectMeta.Name,
+			r.Namespace,
+			r.Name,
 			r.Spec.ForProvider.Build.Name,
-			r.ObjectMeta.Labels[util.ApplicationNameLabel],
+			r.Labels[util.ApplicationNameLabel],
 			string(cfg.Size),
 			replicas,
 			workerJobs,
 			scheduledJobs,
 			string(r.Status.AtProvider.ReleaseStatus),
-			duration.HumanDuration(time.Since(r.ObjectMeta.CreationTimestamp.Time)),
+			duration.HumanDuration(time.Since(r.CreationTimestamp.Time)),
 		)
 	}
 

@@ -48,7 +48,7 @@ func TestProjects(t *testing.T) {
 	}
 
 	// test if the command errors out if the project already exists
-	cmd.resourceCmd.Name = existsAlready
+	cmd.Name = existsAlready
 	if err := cmd.Run(ctx, apiClient); err == nil {
 		t.Fatal("expected an error as project already exists, but got none")
 	}

@@ -116,7 +116,7 @@ func TestFile(t *testing.T) {
 			}
 			defer os.Remove(f.Name())
 
-			if _, err := f.WriteString(fmt.Sprintf(tc.file, name, "value", runtimev1.DeletionOrphan)); err != nil {
+			if _, err := fmt.Fprintf(f, tc.file, name, "value", runtimev1.DeletionOrphan); err != nil {
 				t.Fatal(err)
 			}
 
@@ -144,7 +144,7 @@ func TestFile(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				if _, err := f.WriteString(fmt.Sprintf(tc.file, name, tc.updatedAnnotation, tc.updatedSpecValue)); err != nil {
+				if _, err := fmt.Fprintf(f, tc.file, name, tc.updatedAnnotation, tc.updatedSpecValue); err != nil {
 					t.Fatal(err)
 				}
 
