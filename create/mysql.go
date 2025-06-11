@@ -111,7 +111,7 @@ func (cmd *mySQLCmd) newMySQL(namespace string) *storage.MySQL {
 	return mySQL
 }
 
-// ApplicationKongVars returns all variables which are used in the application
+// MySQLKongVars returns all variables which are used in the MySQL
 // create command
 func MySQLKongVars() kong.Vars {
 	result := make(kong.Vars)

@@ -91,7 +91,7 @@ func (g *gitInformationService) URL() string {
 	return g.server.URL
 }
 
-// Request returns the parsed last request to the service or an eventual error which occured during parsing
+// Request returns the parsed last request to the service or an eventual error which occurred during parsing
 func (g *gitInformationService) Request() (GitInfoServiceParsed, error) {
 	return g.request.data, g.request.err
 }

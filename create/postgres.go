@@ -99,7 +99,7 @@ func (cmd *postgresCmd) newPostgres(namespace string) *storage.Postgres {
 	return postgres
 }
 
-// ApplicationKongVars returns all variables which are used in the application
+// PostgresKongVars returns all variables which are used in the Postgres
 // create command
 func PostgresKongVars() kong.Vars {
 	result := make(kong.Vars)
