@@ -202,9 +202,11 @@ func PrettyPrintObject(obj any, opts PrintOpts) error {
 func printResource(obj any, opts PrintOpts) error {
 	var b []byte
 	var err error
-	if opts.Format == OutputFormatTypeJSON {
+
+	switch opts.Format {
+	case OutputFormatTypeJSON:
 		b, err = json.Marshal(obj)
-	} else {
+	default:
 		b, err = yaml.Marshal(obj)
 	}
 
@@ -216,10 +218,11 @@ func printResource(obj any, opts PrintOpts) error {
 		opts.Out = os.Stdout
 	}
 
-	if opts.Format == OutputFormatTypeJSON {
+	switch opts.Format {
+	case OutputFormatTypeJSON:
 		_, err = opts.Out.Write(b)
 		return err
-	} else {
+	default:
 		p, err := getPrinter(opts.Out)
 		if err != nil {
 			return err

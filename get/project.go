@@ -46,7 +46,7 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 			(&management.ProjectList{Items: projectList}).GetItems(),
 			format.PrintOpts{
 				Out:               proj.out,
-				ExcludeAdditional: projectYamlExcludes(),
+				ExcludeAdditional: projectExcludes(),
 			},
 		)
 	case jsonOut:
@@ -54,7 +54,7 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 			(&management.ProjectList{Items: projectList}).GetItems(),
 			format.PrintOpts{
 				Out:               proj.out,
-				ExcludeAdditional: projectYamlExcludes(),
+				ExcludeAdditional: projectExcludes(),
 				Format:            format.OutputFormatTypeJSON,
 			},
 		)
@@ -83,7 +83,7 @@ func printProject(projects []management.Project, get Cmd, out io.Writer, header 
 	return w.Flush()
 }
 
-func projectYamlExcludes() [][]string {
+func projectExcludes() [][]string {
 	return [][]string{
 		{"spec"},
 		{"status"},
