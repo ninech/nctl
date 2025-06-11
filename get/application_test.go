@@ -186,7 +186,7 @@ dev        dev     dev         sample
 			},
 			project:      "dev",
 			outputFormat: jsonOut,
-			output:       `{"application":"dev","project":"dev","basicauth":{"username":"dev","password":"sample"}}`,
+			output:       `[{"application":"dev","project":"dev","basicauth":{"username":"dev","password":"sample"}}]`,
 		},
 		"multiple apps with basic auth configured and all apps in the project requested": {
 			resources: []client.Object{
@@ -262,7 +262,7 @@ dev        dev-second    dev-second    sample-second
 				),
 			},
 			outputFormat: jsonOut,
-			output:       `[{"application":"dev","basicauth":{"password":"sample","username":"dev"},"project":"dev"},{"application":"prod","basicauth":{"password":"secret","username":"prod"},"project":"prod"}]`,
+			output:       `[{"application":"dev","project":"dev","basicauth":{"username":"dev","password":"sample"}},{"application":"prod","project":"prod","basicauth":{"username":"prod","password":"secret"}}]`,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
