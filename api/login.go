@@ -12,15 +12,16 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt"
+	credreader "github.com/int128/kubelogin/pkg/credentialplugin/reader"
 	"github.com/int128/kubelogin/pkg/credentialplugin/writer"
 	"github.com/int128/kubelogin/pkg/infrastructure/browser"
 	"github.com/int128/kubelogin/pkg/infrastructure/clock"
 	"github.com/int128/kubelogin/pkg/infrastructure/logger"
-	"github.com/int128/kubelogin/pkg/infrastructure/mutex"
 	"github.com/int128/kubelogin/pkg/infrastructure/reader"
 	"github.com/int128/kubelogin/pkg/oidc"
 	"github.com/int128/kubelogin/pkg/oidc/client"
 	"github.com/int128/kubelogin/pkg/tlsclientconfig/loader"
+	"github.com/int128/kubelogin/pkg/tokencache"
 	"github.com/int128/kubelogin/pkg/tokencache/repository"
 	"github.com/int128/kubelogin/pkg/usecases/authentication"
 	"github.com/int128/kubelogin/pkg/usecases/authentication/authcode"
@@ -115,9 +116,10 @@ func GetToken(ctx context.Context, issuerURL, clientID string, usePKCE bool, out
 		Provider: oidc.Provider{
 			IssuerURL: issuerURL,
 			ClientID:  clientID,
-			UsePKCE:   usePKCE,
 		},
-		TokenCacheDir: path.Join(homedir.HomeDir(), DefaultTokenCachePath),
+		TokenCacheConfig: tokencache.Config{
+			Directory: path.Join(homedir.HomeDir(), DefaultTokenCachePath),
+		},
 		GrantOptionSet: authentication.GrantOptionSet{
 			AuthCodeBrowserOption: &authcode.BrowserOption{
 				BindAddress:           defaultBindAddresses,
@@ -138,7 +140,6 @@ func GetToken(ctx context.Context, issuerURL, clientID string, usePKCE bool, out
 				Logger: logger,
 			},
 			Logger: logger,
-			Clock:  clockReal,
 			AuthCodeBrowser: &authcode.Browser{
 				Browser: &browser.Browser{},
 				Logger:  logger,
@@ -156,14 +157,13 @@ func GetToken(ctx context.Context, issuerURL, clientID string, usePKCE bool, out
 				Logger: logger,
 			},
 		},
-		Logger:               logger,
-		TokenCacheRepository: &repository.Repository{},
-		Writer: &writer.Writer{
+		Logger:                 logger,
+		TokenCacheRepository:   &repository.Repository{},
+		CredentialPluginReader: &credreader.Reader{},
+		CredentialPluginWriter: &writer.Writer{
 			Stdout: out,
 		},
-		Mutex: &mutex.Mutex{
-			Logger: logger,
-		},
+		Clock: &clock.Real{},
 	}
 	if err := getToken.Do(ctx, in); err != nil {
 		return fmt.Errorf("error getting OIDC token: %w", err)

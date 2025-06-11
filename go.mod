@@ -1,6 +1,6 @@
 module github.com/ninech/nctl
 
-go 1.24.0
+go 1.24.2
 
 toolchain go1.24.4
 
@@ -21,7 +21,7 @@ require (
 	github.com/grafana/dskit v0.0.0-20250317084829-9cdd36a91f10
 	github.com/grafana/loki/v3 v3.5.1
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/int128/kubelogin v1.28.1
+	github.com/int128/kubelogin v1.32.4
 	github.com/jotaen/kong-completion v0.0.6
 	github.com/lucasepe/codename v0.2.1-0.20230220151621-5e31bf1e775f
 	github.com/mattn/go-isatty v0.0.20
@@ -46,6 +46,7 @@ require (
 )
 
 require (
+	al.essio.dev/pkg/shellescape v1.6.0 // indirect
 	cloud.google.com/go/auth v0.16.2 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/compute/metadata v0.7.0 // indirect
@@ -63,7 +64,6 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/Workiva/go-datastructures v1.1.5 // indirect
 	github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b // indirect
-	github.com/alexflint/go-filemutex v1.3.0 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/aws/aws-sdk-go v1.55.7 // indirect
@@ -82,6 +82,7 @@ require (
 	github.com/coreos/go-oidc/v3 v3.14.1 // indirect
 	github.com/coreos/go-semver v0.3.1 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
+	github.com/danieljoos/wincred v1.2.2 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/dgryski/go-metro v0.0.0-20250106013310-edb8663e5e33 // indirect
@@ -118,6 +119,8 @@ require (
 	github.com/go-redsync/redsync/v4 v4.13.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
+	github.com/godbus/dbus/v5 v5.1.0 // indirect
+	github.com/gofrs/flock v0.12.1 // indirect
 	github.com/gogo/googleapis v1.4.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/gogo/status v1.1.1 // indirect
@@ -243,6 +246,7 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
+	github.com/zalando/go-keyring v0.2.6 // indirect
 	go.etcd.io/etcd/api/v3 v3.6.1 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.6.1 // indirect
 	go.etcd.io/etcd/client/v3 v3.6.1 // indirect

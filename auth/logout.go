@@ -12,6 +12,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/int128/kubelogin/pkg/oidc"
 	"github.com/int128/kubelogin/pkg/tokencache"
 	"github.com/int128/kubelogin/pkg/tokencache/repository"
 
@@ -28,8 +29,10 @@ type LogoutCmd struct {
 
 func (l *LogoutCmd) Run(ctx context.Context, command string, tk api.TokenGetter) error {
 	key := tokencache.Key{
-		ClientID:  l.ClientID,
-		IssuerURL: l.IssuerURL,
+		Provider: oidc.Provider{
+			ClientID:  l.ClientID,
+			IssuerURL: l.IssuerURL,
+		},
 	}
 
 	filename, err := computeFilename(key)
@@ -44,7 +47,7 @@ func (l *LogoutCmd) Run(ctx context.Context, command string, tk api.TokenGetter)
 	}
 
 	r := repository.Repository{}
-	cache, err := r.FindByKey(path.Join(homedir.HomeDir(), api.DefaultTokenCachePath), key)
+	cache, err := r.FindByKey(tokencache.Config{Directory: path.Join(homedir.HomeDir(), api.DefaultTokenCachePath)}, key)
 	if err != nil {
 		return fmt.Errorf("error finding cache file: %w", err)
 	}
