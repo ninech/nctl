@@ -56,6 +56,9 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 				Out:               proj.out,
 				ExcludeAdditional: projectExcludes(),
 				Format:            format.OutputFormatTypeJSON,
+				JSONOpts: format.JSONOutputOptions{
+					PrintSingleItem: proj.Name != "",
+				},
 			},
 		)
 	}

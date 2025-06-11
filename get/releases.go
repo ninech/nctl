@@ -48,7 +48,15 @@ func (cmd *releasesCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 	case yamlOut:
 		return format.PrettyPrintObjects(releaseList.GetItems(), format.PrintOpts{Out: defaultOut(cmd.out)})
 	case jsonOut:
-		return format.PrettyPrintObjects(releaseList.GetItems(), format.PrintOpts{Out: defaultOut(cmd.out), Format: format.OutputFormatTypeJSON})
+		return format.PrettyPrintObjects(
+			releaseList.GetItems(),
+			format.PrintOpts{
+				Out:    defaultOut(cmd.out),
+				Format: format.OutputFormatTypeJSON,
+				JSONOpts: format.JSONOutputOptions{
+					PrintSingleItem: cmd.Name != "",
+				},
+			})
 	}
 
 	return nil
