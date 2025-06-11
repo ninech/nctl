@@ -77,8 +77,8 @@ func (cmd *mySQLCmd) printPassword(ctx context.Context, client *api.Client, mysq
 		return err
 	}
 
-	fmt.Fprintln(cmd.out, pw)
-	return nil
+	_, err = fmt.Fprintln(cmd.out, pw)
+	return err
 }
 
 // printConnectionString according to the MySQL documentation:

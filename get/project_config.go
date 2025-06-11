@@ -84,15 +84,15 @@ func printProjectConfigs(configs []apps.ProjectConfig, get *Cmd, out io.Writer, 
 
 		get.writeTabRow(
 			w,
-			c.ObjectMeta.Namespace,
-			c.ObjectMeta.Name,
+			c.Namespace,
+			c.Name,
 			string(c.Spec.ForProvider.Config.Size),
 			replicas,
 			port,
 			util.EnvVarToString(c.Spec.ForProvider.Config.Env),
 			strconv.FormatBool(basicAuth),
 			deployJobName,
-			duration.HumanDuration(time.Since(c.ObjectMeta.CreationTimestamp.Time)),
+			duration.HumanDuration(time.Since(c.CreationTimestamp.Time)),
 		)
 	}
 

@@ -147,7 +147,7 @@ func PrettyPrintObjects[T any](objs []T, opts PrintOpts) error {
 		}
 		// if there's another object we print a yaml divider
 		if i != len(objs)-1 {
-			fmt.Fprintln(opts.defaultOut(), "---")
+			_, _ = fmt.Fprintln(opts.defaultOut(), "---")
 		}
 	}
 

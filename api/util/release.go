@@ -15,8 +15,8 @@ func OrderReleaseList(releaseList *apps.ReleaseList, reverse bool) {
 	}
 
 	sort.Slice(releaseList.Items, func(i, j int) bool {
-		applicationNameI := releaseList.Items[i].ObjectMeta.Labels[ApplicationNameLabel]
-		applicationNameJ := releaseList.Items[j].ObjectMeta.Labels[ApplicationNameLabel]
+		applicationNameI := releaseList.Items[i].Labels[ApplicationNameLabel]
+		applicationNameJ := releaseList.Items[j].Labels[ApplicationNameLabel]
 
 		if applicationNameI != applicationNameJ {
 			return applicationNameI < applicationNameJ
