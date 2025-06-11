@@ -41,7 +41,7 @@ func TestCreate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// to test the wait we create a ticker that continously updates our
+	// to test the wait we create a ticker that continuously updates our
 	// resource in a goroutine to simulate a controller doing the same
 	ticker := time.NewTicker(100 * time.Millisecond)
 	done := make(chan bool)

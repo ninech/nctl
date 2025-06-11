@@ -71,7 +71,7 @@ func (l *LogoutCmd) Run(ctx context.Context, command string, tk api.TokenGetter)
 	c := http.DefaultClient
 	resp, err := c.Do(req)
 	if err != nil {
-		return fmt.Errorf("error loging out from OIDC: %w", err)
+		return fmt.Errorf("error logging out from OIDC: %w", err)
 	}
 	defer resp.Body.Close()
 

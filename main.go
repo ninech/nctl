@@ -215,9 +215,9 @@ func versionOutput(version, commit, date string) string {
 	return version
 }
 
-func merge(existing kong.Vars, withs ...kong.Vars) error {
-	for _, with := range withs {
-		for k, v := range with {
+func merge(existing kong.Vars, additional ...kong.Vars) error {
+	for _, v := range additional {
+		for k, v := range v {
 			_, exists := existing[k]
 			if exists {
 				return fmt.Errorf("variable %q is already in use", k)

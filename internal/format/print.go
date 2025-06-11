@@ -239,7 +239,7 @@ func IsInteractiveEnvironment(out io.Writer) bool {
 }
 
 // stripObj removes some fields which simply add clutter to the yaml output.
-// The object should still be applyable afterwards as just defaults and
+// The object should still be applicable afterwards as just defaults and
 // computed fields get removed.
 func stripObj(obj resource.Object, excludeAdditional [][]string) (resource.Object, error) {
 	obj.SetManagedFields(nil)

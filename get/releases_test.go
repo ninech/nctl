@@ -157,12 +157,12 @@ func TestReleases(t *testing.T) {
 	for name, tc := range cases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			// we initilize the client with objects in different
+			// we initialize the client with objects in different
 			// order than CreationTimestampNano - we sort them by
 			// CreationTimestamp which is quite "random" here.
 			// This gives us a more realistic test sample and
 			// allows to test the prepare Releases output logic.
-			releasesByCreationTime := copyAndSortRelesesByCreationTime(tc.releases)
+			releasesByCreationTime := copyAndSortReleasesByCreationTime(tc.releases)
 
 			apiClient, err := test.SetupClient(
 				test.WithProjectsFromResources(releasesByCreationTime...),
@@ -250,7 +250,7 @@ func newRelease(
 	}
 }
 
-func copyAndSortRelesesByCreationTime(src []client.Object) []client.Object {
+func copyAndSortReleasesByCreationTime(src []client.Object) []client.Object {
 	newOrder := make([]client.Object, len(src))
 	copy(newOrder, src)
 	sort.Slice(newOrder, func(i, j int) bool {

@@ -59,7 +59,7 @@ func checkManuallyError(err error) error {
 }
 
 func findGitAuthSecrets(ctx context.Context, client *api.Client, a *apps.Application) ([]corev1.Secret, error) {
-	// we always add the default secret which we create if git credentails
+	// we always add the default secret which we create if git credentials
 	// have been given
 	gitAuthSecrets := []corev1.Secret{{
 		ObjectMeta: metav1.ObjectMeta{
