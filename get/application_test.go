@@ -186,7 +186,7 @@ dev        dev     dev         sample
 			},
 			project:      "dev",
 			outputFormat: jsonOut,
-			output:       `{"application":"dev","basicauth":{"password":"sample","username":"dev"},"project":"dev"}`,
+			output:       `{"application":"dev","project":"dev","basicauth":{"username":"dev","password":"sample"}}`,
 		},
 		"multiple apps with basic auth configured and all apps in the project requested": {
 			resources: []client.Object{
