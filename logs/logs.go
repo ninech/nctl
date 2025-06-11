@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/alecthomas/kong"
-	"github.com/grafana/loki/pkg/logproto"
+	"github.com/grafana/loki/v3/pkg/logproto"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/log"
 )

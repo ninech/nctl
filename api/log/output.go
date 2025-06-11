@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/grafana/loki/pkg/logcli/output"
-	"github.com/grafana/loki/pkg/loghttp"
+	"github.com/grafana/loki/v3/pkg/logcli/output"
+	"github.com/grafana/loki/v3/pkg/loghttp"
 )
 
 type filteredOutput struct {
