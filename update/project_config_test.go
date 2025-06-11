@@ -130,13 +130,16 @@ func TestConfig(t *testing.T) {
 // pointers. As we rely on pointers to check if a user supplied a flag we also
 // want to test it in case this ever changes in future kong versions.
 func TestProjectConfigFlags(t *testing.T) {
-	nilFlags := &configCmd{}
+	type cmd struct {
+		Env map[string]string `help:"Environment variables which are passed to the app at runtime."`
+	}
+	nilFlags := &cmd{}
 	_, err := kong.Must(nilFlags).Parse([]string{})
 	require.NoError(t, err)
 
 	assert.Nil(t, nilFlags.Env)
 
-	emptyFlags := &configCmd{}
+	emptyFlags := &cmd{}
 	_, err = kong.Must(emptyFlags).Parse([]string{`--env=`})
 	require.NoError(t, err)
 
