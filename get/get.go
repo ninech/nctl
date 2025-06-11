@@ -84,6 +84,10 @@ func (cmd *Cmd) writeTabRow(w io.Writer, project string, row ...string) {
 }
 
 func (cmd *Cmd) printEmptyMessage(out io.Writer, kind, project string) {
+	if cmd.Output == jsonOut {
+		fmt.Fprintf(defaultOut(out), "[]")
+		return
+	}
 	if cmd.AllProjects {
 		fmt.Fprintf(defaultOut(out), "no %s found in any project\n", flect.Pluralize(kind))
 		return

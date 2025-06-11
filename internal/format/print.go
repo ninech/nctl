@@ -31,6 +31,12 @@ const (
 	OutputFormatTypeJSON OutputFormatType = 1
 )
 
+type JSONOutputOptions struct {
+	// PrintSingleItem will print a single item of an array as is
+	// (without the array notation)
+	PrintSingleItem bool
+}
+
 var spinnerCharset = yacspin.CharSets[24]
 
 // ProgressMessagef is a formatted message for use with a spinner.Suffix. An
@@ -136,6 +142,8 @@ type PrintOpts struct {
 	ExcludeAdditional [][]string
 	// format type of the output, e.g. yaml or json
 	Format OutputFormatType
+	// JSONOpts defines special options for JSON output
+	JSONOpts JSONOutputOptions
 }
 
 func (p PrintOpts) defaultOut() io.Writer {
@@ -149,10 +157,25 @@ func (p PrintOpts) defaultOut() io.Writer {
 // with some metadata, status and other default fields stripped out. If
 // multiple objects are supplied, they will be divided with a yaml divider.
 func PrettyPrintObjects[T any](objs []T, opts PrintOpts) error {
-
 	switch opts.Format {
 	case OutputFormatTypeJSON:
-		if err := PrettyPrintObject(objs, opts); err != nil {
+		// check if we should strip the array around a single item
+		if opts.JSONOpts.PrintSingleItem && len(objs) == 1 {
+			prepared, err := prepareObject(objs[0], opts)
+			if err != nil {
+				return err
+			}
+			return printResource(prepared, opts)
+		}
+		var toPrint []any
+		for _, item := range objs {
+			prepared, err := prepareObject(item, opts)
+			if err != nil {
+				return err
+			}
+			toPrint = append(toPrint, prepared)
+		}
+		if err := printResource(toPrint, opts); err != nil {
 			return err
 		}
 	default:
@@ -169,15 +192,10 @@ func PrettyPrintObjects[T any](objs []T, opts PrintOpts) error {
 	return nil
 }
 
-// PrettyPrintObject prints the supplied object in "pretty" colored yaml
-// with some metadata, status and other default fields stripped out.
-func PrettyPrintObject(obj any, opts PrintOpts) error {
-	// we check if we can make a copy of the object as we might alter it.
-	// If we can't make a copy of the object we print it directly as
-	// altering it would change the source object
+func prepareObject(obj any, opts PrintOpts) (any, error) {
 	runtimeObject, is := obj.(runtime.Object)
 	if !is {
-		return printResource(obj, opts)
+		return obj, nil
 	}
 	objCopy := runtimeObject.DeepCopyObject()
 
@@ -186,7 +204,7 @@ func PrettyPrintObject(obj any, opts PrintOpts) error {
 		var err error
 		toPrint, err = stripObj(res, opts.ExcludeAdditional)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 	// if we got an unstructured object passed we want to remove the
@@ -194,7 +212,20 @@ func PrettyPrintObject(obj any, opts PrintOpts) error {
 	if u, is := toPrint.(*unstructured.Unstructured); is {
 		toPrint = u.Object
 	}
-	return printResource(toPrint, opts)
+	return toPrint, nil
+}
+
+// PrettyPrintObject prints the supplied object in "pretty" colored yaml
+// with some metadata, status and other default fields stripped out.
+func PrettyPrintObject(obj any, opts PrintOpts) error {
+	// we check if we can make a copy of the object as we might alter it.
+	// If we can't make a copy of the object we print it directly as
+	// altering it would change the source object
+	prepared, err := prepareObject(obj, opts)
+	if err != nil {
+		return nil
+	}
+	return printResource(prepared, opts)
 }
 
 // printResource prints the resource similar to how
