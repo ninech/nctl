@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grafana/loki/pkg/logcli/output"
+	"github.com/grafana/loki/v3/pkg/logcli/output"
 	"github.com/stretchr/testify/assert"
 )
 

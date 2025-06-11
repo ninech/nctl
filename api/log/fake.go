@@ -10,13 +10,13 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/grafana/loki/pkg/logcli/volume"
-	"github.com/grafana/loki/pkg/loghttp"
-	legacy "github.com/grafana/loki/pkg/loghttp/legacy"
-	"github.com/grafana/loki/pkg/logproto"
-	"github.com/grafana/loki/pkg/util"
-	"github.com/grafana/loki/pkg/util/httpreq"
-	"github.com/grafana/loki/pkg/util/marshal"
+	"github.com/grafana/loki/v3/pkg/logcli/volume"
+	"github.com/grafana/loki/v3/pkg/loghttp"
+	legacy "github.com/grafana/loki/v3/pkg/loghttp/legacy"
+	"github.com/grafana/loki/v3/pkg/logproto"
+	"github.com/grafana/loki/v3/pkg/util"
+	"github.com/grafana/loki/v3/pkg/util/httpreq"
+	"github.com/grafana/loki/v3/pkg/util/marshal"
 )
 
 type fake struct {
@@ -162,5 +162,9 @@ func (f fake) GetVolume(query *volume.Query) (*loghttp.QueryResponse, error) {
 }
 
 func (f fake) GetVolumeRange(query *volume.Query) (*loghttp.QueryResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (f fake) GetDetectedFields(queryStr, fieldName string, fieldLimit, lineLimit int, start, end time.Time, step time.Duration, quiet bool) (*loghttp.DetectedFieldsResponse, error) {
 	return nil, errors.New("not implemented")
 }

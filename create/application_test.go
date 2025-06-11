@@ -10,7 +10,7 @@ import (
 
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
-	"github.com/grafana/loki/pkg/logcli/output"
+	"github.com/grafana/loki/v3/pkg/logcli/output"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
