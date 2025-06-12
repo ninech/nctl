@@ -61,6 +61,17 @@ func (cmd *applicationsCmd) Run(ctx context.Context, client *api.Client, get *Cm
 		return printApplication(appList.Items, get, defaultOut(cmd.out), false)
 	case yamlOut:
 		return format.PrettyPrintObjects(appList.GetItems(), format.PrintOpts{Out: defaultOut(cmd.out)})
+	case jsonOut:
+		return format.PrettyPrintObjects(
+			appList.GetItems(),
+			format.PrintOpts{
+				Out:    defaultOut(cmd.out),
+				Format: format.OutputFormatTypeJSON,
+				JSONOpts: format.JSONOutputOptions{
+					PrintSingleItem: cmd.Name != "",
+				},
+			},
+		)
 	case stats:
 		return cmd.printStats(ctx, client, appList.Items, get, defaultOut(cmd.out))
 	}
@@ -106,6 +117,9 @@ func printApplication(apps []apps.Application, get *Cmd, out io.Writer, header b
 func printCredentials(creds []appCredentials, get *Cmd, out io.Writer) error {
 	if get.Output == yamlOut {
 		return format.PrettyPrintObjects(creds, format.PrintOpts{Out: out})
+	}
+	if get.Output == jsonOut {
+		return format.PrettyPrintObjects(creds, format.PrintOpts{Out: out, Format: format.OutputFormatTypeJSON})
 	}
 	return printCredentialsTabRow(creds, get, out)
 }
@@ -167,6 +181,9 @@ func join(list []string) string {
 func printDNSDetails(items []util.DNSDetail, get *Cmd, out io.Writer) error {
 	if get.Output == yamlOut {
 		return format.PrettyPrintObjects(items, format.PrintOpts{Out: out})
+	}
+	if get.Output == jsonOut {
+		return format.PrettyPrintObjects(items, format.PrintOpts{Out: out, Format: format.OutputFormatTypeJSON})
 	}
 	return printDNSDetailsTabRow(items, get, out)
 }

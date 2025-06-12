@@ -65,6 +65,16 @@ func (cmd *buildCmd) Run(ctx context.Context, client *api.Client, get *Cmd) erro
 		return printBuild(buildList.Items, get, defaultOut(cmd.out), false)
 	case yamlOut:
 		return format.PrettyPrintObjects(buildList.GetItems(), format.PrintOpts{Out: defaultOut(cmd.out)})
+	case jsonOut:
+		return format.PrettyPrintObjects(
+			buildList.GetItems(),
+			format.PrintOpts{
+				Out:    defaultOut(cmd.out),
+				Format: format.OutputFormatTypeJSON,
+				JSONOpts: format.JSONOutputOptions{
+					PrintSingleItem: cmd.Name != "",
+				},
+			})
 	}
 
 	return nil

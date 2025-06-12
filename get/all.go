@@ -59,6 +59,8 @@ func (cmd *allCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error 
 		return printItems(items, *get, defaultOut(cmd.out), false)
 	case yamlOut:
 		return format.PrettyPrintObjects(items, format.PrintOpts{Out: cmd.out})
+	case jsonOut:
+		return format.PrettyPrintObjects(items, format.PrintOpts{Out: cmd.out, Format: format.OutputFormatTypeJSON})
 	}
 
 	return nil

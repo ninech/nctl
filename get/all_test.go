@@ -61,6 +61,86 @@ dev    pear      Release        apps.nine.ch
 			projectName:  "dev",
 			output:       "apiVersion: apps.nine.ch/v1alpha1\nkind: Application\nmetadata:\n  creationTimestamp: null\n  name: banana\n  namespace: dev\nspec:\n  forProvider:\n    buildEnv: null\n    config:\n      env: null\n      port: null\n      replicas: null\n      size: \"\"\n    dockerfileBuild:\n      enabled: false\n    git:\n      revision: \"\"\n      subPath: \"\"\n      url: \"\"\n    paused: false\nstatus:\n  atProvider:\n    defaultURLs: null\n---\napiVersion: apps.nine.ch/v1alpha1\ncreationTimestampNano: 0\nkind: Release\nmetadata:\n  creationTimestamp: null\n  name: pear\n  namespace: dev\nspec:\n  forProvider:\n    build:\n      name: \"\"\n    config:\n      env: null\n      port: null\n      replicas: null\n      size: \"\"\n    configuration:\n      size:\n        origin: \"\"\n        value: \"\"\n    defaultHosts: null\n    image: {}\n    paused: false\nstatus:\n  atProvider:\n    owning: false\n",
 		},
+		"all resources from one project, json format": {
+			projects:     test.Projects(organization, "dev", "staging", "prod"),
+			objects:      []client.Object{testApplication("banana", "dev"), testRelease("pear", "dev")},
+			outputFormat: jsonOut,
+			projectName:  "dev",
+			output: `[
+  {
+    "apiVersion": "apps.nine.ch/v1alpha1",
+    "kind": "Application",
+    "metadata": {
+      "creationTimestamp": null,
+      "name": "banana",
+      "namespace": "dev"
+    },
+    "spec": {
+      "forProvider": {
+        "buildEnv": null,
+        "config": {
+          "env": null,
+          "port": null,
+          "replicas": null,
+          "size": ""
+        },
+        "dockerfileBuild": {
+          "enabled": false
+        },
+        "git": {
+          "revision": "",
+          "subPath": "",
+          "url": ""
+        },
+        "paused": false
+      }
+    },
+    "status": {
+      "atProvider": {
+        "defaultURLs": null
+      }
+    }
+  },
+  {
+    "apiVersion": "apps.nine.ch/v1alpha1",
+    "creationTimestampNano": 0,
+    "kind": "Release",
+    "metadata": {
+      "creationTimestamp": null,
+      "name": "pear",
+      "namespace": "dev"
+    },
+    "spec": {
+      "forProvider": {
+        "build": {
+          "name": ""
+        },
+        "config": {
+          "env": null,
+          "port": null,
+          "replicas": null,
+          "size": ""
+        },
+        "configuration": {
+          "size": {
+            "origin": "",
+            "value": ""
+          }
+        },
+        "defaultHosts": null,
+        "image": {},
+        "paused": false
+      }
+    },
+    "status": {
+      "atProvider": {
+        "owning": false
+      }
+    }
+  }
+]
+`,
+		},
 		"all projects, full format": {
 			projects: test.Projects(organization, "dev", "staging", "prod"),
 			objects: []client.Object{

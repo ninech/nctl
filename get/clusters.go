@@ -36,6 +36,15 @@ func (l *clustersCmd) Run(ctx context.Context, client *api.Client, get *Cmd) err
 		return printClusters(clusterList.Items, get, false)
 	case yamlOut:
 		return format.PrettyPrintObjects(clusterList.GetItems(), format.PrintOpts{})
+	case jsonOut:
+		return format.PrettyPrintObjects(
+			clusterList.GetItems(),
+			format.PrintOpts{
+				Format: format.OutputFormatTypeJSON,
+				JSONOpts: format.JSONOutputOptions{
+					PrintSingleItem: l.Name != "",
+				},
+			})
 	case contexts:
 		for _, cluster := range clusterList.Items {
 			fmt.Printf("%s\n", config.ContextName(&cluster))

@@ -55,6 +55,15 @@ func (asa *apiServiceAccountsCmd) Run(ctx context.Context, client *api.Client, g
 		return asa.print(asaList.Items, get, false)
 	case yamlOut:
 		return format.PrettyPrintObjects(asaList.GetItems(), format.PrintOpts{})
+	case jsonOut:
+		return format.PrettyPrintObjects(
+			asaList.GetItems(),
+			format.PrintOpts{
+				Format: format.OutputFormatTypeJSON,
+				JSONOpts: format.JSONOutputOptions{
+					PrintSingleItem: asa.Name != "",
+				},
+			})
 	}
 
 	return nil
