@@ -236,7 +236,8 @@ func printResource(obj any, opts PrintOpts) error {
 
 	switch opts.Format {
 	case OutputFormatTypeJSON:
-		b, err = json.Marshal(obj)
+		b, err = json.MarshalIndent(obj, "", "  ")
+		b = append(b, '\n')
 	default:
 		b, err = yaml.Marshal(obj)
 	}

@@ -66,7 +66,80 @@ dev    pear      Release        apps.nine.ch
 			objects:      []client.Object{testApplication("banana", "dev"), testRelease("pear", "dev")},
 			outputFormat: jsonOut,
 			projectName:  "dev",
-			output:       `[{"apiVersion":"apps.nine.ch/v1alpha1","kind":"Application","metadata":{"creationTimestamp":null,"name":"banana","namespace":"dev"},"spec":{"forProvider":{"buildEnv":null,"config":{"env":null,"port":null,"replicas":null,"size":""},"dockerfileBuild":{"enabled":false},"git":{"revision":"","subPath":"","url":""},"paused":false}},"status":{"atProvider":{"defaultURLs":null}}},{"apiVersion":"apps.nine.ch/v1alpha1","creationTimestampNano":0,"kind":"Release","metadata":{"creationTimestamp":null,"name":"pear","namespace":"dev"},"spec":{"forProvider":{"build":{"name":""},"config":{"env":null,"port":null,"replicas":null,"size":""},"configuration":{"size":{"origin":"","value":""}},"defaultHosts":null,"image":{},"paused":false}},"status":{"atProvider":{"owning":false}}}]`,
+			output: `[
+  {
+    "apiVersion": "apps.nine.ch/v1alpha1",
+    "kind": "Application",
+    "metadata": {
+      "creationTimestamp": null,
+      "name": "banana",
+      "namespace": "dev"
+    },
+    "spec": {
+      "forProvider": {
+        "buildEnv": null,
+        "config": {
+          "env": null,
+          "port": null,
+          "replicas": null,
+          "size": ""
+        },
+        "dockerfileBuild": {
+          "enabled": false
+        },
+        "git": {
+          "revision": "",
+          "subPath": "",
+          "url": ""
+        },
+        "paused": false
+      }
+    },
+    "status": {
+      "atProvider": {
+        "defaultURLs": null
+      }
+    }
+  },
+  {
+    "apiVersion": "apps.nine.ch/v1alpha1",
+    "creationTimestampNano": 0,
+    "kind": "Release",
+    "metadata": {
+      "creationTimestamp": null,
+      "name": "pear",
+      "namespace": "dev"
+    },
+    "spec": {
+      "forProvider": {
+        "build": {
+          "name": ""
+        },
+        "config": {
+          "env": null,
+          "port": null,
+          "replicas": null,
+          "size": ""
+        },
+        "configuration": {
+          "size": {
+            "origin": "",
+            "value": ""
+          }
+        },
+        "defaultHosts": null,
+        "image": {},
+        "paused": false
+      }
+    },
+    "status": {
+      "atProvider": {
+        "owning": false
+      }
+    }
+  }
+]
+`,
 		},
 		"all projects, full format": {
 			projects: test.Projects(organization, "dev", "staging", "prod"),

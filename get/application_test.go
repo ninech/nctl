@@ -186,7 +186,17 @@ dev        dev     dev         sample
 			},
 			project:      "dev",
 			outputFormat: jsonOut,
-			output:       `[{"application":"dev","project":"dev","basicauth":{"username":"dev","password":"sample"}}]`,
+			output: `[
+  {
+    "application": "dev",
+    "project": "dev",
+    "basicauth": {
+      "username": "dev",
+      "password": "sample"
+    }
+  }
+]
+`,
 		},
 		"multiple apps with basic auth configured and all apps in the project requested": {
 			resources: []client.Object{
@@ -262,7 +272,25 @@ dev        dev-second    dev-second    sample-second
 				),
 			},
 			outputFormat: jsonOut,
-			output:       `[{"application":"dev","project":"dev","basicauth":{"username":"dev","password":"sample"}},{"application":"prod","project":"prod","basicauth":{"username":"prod","password":"secret"}}]`,
+			output: `[
+  {
+    "application": "dev",
+    "project": "dev",
+    "basicauth": {
+      "username": "dev",
+      "password": "sample"
+    }
+  },
+  {
+    "application": "prod",
+    "project": "prod",
+    "basicauth": {
+      "username": "prod",
+      "password": "secret"
+    }
+  }
+]
+`,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -423,7 +451,21 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 			},
 			project:      "dev",
 			outputFormat: jsonOut,
-			output:       `[{"application":"sample","project":"dev","txtRecord":"deploio-site-verification=sample-dev-3ksdk23","cnameTarget":"sample.3ksdk23.deploio.app"},{"application":"test","project":"dev","txtRecord":"deploio-site-verification=test-dev-4ksdk23","cnameTarget":"test.4ksdk23.deploio.app"}]`,
+			output: `[
+  {
+    "application": "sample",
+    "project": "dev",
+    "txtRecord": "deploio-site-verification=sample-dev-3ksdk23",
+    "cnameTarget": "sample.3ksdk23.deploio.app"
+  },
+  {
+    "application": "test",
+    "project": "dev",
+    "txtRecord": "deploio-site-verification=test-dev-4ksdk23",
+    "cnameTarget": "test.4ksdk23.deploio.app"
+  }
+]
+`,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
