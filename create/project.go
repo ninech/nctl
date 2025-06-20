@@ -21,6 +21,10 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client) error {
 		return err
 	}
 
+	if proj.DisplayName == "" {
+		proj.DisplayName = "Default"
+	}
+
 	p := newProject(proj.Name, org, proj.DisplayName)
 	fmt.Printf("Creating new project %s for organization %s\n", p.Name, org)
 	c := newCreator(client, p, strings.ToLower(management.ProjectKind))
