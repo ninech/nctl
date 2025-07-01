@@ -36,7 +36,7 @@ require (
 	golang.org/x/exp v0.0.0-20250606033433-dcc06ee1d476
 	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.33.1
-	k8s.io/apimachinery v0.33.1
+	k8s.io/apimachinery v0.33.2
 	k8s.io/client-go v0.33.1
 	k8s.io/kubectl v0.33.1
 	k8s.io/metrics v0.33.1
