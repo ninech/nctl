@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: crate-ci/typos@v1.33.1
+      - uses: crate-ci/typos@v1.34.0
   test:
     name: test
     container: ninech/controller-test-image:latest
