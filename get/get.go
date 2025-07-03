@@ -24,6 +24,7 @@ type Cmd struct {
 	Releases            releasesCmd           `cmd:"" group:"deplo.io" name:"releases" aliases:"release" help:"Get deplo.io Releases."`
 	Configs             configsCmd            `cmd:"" group:"deplo.io" name:"configs" aliases:"config" help:"Get deplo.io Project Configuration."`
 	MySQL               mySQLCmd              `cmd:"" group:"storage.nine.ch" name:"mysql" help:"Get MySQL instances."`
+	MySQLDatabases      mysqlDatabaseCmd      `cmd:"" group:"storage.nine.ch" name:"mysqldatabases" aliases:"mysqldatabase" help:"Get MySQL databases."`
 	Postgres            postgresCmd           `cmd:"" group:"storage.nine.ch" name:"postgres" help:"Get PostgreSQL instances."`
 	PostgresDatabases   postgresDatabaseCmd   `cmd:"" group:"storage.nine.ch" name:"postgresdatabases" aliases:"postgresdatabase" help:"Get PostgreSQL databases."`
 	KeyValueStore       keyValueStoreCmd      `cmd:"" group:"storage.nine.ch" name:"keyvaluestore" aliases:"kvs" help:"Get KeyValueStore instances."`
