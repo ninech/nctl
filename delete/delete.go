@@ -21,6 +21,7 @@ type Cmd struct {
 	Application         applicationCmd       `cmd:"" group:"deplo.io" name:"application" aliases:"app,application" help:"Delete a deplo.io Application."`
 	MySQL               mySQLCmd             `cmd:"" group:"storage.nine.ch" name:"mysql" help:"Delete a MySQL instance."`
 	Postgres            postgresCmd          `cmd:"" group:"storage.nine.ch" name:"postgres" help:"Delete a PostgreSQL instance."`
+	PostgresDatabase    postgresDatabaseCmd  `cmd:"" group:"storage.nine.ch" name:"postgresdatabase" help:"Delete a PostgreSQL database."`
 	KeyValueStore       keyValueStoreCmd     `cmd:"" group:"storage.nine.ch" name:"keyvaluestore" aliases:"kvs" help:"Delete a KeyValueStore instance."`
 	CloudVirtualMachine cloudVMCmd           `cmd:"" group:"infrastructure.nine.ch" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Delete a CloudVM."`
 }
