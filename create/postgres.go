@@ -59,8 +59,7 @@ func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client) error {
 			}
 			return false, nil
 		},
-	},
-	)
+	})
 }
 
 func (cmd *postgresCmd) newPostgres(namespace string) *storage.Postgres {

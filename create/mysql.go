@@ -64,8 +64,7 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
 			}
 			return false, nil
 		},
-	},
-	)
+	})
 }
 
 func (cmd *mySQLCmd) newMySQL(namespace string) *storage.MySQL {
