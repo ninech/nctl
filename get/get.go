@@ -24,7 +24,9 @@ type Cmd struct {
 	Releases            releasesCmd           `cmd:"" group:"deplo.io" name:"releases" aliases:"release" help:"Get deplo.io Releases."`
 	Configs             configsCmd            `cmd:"" group:"deplo.io" name:"configs" aliases:"config" help:"Get deplo.io Project Configuration."`
 	MySQL               mySQLCmd              `cmd:"" group:"storage.nine.ch" name:"mysql" help:"Get MySQL instances."`
+	MySQLDatabases      mysqlDatabaseCmd      `cmd:"" group:"storage.nine.ch" name:"mysqldatabases" aliases:"mysqldatabase" help:"Get MySQL databases."`
 	Postgres            postgresCmd           `cmd:"" group:"storage.nine.ch" name:"postgres" help:"Get PostgreSQL instances."`
+	PostgresDatabases   postgresDatabaseCmd   `cmd:"" group:"storage.nine.ch" name:"postgresdatabases" aliases:"postgresdatabase" help:"Get PostgreSQL databases."`
 	KeyValueStore       keyValueStoreCmd      `cmd:"" group:"storage.nine.ch" name:"keyvaluestore" aliases:"kvs" help:"Get KeyValueStore instances."`
 	All                 allCmd                `cmd:"" name:"all" help:"Get project content"`
 	CloudVirtualMachine cloudVMCmd            `cmd:"" group:"infrastructure.nine.ch" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Get a CloudVM."`
@@ -107,16 +109,39 @@ func defaultOut(out io.Writer) io.Writer {
 	return out
 }
 
-func getConnectionSecret(ctx context.Context, client *api.Client, key string, mg resource.Managed) (string, error) {
+func getConnectionSecretMap(ctx context.Context, client *api.Client, mg resource.Managed) (map[string][]byte, error) {
 	secret, err := client.GetConnectionSecret(ctx, mg)
+	if err != nil {
+		return nil, err
+	}
+
+	return secret.Data, nil
+}
+
+func getConnectionSecret(ctx context.Context, client *api.Client, key string, mg resource.Managed) (string, error) {
+	secrets, err := getConnectionSecretMap(ctx, client, mg)
 	if err != nil {
 		return "", fmt.Errorf("unable to get connection secret: %w", err)
 	}
 
-	content, ok := secret.Data[key]
+	content, ok := secrets[key]
 	if !ok {
 		return "", fmt.Errorf("secret %s has no key %s", mg.GetName(), key)
 	}
 
 	return string(content), nil
+}
+
+func (cmd *resourceCmd) printSecret(out io.Writer, ctx context.Context, client *api.Client, mg resource.Managed, field func(string, string) string) error {
+	secrets, err := getConnectionSecretMap(ctx, client, mg)
+	if err != nil {
+		return err
+	}
+
+	for k, v := range secrets {
+		fmt.Fprintln(out, field(k, string(v)))
+		break
+	}
+
+	return nil
 }

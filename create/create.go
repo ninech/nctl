@@ -28,7 +28,9 @@ type Cmd struct {
 	Config              configCmd            `cmd:"" group:"deplo.io" name:"config"  help:"Create a new deplo.io Project Configuration."`
 	Application         applicationCmd       `cmd:"" group:"deplo.io" name:"application" aliases:"app,application" help:"Create a new deplo.io Application."`
 	MySQL               mySQLCmd             `cmd:"" group:"storage.nine.ch" name:"mysql" help:"Create a new MySQL instance."`
+	MySQLDatabase       mysqlDatabaseCmd     `cmd:"" group:"storage.nine.ch" name:"mysqldatabase" help:"Create a new MySQL database."`
 	Postgres            postgresCmd          `cmd:"" group:"storage.nine.ch" name:"postgres" help:"Create a new PostgreSQL instance."`
+	PostgresDatabase    postgresDatabaseCmd  `cmd:"" group:"storage.nine.ch" name:"postgresdatabase" help:"Create a new PostgreSQL database."`
 	KeyValueStore       keyValueStoreCmd     `cmd:"" group:"storage.nine.ch" name:"keyvaluestore" aliases:"kvs" help:"Create a new KeyValueStore instance"`
 	CloudVirtualMachine cloudVMCmd           `cmd:"" group:"infrastructure.nine.ch" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Create a new CloudVM."`
 }

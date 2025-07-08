@@ -47,8 +47,7 @@ func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client) error 
 			}
 			return false, nil
 		},
-	},
-	)
+	})
 }
 
 func (cmd *keyValueStoreCmd) newKeyValueStore(namespace string) (*storage.KeyValueStore, error) {
