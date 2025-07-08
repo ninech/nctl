@@ -217,7 +217,7 @@ func sizeForWorkerJob(release *apps.Release, workerJobName string) *apps.Applica
 }
 
 func sizeForScheduledJob(release *apps.Release, scheduledJobName string) *apps.ApplicationSize {
-	for _, sj := range release.Spec.ForProvider.Config.ScheduledJobs {
+	for _, sj := range release.Spec.ForProvider.Configuration.WithoutOrigin().ScheduledJobs {
 		if sj.Name == scheduledJobName {
 			return sj.Size
 		}
