@@ -15,10 +15,11 @@ import (
 
 type keyValueStoreCmd struct {
 	resourceCmd
-	Location        string                               `default:"nine-es34" help:"Location where the KeyValueStore instance is created."`
-	MemorySize      string                               `help:"MemorySize configures KeyValueStore to use a specified amount of memory for the data set." placeholder:"1Gi"`
-	MaxMemoryPolicy storage.KeyValueStoreMaxMemoryPolicy `help:"MaxMemoryPolicy specifies the exact behavior KeyValueStore follows when the maxmemory limit is reached." placeholder:"allkeys-lru"`
-	AllowedCidrs    []meta.IPv4CIDR                      `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance." placeholder:"203.0.113.1/32"`
+	Location                string                               `placeholder:"nine-es34" help:"Location where the KeyValueStore instance is created."`
+	MemorySize              string                               `help:"MemorySize configures KeyValueStore to use a specified amount of memory for the data set." placeholder:"1Gi"`
+	MaxMemoryPolicy         storage.KeyValueStoreMaxMemoryPolicy `help:"MaxMemoryPolicy specifies the exact behavior KeyValueStore follows when the maxmemory limit is reached." placeholder:"allkeys-lru"`
+	AllowedCidrs            []meta.IPv4CIDR                      `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance." placeholder:"203.0.113.1/32"`
+	PublicNetworkingEnabled *bool                                `help:"Specifies if the service should be available without service connection." placeholder:"true"`
 }
 
 func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client) error {
@@ -66,9 +67,10 @@ func (cmd *keyValueStoreCmd) newKeyValueStore(namespace string) (*storage.KeyVal
 				},
 			},
 			ForProvider: storage.KeyValueStoreParameters{
-				Location:        meta.LocationName(cmd.Location),
-				MaxMemoryPolicy: cmd.MaxMemoryPolicy,
-				AllowedCIDRs:    cmd.AllowedCidrs,
+				Location:                meta.LocationName(cmd.Location),
+				MaxMemoryPolicy:         cmd.MaxMemoryPolicy,
+				AllowedCIDRs:            cmd.AllowedCidrs,
+				PublicNetworkingEnabled: cmd.PublicNetworkingEnabled,
 			},
 		},
 	}
