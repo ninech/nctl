@@ -14,9 +14,10 @@ import (
 
 type keyValueStoreCmd struct {
 	resourceCmd
-	MemorySize      *string                               `help:"MemorySize configures KeyValueStore to use a specified amount of memory for the data set." placeholder:"1Gi"`
-	MaxMemoryPolicy *storage.KeyValueStoreMaxMemoryPolicy `help:"MaxMemoryPolicy specifies the exact behavior KeyValueStore follows when the maxmemory limit is reached." placeholder:"allkeys-lru"`
-	AllowedCidrs    *[]meta.IPv4CIDR                      `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance." placeholder:"203.0.113.1/32"`
+	MemorySize              *string                               `help:"MemorySize configures KeyValueStore to use a specified amount of memory for the data set." placeholder:"1Gi"`
+	MaxMemoryPolicy         *storage.KeyValueStoreMaxMemoryPolicy `help:"MaxMemoryPolicy specifies the exact behavior KeyValueStore follows when the maxmemory limit is reached." placeholder:"allkeys-lru"`
+	AllowedCidrs            *[]meta.IPv4CIDR                      `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance." placeholder:"203.0.113.1/32"`
+	PublicNetworkingEnabled *bool                                 `help:"Specifies if the service should be available without service connection."`
 }
 
 func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client) error {
@@ -51,6 +52,10 @@ func (cmd *keyValueStoreCmd) applyUpdates(keyValueStore *storage.KeyValueStore) 
 	}
 	if cmd.AllowedCidrs != nil {
 		keyValueStore.Spec.ForProvider.AllowedCIDRs = *cmd.AllowedCidrs
+	}
+
+	if cmd.PublicNetworkingEnabled != nil {
+		keyValueStore.Spec.ForProvider.PublicNetworkingEnabled = cmd.PublicNetworkingEnabled
 	}
 
 	return nil

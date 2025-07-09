@@ -97,6 +97,16 @@ func TestKeyValueStore(t *testing.T) {
 				AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")},
 			},
 		},
+		{
+			name: "update-public-networking",
+			create: storage.KeyValueStoreParameters{
+				PublicNetworkingEnabled: ptr.To(true),
+			},
+			update: keyValueStoreCmd{PublicNetworkingEnabled: ptr.To(false)},
+			want: storage.KeyValueStoreParameters{
+				PublicNetworkingEnabled: ptr.To(false),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
