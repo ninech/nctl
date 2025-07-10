@@ -2,16 +2,18 @@ package predictor
 
 import (
 	"context"
+	"os"
 	"reflect"
 	"strings"
 	"time"
 
 	"github.com/gobuffalo/flect"
-	"github.com/ninech/apis/management/v1alpha1"
+	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/posener/complete"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -23,43 +25,49 @@ const (
 // argResourceMap maps certain unusual args to resource names to aid with
 // completion.
 var argResourceMap = map[string]string{
-	"clusters":    "kubernetesclusters",
-	"set-project": "projects",
-	"-p":          "projects",
-	"--project":   "projects",
+	"clusters": "kubernetesclusters",
 }
 
 type Resource struct {
-	clientCreator func() (*api.Client, error)
-	client        *api.Client
+	client   *api.Client
+	knownGVK *schema.GroupVersionKind
 }
 
-func NewResourceName(clientCreator func() (*api.Client, error)) *Resource {
+func NewResourceName(ctx context.Context, defaultAPICluster string) complete.Predictor {
+	// we don't want to error in our predictor so we just return an empty predictor
+	client, err := newClient(ctx, defaultAPICluster)
+	if err != nil {
+		return complete.PredictNothing
+	}
+	return &Resource{client: client}
+}
+
+func NewResourceNameWithKind(ctx context.Context, defaultAPICluster string, gvk schema.GroupVersionKind) complete.Predictor {
+	// we can't error in our predictor so we just return an empty predictor
+	client, err := newClient(ctx, defaultAPICluster)
+	if err != nil {
+		return complete.PredictNothing
+	}
 	return &Resource{
-		clientCreator: clientCreator,
+		client:   client,
+		knownGVK: ptr.To(gvk),
 	}
 }
 
 func (r *Resource) Predict(args complete.Args) []string {
-	if r.clientCreator == nil {
-		return []string{}
-	}
-	if r.client == nil {
-		var err error
-		if r.client, err = r.clientCreator(); err != nil {
-			return []string{}
-		}
-	}
-
 	u := &unstructured.UnstructuredList{}
-	u.SetGroupVersionKind(r.findKind(args.LastCompleted))
+	if r.knownGVK != nil {
+		u.SetGroupVersionKind(*r.knownGVK)
+	} else {
+		u.SetGroupVersionKind(r.findKind(args.LastCompleted))
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	ns := r.client.Project
 	// if we're looking for projects, we need to use the org as the namespace
-	if u.GetObjectKind().GroupVersionKind().Kind == reflect.TypeOf(v1alpha1.ProjectList{}).Name() {
+	if u.GetObjectKind().GroupVersionKind().Kind == reflect.TypeOf(management.ProjectList{}).Name() {
 		org, err := r.client.Organization()
 		if err != nil {
 			return []string{}
@@ -99,4 +107,20 @@ func (r *Resource) findKind(arg string) schema.GroupVersionKind {
 
 func listKindToResource(kind string) string {
 	return flect.Pluralize(strings.TrimSuffix(strings.ToLower(kind), listSuffix))
+}
+
+func newClient(ctx context.Context, defaultAPICluster string) (*api.Client, error) {
+	// the client for the predictor requires a static token in the client config
+	// since dynamic exec config seems to break with some shells during completion.
+	// The exact reason for that is unknown.
+	apiCluster := defaultAPICluster
+	if v, ok := os.LookupEnv("NCTL_API_CLUSTER"); ok {
+		apiCluster = v
+	}
+	c, err := api.New(ctx, apiCluster, "", api.StaticToken(ctx))
+	if err != nil {
+		return nil, err
+	}
+
+	return c, nil
 }
