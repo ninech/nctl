@@ -7,15 +7,14 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"reflect"
 	"runtime/debug"
 	"strings"
 	"syscall"
 
 	"github.com/alecthomas/kong"
-
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-
 	completion "github.com/jotaen/kong-completion"
+	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/apply"
@@ -29,10 +28,11 @@ import (
 	"github.com/ninech/nctl/predictor"
 	"github.com/ninech/nctl/update"
 	"github.com/posener/complete"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 type flags struct {
-	Project        string           `predictor:"resource_name" help:"Limit commands to a specific project." short:"p"`
+	Project        string           `help:"Limit commands to a specific project." short:"p" predictor:"project_name"`
 	APICluster     string           `help:"Context name of the API cluster." default:"${api_cluster}" env:"NCTL_API_CLUSTER" hidden:""`
 	LogAPIAddress  string           `help:"Address of the deplo.io logging API server." default:"https://logs.deplo.io" env:"NCTL_LOG_ADDR" hidden:""`
 	LogAPIInsecure bool             `help:"Don't verify TLS connection to the logging API server." hidden:"" default:"false" env:"NCTL_LOG_INSECURE"`
@@ -83,27 +83,15 @@ func main() {
 		kong.BindTo(ctx, (*context.Context)(nil)),
 	)
 
-	resourceNamePredictor := predictor.NewResourceName(func() (*api.Client, error) {
-		// the client for the predictor requires a static token in the client config
-		// since dynamic exec config seems to break with some shells during completion.
-		// The exact reason for that is unknown.
-		apiCluster := defaultAPICluster
-		if v, ok := os.LookupEnv("NCTL_API_CLUSTER"); ok {
-			apiCluster = v
-		}
-		c, err := api.New(ctx, apiCluster, "", api.StaticToken(ctx))
-		if err != nil {
-			return nil, err
-		}
-
-		return c, nil
-	})
-
-	// completion handling
 	completion.Register(
 		parser,
 		completion.WithPredictor("file", complete.PredictFiles("*")),
-		completion.WithPredictor("resource_name", resourceNamePredictor),
+		completion.WithPredictor("resource_name", predictor.NewResourceName(ctx, defaultAPICluster)),
+		completion.WithPredictor("project_name", predictor.NewResourceNameWithKind(
+			ctx, defaultAPICluster, management.SchemeGroupVersion.WithKind(
+				reflect.TypeOf(management.ProjectList{}).Name(),
+			)),
+		),
 	)
 
 	kongCtx, err := parser.Parse(os.Args[1:])
