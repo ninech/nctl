@@ -19,6 +19,7 @@ import (
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/apply"
 	"github.com/ninech/nctl/auth"
+	"github.com/ninech/nctl/copy"
 	"github.com/ninech/nctl/create"
 	"github.com/ninech/nctl/delete"
 	"github.com/ninech/nctl/exec"
@@ -46,6 +47,7 @@ type rootCommand struct {
 	Auth        auth.Cmd              `cmd:"" help:"Authenticate with resource."`
 	Completions completion.Completion `cmd:"" help:"Print shell completions."`
 	Create      create.Cmd            `cmd:"" help:"Create resource."`
+	Copy        copy.Cmd              `cmd:"" help:"Copy resource"`
 	Apply       apply.Cmd             `cmd:"" help:"Apply resource."`
 	Delete      delete.Cmd            `cmd:"" help:"Delete resource."`
 	Logs        logs.Cmd              `cmd:"" help:"Get logs of resource."`
