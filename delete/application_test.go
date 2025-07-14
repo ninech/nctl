@@ -6,6 +6,7 @@ import (
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
+	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/internal/test"
@@ -106,8 +107,40 @@ func TestApplication(t *testing.T) {
 			name:          "dev",
 			errorExpected: false,
 		},
+		"application-static-egress": {
+			testObjects: func() []testObject {
+				appOne := dummyApp("dev", project)
+				egressOne := &networking.StaticEgress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "name-should-not-matter",
+						Namespace: project,
+					},
+					Spec: networking.StaticEgressSpec{
+						ForProvider: networking.StaticEgressParameters{
+							Target: meta.LocalTypedReference{
+								LocalReference: meta.LocalReference{
+									Name: "dev",
+								},
+								GroupKind: metav1.GroupKind{
+									Group: apps.Group,
+									Kind:  apps.ApplicationKind,
+								},
+							},
+						},
+					},
+				}
+				egressTwo := egressOne.DeepCopy()
+				egressTwo.Name = "second-egress"
+				return toTestObj(
+					appOne,
+					egressOne,
+					egressTwo,
+				)
+			}(),
+			name:          "dev",
+			errorExpected: false,
+		},
 	} {
-		testCase := testCase
 		t.Run(name, func(t *testing.T) {
 			cmd := applicationCmd{
 				resourceCmd: resourceCmd{
