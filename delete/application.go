@@ -2,14 +2,14 @@ package delete
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
-	"github.com/hashicorp/go-multierror"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -32,20 +32,29 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	if err != nil {
 		return err
 	}
+	staticEgresses, err := util.ApplicationStaticEgresses(ctx, client, api.ObjectName(a))
+	if err != nil {
+		return fmt.Errorf("finding static egresses of app: %w", err)
+	}
 
 	d := newDeleter(a, apps.ApplicationKind)
 	if err := d.deleteResource(ctx, client, app.WaitTimeout, app.Wait, app.Force); err != nil {
 		return fmt.Errorf("error while deleting %s: %w", apps.ApplicationKind, err)
 	}
 
-	var secretErrors error
+	var deleteErrors []error
 	for _, s := range gitAuthSecrets {
 		if err := deleteGitAuthSecret(ctx, client, s); err != nil {
-			secretErrors = multierror.Append(secretErrors, err)
+			deleteErrors = append(deleteErrors, err)
+		}
+	}
+	for _, egress := range staticEgresses {
+		if err := client.Delete(ctx, &egress); err != nil {
+			deleteErrors = append(deleteErrors, err)
 		}
 	}
 
-	return secretErrors
+	return errors.Join(deleteErrors...)
 }
 
 type manualCheckError string
@@ -95,7 +104,7 @@ func findGitAuthSecrets(ctx context.Context, client *api.Client, a *apps.Applica
 // It will only delete secrets which have been created by nctl itself.
 func deleteGitAuthSecret(ctx context.Context, client *api.Client, secret corev1.Secret) error {
 	if err := client.Get(ctx, api.ObjectName(&secret), &secret); err != nil {
-		if errors.IsNotFound(err) {
+		if kerrors.IsNotFound(err) {
 			return nil
 		}
 		return checkManuallyError(fmt.Errorf("error when checking git auth secret %q for application", secret.Name))

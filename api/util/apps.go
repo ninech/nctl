@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
+	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/api"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -351,4 +352,22 @@ func latestAvailableRelease(releases *apps.ReleaseList) *apps.Release {
 		}
 	}
 	return nil
+}
+
+// ApplicationStaticEgresses returns all static egress resources targeting the
+// specified app.
+func ApplicationStaticEgresses(ctx context.Context, client *api.Client, app types.NamespacedName) ([]networking.StaticEgress, error) {
+	egressList := &networking.StaticEgressList{}
+	if err := client.List(ctx, egressList, runtimeclient.InNamespace(app.Namespace)); err != nil {
+		return nil, err
+	}
+	appEgresses := []networking.StaticEgress{}
+	for _, egress := range egressList.Items {
+		if egress.Spec.ForProvider.Target.Kind == apps.ApplicationKind &&
+			egress.Spec.ForProvider.Target.Group == apps.Group &&
+			egress.Spec.ForProvider.Target.Name == app.Name {
+			appEgresses = append(appEgresses, egress)
+		}
+	}
+	return appEgresses, nil
 }
