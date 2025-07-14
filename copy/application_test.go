@@ -6,6 +6,7 @@ import (
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
+	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/assert"
@@ -22,6 +23,7 @@ func TestApplication(t *testing.T) {
 	tests := map[string]struct {
 		source              *apps.Application
 		sourceGitAuthSecret *corev1.Secret
+		staticEgress        *networking.StaticEgress
 		cmd                 applicationCmd
 		expectedErr         string
 	}{
@@ -128,6 +130,34 @@ func TestApplication(t *testing.T) {
 				},
 			},
 		},
+		"app with static egress": {
+			source: newApp("source", apps.ApplicationSpec{}),
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Name:       "source",
+					TargetName: "target",
+				},
+			},
+			staticEgress: &networking.StaticEgress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "source",
+					Namespace: "default",
+				},
+				Spec: networking.StaticEgressSpec{
+					ForProvider: networking.StaticEgressParameters{
+						Target: meta.LocalTypedReference{
+							LocalReference: meta.LocalReference{
+								Name: "source",
+							},
+							GroupKind: metav1.GroupKind{
+								Group: apps.Group,
+								Kind:  apps.ApplicationKind,
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -135,6 +165,9 @@ func TestApplication(t *testing.T) {
 			objs := []client.Object{tc.source}
 			if tc.sourceGitAuthSecret != nil {
 				objs = append(objs, tc.sourceGitAuthSecret)
+			}
+			if tc.staticEgress != nil {
+				objs = append(objs, tc.staticEgress)
 			}
 			apiClient, err := test.SetupClient(test.WithObjects(objs...))
 			require.NoError(t, err)
@@ -162,6 +195,13 @@ func TestApplication(t *testing.T) {
 				newSecretName := types.NamespacedName{Name: util.GitAuthSecretName(copiedApp), Namespace: tc.cmd.targetNamespace(apiClient)}
 				assert.NoError(t, apiClient.Get(ctx, newSecretName, copiedSecret))
 				assert.Equal(t, tc.sourceGitAuthSecret.Data, copiedSecret.Data)
+			}
+			// check if static egress has been copied if there's a source
+			if tc.staticEgress != nil {
+				copiedEgress := &networking.StaticEgress{}
+				newEgressName := types.NamespacedName{Name: copiedApp.Name, Namespace: tc.cmd.targetNamespace(apiClient)}
+				assert.NoError(t, apiClient.Get(ctx, newEgressName, copiedEgress))
+				assert.Equal(t, tc.cmd.TargetName, copiedEgress.Spec.ForProvider.Target.Name)
 			}
 		})
 	}
