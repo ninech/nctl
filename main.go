@@ -22,6 +22,7 @@ import (
 	"github.com/ninech/nctl/copy"
 	"github.com/ninech/nctl/create"
 	"github.com/ninech/nctl/delete"
+	"github.com/ninech/nctl/edit"
 	"github.com/ninech/nctl/exec"
 	"github.com/ninech/nctl/get"
 	"github.com/ninech/nctl/internal/format"
@@ -53,6 +54,7 @@ type rootCommand struct {
 	Logs        logs.Cmd              `cmd:"" help:"Get logs of resource."`
 	Update      update.Cmd            `cmd:"" help:"Update resource."`
 	Exec        exec.Cmd              `cmd:"" help:"Execute a command."`
+	Edit        edit.Cmd              `cmd:"" help:"Edit a resource."`
 }
 
 const (

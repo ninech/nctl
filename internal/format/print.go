@@ -144,6 +144,8 @@ type PrintOpts struct {
 	Format OutputFormatType
 	// JSONOpts defines special options for JSON output
 	JSONOpts JSONOutputOptions
+	// AllFields prints all fields of the object.
+	AllFields bool
 }
 
 func (p PrintOpts) defaultOut() io.Writer {
@@ -166,6 +168,7 @@ func PrettyPrintObjects[T any](objs []T, opts PrintOpts) error {
 				return err
 			}
 			return printResource(prepared, opts)
+
 		}
 		var toPrint []any
 		for _, item := range objs {
@@ -193,6 +196,9 @@ func PrettyPrintObjects[T any](objs []T, opts PrintOpts) error {
 }
 
 func prepareObject(obj any, opts PrintOpts) (any, error) {
+	if opts.AllFields {
+		return obj, nil
+	}
 	runtimeObject, is := obj.(runtime.Object)
 	if !is {
 		return obj, nil
