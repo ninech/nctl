@@ -341,7 +341,6 @@ func addCreationTimestamp(releases []apps.Release) []client.Object {
 	}
 	objs := make([]client.Object, len(releases))
 	for i, rel := range releases {
-		rel := rel
 		objs[i] = &rel
 	}
 

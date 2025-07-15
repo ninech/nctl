@@ -199,7 +199,7 @@ func prepareObject(obj any, opts PrintOpts) (any, error) {
 	}
 	objCopy := runtimeObject.DeepCopyObject()
 
-	var toPrint interface{} = objCopy
+	var toPrint any = objCopy
 	if res, is := objCopy.(resource.Object); is {
 		var err error
 		toPrint, err = stripObj(res, opts.ExcludeAdditional)

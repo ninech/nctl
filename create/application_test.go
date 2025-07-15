@@ -443,7 +443,6 @@ func TestApplication(t *testing.T) {
 	}
 
 	for name, tc := range cases {
-		tc := tc
 		t.Run(name, func(t *testing.T) {
 			if tc.cmd.GitInformationServiceURL == "" {
 				tc.cmd.GitInformationServiceURL = gitInfoService.URL()
@@ -653,7 +652,7 @@ func TestApplicationBuildFail(t *testing.T) {
 	// fill our logs so we have more than errorLogLines
 	logString := "does not compute!"
 	buildLog := []string{}
-	for i := 0; i < errorLogLines+30; i++ {
+	for range errorLogLines + 30 {
 		buildLog = append(buildLog, logString)
 	}
 	client.Log = &log.Client{Client: log.NewFake(t, time.Now(), buildLog...), StdOut: out}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"net/url"
 	"os"
 	"strings"
@@ -244,15 +245,7 @@ func login(ctx context.Context, newConfig *clientcmdapi.Config, kubeconfigPath, 
 }
 
 func mergeKubeConfig(from, to *clientcmdapi.Config) {
-	for k, v := range from.Clusters {
-		to.Clusters[k] = v
-	}
-
-	for k, v := range from.AuthInfos {
-		to.AuthInfos[k] = v
-	}
-
-	for k, v := range from.Contexts {
-		to.Contexts[k] = v
-	}
+	maps.Copy(to.Clusters, from.Clusters)
+	maps.Copy(to.AuthInfos, from.AuthInfos)
+	maps.Copy(to.Contexts, from.Contexts)
 }

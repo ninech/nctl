@@ -155,7 +155,6 @@ func TestReleases(t *testing.T) {
 	}
 
 	for name, tc := range cases {
-		tc := tc
 		t.Run(name, func(t *testing.T) {
 			// we initialize the client with objects in different
 			// order than CreationTimestampNano - we sort them by

@@ -35,7 +35,6 @@ func TestProject(t *testing.T) {
 			},
 		},
 	} {
-		testCase := testCase
 		t.Run(name, func(t *testing.T) {
 			cmd := projectCmd{
 				resourceCmd: resourceCmd{

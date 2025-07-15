@@ -66,11 +66,11 @@ func GetTokenFromExecConfig(ctx context.Context, execConfig *api.ExecConfig) (st
 	var issuerURL, clientID string
 	var usePKCE bool
 	for _, arg := range execConfig.Args {
-		if strings.HasPrefix(arg, IssuerURLArg) {
-			issuerURL = strings.TrimPrefix(arg, IssuerURLArg)
+		if after, ok := strings.CutPrefix(arg, IssuerURLArg); ok {
+			issuerURL = after
 		}
-		if strings.HasPrefix(arg, ClientIDArg) {
-			clientID = strings.TrimPrefix(arg, ClientIDArg)
+		if after, ok := strings.CutPrefix(arg, ClientIDArg); ok {
+			clientID = after
 		}
 		if arg == UsePKCEArg {
 			usePKCE = true
@@ -196,8 +196,8 @@ func GetUserInfoFromToken(tokenString string) (*UserInfo, error) {
 
 	var orgs []string
 	for _, grp := range claims.Groups {
-		if strings.HasPrefix(grp, CustomersPrefix) {
-			orgs = append(orgs, strings.TrimPrefix(grp, CustomersPrefix))
+		if after, ok := strings.CutPrefix(grp, CustomersPrefix); ok {
+			orgs = append(orgs, after)
 		}
 	}
 

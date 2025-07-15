@@ -43,7 +43,6 @@ func TestConfigParsing(t *testing.T) {
 		},
 	} {
 
-		testCase := testCase
 		t.Run(name, func(t *testing.T) {
 			content, err := clientcmd.Write(testCase.kubeconfig)
 			require.NoError(t, err)

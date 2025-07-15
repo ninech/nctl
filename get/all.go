@@ -99,7 +99,6 @@ func (cmd *allCmd) getProjectContent(ctx context.Context, client *api.Client, pr
 			// directly call DeepCopyObject() on them and also
 			// filter nine owned resources if needed
 			for _, item := range u.Items {
-				item := item
 				if cmd.IncludeNineResources {
 					result = append(result, &item)
 					continue
