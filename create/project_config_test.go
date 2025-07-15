@@ -84,7 +84,6 @@ func TestProjectConfig(t *testing.T) {
 	}
 
 	for name, tc := range cases {
-		tc := tc
 		t.Run(name, func(t *testing.T) {
 			apiClient.Project = tc.project
 			cfg := tc.cmd.newProjectConfig(tc.project)

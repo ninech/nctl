@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/alecthomas/kong"
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
@@ -13,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
-	"github.com/alecthomas/kong"
 )
 
 type cloudVMCmd struct {

@@ -108,7 +108,6 @@ func TestFile(t *testing.T) {
 	}
 
 	for name, tc := range tests {
-		tc := tc
 		t.Run(name, func(t *testing.T) {
 			f, err := os.CreateTemp("", "nctl-filetest*")
 			if err != nil {

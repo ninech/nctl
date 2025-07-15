@@ -105,7 +105,6 @@ func TestRepositoryInformation(t *testing.T) {
 			errorExpected: true,
 		},
 	} {
-		testCase := testCase
 		t.Run(name, func(t *testing.T) {
 			if testCase.setResponse != nil {
 				gitInfo.SetResponse(*testCase.setResponse)

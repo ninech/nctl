@@ -148,7 +148,6 @@ func gatherCredentials(ctx context.Context, items []apps.Application, c *api.Cli
 	var resultErrors error
 	creds := []appCredentials{}
 	for _, app := range items {
-		app := app
 		if app.Status.AtProvider.BasicAuthSecret == nil {
 			// the app has no basic auth configured so we skip it
 			// in the output

@@ -19,7 +19,7 @@ func TestRun(t *testing.T) {
 	expectedTime := time.Now()
 	lines := []string{}
 
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		lines = append(lines, fmt.Sprintf("log line %d", i))
 	}
 
@@ -94,7 +94,6 @@ func TestRun(t *testing.T) {
 	}
 
 	for name, tc := range cases {
-		tc := tc
 		t.Run(name, func(t *testing.T) {
 			var buf bytes.Buffer
 			out, err := log.NewOutput(&buf, log.Mode(tc.cmd.Output), true)

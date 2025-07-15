@@ -63,7 +63,7 @@ func MissingChildren(node *kong.Node) bool {
 }
 
 // ExitIfErrorf prints Usage + friendly message on error (and exits).
-func ExitIfErrorf(err error, args ...interface{}) error {
+func ExitIfErrorf(err error, args ...any) error {
 	if err == nil {
 		return nil
 	}

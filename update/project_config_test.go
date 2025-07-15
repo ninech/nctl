@@ -99,8 +99,6 @@ func TestConfig(t *testing.T) {
 	}
 
 	for name, tc := range cases {
-		tc := tc
-
 		t.Run(name, func(t *testing.T) {
 			apiClient, err := test.SetupClient(
 				test.WithObjects(tc.orig),

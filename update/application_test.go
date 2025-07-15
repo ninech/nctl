@@ -505,8 +505,6 @@ func TestApplication(t *testing.T) {
 	}
 
 	for name, tc := range cases {
-		tc := tc
-
 		t.Run(name, func(t *testing.T) {
 			if tc.cmd.GitInformationServiceURL == "" {
 				tc.cmd.GitInformationServiceURL = gitInfoService.URL()
