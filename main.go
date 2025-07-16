@@ -188,7 +188,7 @@ func kongVariables() (kong.Vars, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error on application create kong vars: %w", err)
 	}
-	if err := merge(result, appCreateKongVars, create.CloudVMKongVars(), create.MySQLKongVars(), create.MySQLDatabaseKongVars(), create.PostgresKongVars(), create.PostgresDatabaseKongVars(), logs.KongVars()); err != nil {
+	if err := merge(result, appCreateKongVars, create.CloudVMKongVars(), create.MySQLKongVars(), create.MySQLDatabaseKongVars(), create.PostgresKongVars(), create.PostgresDatabaseKongVars(), create.ServiceConnectionKongVars(), logs.KongVars()); err != nil {
 		return nil, fmt.Errorf("error when merging kong variables: %w", err)
 	}
 
