@@ -140,6 +140,11 @@ func main() {
 		return
 	}
 
+	if strings.HasPrefix(kongCtx.Command(), "completions") {
+		kongCtx.FatalIfErrorf(nctl.Completions.Run(kongCtx))
+		return
+	}
+
 	client, err := api.New(ctx, nctl.APICluster, nctl.Project, api.LogClient(ctx, nctl.LogAPIAddress, nctl.LogAPIInsecure))
 	if err != nil {
 		fmt.Println(err)
