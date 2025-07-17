@@ -94,7 +94,7 @@ func (d *deleter) deleteResource(ctx context.Context, client *api.Client, waitTi
 
 	// check if the the resource even exists before going any further
 	if err := client.Get(ctx, client.Name(d.mg.GetName()), d.mg); err != nil {
-		return fmt.Errorf("unable to get %s %q: %w", d.kind, d.mg.GetName(), err)
+		return fmt.Errorf("unable to delete %s %q: %w", d.kind, d.mg.GetName(), err)
 	}
 
 	if !force {
