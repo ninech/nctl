@@ -5,12 +5,17 @@ import (
 	"fmt"
 	"strings"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/alecthomas/kong"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/format"
 )
 
 type serviceConnectionCmd struct {
@@ -83,13 +88,13 @@ func (r *TypedReference) UnmarshalText(text []byte) error {
 		return fmt.Errorf("unmarshal error: expected kind/name, got %q", text)
 	}
 
-	groupKind, err := groupKindFromKind(kind)
+	gvk, err := groupVersionKindFromKind(kind)
 	if err != nil {
 		return fmt.Errorf("unmarshal error: %w", err)
 	}
 
 	r.Name = name
-	r.GroupKind = groupKind
+	r.GroupKind = metav1.GroupKind(gvk.GroupKind())
 
 	return nil
 }
@@ -99,6 +104,7 @@ func (cmd *serviceConnectionCmd) Run(ctx context.Context, client *api.Client) er
 	if err != nil {
 		return err
 	}
+	params := sc.Spec.ForProvider.DeepCopy()
 
 	c := newCreator(client, sc, networking.ServiceConnectionKind)
 	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
@@ -112,11 +118,49 @@ func (cmd *serviceConnectionCmd) Run(ctx context.Context, client *api.Client) er
 		return nil
 	}
 
+	sourceExists, err := resourceExists(ctx, params.Source.Reference, client)
+	if err != nil {
+		return err
+	}
+	destinationExists, err := resourceExists(ctx, params.Destination, client)
+	if err != nil {
+		return err
+	}
+	if !sourceExists || !destinationExists {
+		if !sourceExists {
+			format.PrintWarningf("source %q does not yet exist\n", sc.Spec.ForProvider.Source.Reference)
+		}
+		if !destinationExists {
+			format.PrintWarningf("destination %q does not yet exist\n", sc.Spec.ForProvider.Destination)
+		}
+
+		return nil
+	}
+
 	return c.wait(ctx, waitStage{
 		objectList: &networking.ServiceConnectionList{},
 		onResult:   resourceAvailable,
 	},
 	)
+}
+
+func resourceExists(ctx context.Context, key meta.TypedReference, kube client.Reader) (bool, error) {
+	gvk, err := groupVersionKindFromKind(key.Kind)
+	if err != nil {
+		return false, err
+	}
+
+	u := &unstructured.Unstructured{}
+	u.SetGroupVersionKind(gvk)
+	err = kube.Get(ctx, key.NamespacedName(), u)
+	if err == nil {
+		return true, nil
+	}
+	if !apierrors.IsNotFound(err) {
+		return false, err
+	}
+
+	return false, nil
 }
 
 func (cmd *serviceConnectionCmd) newServiceConnection(namespace string) (*networking.ServiceConnection, error) {
@@ -149,19 +193,19 @@ func (cmd *serviceConnectionCmd) newServiceConnection(namespace string) (*networ
 	return sc, nil
 }
 
-func groupKindFromKind(kind string) (metav1.GroupKind, error) {
+func groupVersionKindFromKind(kind string) (schema.GroupVersionKind, error) {
 	scheme, err := api.NewScheme()
 	if err != nil {
-		return metav1.GroupKind{}, fmt.Errorf("error creating scheme: %w", err)
+		return schema.GroupVersionKind{}, fmt.Errorf("error creating scheme: %w", err)
 	}
 
 	for gvk := range scheme.AllKnownTypes() {
-		if kind == strings.ToLower(gvk.Kind) {
-			return metav1.GroupKind(gvk.GroupKind()), nil
+		if strings.EqualFold(kind, gvk.Kind) {
+			return gvk, nil
 		}
 	}
 
-	return metav1.GroupKind{}, fmt.Errorf("kind %s is invalid", kind)
+	return schema.GroupVersionKind{}, fmt.Errorf("kind %s is invalid", kind)
 }
 
 // ServiceConnectionKongVars returns all variables which are used in the ServiceConnection
