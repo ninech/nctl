@@ -33,7 +33,7 @@ func TestReleases(t *testing.T) {
 		releases      []client.Object
 		inAllProjects bool
 		// output will be full if not set
-		output      output
+		output      outputFormat
 		wantErr     bool
 		wantContain []string
 		wantLines   int
@@ -174,12 +174,14 @@ func TestReleases(t *testing.T) {
 			if tc.output == "" {
 				tc.output = full
 			}
-			get := &Cmd{
-				Output:      tc.output,
-				AllProjects: tc.inAllProjects,
-			}
 			buf := &bytes.Buffer{}
-			tc.cmd.out = buf
+			get := &Cmd{
+				output: output{
+					Format:      tc.output,
+					AllProjects: tc.inAllProjects,
+					writer:      buf,
+				},
+			}
 
 			if err := tc.cmd.Run(ctx, apiClient, get); (err != nil) != tc.wantErr {
 				t.Errorf("releasesCmd.Run() error = %v, wantErr %v", err, tc.wantErr)

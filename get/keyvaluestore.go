@@ -3,44 +3,42 @@ package get
 import (
 	"context"
 	"fmt"
-	"io"
-	"text/tabwriter"
 
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type keyValueStoreCmd struct {
 	resourceCmd
 	PrintToken bool `help:"Print the bearer token of the Account. Requires name to be set." default:"false"`
-
-	out io.Writer
 }
 
 func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
-	cmd.out = defaultOut(cmd.out)
+	return get.listPrint(ctx, client, cmd, api.MatchName(cmd.Name))
+}
 
-	keyValueStoreList := &storage.KeyValueStoreList{}
+func (cmd *keyValueStoreCmd) list() client.ObjectList {
+	return &storage.KeyValueStoreList{}
+}
 
-	if err := get.list(ctx, client, keyValueStoreList, api.MatchName(cmd.Name)); err != nil {
-		return err
-	}
-
+func (cmd *keyValueStoreCmd) print(ctx context.Context, client *api.Client, list client.ObjectList, out *output) error {
+	keyValueStoreList := list.(*storage.KeyValueStoreList)
 	if len(keyValueStoreList.Items) == 0 {
-		get.printEmptyMessage(cmd.out, storage.KeyValueStoreKind, client.Project)
+		out.printEmptyMessage(storage.KeyValueStoreKind, client.Project)
 		return nil
 	}
 
 	if cmd.Name != "" && cmd.PrintToken {
-		return cmd.printPassword(ctx, client, &keyValueStoreList.Items[0])
+		return cmd.printPassword(ctx, client, &keyValueStoreList.Items[0], out)
 	}
 
-	switch get.Output {
+	switch out.Format {
 	case full:
-		return cmd.printKeyValueStoreInstances(keyValueStoreList.Items, get, true)
+		return cmd.printKeyValueStoreInstances(keyValueStoreList.Items, out, true)
 	case noHeader:
-		return cmd.printKeyValueStoreInstances(keyValueStoreList.Items, get, false)
+		return cmd.printKeyValueStoreInstances(keyValueStoreList.Items, out, false)
 	case yamlOut:
 		return format.PrettyPrintObjects(keyValueStoreList.GetItems(), format.PrintOpts{})
 	case jsonOut:
@@ -57,26 +55,24 @@ func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client, get *C
 	return nil
 }
 
-func (cmd *keyValueStoreCmd) printKeyValueStoreInstances(list []storage.KeyValueStore, get *Cmd, header bool) error {
-	w := tabwriter.NewWriter(cmd.out, 0, 0, 4, ' ', 0)
-
+func (cmd *keyValueStoreCmd) printKeyValueStoreInstances(list []storage.KeyValueStore, out *output, header bool) error {
 	if header {
-		get.writeHeader(w, "NAME", "FQDN", "TLS", "MEMORY SIZE")
+		out.writeHeader("NAME", "FQDN", "TLS", "MEMORY SIZE")
 	}
 
 	for _, keyValueStore := range list {
-		get.writeTabRow(w, keyValueStore.Namespace, keyValueStore.Name, keyValueStore.Status.AtProvider.FQDN, "true", keyValueStore.Spec.ForProvider.MemorySize.String())
+		out.writeTabRow(keyValueStore.Namespace, keyValueStore.Name, keyValueStore.Status.AtProvider.FQDN, "true", keyValueStore.Spec.ForProvider.MemorySize.String())
 	}
 
-	return w.Flush()
+	return out.tabWriter.Flush()
 }
 
-func (cmd *keyValueStoreCmd) printPassword(ctx context.Context, client *api.Client, keyValueStore *storage.KeyValueStore) error {
+func (cmd *keyValueStoreCmd) printPassword(ctx context.Context, client *api.Client, keyValueStore *storage.KeyValueStore, out *output) error {
 	pw, err := getConnectionSecret(ctx, client, storage.KeyValueStoreUser, keyValueStore)
 	if err != nil {
 		return err
 	}
 
-	fmt.Fprintln(cmd.out, pw)
+	fmt.Fprintln(out.writer, pw)
 	return nil
 }

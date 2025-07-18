@@ -2,9 +2,7 @@ package get
 
 import (
 	"context"
-	"io"
 	"strconv"
-	"text/tabwriter"
 	"time"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
@@ -12,46 +10,48 @@ import (
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/internal/format"
 	"k8s.io/apimachinery/pkg/util/duration"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type releasesCmd struct {
 	resourceCmd
 	ApplicationName string `short:"a" help:"Name of the Application to get releases for. If omitted all applications in the project will be listed."`
-	out             io.Writer
 }
 
 func (cmd *releasesCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
-	cmd.out = defaultOut(cmd.out)
-
-	releaseList := &apps.ReleaseList{}
 	opts := []api.ListOpt{api.MatchName(cmd.Name)}
 	if len(cmd.ApplicationName) != 0 {
 		opts = append(opts, api.MatchLabel(util.ApplicationNameLabel, cmd.ApplicationName))
 	}
 
-	if err := get.list(ctx, client, releaseList, opts...); err != nil {
-		return err
-	}
+	return get.listPrint(ctx, client, cmd, opts...)
+}
 
+func (cmd *releasesCmd) list() client.ObjectList {
+	return &apps.ReleaseList{}
+}
+
+func (cmd *releasesCmd) print(ctx context.Context, client *api.Client, list client.ObjectList, out *output) error {
+	releaseList := list.(*apps.ReleaseList)
 	if len(releaseList.Items) == 0 {
-		get.printEmptyMessage(cmd.out, apps.ReleaseKind, client.Project)
+		out.printEmptyMessage(apps.ReleaseKind, client.Project)
 		return nil
 	}
 
 	util.OrderReleaseList(releaseList, true)
 
-	switch get.Output {
+	switch out.Format {
 	case full:
-		return cmd.printReleases(releaseList.Items, get, true)
+		return cmd.printReleases(releaseList.Items, out, true)
 	case noHeader:
-		return cmd.printReleases(releaseList.Items, get, false)
+		return cmd.printReleases(releaseList.Items, out, false)
 	case yamlOut:
-		return format.PrettyPrintObjects(releaseList.GetItems(), format.PrintOpts{Out: defaultOut(cmd.out)})
+		return format.PrettyPrintObjects(releaseList.GetItems(), format.PrintOpts{Out: out.writer})
 	case jsonOut:
 		return format.PrettyPrintObjects(
 			releaseList.GetItems(),
 			format.PrintOpts{
-				Out:    defaultOut(cmd.out),
+				Out:    out.writer,
 				Format: format.OutputFormatTypeJSON,
 				JSONOpts: format.JSONOutputOptions{
 					PrintSingleItem: cmd.Name != "",
@@ -62,12 +62,9 @@ func (cmd *releasesCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 	return nil
 }
 
-func (cmd *releasesCmd) printReleases(releases []apps.Release, get *Cmd, header bool) error {
-	w := tabwriter.NewWriter(cmd.out, 0, 0, 4, ' ', 0)
-
+func (cmd *releasesCmd) printReleases(releases []apps.Release, out *output, header bool) error {
 	if header {
-		get.writeHeader(
-			w,
+		out.writeHeader(
 			"NAME",
 			"BUILDNAME",
 			"APPLICATION",
@@ -92,8 +89,7 @@ func (cmd *releasesCmd) printReleases(releases []apps.Release, get *Cmd, header 
 		workerJobs := strconv.Itoa(len(cfg.WorkerJobs))
 		scheduledJobs := strconv.Itoa(len(cfg.ScheduledJobs))
 
-		get.writeTabRow(
-			w,
+		out.writeTabRow(
 			r.Namespace,
 			r.Name,
 			r.Spec.ForProvider.Build.Name,
@@ -107,5 +103,5 @@ func (cmd *releasesCmd) printReleases(releases []apps.Release, get *Cmd, header 
 		)
 	}
 
-	return w.Flush()
+	return out.tabWriter.Flush()
 }

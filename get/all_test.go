@@ -28,7 +28,7 @@ func TestAllContent(t *testing.T) {
 		projects             []client.Object
 		objects              []client.Object
 		projectName          string
-		outputFormat         output
+		outputFormat         outputFormat
 		allProjects          bool
 		includeNineResources bool
 		kinds                []string
@@ -290,9 +290,13 @@ dev        pear      Release        apps.nine.ch
 		t.Run(name, func(t *testing.T) {
 			testCase := testCase
 
+			outputBuffer := &bytes.Buffer{}
 			get := &Cmd{
-				Output:      testCase.outputFormat,
-				AllProjects: testCase.allProjects,
+				output: output{
+					Format:      testCase.outputFormat,
+					AllProjects: testCase.allProjects,
+					writer:      outputBuffer,
+				},
 			}
 
 			scheme, err := api.NewScheme()
@@ -312,9 +316,7 @@ dev        pear      Release        apps.nine.ch
 			require.NoError(t, err)
 			defer os.Remove(kubeconfig)
 
-			outputBuffer := &bytes.Buffer{}
 			cmd := allCmd{
-				out:                  outputBuffer,
 				IncludeNineResources: testCase.includeNineResources,
 				Kinds:                testCase.kinds,
 			}

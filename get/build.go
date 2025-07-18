@@ -3,10 +3,8 @@ package get
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"path"
-	"text/tabwriter"
 	"time"
 
 	"github.com/docker/docker/api/types/image"
@@ -20,6 +18,7 @@ import (
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/internal/format"
 	"k8s.io/apimachinery/pkg/util/duration"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -30,23 +29,25 @@ type buildCmd struct {
 	resourceCmd
 	ApplicationName string `short:"a" help:"Name of the Application to get builds for. If omitted all in the project will be listed."`
 	PullImage       bool   `help:"Pull the image of the build. Uses the local docker socket at the env DOCKER_HOST if set."`
-	out             io.Writer
 }
 
 func (cmd *buildCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
-	buildList := &apps.BuildList{}
-
 	opts := []api.ListOpt{api.MatchName(cmd.Name)}
 	if len(cmd.ApplicationName) != 0 {
 		opts = append(opts, api.MatchLabel(util.ApplicationNameLabel, cmd.ApplicationName))
 	}
 
-	if err := get.list(ctx, client, buildList, opts...); err != nil {
-		return err
-	}
+	return get.listPrint(ctx, client, cmd, opts...)
+}
 
+func (cmd *buildCmd) list() runtimeclient.ObjectList {
+	return &apps.BuildList{}
+}
+
+func (cmd *buildCmd) print(ctx context.Context, client *api.Client, list runtimeclient.ObjectList, out *output) error {
+	buildList := list.(*apps.BuildList)
 	if len(buildList.Items) == 0 {
-		get.printEmptyMessage(cmd.out, apps.BuildKind, client.Project)
+		out.printEmptyMessage(apps.BuildKind, client.Project)
 		return nil
 	}
 
@@ -58,18 +59,18 @@ func (cmd *buildCmd) Run(ctx context.Context, client *api.Client, get *Cmd) erro
 		return pullImage(ctx, client, &buildList.Items[0])
 	}
 
-	switch get.Output {
+	switch out.Format {
 	case full:
-		return printBuild(buildList.Items, get, defaultOut(cmd.out), true)
+		return printBuild(buildList.Items, out, true)
 	case noHeader:
-		return printBuild(buildList.Items, get, defaultOut(cmd.out), false)
+		return printBuild(buildList.Items, out, false)
 	case yamlOut:
-		return format.PrettyPrintObjects(buildList.GetItems(), format.PrintOpts{Out: defaultOut(cmd.out)})
+		return format.PrettyPrintObjects(buildList.GetItems(), format.PrintOpts{Out: out.writer})
 	case jsonOut:
 		return format.PrettyPrintObjects(
 			buildList.GetItems(),
 			format.PrintOpts{
-				Out:    defaultOut(cmd.out),
+				Out:    out.writer,
 				Format: format.OutputFormatTypeJSON,
 				JSONOpts: format.JSONOutputOptions{
 					PrintSingleItem: cmd.Name != "",
@@ -80,21 +81,19 @@ func (cmd *buildCmd) Run(ctx context.Context, client *api.Client, get *Cmd) erro
 	return nil
 }
 
-func printBuild(builds []apps.Build, get *Cmd, out io.Writer, header bool) error {
-	w := tabwriter.NewWriter(out, 0, 0, 4, ' ', 0)
-
+func printBuild(builds []apps.Build, out *output, header bool) error {
 	if header {
-		get.writeHeader(w, "NAME", "APPLICATION", "STATUS", "AGE")
+		out.writeHeader("NAME", "APPLICATION", "STATUS", "AGE")
 	}
 
 	for _, build := range builds {
-		get.writeTabRow(w, build.Namespace, build.Name,
+		out.writeTabRow(build.Namespace, build.Name,
 			build.Labels[util.ApplicationNameLabel],
 			string(build.Status.AtProvider.BuildStatus),
 			duration.HumanDuration(time.Since(build.CreationTimestamp.Time)))
 	}
 
-	return w.Flush()
+	return out.tabWriter.Flush()
 }
 
 func pullImage(ctx context.Context, apiClient *api.Client, build *apps.Build) error {

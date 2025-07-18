@@ -20,8 +20,10 @@ import (
 type ListOpts struct {
 	clientListOptions []runtimeclient.ListOption
 	searchForName     string
-	allProjects       bool `help:"apply the get over all projects." short:"A"`
-	allNamespaces     bool `help:"apply the get over all namespaces." hidden:""`
+	allProjects       bool
+	allNamespaces     bool
+	watch             bool
+	watchFunc         WatchFunc
 }
 
 type ListOpt func(opts *ListOpts)
@@ -55,6 +57,13 @@ func AllNamespaces() ListOpt {
 	}
 }
 
+func Watch(f WatchFunc) ListOpt {
+	return func(opt *ListOpts) {
+		opt.watch = true
+		opt.watchFunc = f
+	}
+}
+
 func (opts *ListOpts) namedResourceNotFound(project string, foundInProjects ...string) error {
 	if opts.allProjects {
 		return fmt.Errorf("resource %q was not found in any project", opts.searchForName)
@@ -77,6 +86,10 @@ func (c *Client) ListObjects(ctx context.Context, list runtimeclient.ObjectList,
 	opts := &ListOpts{}
 	for _, opt := range options {
 		opt(opts)
+	}
+
+	if opts.watch {
+		return c.watch(ctx, list, options...)
 	}
 
 	if opts.allNamespaces {

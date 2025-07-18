@@ -32,8 +32,9 @@ func TestApplication(t *testing.T) {
 	app3.Name = app.Name + "-3"
 	app3.Namespace = otherProject
 
+	buf := &bytes.Buffer{}
 	get := &Cmd{
-		Output: full,
+		output: output{writer: buf, Format: full},
 	}
 
 	apiClient, err := test.SetupClient(
@@ -45,9 +46,7 @@ func TestApplication(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := context.Background()
-	buf := &bytes.Buffer{}
 	cmd := applicationsCmd{
-		out:                  buf,
 		BasicAuthCredentials: false,
 	}
 
@@ -66,7 +65,7 @@ func TestApplication(t *testing.T) {
 	assert.Equal(t, 2, test.CountLines(buf.String()))
 	buf.Reset()
 
-	get.Output = noHeader
+	get.Format = noHeader
 	if err := cmd.Run(ctx, apiClient, get); err != nil {
 		t.Fatal(err)
 	}
@@ -91,7 +90,7 @@ func TestApplicationCredentials(t *testing.T) {
 	for name, testCase := range map[string]struct {
 		resources     []client.Object
 		name          string
-		outputFormat  output
+		outputFormat  outputFormat
 		project       string
 		output        string
 		errorExpected bool
@@ -295,9 +294,13 @@ dev        dev-second    dev-second    sample-second
 	} {
 		t.Run(name, func(t *testing.T) {
 			testCase := testCase
+			buf := &bytes.Buffer{}
 			get := &Cmd{
-				Output:      testCase.outputFormat,
-				AllProjects: testCase.project == "",
+				output: output{
+					Format:      testCase.outputFormat,
+					AllProjects: testCase.project == "",
+					writer:      buf,
+				},
 			}
 
 			apiClient, err := test.SetupClient(
@@ -309,12 +312,10 @@ dev        dev-second    dev-second    sample-second
 			)
 			require.NoError(t, err)
 
-			buf := &bytes.Buffer{}
 			cmd := applicationsCmd{
 				resourceCmd: resourceCmd{
 					Name: testCase.name,
 				},
-				out:                  buf,
 				BasicAuthCredentials: true,
 			}
 
@@ -337,7 +338,7 @@ func TestApplicationDNS(t *testing.T) {
 	for name, testCase := range map[string]struct {
 		apps          []client.Object
 		name          string
-		outputFormat  output
+		outputFormat  outputFormat
 		project       string
 		output        string
 		errorExpected bool
@@ -470,9 +471,13 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 	} {
 		t.Run(name, func(t *testing.T) {
 			testCase := testCase
+			buf := &bytes.Buffer{}
 			get := &Cmd{
-				Output:      testCase.outputFormat,
-				AllProjects: testCase.project == "",
+				output: output{
+					Format:      testCase.outputFormat,
+					AllProjects: testCase.project == "",
+					writer:      buf,
+				},
 			}
 			apiClient, err := test.SetupClient(
 				test.WithProjectsFromResources(testCase.apps...),
@@ -482,12 +487,10 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 			)
 			require.NoError(t, err)
 
-			buf := &bytes.Buffer{}
 			cmd := applicationsCmd{
 				resourceCmd: resourceCmd{
 					Name: testCase.name,
 				},
-				out:                  buf,
 				BasicAuthCredentials: false,
 				DNS:                  true,
 			}

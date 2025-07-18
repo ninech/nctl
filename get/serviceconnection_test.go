@@ -28,7 +28,7 @@ func TestServiceConnection(t *testing.T) {
 		get       serviceConnectionCmd
 		// out defines the output format and will bet set to "full" if
 		// not given
-		out           output
+		out           outputFormat
 		wantContain   []string
 		wantLines     int
 		inAllProjects bool
@@ -104,9 +104,6 @@ func TestServiceConnection(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			buf := &bytes.Buffer{}
-			tt.get.out = buf
-
 			objects := []client.Object{}
 			for _, instance := range tt.instances {
 				created := test.ServiceConnection(instance.name, instance.project)
@@ -126,7 +123,8 @@ func TestServiceConnection(t *testing.T) {
 			if tt.out == "" {
 				tt.out = full
 			}
-			if err := tt.get.Run(ctx, apiClient, &Cmd{Output: tt.out, AllProjects: tt.inAllProjects}); (err != nil) != tt.wantErr {
+			buf := &bytes.Buffer{}
+			if err := tt.get.Run(ctx, apiClient, &Cmd{output: output{Format: tt.out, AllProjects: tt.inAllProjects, writer: buf}}); (err != nil) != tt.wantErr {
 				t.Errorf("serviceConnectionCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if tt.wantErr {

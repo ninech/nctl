@@ -7,7 +7,6 @@ import (
 	"os"
 	"sort"
 	"strings"
-	"text/tabwriter"
 
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	management "github.com/ninech/apis/management/v1alpha1"
@@ -22,7 +21,6 @@ import (
 )
 
 type allCmd struct {
-	out                  io.Writer
 	stdErr               io.Writer
 	Kinds                []string `help:"specify the kind of resources which should be listed"`
 	IncludeNineResources bool     `help:"show resources which are owned by Nine" default:"false"`
@@ -48,19 +46,19 @@ func (cmd *allCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error 
 	}
 
 	if len(items) == 0 {
-		get.printEmptyMessage(cmd.out, "Resource", projectName)
+		get.printEmptyMessage("Resource", projectName)
 		return nil
 	}
 
-	switch get.Output {
+	switch get.Format {
 	case full:
-		return printItems(items, *get, defaultOut(cmd.out), true)
+		return printItems(items, *get, true)
 	case noHeader:
-		return printItems(items, *get, defaultOut(cmd.out), false)
+		return printItems(items, *get, false)
 	case yamlOut:
-		return format.PrettyPrintObjects(items, format.PrintOpts{Out: cmd.out})
+		return format.PrettyPrintObjects(items, format.PrintOpts{Out: get.writer})
 	case jsonOut:
-		return format.PrettyPrintObjects(items, format.PrintOpts{Out: cmd.out, Format: format.OutputFormatTypeJSON})
+		return format.PrettyPrintObjects(items, format.PrintOpts{Out: get.writer, Format: format.OutputFormatTypeJSON})
 	}
 
 	return nil
@@ -128,20 +126,19 @@ func (cmd *allCmd) getProjectContent(ctx context.Context, client *api.Client, pr
 	return result, warnings, nil
 }
 
-func printItems(items []*unstructured.Unstructured, get Cmd, out io.Writer, header bool) error {
-	w := tabwriter.NewWriter(out, 0, 0, 4, ' ', 0)
+func printItems(items []*unstructured.Unstructured, get Cmd, header bool) error {
 	// we always want to include the PROJECT (also in no header mode) as it
 	// clearly indicates from which project the displayed resources are
 	get.AllProjects = true
 
 	if header {
-		get.writeHeader(w, "NAME", "KIND", "GROUP")
+		get.writeHeader("NAME", "KIND", "GROUP")
 	}
 	for _, item := range items {
-		get.writeTabRow(w, item.GetNamespace(), item.GetName(), item.GroupVersionKind().Kind, item.GroupVersionKind().Group)
+		get.writeTabRow(item.GetNamespace(), item.GetName(), item.GroupVersionKind().Kind, item.GroupVersionKind().Group)
 	}
 
-	return w.Flush()
+	return get.tabWriter.Flush()
 }
 
 func filteredListTypes(s *runtime.Scheme, kinds []string) ([]schema.GroupVersionKind, error) {

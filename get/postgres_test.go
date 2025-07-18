@@ -30,7 +30,7 @@ func TestPostgres(t *testing.T) {
 		get       postgresCmd
 		// out defines the output format and will bet set to "full" if
 		// not given
-		out           output
+		out           outputFormat
 		wantContain   []string
 		wantLines     int
 		inAllProjects bool
@@ -137,9 +137,6 @@ func TestPostgres(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			buf := &bytes.Buffer{}
-			tt.get.out = buf
-
 			objects := []client.Object{}
 			for _, instance := range tt.instances {
 				created := test.Postgres(instance.name, instance.project, "nine-es34")
@@ -163,7 +160,8 @@ func TestPostgres(t *testing.T) {
 			if tt.out == "" {
 				tt.out = full
 			}
-			if err := tt.get.Run(ctx, apiClient, &Cmd{Output: tt.out, AllProjects: tt.inAllProjects}); (err != nil) != tt.wantErr {
+			buf := &bytes.Buffer{}
+			if err := tt.get.Run(ctx, apiClient, &Cmd{output: output{Format: tt.out, AllProjects: tt.inAllProjects, writer: buf}}); (err != nil) != tt.wantErr {
 				t.Errorf("postgresCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if tt.wantErr {

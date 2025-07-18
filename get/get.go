@@ -1,3 +1,4 @@
+// Package get implements the get command.
 package get
 
 import (
@@ -8,14 +9,13 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/gobuffalo/flect"
+	"github.com/liggitt/tabwriter"
 	"github.com/ninech/nctl/api"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Cmd struct {
-	Output              output                `help:"Configures list output. ${enum}" short:"o" enum:"full,no-header,contexts,yaml,stats,json" default:"full"`
-	AllProjects         bool                  `help:"apply the get over all projects." short:"A"`
-	AllNamespaces       bool                  `help:"apply the get over all namespaces." hidden:""`
+	output
 	Clusters            clustersCmd           `cmd:"" group:"infrastructure.nine.ch" aliases:"cluster,vcluster" help:"Get Kubernetes Clusters."`
 	APIServiceAccounts  apiServiceAccountsCmd `cmd:"" group:"iam.nine.ch" name:"apiserviceaccounts" aliases:"asa" help:"Get API Service Accounts."`
 	Projects            projectCmd            `cmd:"" group:"management.nine.ch" name:"projects" aliases:"proj" help:"Get Projects."`
@@ -33,38 +33,78 @@ type Cmd struct {
 	ServiceConnection   serviceConnectionCmd  `cmd:"" group:"networking.nine.ch" name:"serviceconnection" aliases:"sc" help:"Get a ServiceConnection."`
 }
 
+type output struct {
+	Format        outputFormat `help:"Configures list output. ${enum}" name:"output" short:"o" enum:"full,no-header,contexts,yaml,stats,json" default:"full"`
+	AllProjects   bool         `help:"apply the get over all projects." short:"A" xor:"watch"`
+	AllNamespaces bool         `help:"apply the get over all namespaces." hidden:"" xor:"watch"`
+	Watch         bool         `help:"Watch resource(s) for changes and print the updated resource." short:"w" xor:"watch"`
+	tabWriter     *tabwriter.Writer
+	writer        io.Writer
+}
+
 type resourceCmd struct {
 	Name string `arg:"" predictor:"resource_name" help:"Name of the resource to get. If omitted all in the project will be listed." default:""`
 }
 
-type output string
+type outputFormat string
 
 const (
-	full     output = "full"
-	noHeader output = "no-header"
-	contexts output = "contexts"
-	yamlOut  output = "yaml"
-	stats    output = "stats"
-	jsonOut  output = "json"
+	full     outputFormat = "full"
+	noHeader outputFormat = "no-header"
+	contexts outputFormat = "contexts"
+	yamlOut  outputFormat = "yaml"
+	stats    outputFormat = "stats"
+	jsonOut  outputFormat = "json"
 )
 
-func (cmd *Cmd) list(ctx context.Context, client *api.Client, list runtimeclient.ObjectList, opts ...api.ListOpt) error {
+func (cmd *Cmd) AfterApply() error {
+	cmd.initOut()
+	return nil
+}
+
+// listPrinter needs to be implemented by all resources.
+type listPrinter interface {
+	print(context.Context, *api.Client, runtimeclient.ObjectList, *output) error
+	list() runtimeclient.ObjectList
+}
+
+func (cmd *Cmd) listPrint(ctx context.Context, client *api.Client, lp listPrinter, opts ...api.ListOpt) error {
 	if cmd.AllProjects {
 		opts = append(opts, api.AllProjects())
 	}
 	if cmd.AllNamespaces {
 		opts = append(opts, api.AllNamespaces())
 	}
-	return client.ListObjects(ctx, list, opts...)
+	if cmd.Watch {
+		opts = append(opts, api.Watch(func(list runtimeclient.ObjectList) error {
+			return lp.print(ctx, client, list, &cmd.output)
+		}))
+	}
+	list := lp.list()
+	if err := client.ListObjects(ctx, list, opts...); err != nil {
+		return err
+	}
+	if cmd.Watch {
+		return nil
+	}
+	return lp.print(ctx, client, list, &cmd.output)
 }
 
 // writeHeader writes the header row, prepending the always shown project
-func (cmd *Cmd) writeHeader(w io.Writer, headings ...string) {
-	cmd.writeTabRow(w, "PROJECT", headings...)
+func (out *output) writeHeader(headings ...string) {
+	out.initOut()
+	// don't write header if watch is enabled and RememberedWidths is not empty,
+	// as it means we have already printed the header.
+	if out.Watch && len(out.tabWriter.RememberedWidths()) != 0 {
+		return
+	}
+	out.writeTabRow("PROJECT", headings...)
 }
 
 // writeTabRow writes a row to w, prepending the passed project
-func (cmd *Cmd) writeTabRow(w io.Writer, project string, row ...string) {
+func (out *output) writeTabRow(project string, row ...string) {
+	out.initOut()
+
 	if project == "" {
 		// if the project is empty, the content should just be a "tab"
 		// so that the structure will be contained
@@ -76,38 +116,43 @@ func (cmd *Cmd) writeTabRow(w io.Writer, project string, row ...string) {
 	case 0:
 		break
 	case 1:
-		fmt.Fprintf(w, "%s\n", row[0])
+		fmt.Fprintf(out.tabWriter, "%s\n", row[0])
 	default:
-		fmt.Fprintf(w, "%s", row[0])
+		fmt.Fprintf(out.tabWriter, "%s", row[0])
 		for _, r := range row[1:] {
-			fmt.Fprintf(w, "\t%s", r)
+			fmt.Fprintf(out.tabWriter, "\t%s", r)
 		}
-		fmt.Fprint(w, "\n")
+		fmt.Fprint(out.tabWriter, "\n")
 	}
 }
 
-func (cmd *Cmd) printEmptyMessage(out io.Writer, kind, project string) {
-	if cmd.Output == jsonOut {
-		fmt.Fprintf(defaultOut(out), "[]")
+func (out *output) printEmptyMessage(kind, project string) {
+	out.initOut()
+
+	if out.Format == jsonOut {
+		fmt.Fprintf(out.writer, "[]")
 		return
 	}
-	if cmd.AllProjects {
-		fmt.Fprintf(defaultOut(out), "no %s found in any project\n", flect.Pluralize(kind))
+	if out.AllProjects {
+		fmt.Fprintf(out.writer, "no %s found in any project\n", flect.Pluralize(kind))
 		return
 	}
 	if project == "" {
-		fmt.Fprintf(defaultOut(out), "no %s found\n", flect.Pluralize(kind))
+		fmt.Fprintf(out.writer, "no %s found\n", flect.Pluralize(kind))
 		return
 	}
 
-	fmt.Fprintf(defaultOut(out), "no %s found in project %s\n", flect.Pluralize(kind), project)
+	fmt.Fprintf(out.writer, "no %s found in project %s\n", flect.Pluralize(kind), project)
 }
 
-func defaultOut(out io.Writer) io.Writer {
-	if out == nil {
-		return os.Stdout
+func (out *output) initOut() {
+	if out.writer == nil {
+		out.writer = os.Stdout
 	}
-	return out
+
+	if out.tabWriter == nil {
+		out.tabWriter = tabwriter.NewWriter(out.writer, 0, 0, 4, ' ', tabwriter.RememberWidths)
+	}
 }
 
 func getConnectionSecretMap(ctx context.Context, client *api.Client, mg resource.Managed) (map[string][]byte, error) {

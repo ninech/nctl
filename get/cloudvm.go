@@ -2,44 +2,45 @@ package get
 
 import (
 	"context"
-	"io"
-	"text/tabwriter"
 
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type cloudVMCmd struct {
 	resourceCmd
-	out io.Writer
 }
 
 func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
-	cmd.out = defaultOut(cmd.out)
+	return get.listPrint(ctx, client, cmd, api.MatchName(cmd.Name))
+}
 
-	cloudVMList := &infrastructure.CloudVirtualMachineList{}
+func (cmd *cloudVMCmd) list() client.ObjectList {
+	return &infrastructure.CloudVirtualMachineList{}
+}
 
-	if err := get.list(ctx, client, cloudVMList, api.MatchName(cmd.Name)); err != nil {
-		return err
-	}
+func (cmd *cloudVMCmd) print(ctx context.Context, client *api.Client, list client.ObjectList, out *output) error {
+	cloudVMList := list.(*infrastructure.CloudVirtualMachineList)
 
 	if len(cloudVMList.Items) == 0 {
-		get.printEmptyMessage(cmd.out, infrastructure.CloudVirtualMachineKind, client.Project)
+		out.printEmptyMessage(infrastructure.CloudVirtualMachineKind, client.Project)
 		return nil
 	}
 
-	switch get.Output {
+	switch out.Format {
 	case full:
-		return cmd.printCloudVirtualMachineInstances(cloudVMList.Items, get, true)
+		return cmd.printCloudVirtualMachineInstances(cloudVMList.Items, out, true)
 	case noHeader:
-		return cmd.printCloudVirtualMachineInstances(cloudVMList.Items, get, false)
+		return cmd.printCloudVirtualMachineInstances(cloudVMList.Items, out, false)
 	case yamlOut:
-		return format.PrettyPrintObjects(cloudVMList.GetItems(), format.PrintOpts{})
+		return format.PrettyPrintObjects(cloudVMList.GetItems(), format.PrintOpts{Out: out.writer})
 	case jsonOut:
 		return format.PrettyPrintObjects(
 			cloudVMList.GetItems(),
 			format.PrintOpts{
+				Out:    out.writer,
 				Format: format.OutputFormatTypeJSON,
 				JSONOpts: format.JSONOutputOptions{
 					PrintSingleItem: cmd.Name != "",
@@ -50,16 +51,14 @@ func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client, get *Cmd) er
 	return nil
 }
 
-func (cmd *cloudVMCmd) printCloudVirtualMachineInstances(list []infrastructure.CloudVirtualMachine, get *Cmd, header bool) error {
-	w := tabwriter.NewWriter(cmd.out, 0, 0, 4, ' ', 0)
-
+func (cmd *cloudVMCmd) printCloudVirtualMachineInstances(list []infrastructure.CloudVirtualMachine, out *output, header bool) error {
 	if header {
-		get.writeHeader(w, "NAME", "FQDN", "POWER STATE", "IP ADDRESS")
+		out.writeHeader("NAME", "FQDN", "POWER STATE", "IP ADDRESS")
 	}
 
 	for _, cloudvm := range list {
-		get.writeTabRow(w, cloudvm.Namespace, cloudvm.Name, cloudvm.Status.AtProvider.FQDN, string(cloudvm.Status.AtProvider.PowerState), cloudvm.Status.AtProvider.IPAddress)
+		out.writeTabRow(cloudvm.Namespace, cloudvm.Name, cloudvm.Status.AtProvider.FQDN, string(cloudvm.Status.AtProvider.PowerState), cloudvm.Status.AtProvider.IPAddress)
 	}
 
-	return w.Flush()
+	return out.tabWriter.Flush()
 }

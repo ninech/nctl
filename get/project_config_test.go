@@ -28,8 +28,10 @@ func TestProjectConfigs(t *testing.T) {
 	}{
 		"get configs for all projects": {
 			get: &Cmd{
-				Output:      full,
-				AllProjects: true,
+				output: output{
+					Format:      full,
+					AllProjects: true,
+				},
 			},
 			project: "ns-1",
 			createdConfigs: []client.Object{
@@ -42,7 +44,9 @@ func TestProjectConfigs(t *testing.T) {
 		},
 		"get config for current project": {
 			get: &Cmd{
-				Output: full,
+				output: output{
+					Format: full,
+				},
 			},
 			project: "ns-2",
 			createdConfigs: []client.Object{
@@ -57,7 +61,9 @@ func TestProjectConfigs(t *testing.T) {
 		},
 		"no configs existing": {
 			get: &Cmd{
-				Output: full,
+				output: output{
+					Format: full,
+				},
 			},
 			project:            "ns-3",
 			expectExactMessage: ptr.To("no ProjectConfigs found in project ns-3\n"),
@@ -76,8 +82,8 @@ func TestProjectConfigs(t *testing.T) {
 			require.NoError(t, err)
 
 			buf := &bytes.Buffer{}
+			tc.get.writer = buf
 			cmd := configsCmd{}
-			cmd.out = buf
 
 			if err := cmd.Run(ctx, apiClient, tc.get); err != nil {
 				t.Fatal(err)

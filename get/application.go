@@ -3,10 +3,8 @@ package get
 import (
 	"context"
 	"fmt"
-	"io"
 	"strconv"
 	"strings"
-	"text/tabwriter"
 
 	"github.com/hashicorp/go-multierror"
 	apps "github.com/ninech/apis/apps/v1alpha1"
@@ -18,54 +16,58 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	metricsv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type applicationsCmd struct {
 	resourceCmd
 	BasicAuthCredentials bool `help:"Show the basic auth credentials of the application."`
 	DNS                  bool `help:"Show the DNS details for custom hosts."`
-	out                  io.Writer
 }
 
-func (cmd *applicationsCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
-	appList := &apps.ApplicationList{}
-	if err := get.list(ctx, client, appList, api.MatchName(cmd.Name)); err != nil {
-		return err
-	}
+func (cmd *applicationsCmd) Run(ctx context.Context, c *api.Client, get *Cmd) error {
+	return get.listPrint(ctx, c, cmd, api.MatchName(cmd.Name))
+}
 
+func (cmd *applicationsCmd) list() client.ObjectList {
+	return &apps.ApplicationList{}
+}
+
+func (cmd *applicationsCmd) print(ctx context.Context, client *api.Client, list client.ObjectList, out *output) error {
+	appList := list.(*apps.ApplicationList)
 	if len(appList.Items) == 0 {
-		get.printEmptyMessage(cmd.out, apps.ApplicationKind, client.Project)
+		out.printEmptyMessage(apps.ApplicationKind, client.Project)
 		return nil
 	}
 
 	if cmd.BasicAuthCredentials {
 		creds, err := gatherCredentials(ctx, appList.Items, client)
 		if len(creds) == 0 {
-			fmt.Fprintf(defaultOut(cmd.out), "no application with basic auth enabled found\n")
+			fmt.Fprintf(out.writer, "no application with basic auth enabled found\n")
 			return err
 		}
-		if printErr := printCredentials(creds, get, defaultOut(cmd.out)); printErr != nil {
+		if printErr := printCredentials(creds, out); printErr != nil {
 			err = multierror.Append(err, printErr)
 		}
 		return err
 	}
 
 	if cmd.DNS {
-		return printDNSDetails(util.GatherDNSDetails(appList.Items), get, defaultOut(cmd.out))
+		return printDNSDetails(util.GatherDNSDetails(appList.Items), out)
 	}
 
-	switch get.Output {
+	switch out.Format {
 	case full:
-		return printApplication(appList.Items, get, defaultOut(cmd.out), true)
+		return printApplication(appList.Items, out, true)
 	case noHeader:
-		return printApplication(appList.Items, get, defaultOut(cmd.out), false)
+		return printApplication(appList.Items, out, false)
 	case yamlOut:
-		return format.PrettyPrintObjects(appList.GetItems(), format.PrintOpts{Out: defaultOut(cmd.out)})
+		return format.PrettyPrintObjects(appList.GetItems(), format.PrintOpts{Out: out.writer})
 	case jsonOut:
 		return format.PrettyPrintObjects(
 			appList.GetItems(),
 			format.PrintOpts{
-				Out:    defaultOut(cmd.out),
+				Out:    out.writer,
 				Format: format.OutputFormatTypeJSON,
 				JSONOpts: format.JSONOutputOptions{
 					PrintSingleItem: cmd.Name != "",
@@ -73,7 +75,7 @@ func (cmd *applicationsCmd) Run(ctx context.Context, client *api.Client, get *Cm
 			},
 		)
 	case stats:
-		return cmd.printStats(ctx, client, appList.Items, get, defaultOut(cmd.out))
+		return cmd.printStats(ctx, client, appList.Items, out)
 	}
 
 	return nil
@@ -91,11 +93,9 @@ func (cmd *applicationsCmd) Help() string {
 		"\tLASTEXITCODE: The exit code the last time the replica restarted. This can give an indication on why the replica is restarting."
 }
 
-func printApplication(apps []apps.Application, get *Cmd, out io.Writer, header bool) error {
-	w := tabwriter.NewWriter(out, 0, 0, 4, ' ', 0)
-
+func printApplication(apps []apps.Application, out *output, header bool) error {
 	if header {
-		get.writeHeader(w, "NAME", "REPLICAS", "WORKERJOBS", "SCHEDULEDJOBS", "HOSTS", "UNVERIFIEDHOSTS")
+		out.writeHeader("NAME", "REPLICAS", "WORKERJOBS", "SCHEDULEDJOBS", "HOSTS", "UNVERIFIEDHOSTS")
 	}
 
 	for _, app := range apps {
@@ -108,34 +108,32 @@ func printApplication(apps []apps.Application, get *Cmd, out io.Writer, header b
 		workerJobs := fmt.Sprintf("%d", len(app.Status.AtProvider.WorkerJobs))
 		scheduledJobs := fmt.Sprintf("%d", len(app.Status.AtProvider.ScheduledJobs))
 
-		get.writeTabRow(w, app.Namespace, app.Name, fmt.Sprintf("%d", replicas), workerJobs, scheduledJobs, join(verifiedHosts), join(unverifiedHosts))
+		out.writeTabRow(app.Namespace, app.Name, fmt.Sprintf("%d", replicas), workerJobs, scheduledJobs, join(verifiedHosts), join(unverifiedHosts))
 	}
 
-	return w.Flush()
+	return out.tabWriter.Flush()
 }
 
-func printCredentials(creds []appCredentials, get *Cmd, out io.Writer) error {
-	if get.Output == yamlOut {
-		return format.PrettyPrintObjects(creds, format.PrintOpts{Out: out})
+func printCredentials(creds []appCredentials, out *output) error {
+	if out.Format == yamlOut {
+		return format.PrettyPrintObjects(creds, format.PrintOpts{Out: out.writer})
 	}
-	if get.Output == jsonOut {
-		return format.PrettyPrintObjects(creds, format.PrintOpts{Out: out, Format: format.OutputFormatTypeJSON})
+	if out.Format == jsonOut {
+		return format.PrettyPrintObjects(creds, format.PrintOpts{Out: out.writer, Format: format.OutputFormatTypeJSON})
 	}
-	return printCredentialsTabRow(creds, get, out)
+	return printCredentialsTabRow(creds, out)
 }
 
-func printCredentialsTabRow(creds []appCredentials, get *Cmd, out io.Writer) error {
-	w := tabwriter.NewWriter(out, 0, 0, 4, ' ', 0)
-
-	if get.Output == full {
-		get.writeHeader(w, "NAME", "USERNAME", "PASSWORD")
+func printCredentialsTabRow(creds []appCredentials, out *output) error {
+	if out.Format == full {
+		out.writeHeader("NAME", "USERNAME", "PASSWORD")
 	}
 
 	for _, cred := range creds {
-		get.writeTabRow(w, cred.Project, cred.Application, cred.Username, cred.Password)
+		out.writeTabRow(cred.Project, cred.Application, cred.Username, cred.Password)
 	}
 
-	return w.Flush()
+	return out.tabWriter.Flush()
 }
 
 type appCredentials struct {
@@ -177,32 +175,29 @@ func join(list []string) string {
 	return strings.Join(list, ",")
 }
 
-func printDNSDetails(items []util.DNSDetail, get *Cmd, out io.Writer) error {
-	if get.Output == yamlOut {
-		return format.PrettyPrintObjects(items, format.PrintOpts{Out: out})
+func printDNSDetails(items []util.DNSDetail, out *output) error {
+	if out.Format == yamlOut {
+		return format.PrettyPrintObjects(items, format.PrintOpts{Out: out.writer})
 	}
-	if get.Output == jsonOut {
-		return format.PrettyPrintObjects(items, format.PrintOpts{Out: out, Format: format.OutputFormatTypeJSON})
+	if out.Format == jsonOut {
+		return format.PrettyPrintObjects(items, format.PrintOpts{Out: out.writer, Format: format.OutputFormatTypeJSON})
 	}
-	return printDNSDetailsTabRow(items, get, out)
+	return printDNSDetailsTabRow(items, out)
 }
 
-func printDNSDetailsTabRow(items []util.DNSDetail, get *Cmd, out io.Writer) error {
-	w := tabwriter.NewWriter(out, 0, 0, 4, ' ', 0)
-
-	if get.Output == full {
-		get.writeHeader(w, "NAME", "TXT RECORD", "DNS TARGET")
+func printDNSDetailsTabRow(items []util.DNSDetail, out *output) error {
+	if out.Format == full {
+		out.writeHeader("NAME", "TXT RECORD", "DNS TARGET")
 	}
 
 	for _, item := range items {
-		get.writeTabRow(w, item.Project, item.Application, item.TXTRecord, item.CNAMETarget)
+		out.writeTabRow(item.Project, item.Application, item.TXTRecord, item.CNAMETarget)
 	}
-
-	if err := w.Flush(); err != nil {
+	if err := out.tabWriter.Flush(); err != nil {
 		return err
 	}
-	fmt.Fprintf(out, "\nVisit %s to see instructions on how to setup custom hosts\n", util.DNSSetupURL)
 
+	fmt.Fprintf(out.writer, "\nVisit %s to see instructions on how to setup custom hosts\n", util.DNSSetupURL)
 	return nil
 }
 
@@ -224,7 +219,7 @@ func sizeForScheduledJob(release *apps.Release, scheduledJobName string) *apps.A
 	return nil
 }
 
-func (cmd *applicationsCmd) printStats(ctx context.Context, c *api.Client, appList []apps.Application, get *Cmd, out io.Writer) error {
+func (cmd *applicationsCmd) printStats(ctx context.Context, c *api.Client, appList []apps.Application, out *output) error {
 	scheme := runtime.NewScheme()
 	if err := metricsv1beta1.AddToScheme(scheme); err != nil {
 		return err
@@ -234,8 +229,7 @@ func (cmd *applicationsCmd) printStats(ctx context.Context, c *api.Client, appLi
 	if err != nil {
 		return err
 	}
-	w := tabwriter.NewWriter(out, 0, 0, 3, ' ', 0)
-	get.writeHeader(w, "NAME", "REPLICA", "STATUS", "CPU", "CPU%", "MEMORY", "MEMORY%", "RESTARTS", "LASTEXITCODE")
+	out.writeHeader("NAME", "REPLICA", "STATUS", "CPU", "CPU%", "MEMORY", "MEMORY%", "RESTARTS", "LASTEXITCODE")
 
 	type statsObservation struct {
 		name string
@@ -310,8 +304,8 @@ func (cmd *applicationsCmd) printStats(ctx context.Context, c *api.Client, appLi
 				memoryPercentage = formatPercentage(memory.MilliValue(), maxResources.Memory().MilliValue())
 			}
 
-			get.writeTabRow(
-				w, app.Namespace, statsObservation.name,
+			out.writeTabRow(
+				app.Namespace, statsObservation.name,
 				statsObservation.ReplicaName,
 				string(statsObservation.Status),
 				cpuUsage,
@@ -323,7 +317,7 @@ func (cmd *applicationsCmd) printStats(ctx context.Context, c *api.Client, appLi
 			)
 		}
 	}
-	return w.Flush()
+	return out.tabWriter.Flush()
 }
 
 // formatQuantity formats cpu/memory into human readable form. Adapted from
