@@ -62,7 +62,7 @@ func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {
 		return err
 	}
 
-	fmt.Printf("\n Your Cloud VM %s is now available, you can now connect with: ssh %s\n\n", cloudVM.Name, cloudVM.Status.AtProvider.FQDN)
+	fmt.Printf("\nYour Cloud VM %s is now available, you can now connect with:\n  ssh root@%s\n\n", cloudVM.Name, cloudVM.Status.AtProvider.FQDN)
 
 	return nil
 }
