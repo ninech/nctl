@@ -33,7 +33,7 @@ func (cmd *postgresCmd) print(ctx context.Context, client *api.Client, list clie
 		func(mg resource.Managed) (string, error) {
 			db, ok := mg.(*storage.Postgres)
 			if !ok {
-				return "", fmt.Errorf("expected postgres, got %T", mg)
+				return "", fmt.Errorf("expected %T, got %T", &storage.Postgres{}, mg)
 			}
 			return db.Status.AtProvider.CACert, nil
 		},
@@ -48,7 +48,7 @@ func (cmd *postgresCmd) printPostgresInstances(resources []resource.Managed, get
 	for _, mg := range resources {
 		db, ok := mg.(*storage.Postgres)
 		if !ok {
-			return fmt.Errorf("expected postgres, got %T", mg)
+			return fmt.Errorf("expected %T, got %T", &storage.Postgres{}, mg)
 		}
 
 		get.writeTabRow(db.Namespace, db.Name, db.Status.AtProvider.FQDN, string(db.Spec.ForProvider.Location), db.Spec.ForProvider.MachineType.String())

@@ -35,7 +35,7 @@ func (cmd *postgresDatabaseCmd) print(ctx context.Context, client *api.Client, l
 		func(mg resource.Managed) (string, error) {
 			db, ok := mg.(*storage.PostgresDatabase)
 			if !ok {
-				return "", fmt.Errorf("expected postgresdatabase, got %T", mg)
+				return "", fmt.Errorf("expected %T, got %T", &storage.PostgresDatabase{}, mg)
 			}
 			return db.Status.AtProvider.CACert, nil
 		},
@@ -50,7 +50,7 @@ func (cmd *postgresDatabaseCmd) printPostgresDatabases(resources []resource.Mana
 	for _, mg := range resources {
 		db, ok := mg.(*storage.PostgresDatabase)
 		if !ok {
-			return fmt.Errorf("expected postgresdatabase, got %T", mg)
+			return fmt.Errorf("expected %T, got %T", &storage.PostgresDatabase{}, mg)
 		}
 
 		get.writeTabRow(
