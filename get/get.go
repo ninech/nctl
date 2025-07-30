@@ -2,10 +2,13 @@
 package get
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/gobuffalo/flect"
@@ -190,4 +193,19 @@ func (cmd *resourceCmd) printSecret(out io.Writer, ctx context.Context, client *
 	}
 
 	return nil
+}
+
+func printBase64(out io.Writer, s string) error {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil
+	}
+
+	pem, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		return fmt.Errorf("unable to decode base64: %w", err)
+	}
+
+	_, err = fmt.Fprintln(out, string(bytes.TrimSpace(pem)))
+	return err
 }

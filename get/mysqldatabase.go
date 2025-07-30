@@ -3,92 +3,97 @@ package get
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"strconv"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
-	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type mysqlDatabaseCmd struct {
-	databaseCmd
-	PrintCharacterSet bool `help:"Print the character set of the MySQL database. Requires name to be set." xor:"print"`
+type mysqlDatabaseCmd struct{ databaseCmd }
+
+func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, c *api.Client, get *Cmd) error {
+	return get.listPrint(ctx, c, cmd, api.MatchName(cmd.Name))
 }
 
-func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
-	return get.listPrint(ctx, client, cmd, api.MatchName(cmd.Name))
-}
-
-func (cmd *mysqlDatabaseCmd) list() runtimeclient.ObjectList {
+func (cmd *mysqlDatabaseCmd) list() client.ObjectList {
 	return &storage.MySQLDatabaseList{}
 }
 
-func (cmd *mysqlDatabaseCmd) print(ctx context.Context, client *api.Client, list runtimeclient.ObjectList, out *output) error {
-	databaseList := list.(*storage.MySQLDatabaseList)
-	databaseResources := make([]resource.Managed, 0, len(databaseList.Items))
-	for i := range databaseList.Items {
-		databaseResources = append(databaseResources, &databaseList.Items[i])
+func (cmd *mysqlDatabaseCmd) print(ctx context.Context, client *api.Client, list client.ObjectList, out *output) error {
+	databaseList, ok := list.(*storage.MySQLDatabaseList)
+	if !ok {
+		return fmt.Errorf("expected %T, got %T", &storage.MySQLDatabaseList{}, list)
 	}
 
-	if cmd.Name != "" && cmd.PrintCharacterSet {
-		return cmd.printMySQLCharacterSet(databaseResources[0].(*storage.MySQLDatabase), out)
-	}
-
-	return cmd.runDatabaseCmd(ctx, client, out,
-		databaseResources, storage.MySQLDatabaseKind,
-		func(ctx context.Context, client *api.Client, mg resource.Managed) error {
-			return cmd.printConnectionString(ctx, client, mg.(*storage.MySQLDatabase), out)
-		},
-		func(res []resource.Managed, out *output, header bool) error {
-			dbs := make([]storage.MySQLDatabase, len(res))
-			for i, r := range res {
-				dbs[i] = *r.(*storage.MySQLDatabase)
+	return cmd.run(ctx, client, &Cmd{output: *out},
+		databaseList, storage.MySQLDatabaseKind,
+		cmd.printConnectionString,
+		cmd.printMySQLDatabases,
+		func(mg resource.Managed) (string, error) {
+			db, ok := mg.(*storage.MySQLDatabase)
+			if !ok {
+				return "", fmt.Errorf("expected mysqldatabase, got %T", mg)
 			}
-
-			return cmd.printMySQLDatabases(dbs, out, header)
+			return db.Status.AtProvider.CACert, nil
 		},
 	)
 }
 
-func (cmd *mysqlDatabaseCmd) printMySQLDatabases(list []storage.MySQLDatabase, out *output, header bool) error {
-	databases := make([]Database, len(list))
-	for i, db := range list {
-		databases[i] = Database{
-			Namespace:   db.Namespace,
-			Name:        db.Name,
-			FQDN:        db.Status.AtProvider.FQDN,
-			Location:    string(db.Spec.ForProvider.Location),
-			Size:        db.Status.AtProvider.Size.String(),
-			Connections: fmt.Sprintf("%d", db.Status.AtProvider.Connections),
-		}
+func (cmd *mysqlDatabaseCmd) printMySQLDatabases(databases []resource.Managed, get *Cmd, header bool) error {
+	if header {
+		get.writeHeader("NAME", "FQDN", "LOCATION", "SIZE", "CONNECTIONS")
 	}
 
-	return printDatabases(out, databases, header)
+	for _, mg := range databases {
+		db, ok := mg.(*storage.MySQLDatabase)
+		if !ok {
+			return fmt.Errorf("expected mysqldatabase, got %T", mg)
+		}
+
+		get.writeTabRow(
+			db.Namespace,
+			db.Name,
+			db.Status.AtProvider.FQDN,
+			string(db.Spec.ForProvider.Location),
+			db.Status.AtProvider.Size.String(),
+			strconv.FormatUint(uint64(db.Status.AtProvider.Connections), 10),
+		)
+	}
+
+	return get.tabWriter.Flush()
 }
 
-// printConnectionString according to the MySQL documentation:
-// https://dev.mysql.com/doc/refman/8.4/en/connecting-using-uri-or-key-value-pairs.html#connecting-using-uri
-func (cmd *mysqlDatabaseCmd) printConnectionString(ctx context.Context, client *api.Client, mdb *storage.MySQLDatabase, out *output) error {
-	secrets, err := getConnectionSecretMap(ctx, client, mdb)
+func (cmd *mysqlDatabaseCmd) printConnectionString(ctx context.Context, client *api.Client, mg resource.Managed) error {
+	my, ok := mg.(*storage.MySQLDatabase)
+	if !ok {
+		return fmt.Errorf("expected mysqldatabase, got %T", mg)
+	}
+
+	secrets, err := getConnectionSecretMap(ctx, client, my)
 	if err != nil {
 		return err
 	}
 
 	for db, pw := range secrets {
-		fmt.Fprintf(out.writer, "mysql://%s:%s@%s/%s\n",
-			db,
-			pw,
-			mdb.Status.AtProvider.FQDN,
-			db,
-		)
-		break
+		fmt.Fprintln(cmd.out, mySQLConnectionString(my.Status.AtProvider.FQDN, db, db, pw))
+		return nil
 	}
 
 	return nil
 }
 
-func (cmd *mysqlDatabaseCmd) printMySQLCharacterSet(mdb *storage.MySQLDatabase, out *output) error {
-	fmt.Fprintln(out.writer, mdb.Spec.ForProvider.CharacterSet.Name)
+// mySQLConnectionString according to the MySQL documentation:
+// https://dev.mysql.com/doc/refman/8.4/en/connecting-using-uri-or-key-value-pairs.html#connecting-using-uri
+func mySQLConnectionString(fqdn, user, db string, pw []byte) string {
+	u := &url.URL{
+		Scheme: "mysql",
+		Host:   fqdn,
+		User:   url.UserPassword(user, string(pw)),
+		Path:   db,
+	}
 
-	return nil
+	return u.String()
 }

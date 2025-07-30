@@ -50,26 +50,6 @@ func TestMySQLDatabase(t *testing.T) {
 			wantLines:   2, // header + result
 		},
 		{
-			name: "show-character-set",
-			databases: []mysqlDatabase{
-				{
-					name:         "test1",
-					project:      test.DefaultProject,
-					location:     meta.LocationNineCZ41,
-					characterSet: storage.MySQLCharacterSet{Name: "utf8mb4"},
-				},
-				{
-					name:         "test2",
-					project:      test.DefaultProject,
-					location:     meta.LocationNineCZ41,
-					characterSet: storage.MySQLCharacterSet{Name: "ascii"},
-				},
-			},
-			get:         mysqlDatabaseCmd{PrintCharacterSet: true, databaseCmd: databaseCmd{resourceCmd: resourceCmd{Name: "test2"}}},
-			wantContain: []string{"ascii"},
-			wantLines:   1,
-		},
-		{
 			name: "show-connection-string",
 			databases: []mysqlDatabase{
 				{

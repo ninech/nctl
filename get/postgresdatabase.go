@@ -3,81 +3,97 @@ package get
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"strconv"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
-	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type postgresDatabaseCmd struct {
-	databaseCmd
+type postgresDatabaseCmd struct{ databaseCmd }
+
+func (cmd *postgresDatabaseCmd) Run(ctx context.Context, c *api.Client, get *Cmd) error {
+	return get.listPrint(ctx, c, cmd, api.MatchName(cmd.Name))
 }
 
-func (cmd *postgresDatabaseCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
-	return get.listPrint(ctx, client, cmd, api.MatchName(cmd.Name))
-}
-
-func (cmd *postgresDatabaseCmd) list() runtimeclient.ObjectList {
+func (cmd *postgresDatabaseCmd) list() client.ObjectList {
 	return &storage.PostgresDatabaseList{}
 }
 
-func (cmd *postgresDatabaseCmd) print(ctx context.Context, client *api.Client, list runtimeclient.ObjectList, out *output) error {
-	databaseList := list.(*storage.PostgresDatabaseList)
-	databaseResources := make([]resource.Managed, 0, len(databaseList.Items))
-	for i := range databaseList.Items {
-		databaseResources = append(databaseResources, &databaseList.Items[i])
+func (cmd *postgresDatabaseCmd) print(ctx context.Context, client *api.Client, list client.ObjectList, out *output) error {
+	databaseList, ok := list.(*storage.PostgresDatabaseList)
+	if !ok {
+		return fmt.Errorf("expected %T, got %T", &storage.PostgresDatabaseList{}, list)
 	}
 
-	return cmd.runDatabaseCmd(ctx, client, out,
-		databaseResources, storage.PostgresDatabaseKind,
-		func(ctx context.Context, client *api.Client, mg resource.Managed) error {
-			return cmd.printConnectionString(ctx, client, mg.(*storage.PostgresDatabase), out)
-		},
-		func(res []resource.Managed, out *output, header bool) error {
-			dbs := make([]storage.PostgresDatabase, len(res))
-			for i, r := range res {
-				dbs[i] = *r.(*storage.PostgresDatabase)
+	return cmd.run(ctx, client, &Cmd{output: *out},
+		databaseList, storage.PostgresDatabaseKind,
+		cmd.printConnectionString,
+		cmd.printPostgresDatabases,
+		func(mg resource.Managed) (string, error) {
+			db, ok := mg.(*storage.PostgresDatabase)
+			if !ok {
+				return "", fmt.Errorf("expected postgresdatabase, got %T", mg)
 			}
-
-			return cmd.printPostgresDatabases(dbs, out, header)
+			return db.Status.AtProvider.CACert, nil
 		},
 	)
 }
 
-func (cmd *postgresDatabaseCmd) printPostgresDatabases(list []storage.PostgresDatabase, out *output, header bool) error {
-	databases := make([]Database, len(list))
-	for i, db := range list {
-		databases[i] = Database{
-			Namespace:   db.Namespace,
-			Name:        db.Name,
-			FQDN:        db.Status.AtProvider.FQDN,
-			Location:    string(db.Spec.ForProvider.Location),
-			Size:        db.Status.AtProvider.Size.String(),
-			Connections: fmt.Sprintf("%d", db.Status.AtProvider.Connections),
-		}
+func (cmd *postgresDatabaseCmd) printPostgresDatabases(resources []resource.Managed, get *Cmd, header bool) error {
+	if header {
+		get.writeHeader("NAME", "FQDN", "LOCATION", "SIZE", "CONNECTIONS")
 	}
 
-	return printDatabases(out, databases, header)
+	for _, mg := range resources {
+		db, ok := mg.(*storage.PostgresDatabase)
+		if !ok {
+			return fmt.Errorf("expected postgresdatabase, got %T", mg)
+		}
+
+		get.writeTabRow(
+			db.Namespace,
+			db.Name,
+			db.Status.AtProvider.FQDN,
+			string(db.Spec.ForProvider.Location),
+			db.Status.AtProvider.Size.String(),
+			strconv.FormatUint(uint64(db.Status.AtProvider.Connections), 10),
+		)
+	}
+
+	return get.tabWriter.Flush()
 }
 
-// printConnectionString according to the PostgreSQL documentation:
-// https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING
-func (cmd *postgresDatabaseCmd) printConnectionString(ctx context.Context, client *api.Client, pgd *storage.PostgresDatabase, out *output) error {
-	secrets, err := getConnectionSecretMap(ctx, client, pgd)
+func (cmd *postgresDatabaseCmd) printConnectionString(ctx context.Context, client *api.Client, mg resource.Managed) error {
+	pg, ok := mg.(*storage.PostgresDatabase)
+	if !ok {
+		return fmt.Errorf("expected postgresdatabase, got %T", mg)
+	}
+
+	secrets, err := getConnectionSecretMap(ctx, client, pg)
 	if err != nil {
 		return err
 	}
 
 	for db, pw := range secrets {
-		fmt.Fprintf(out.writer, "postgres://%s:%s@%s/%s\n",
-			db,
-			pw,
-			pgd.Status.AtProvider.FQDN,
-			db,
-		)
-		break
+		fmt.Fprintln(cmd.out, postgresConnectionString(pg.Status.AtProvider.FQDN, db, db, pw))
+		return nil
 	}
 
 	return nil
+}
+
+// postgresConnectionString according to the PostgreSQL documentation:
+// https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING
+func postgresConnectionString(fqdn, user, db string, pw []byte) string {
+	u := &url.URL{
+		Scheme: "postgres",
+		Host:   fqdn,
+		User:   url.UserPassword(user, string(pw)),
+		Path:   db,
+	}
+
+	return u.String()
 }
