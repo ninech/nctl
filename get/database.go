@@ -51,6 +51,13 @@ func (cmd *databaseCmd) run(ctx context.Context, client *api.Client, get *Cmd,
 		}
 		return printBase64(cmd.out, ca)
 	}
+	if cmd.Name != "" && cmd.PrintCACert {
+		ca, err := caCertHandler(databaseResources.GetItems()[0])
+		if err != nil {
+			return err
+		}
+		return printBase64(cmd.out, ca)
+	}
 
 	switch get.Format {
 	case full:

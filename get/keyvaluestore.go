@@ -12,7 +12,8 @@ import (
 
 type keyValueStoreCmd struct {
 	resourceCmd
-	PrintToken bool `help:"Print the bearer token of the Account. Requires name to be set." default:"false"`
+	PrintToken  bool `help:"Print the bearer token of the Account. Requires name to be set." xor:"print"`
+	PrintCACert bool `help:"Print the ca certificate. Requires name to be set." xor:"print"`
 }
 
 func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
@@ -24,13 +25,19 @@ func (cmd *keyValueStoreCmd) list() client.ObjectList {
 }
 
 func (cmd *keyValueStoreCmd) print(ctx context.Context, client *api.Client, list client.ObjectList, out *output) error {
-	keyValueStoreList := list.(*storage.KeyValueStoreList)
+	keyValueStoreList, ok := list.(*storage.KeyValueStoreList)
+	if !ok {
+		return fmt.Errorf("expected %T, got %T", &storage.KeyValueStoreList{}, list)
+	}
 	if len(keyValueStoreList.Items) == 0 {
 		return out.printEmptyMessage(storage.KeyValueStoreKind, client.Project)
 	}
 
 	if cmd.Name != "" && cmd.PrintToken {
-		return cmd.printPassword(ctx, client, &keyValueStoreList.Items[0], out)
+		return cmd.printSecret(out.writer, ctx, client, &keyValueStoreList.Items[0], func(_, pw string) string { return pw })
+	}
+	if cmd.Name != "" && cmd.PrintCACert {
+		return printBase64(out.writer, keyValueStoreList.Items[0].Status.AtProvider.CACert)
 	}
 
 	switch out.Format {
@@ -64,14 +71,4 @@ func (cmd *keyValueStoreCmd) printKeyValueStoreInstances(list []storage.KeyValue
 	}
 
 	return out.tabWriter.Flush()
-}
-
-func (cmd *keyValueStoreCmd) printPassword(ctx context.Context, client *api.Client, keyValueStore *storage.KeyValueStore, out *output) error {
-	pw, err := getConnectionSecret(ctx, client, storage.KeyValueStoreUser, keyValueStore)
-	if err != nil {
-		return err
-	}
-
-	fmt.Fprintln(out.writer, pw)
-	return nil
 }

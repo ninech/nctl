@@ -35,8 +35,9 @@ func (cmd *mysqlDatabaseCmd) print(ctx context.Context, client *api.Client, list
 		func(mg resource.Managed) (string, error) {
 			db, ok := mg.(*storage.MySQLDatabase)
 			if !ok {
-				return "", fmt.Errorf("expected mysqldatabase, got %T", mg)
+				return "", fmt.Errorf("expected %T, got %T", &storage.MySQLDatabase{}, mg)
 			}
+
 			return db.Status.AtProvider.CACert, nil
 		},
 	)
@@ -50,7 +51,7 @@ func (cmd *mysqlDatabaseCmd) printMySQLDatabases(databases []resource.Managed, g
 	for _, mg := range databases {
 		db, ok := mg.(*storage.MySQLDatabase)
 		if !ok {
-			return fmt.Errorf("expected mysqldatabase, got %T", mg)
+			return fmt.Errorf("expected %T, got %T", &storage.MySQLDatabase{}, mg)
 		}
 
 		get.writeTabRow(
