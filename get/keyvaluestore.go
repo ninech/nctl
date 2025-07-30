@@ -26,8 +26,7 @@ func (cmd *keyValueStoreCmd) list() client.ObjectList {
 func (cmd *keyValueStoreCmd) print(ctx context.Context, client *api.Client, list client.ObjectList, out *output) error {
 	keyValueStoreList := list.(*storage.KeyValueStoreList)
 	if len(keyValueStoreList.Items) == 0 {
-		out.printEmptyMessage(storage.KeyValueStoreKind, client.Project)
-		return nil
+		return out.printEmptyMessage(storage.KeyValueStoreKind, client.Project)
 	}
 
 	if cmd.Name != "" && cmd.PrintToken {

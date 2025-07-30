@@ -24,8 +24,7 @@ func (cmd *serviceConnectionCmd) list() client.ObjectList {
 func (cmd *serviceConnectionCmd) print(ctx context.Context, client *api.Client, list client.ObjectList, out *output) error {
 	serviceConnectionList := list.(*networking.ServiceConnectionList)
 	if len(serviceConnectionList.Items) == 0 {
-		out.printEmptyMessage(networking.ServiceConnectionKind, client.Project)
-		return nil
+		return out.printEmptyMessage(networking.ServiceConnectionKind, client.Project)
 	}
 
 	switch out.Format {

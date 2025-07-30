@@ -21,8 +21,7 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 	}
 
 	if len(projectList) == 0 {
-		get.printEmptyMessage(management.ProjectKind, "")
-		return nil
+		return get.printEmptyMessage(management.ProjectKind, "")
 	}
 
 	// we sort alphabetically to have a deterministic output

@@ -30,8 +30,7 @@ func (cmd *databaseCmd) run(ctx context.Context, client *api.Client, get *Cmd,
 	}
 
 	if len(databaseResources.GetItems()) == 0 {
-		get.printEmptyMessage(databaseKind, client.Project)
-		return nil
+		return get.printEmptyMessage(databaseKind, client.Project)
 	}
 
 	if cmd.Name != "" && cmd.PrintConnectionString {

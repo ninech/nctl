@@ -129,23 +129,24 @@ func (out *output) writeTabRow(project string, row ...string) {
 	}
 }
 
-func (out *output) printEmptyMessage(kind, project string) {
+func (out *output) printEmptyMessage(kind, project string) error {
 	out.initOut()
 
 	if out.Format == jsonOut {
-		fmt.Fprintf(out.writer, "[]")
-		return
+		_, err := fmt.Fprintf(out.writer, "[]")
+		return err
 	}
 	if out.AllProjects {
-		fmt.Fprintf(out.writer, "no %s found in any project\n", flect.Pluralize(kind))
-		return
+		_, err := fmt.Fprintf(out.writer, "no %s found in any project\n", flect.Pluralize(kind))
+		return err
 	}
 	if project == "" {
-		fmt.Fprintf(out.writer, "no %s found\n", flect.Pluralize(kind))
-		return
+		_, err := fmt.Fprintf(out.writer, "no %s found\n", flect.Pluralize(kind))
+		return err
 	}
 
-	fmt.Fprintf(out.writer, "no %s found in project %s\n", flect.Pluralize(kind), project)
+	_, err := fmt.Fprintf(out.writer, "no %s found in project %s\n", flect.Pluralize(kind), project)
+	return err
 }
 
 func (out *output) initOut() {
@@ -188,8 +189,8 @@ func (cmd *resourceCmd) printSecret(out io.Writer, ctx context.Context, client *
 	}
 
 	for k, v := range secrets {
-		fmt.Fprintln(out, field(k, string(v)))
-		break
+		_, err = fmt.Fprintln(out, field(k, string(v)))
+		return err
 	}
 
 	return nil
