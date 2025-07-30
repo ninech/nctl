@@ -47,8 +47,7 @@ func (cmd *buildCmd) list() runtimeclient.ObjectList {
 func (cmd *buildCmd) print(ctx context.Context, client *api.Client, list runtimeclient.ObjectList, out *output) error {
 	buildList := list.(*apps.BuildList)
 	if len(buildList.Items) == 0 {
-		out.printEmptyMessage(apps.BuildKind, client.Project)
-		return nil
+		return out.printEmptyMessage(apps.BuildKind, client.Project)
 	}
 
 	if cmd.PullImage {

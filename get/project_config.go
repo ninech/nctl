@@ -27,8 +27,7 @@ func (cmd *configsCmd) list() client.ObjectList {
 func (cmd *configsCmd) print(ctx context.Context, client *api.Client, list client.ObjectList, out *output) error {
 	projectConfigList := list.(*apps.ProjectConfigList)
 	if len(projectConfigList.Items) == 0 {
-		out.printEmptyMessage(apps.ProjectConfigKind, client.Project)
-		return nil
+		return out.printEmptyMessage(apps.ProjectConfigKind, client.Project)
 	}
 
 	switch out.Format {
