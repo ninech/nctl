@@ -2,56 +2,69 @@ package get
 
 import (
 	"context"
+	"io"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
 )
 
-type Database struct {
-	Namespace, Name, FQDN, Location, Size, Connections string
-}
-
 type databaseCmd struct {
 	resourceCmd
 	PrintPassword         bool `help:"Print the password of the database. Requires name to be set." xor:"print"`
-	PrintDatabaseUser     bool `help:"Print the database name and user of the database. Requires name to be set." xor:"print"`
+	PrintUser             bool `help:"Print the database name and user of the database. Requires name to be set." xor:"print" aliases:"print-database-user"`
 	PrintConnectionString bool `help:"Print the connection string of the database. Requires name to be set." xor:"print"`
+	PrintCACert           bool `help:"Print the ca certificate. Requires name to be set." xor:"print"`
+
+	out io.Writer
 }
 
-func (cmd *databaseCmd) runDatabaseCmd(ctx context.Context, client *api.Client,
-	out *output, databaseResources []resource.Managed, databaseKind string,
+func (cmd *databaseCmd) run(ctx context.Context, client *api.Client, get *Cmd,
+	databaseResources resource.ManagedList, databaseKind string,
 	connectionStringHandler func(context.Context, *api.Client, resource.Managed) error,
-	databasesHandler func([]resource.Managed, *output, bool) error,
+	databasesHandler func([]resource.Managed, *Cmd, bool) error,
+	caCertHandler func(resource.Managed) (string, error),
 ) error {
-	if len(databaseResources) == 0 {
-		out.printEmptyMessage(databaseKind, client.Project)
+	if cmd.out == nil {
+		cmd.out = get.writer
+	}
+
+	if len(databaseResources.GetItems()) == 0 {
+		get.printEmptyMessage(databaseKind, client.Project)
 		return nil
 	}
 
 	if cmd.Name != "" && cmd.PrintConnectionString {
-		return connectionStringHandler(ctx, client, databaseResources[0])
+		return connectionStringHandler(ctx, client, databaseResources.GetItems()[0])
 	}
 
-	if cmd.Name != "" && cmd.PrintDatabaseUser {
-		return cmd.printSecret(out.writer, ctx, client, databaseResources[0], func(db, _ string) string { return db })
+	if cmd.Name != "" && cmd.PrintUser {
+		return cmd.printSecret(cmd.out, ctx, client, databaseResources.GetItems()[0], func(db, _ string) string { return db })
 	}
 
 	if cmd.Name != "" && cmd.PrintPassword {
-		return cmd.printSecret(out.writer, ctx, client, databaseResources[0], func(_, pw string) string { return pw })
+		return cmd.printSecret(cmd.out, ctx, client, databaseResources.GetItems()[0], func(_, pw string) string { return pw })
+	}
+	if cmd.Name != "" && cmd.PrintCACert {
+		ca, err := caCertHandler(databaseResources.GetItems()[0])
+		if err != nil {
+			return err
+		}
+		return printBase64(cmd.out, ca)
 	}
 
-	switch out.Format {
+	switch get.Format {
 	case full:
-		return databasesHandler(databaseResources, out, true)
+		return databasesHandler(databaseResources.GetItems(), get, true)
 	case noHeader:
-		return databasesHandler(databaseResources, out, false)
+		return databasesHandler(databaseResources.GetItems(), get, false)
 	case yamlOut:
-		return format.PrettyPrintObjects(databaseResources, format.PrintOpts{})
+		return format.PrettyPrintObjects(databaseResources.GetItems(), format.PrintOpts{Out: get.writer})
 	case jsonOut:
 		return format.PrettyPrintObjects(
-			databaseResources,
+			databaseResources.GetItems(),
 			format.PrintOpts{
+				Out:    get.writer,
 				Format: format.OutputFormatTypeJSON,
 				JSONOpts: format.JSONOutputOptions{
 					PrintSingleItem: cmd.Name != "",
@@ -60,23 +73,4 @@ func (cmd *databaseCmd) runDatabaseCmd(ctx context.Context, client *api.Client,
 	}
 
 	return nil
-}
-
-func printDatabases(out *output, databases []Database, header bool) error {
-	if header {
-		out.writeHeader("NAME", "FQDN", "LOCATION", "SIZE", "CONNECTIONS")
-	}
-
-	for _, db := range databases {
-		out.writeTabRow(
-			db.Namespace,
-			db.Name,
-			db.FQDN,
-			db.Location,
-			db.Size,
-			db.Connections,
-		)
-	}
-
-	return out.tabWriter.Flush()
 }
