@@ -30,7 +30,7 @@ func (cmd *postgresDatabaseCmd) print(ctx context.Context, client *api.Client, l
 
 	return cmd.run(ctx, client, &Cmd{output: *out},
 		databaseList, storage.PostgresDatabaseKind,
-		cmd.printConnectionString,
+		cmd.connectionString,
 		cmd.printPostgresDatabases,
 		func(mg resource.Managed) (string, error) {
 			db, ok := mg.(*storage.PostgresDatabase)
@@ -59,23 +59,17 @@ func (cmd *postgresDatabaseCmd) printPostgresDatabases(resources resource.Manage
 	return get.tabWriter.Flush()
 }
 
-func (cmd *postgresDatabaseCmd) printConnectionString(ctx context.Context, client *api.Client, mg resource.Managed) error {
-	pg, ok := mg.(*storage.PostgresDatabase)
+func (cmd *postgresDatabaseCmd) connectionString(mg resource.Managed, secrets map[string][]byte) (string, error) {
+	my, ok := mg.(*storage.PostgresDatabase)
 	if !ok {
-		return fmt.Errorf("expected postgresdatabase, got %T", mg)
+		return "", fmt.Errorf("expected %T, got %T", &storage.PostgresDatabase{}, mg)
 	}
 
-	secrets, err := getConnectionSecretMap(ctx, client, pg)
-	if err != nil {
-		return err
+	for user, pw := range secrets {
+		return postgresConnectionString(my.Status.AtProvider.FQDN, user, user, pw), nil
 	}
 
-	for db, pw := range secrets {
-		fmt.Fprintln(cmd.out, postgresConnectionString(pg.Status.AtProvider.FQDN, db, db, pw))
-		return nil
-	}
-
-	return nil
+	return "", nil
 }
 
 // postgresConnectionString according to the PostgreSQL documentation:

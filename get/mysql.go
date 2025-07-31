@@ -28,7 +28,7 @@ func (cmd *mySQLCmd) print(ctx context.Context, client *api.Client, list client.
 
 	return cmd.run(ctx, client, &Cmd{output: *out},
 		databaseList, storage.MySQLKind,
-		cmd.printConnectionString,
+		cmd.connectionString,
 		cmd.printMySQLInstances,
 		func(mg resource.Managed) (string, error) {
 			db, ok := mg.(*storage.MySQL)
@@ -57,21 +57,15 @@ func (cmd *mySQLCmd) printMySQLInstances(resources resource.ManagedList, get *Cm
 	return get.tabWriter.Flush()
 }
 
-func (cmd *mySQLCmd) printConnectionString(ctx context.Context, client *api.Client, mg resource.Managed) error {
+func (cmd *mySQLCmd) connectionString(mg resource.Managed, secrets map[string][]byte) (string, error) {
 	my, ok := mg.(*storage.MySQL)
 	if !ok {
-		return fmt.Errorf("expected mysql, got %T", mg)
+		return "", fmt.Errorf("expected %T, got %T", &storage.MySQL{}, mg)
 	}
 
-	secrets, err := getConnectionSecretMap(ctx, client, my)
-	if err != nil {
-		return err
+	for user, pw := range secrets {
+		return mySQLConnectionString(my.Status.AtProvider.FQDN, user, "", pw), nil
 	}
 
-	for db, pw := range secrets {
-		fmt.Fprintln(cmd.out, mySQLConnectionString(my.Status.AtProvider.FQDN, db, db, pw))
-		return nil
-	}
-
-	return nil
+	return "", nil
 }
