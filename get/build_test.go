@@ -28,8 +28,9 @@ func TestBuild(t *testing.T) {
 	build2 := build
 	build2.Name = build2.Name + "-2"
 
+	buf := &bytes.Buffer{}
 	get := &Cmd{
-		Output: full,
+		output: output{Format: full, writer: buf},
 	}
 
 	apiClient, err := test.SetupClient(
@@ -38,11 +39,7 @@ func TestBuild(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	buf := &bytes.Buffer{}
-	cmd := buildCmd{
-		out: buf,
-	}
-
+	cmd := buildCmd{}
 	if err := cmd.Run(ctx, apiClient, get); err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +55,7 @@ func TestBuild(t *testing.T) {
 	assert.Equal(t, 2, test.CountLines(buf.String()))
 	buf.Reset()
 
-	get.Output = noHeader
+	get.Format = noHeader
 	if err := cmd.Run(ctx, apiClient, get); err != nil {
 		t.Fatal(err)
 	}

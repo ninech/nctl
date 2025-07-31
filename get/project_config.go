@@ -2,9 +2,7 @@ package get
 
 import (
 	"context"
-	"io"
 	"strconv"
-	"text/tabwriter"
 	"time"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
@@ -12,43 +10,44 @@ import (
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/internal/format"
 	"k8s.io/apimachinery/pkg/util/duration"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type configsCmd struct {
-	out io.Writer
 }
 
 func (cmd *configsCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
-	projectConfigList := &apps.ProjectConfigList{}
-	if err := get.list(ctx, client, projectConfigList); err != nil {
-		return err
-	}
+	return get.listPrint(ctx, client, cmd)
+}
 
+func (cmd *configsCmd) list() client.ObjectList {
+	return &apps.ProjectConfigList{}
+}
+
+func (cmd *configsCmd) print(ctx context.Context, client *api.Client, list client.ObjectList, out *output) error {
+	projectConfigList := list.(*apps.ProjectConfigList)
 	if len(projectConfigList.Items) == 0 {
-		get.printEmptyMessage(cmd.out, apps.ProjectConfigKind, client.Project)
+		out.printEmptyMessage(apps.ProjectConfigKind, client.Project)
 		return nil
 	}
 
-	switch get.Output {
+	switch out.Format {
 	case full:
-		return printProjectConfigs(projectConfigList.Items, get, defaultOut(cmd.out), true)
+		return printProjectConfigs(projectConfigList.Items, out, true)
 	case noHeader:
-		return printProjectConfigs(projectConfigList.Items, get, defaultOut(cmd.out), false)
+		return printProjectConfigs(projectConfigList.Items, out, false)
 	case yamlOut:
-		return format.PrettyPrintObjects(projectConfigList.GetItems(), format.PrintOpts{Out: defaultOut(cmd.out)})
+		return format.PrettyPrintObjects(projectConfigList.GetItems(), format.PrintOpts{Out: out.writer})
 	case jsonOut:
-		return format.PrettyPrintObjects(projectConfigList.GetItems(), format.PrintOpts{Out: defaultOut(cmd.out), Format: format.OutputFormatTypeJSON})
+		return format.PrettyPrintObjects(projectConfigList.GetItems(), format.PrintOpts{Out: out.writer, Format: format.OutputFormatTypeJSON})
 	}
 
 	return nil
 }
 
-func printProjectConfigs(configs []apps.ProjectConfig, get *Cmd, out io.Writer, header bool) error {
-	w := tabwriter.NewWriter(out, 0, 0, 4, ' ', 0)
-
+func printProjectConfigs(configs []apps.ProjectConfig, out *output, header bool) error {
 	if header {
-		get.writeHeader(
-			w,
+		out.writeHeader(
 			"NAME",
 			"SIZE",
 			"REPLICAS",
@@ -84,8 +83,7 @@ func printProjectConfigs(configs []apps.ProjectConfig, get *Cmd, out io.Writer, 
 			deployJobName = c.Spec.ForProvider.Config.DeployJob.Name
 		}
 
-		get.writeTabRow(
-			w,
+		out.writeTabRow(
 			c.Namespace,
 			c.Name,
 			string(c.Spec.ForProvider.Config.Size),
@@ -98,5 +96,5 @@ func printProjectConfigs(configs []apps.ProjectConfig, get *Cmd, out io.Writer, 
 		)
 	}
 
-	return w.Flush()
+	return out.tabWriter.Flush()
 }

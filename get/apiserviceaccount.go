@@ -3,12 +3,11 @@ package get
 import (
 	"context"
 	"fmt"
-	"os"
-	"text/tabwriter"
 
 	iam "github.com/ninech/apis/iam/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type apiServiceAccountsCmd struct {
@@ -23,14 +22,17 @@ const (
 )
 
 func (asa *apiServiceAccountsCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
-	asaList := &iam.APIServiceAccountList{}
+	return get.listPrint(ctx, client, asa, api.MatchName(asa.Name))
+}
 
-	if err := get.list(ctx, client, asaList, api.MatchName(asa.Name)); err != nil {
-		return err
-	}
+func (asa *apiServiceAccountsCmd) list() client.ObjectList {
+	return &iam.APIServiceAccountList{}
+}
 
+func (asa *apiServiceAccountsCmd) print(ctx context.Context, client *api.Client, list client.ObjectList, out *output) error {
+	asaList := list.(*iam.APIServiceAccountList)
 	if len(asaList.Items) == 0 {
-		get.printEmptyMessage(os.Stdout, iam.APIServiceAccountKind, client.Project)
+		out.printEmptyMessage(iam.APIServiceAccountKind, client.Project)
 		return nil
 	}
 
@@ -48,11 +50,11 @@ func (asa *apiServiceAccountsCmd) Run(ctx context.Context, client *api.Client, g
 		return fmt.Errorf("name is not set, token or kubeconfig can only be printed for a single API Service Account")
 	}
 
-	switch get.Output {
+	switch out.Format {
 	case full:
-		return asa.print(asaList.Items, get, true)
+		return asa.printAsa(asaList.Items, out, true)
 	case noHeader:
-		return asa.print(asaList.Items, get, false)
+		return asa.printAsa(asaList.Items, out, false)
 	case yamlOut:
 		return format.PrettyPrintObjects(asaList.GetItems(), format.PrintOpts{})
 	case jsonOut:
@@ -69,18 +71,16 @@ func (asa *apiServiceAccountsCmd) Run(ctx context.Context, client *api.Client, g
 	return nil
 }
 
-func (asa *apiServiceAccountsCmd) print(sas []iam.APIServiceAccount, get *Cmd, header bool) error {
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
-
+func (asa *apiServiceAccountsCmd) printAsa(sas []iam.APIServiceAccount, out *output, header bool) error {
 	if header {
-		get.writeHeader(w, "NAME", "ROLE")
+		out.writeHeader("NAME", "ROLE")
 	}
 
 	for _, sa := range sas {
-		get.writeTabRow(w, sa.Namespace, sa.Name, string(sa.Spec.ForProvider.Role))
+		out.writeTabRow(sa.Namespace, sa.Name, string(sa.Spec.ForProvider.Role))
 	}
 
-	return w.Flush()
+	return out.tabWriter.Flush()
 }
 
 func (asa *apiServiceAccountsCmd) printToken(ctx context.Context, client *api.Client, sa *iam.APIServiceAccount) error {

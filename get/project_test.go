@@ -23,7 +23,7 @@ func TestProject(t *testing.T) {
 		projects     []client.Object
 		displayNames []string
 		name         string
-		outputFormat output
+		outputFormat outputFormat
 		allProjects  bool
 		output       string
 	}{
@@ -147,9 +147,13 @@ dev        <none>
 		t.Run(name, func(t *testing.T) {
 			testCase := testCase
 
+			buf := &bytes.Buffer{}
 			get := &Cmd{
-				Output:      testCase.outputFormat,
-				AllProjects: testCase.allProjects,
+				output: output{
+					Format:      testCase.outputFormat,
+					AllProjects: testCase.allProjects,
+					writer:      buf,
+				},
 			}
 
 			projects := testCase.projects
@@ -167,12 +171,10 @@ dev        <none>
 			)
 			require.NoError(t, err)
 
-			buf := &bytes.Buffer{}
 			cmd := projectCmd{
 				resourceCmd: resourceCmd{
 					Name: testCase.name,
 				},
-				out: buf,
 			}
 
 			if err := cmd.Run(ctx, apiClient, get); err != nil {
@@ -196,7 +198,7 @@ func TestProjectsConfigErrors(t *testing.T) {
 		},
 	}
 	get := &Cmd{
-		Output: full,
+		output: output{Format: full},
 	}
 	// there is no kubeconfig so we expect to fail
 	require.Error(t, cmd.Run(ctx, apiClient, get))

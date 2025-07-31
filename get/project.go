@@ -2,9 +2,7 @@ package get
 
 import (
 	"context"
-	"io"
 	"sort"
-	"text/tabwriter"
 
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
@@ -14,7 +12,6 @@ import (
 
 type projectCmd struct {
 	resourceCmd
-	out io.Writer
 }
 
 func (proj *projectCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
@@ -24,7 +21,7 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 	}
 
 	if len(projectList) == 0 {
-		get.printEmptyMessage(proj.out, management.ProjectKind, "")
+		get.printEmptyMessage(management.ProjectKind, "")
 		return nil
 	}
 
@@ -36,16 +33,16 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 		},
 	)
 
-	switch get.Output {
+	switch get.Format {
 	case full:
-		return printProject(projectList, *get, defaultOut(proj.out), true)
+		return printProject(projectList, *get, true)
 	case noHeader:
-		return printProject(projectList, *get, defaultOut(proj.out), false)
+		return printProject(projectList, *get, false)
 	case yamlOut:
 		return format.PrettyPrintObjects(
 			(&management.ProjectList{Items: projectList}).GetItems(),
 			format.PrintOpts{
-				Out:               proj.out,
+				Out:               get.writer,
 				ExcludeAdditional: projectExcludes(),
 			},
 		)
@@ -53,7 +50,7 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 		return format.PrettyPrintObjects(
 			(&management.ProjectList{Items: projectList}).GetItems(),
 			format.PrintOpts{
-				Out:               proj.out,
+				Out:               get.writer,
 				ExcludeAdditional: projectExcludes(),
 				Format:            format.OutputFormatTypeJSON,
 				JSONOpts: format.JSONOutputOptions{
@@ -65,14 +62,12 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 	return nil
 }
 
-func printProject(projects []management.Project, get Cmd, out io.Writer, header bool) error {
-	w := tabwriter.NewWriter(out, 0, 0, 4, ' ', 0)
-
+func printProject(projects []management.Project, get Cmd, header bool) error {
 	// we don't want to include the PROJECT header as it doesn't make sense
 	// for projects
 	if header {
 		get.AllProjects = false
-		get.writeHeader(w, "DISPLAY NAME")
+		get.writeHeader("DISPLAY NAME")
 	}
 
 	for _, proj := range projects {
@@ -80,10 +75,10 @@ func printProject(projects []management.Project, get Cmd, out io.Writer, header 
 		if len(displayName) == 0 {
 			displayName = util.NoneText
 		}
-		get.writeTabRow(w, proj.Name, displayName)
+		get.writeTabRow(proj.Name, displayName)
 	}
 
-	return w.Flush()
+	return get.tabWriter.Flush()
 }
 
 func projectExcludes() [][]string {

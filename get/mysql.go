@@ -3,12 +3,11 @@ package get
 import (
 	"context"
 	"fmt"
-	"io"
-	"text/tabwriter"
 
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type mySQLCmd struct {
@@ -16,40 +15,41 @@ type mySQLCmd struct {
 	PrintPassword         bool `help:"Print the password of the MySQL User. Requires name to be set." xor:"print"`
 	PrintUser             bool `help:"Print the name of the MySQL User. Requires name to be set." xor:"print"`
 	PrintConnectionString bool `help:"Print the connection string of the MySQL instance. Requires name to be set." xor:"print"`
-
-	out io.Writer
 }
 
 func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
-	cmd.out = defaultOut(cmd.out)
-
 	if cmd.Name != "" && cmd.PrintUser {
-		fmt.Fprintln(cmd.out, storage.MySQLUser)
+		fmt.Fprintln(get.writer, storage.MySQLUser)
 		return nil
 	}
 
-	mysqlList := &storage.MySQLList{}
-	if err := get.list(ctx, client, mysqlList, api.MatchName(cmd.Name)); err != nil {
-		return err
-	}
+	return get.listPrint(ctx, client, cmd, api.MatchName(cmd.Name))
+}
+
+func (cmd *mySQLCmd) list() runtimeclient.ObjectList {
+	return &storage.MySQLList{}
+}
+
+func (cmd *mySQLCmd) print(ctx context.Context, client *api.Client, list runtimeclient.ObjectList, out *output) error {
+	mysqlList := list.(*storage.MySQLList)
 	if len(mysqlList.Items) == 0 {
-		get.printEmptyMessage(cmd.out, storage.MySQLKind, client.Project)
+		out.printEmptyMessage(storage.MySQLKind, client.Project)
 		return nil
 	}
 
 	if cmd.Name != "" && cmd.PrintConnectionString {
-		return cmd.printConnectionString(ctx, client, &mysqlList.Items[0])
+		return cmd.printConnectionString(ctx, client, &mysqlList.Items[0], out)
 	}
 
 	if cmd.Name != "" && cmd.PrintPassword {
-		return cmd.printPassword(ctx, client, &mysqlList.Items[0])
+		return cmd.printPassword(ctx, client, &mysqlList.Items[0], out)
 	}
 
-	switch get.Output {
+	switch out.Format {
 	case full:
-		return cmd.printMySQLInstances(mysqlList.Items, get, true)
+		return cmd.printMySQLInstances(mysqlList.Items, out, true)
 	case noHeader:
-		return cmd.printMySQLInstances(mysqlList.Items, get, false)
+		return cmd.printMySQLInstances(mysqlList.Items, out, false)
 	case yamlOut:
 		return format.PrettyPrintObjects(mysqlList.GetItems(), format.PrintOpts{})
 	case jsonOut:
@@ -66,39 +66,37 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client, get *Cmd) erro
 	return nil
 }
 
-func (cmd *mySQLCmd) printMySQLInstances(list []storage.MySQL, get *Cmd, header bool) error {
-	w := tabwriter.NewWriter(cmd.out, 0, 0, 4, ' ', 0)
-
+func (cmd *mySQLCmd) printMySQLInstances(list []storage.MySQL, out *output, header bool) error {
 	if header {
-		get.writeHeader(w, "NAME", "FQDN", "LOCATION", "MACHINE TYPE")
+		out.writeHeader("NAME", "FQDN", "LOCATION", "MACHINE TYPE")
 	}
 
 	for _, mysql := range list {
-		get.writeTabRow(w, mysql.Namespace, mysql.Name, mysql.Status.AtProvider.FQDN, string(mysql.Spec.ForProvider.Location), mysql.Spec.ForProvider.MachineType.String())
+		out.writeTabRow(mysql.Namespace, mysql.Name, mysql.Status.AtProvider.FQDN, string(mysql.Spec.ForProvider.Location), mysql.Spec.ForProvider.MachineType.String())
 	}
 
-	return w.Flush()
+	return out.tabWriter.Flush()
 }
 
-func (cmd *mySQLCmd) printPassword(ctx context.Context, client *api.Client, mysql *storage.MySQL) error {
+func (cmd *mySQLCmd) printPassword(ctx context.Context, client *api.Client, mysql *storage.MySQL, out *output) error {
 	pw, err := getConnectionSecret(ctx, client, storage.MySQLUser, mysql)
 	if err != nil {
 		return err
 	}
 
-	_, err = fmt.Fprintln(cmd.out, pw)
+	_, err = fmt.Fprintln(out.writer, pw)
 	return err
 }
 
 // printConnectionString according to the MySQL documentation:
 // https://dev.mysql.com/doc/refman/8.4/en/connecting-using-uri-or-key-value-pairs.html#connecting-using-uri
-func (cmd *mySQLCmd) printConnectionString(ctx context.Context, client *api.Client, mysql *storage.MySQL) error {
+func (cmd *mySQLCmd) printConnectionString(ctx context.Context, client *api.Client, mysql *storage.MySQL, out *output) error {
 	pw, err := getConnectionSecret(ctx, client, storage.MySQLUser, mysql)
 	if err != nil {
 		return err
 	}
 
-	fmt.Fprintf(cmd.out, "mysql://%s:%s@%s",
+	fmt.Fprintf(out.writer, "mysql://%s:%s@%s",
 		storage.MySQLUser,
 		pw,
 		mysql.Status.AtProvider.FQDN,

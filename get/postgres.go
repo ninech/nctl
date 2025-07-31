@@ -3,12 +3,11 @@ package get
 import (
 	"context"
 	"fmt"
-	"io"
-	"text/tabwriter"
 
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type postgresCmd struct {
@@ -16,40 +15,41 @@ type postgresCmd struct {
 	PrintPassword         bool `help:"Print the password of the PostgreSQL User. Requires name to be set." xor:"print"`
 	PrintUser             bool `help:"Print the name of the PostgreSQL User. Requires name to be set." xor:"print"`
 	PrintConnectionString bool `help:"Print the connection string of the PostgreSQL instance. Requires name to be set." xor:"print"`
-
-	out io.Writer
 }
 
 func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
-	cmd.out = defaultOut(cmd.out)
-
 	if cmd.Name != "" && cmd.PrintUser {
-		fmt.Fprintln(cmd.out, storage.PostgresUser)
+		fmt.Fprintln(get.writer, storage.PostgresUser)
 		return nil
 	}
 
-	postgresList := &storage.PostgresList{}
-	if err := get.list(ctx, client, postgresList, api.MatchName(cmd.Name)); err != nil {
-		return err
-	}
+	return get.listPrint(ctx, client, cmd, api.MatchName(cmd.Name))
+}
+
+func (cmd *postgresCmd) list() runtimeclient.ObjectList {
+	return &storage.PostgresList{}
+}
+
+func (cmd *postgresCmd) print(ctx context.Context, client *api.Client, list runtimeclient.ObjectList, out *output) error {
+	postgresList := list.(*storage.PostgresList)
 	if len(postgresList.Items) == 0 {
-		get.printEmptyMessage(cmd.out, storage.PostgresKind, client.Project)
+		out.printEmptyMessage(storage.PostgresKind, client.Project)
 		return nil
 	}
 
 	if cmd.Name != "" && cmd.PrintConnectionString {
-		return cmd.printConnectionString(ctx, client, &postgresList.Items[0])
+		return cmd.printConnectionString(ctx, client, &postgresList.Items[0], out)
 	}
 
 	if cmd.Name != "" && cmd.PrintPassword {
-		return cmd.printPassword(ctx, client, &postgresList.Items[0])
+		return cmd.printPassword(ctx, client, &postgresList.Items[0], out)
 	}
 
-	switch get.Output {
+	switch out.Format {
 	case full:
-		return cmd.printPostgresInstances(postgresList.Items, get, true)
+		return cmd.printPostgresInstances(postgresList.Items, out, true)
 	case noHeader:
-		return cmd.printPostgresInstances(postgresList.Items, get, false)
+		return cmd.printPostgresInstances(postgresList.Items, out, false)
 	case yamlOut:
 		return format.PrettyPrintObjects(postgresList.GetItems(), format.PrintOpts{})
 	case jsonOut:
@@ -66,39 +66,37 @@ func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 	return nil
 }
 
-func (cmd *postgresCmd) printPostgresInstances(list []storage.Postgres, get *Cmd, header bool) error {
-	w := tabwriter.NewWriter(cmd.out, 0, 0, 4, ' ', 0)
-
+func (cmd *postgresCmd) printPostgresInstances(list []storage.Postgres, out *output, header bool) error {
 	if header {
-		get.writeHeader(w, "NAME", "FQDN", "LOCATION", "MACHINE TYPE")
+		out.writeHeader("NAME", "FQDN", "LOCATION", "MACHINE TYPE")
 	}
 
 	for _, postgres := range list {
-		get.writeTabRow(w, postgres.Namespace, postgres.Name, postgres.Status.AtProvider.FQDN, string(postgres.Spec.ForProvider.Location), postgres.Spec.ForProvider.MachineType.String())
+		out.writeTabRow(postgres.Namespace, postgres.Name, postgres.Status.AtProvider.FQDN, string(postgres.Spec.ForProvider.Location), postgres.Spec.ForProvider.MachineType.String())
 	}
 
-	return w.Flush()
+	return out.tabWriter.Flush()
 }
 
-func (cmd *postgresCmd) printPassword(ctx context.Context, client *api.Client, postgres *storage.Postgres) error {
+func (cmd *postgresCmd) printPassword(ctx context.Context, client *api.Client, postgres *storage.Postgres, out *output) error {
 	pw, err := getConnectionSecret(ctx, client, storage.PostgresUser, postgres)
 	if err != nil {
 		return err
 	}
 
-	fmt.Fprintln(cmd.out, pw)
+	fmt.Fprintln(out.writer, pw)
 	return nil
 }
 
 // printConnectionString according to the PostgreSQL documentation:
 // https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING
-func (cmd *postgresCmd) printConnectionString(ctx context.Context, client *api.Client, pg *storage.Postgres) error {
+func (cmd *postgresCmd) printConnectionString(ctx context.Context, client *api.Client, pg *storage.Postgres, out *output) error {
 	pw, err := getConnectionSecret(ctx, client, storage.PostgresUser, pg)
 	if err != nil {
 		return err
 	}
 
-	fmt.Fprintf(cmd.out, "postgres://%s:%s@%s",
+	fmt.Fprintf(out.writer, "postgres://%s:%s@%s",
 		storage.PostgresUser,
 		pw,
 		pg.Status.AtProvider.FQDN,
