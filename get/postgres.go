@@ -40,17 +40,17 @@ func (cmd *postgresCmd) print(ctx context.Context, client *api.Client, list clie
 	)
 }
 
-func (cmd *postgresCmd) printPostgresInstances(resources []resource.Managed, get *Cmd, header bool) error {
+func (cmd *postgresCmd) printPostgresInstances(resources resource.ManagedList, get *Cmd, header bool) error {
+	dbs, ok := resources.(*storage.PostgresList)
+	if !ok {
+		return fmt.Errorf("expected %T, got %T", &storage.PostgresList{}, dbs)
+	}
+
 	if header {
 		get.writeHeader("NAME", "FQDN", "LOCATION", "MACHINE TYPE")
 	}
 
-	for _, mg := range resources {
-		db, ok := mg.(*storage.Postgres)
-		if !ok {
-			return fmt.Errorf("expected %T, got %T", &storage.Postgres{}, mg)
-		}
-
+	for _, db := range dbs.Items {
 		get.writeTabRow(db.Namespace, db.Name, db.Status.AtProvider.FQDN, string(db.Spec.ForProvider.Location), db.Spec.ForProvider.MachineType.String())
 	}
 

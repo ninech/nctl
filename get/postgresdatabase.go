@@ -42,25 +42,18 @@ func (cmd *postgresDatabaseCmd) print(ctx context.Context, client *api.Client, l
 	)
 }
 
-func (cmd *postgresDatabaseCmd) printPostgresDatabases(resources []resource.Managed, get *Cmd, header bool) error {
+func (cmd *postgresDatabaseCmd) printPostgresDatabases(resources resource.ManagedList, get *Cmd, header bool) error {
+	dbs, ok := resources.(*storage.PostgresDatabaseList)
+	if !ok {
+		return fmt.Errorf("expected %T, got %T", &storage.PostgresDatabaseList{}, dbs)
+	}
+
 	if header {
 		get.writeHeader("NAME", "FQDN", "LOCATION", "SIZE", "CONNECTIONS")
 	}
 
-	for _, mg := range resources {
-		db, ok := mg.(*storage.PostgresDatabase)
-		if !ok {
-			return fmt.Errorf("expected %T, got %T", &storage.PostgresDatabase{}, mg)
-		}
-
-		get.writeTabRow(
-			db.Namespace,
-			db.Name,
-			db.Status.AtProvider.FQDN,
-			string(db.Spec.ForProvider.Location),
-			db.Status.AtProvider.Size.String(),
-			strconv.FormatUint(uint64(db.Status.AtProvider.Connections), 10),
-		)
+	for _, db := range dbs.Items {
+		get.writeTabRow(db.Namespace, db.Name, db.Status.AtProvider.FQDN, string(db.Spec.ForProvider.Location), db.Status.AtProvider.Size.String(), strconv.FormatUint(uint64(db.Status.AtProvider.Connections), 10))
 	}
 
 	return get.tabWriter.Flush()
