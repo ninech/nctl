@@ -45,7 +45,7 @@ func (cmd *mysqlDatabaseCmd) print(ctx context.Context, client *api.Client, list
 
 func (cmd *mysqlDatabaseCmd) printMySQLDatabases(databases []resource.Managed, get *Cmd, header bool) error {
 	if header {
-		get.writeHeader("NAME", "FQDN", "LOCATION", "SIZE", "CONNECTIONS")
+		get.writeHeader("NAME", "FQDN", "LOCATION", "COLLATION", "SIZE", "CONNECTIONS")
 	}
 
 	for _, mg := range databases {
@@ -59,6 +59,7 @@ func (cmd *mysqlDatabaseCmd) printMySQLDatabases(databases []resource.Managed, g
 			db.Name,
 			db.Status.AtProvider.FQDN,
 			string(db.Spec.ForProvider.Location),
+			db.Spec.ForProvider.CharacterSet.Collation,
 			db.Status.AtProvider.Size.String(),
 			strconv.FormatUint(uint64(db.Status.AtProvider.Connections), 10),
 		)
