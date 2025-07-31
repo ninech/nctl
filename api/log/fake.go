@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/grafana/loki/v3/pkg/logcli/client"
 	"github.com/grafana/loki/v3/pkg/logcli/volume"
 	"github.com/grafana/loki/v3/pkg/loghttp"
 	legacy "github.com/grafana/loki/v3/pkg/loghttp/legacy"
@@ -167,4 +168,16 @@ func (f fake) GetVolumeRange(query *volume.Query) (*loghttp.QueryResponse, error
 
 func (f fake) GetDetectedFields(queryStr, fieldName string, fieldLimit, lineLimit int, start, end time.Time, step time.Duration, quiet bool) (*loghttp.DetectedFieldsResponse, error) {
 	return nil, errors.New("not implemented")
+}
+
+func (f fake) CreateDeleteRequest(params client.DeleteRequestParams, quiet bool) error {
+	return errors.New("not implemented")
+}
+
+func (f fake) ListDeleteRequests(quiet bool) ([]client.DeleteRequest, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (f fake) CancelDeleteRequest(requestID string, force bool, quiet bool) error {
+	return errors.New("not implemented")
 }
