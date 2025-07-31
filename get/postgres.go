@@ -28,7 +28,7 @@ func (cmd *postgresCmd) print(ctx context.Context, client *api.Client, list clie
 
 	return cmd.run(ctx, client, &Cmd{output: *out},
 		databaseList, storage.PostgresKind,
-		cmd.printConnectionString,
+		cmd.connectionString,
 		cmd.printPostgresInstances,
 		func(mg resource.Managed) (string, error) {
 			db, ok := mg.(*storage.Postgres)
@@ -57,21 +57,15 @@ func (cmd *postgresCmd) printPostgresInstances(resources resource.ManagedList, g
 	return get.tabWriter.Flush()
 }
 
-func (cmd *postgresCmd) printConnectionString(ctx context.Context, client *api.Client, mg resource.Managed) error {
+func (cmd *postgresCmd) connectionString(mg resource.Managed, secrets map[string][]byte) (string, error) {
 	my, ok := mg.(*storage.Postgres)
 	if !ok {
-		return fmt.Errorf("expected postgres, got %T", mg)
+		return "", fmt.Errorf("expected %T, got %T", &storage.Postgres{}, mg)
 	}
 
-	secrets, err := getConnectionSecretMap(ctx, client, my)
-	if err != nil {
-		return err
+	for user, pw := range secrets {
+		return postgresConnectionString(my.Status.AtProvider.FQDN, user, "postgres", pw), nil
 	}
 
-	for db, pw := range secrets {
-		fmt.Fprintln(cmd.out, postgresConnectionString(my.Status.AtProvider.FQDN, db, db, pw))
-		return nil
-	}
-
-	return nil
+	return "", nil
 }

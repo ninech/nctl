@@ -30,7 +30,7 @@ func (cmd *mysqlDatabaseCmd) print(ctx context.Context, client *api.Client, list
 
 	return cmd.run(ctx, client, &Cmd{output: *out},
 		databaseList, storage.MySQLDatabaseKind,
-		cmd.printConnectionString,
+		cmd.connectionString,
 		cmd.printMySQLDatabases,
 		func(mg resource.Managed) (string, error) {
 			db, ok := mg.(*storage.MySQLDatabase)
@@ -60,23 +60,17 @@ func (cmd *mysqlDatabaseCmd) printMySQLDatabases(resources resource.ManagedList,
 	return get.tabWriter.Flush()
 }
 
-func (cmd *mysqlDatabaseCmd) printConnectionString(ctx context.Context, client *api.Client, mg resource.Managed) error {
+func (cmd *mysqlDatabaseCmd) connectionString(mg resource.Managed, secrets map[string][]byte) (string, error) {
 	my, ok := mg.(*storage.MySQLDatabase)
 	if !ok {
-		return fmt.Errorf("expected mysqldatabase, got %T", mg)
+		return "", fmt.Errorf("expected %T, got %T", &storage.MySQLDatabase{}, mg)
 	}
 
-	secrets, err := getConnectionSecretMap(ctx, client, my)
-	if err != nil {
-		return err
+	for user, pw := range secrets {
+		return mySQLConnectionString(my.Status.AtProvider.FQDN, user, user, pw), nil
 	}
 
-	for db, pw := range secrets {
-		fmt.Fprintln(cmd.out, mySQLConnectionString(my.Status.AtProvider.FQDN, db, db, pw))
-		return nil
-	}
-
-	return nil
+	return "", nil
 }
 
 // mySQLConnectionString according to the MySQL documentation:

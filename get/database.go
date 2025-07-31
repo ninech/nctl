@@ -2,7 +2,7 @@ package get
 
 import (
 	"context"
-	"io"
+	"fmt"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/ninech/nctl/api"
@@ -15,55 +15,54 @@ type databaseCmd struct {
 	PrintUser             bool `help:"Print the database name and user of the database. Requires name to be set." xor:"print" aliases:"print-database-user"`
 	PrintConnectionString bool `help:"Print the connection string of the database. Requires name to be set." xor:"print"`
 	PrintCACert           bool `help:"Print the ca certificate. Requires name to be set." xor:"print"`
-
-	out io.Writer
 }
 
 func (cmd *databaseCmd) run(ctx context.Context, client *api.Client, get *Cmd,
 	databaseResources resource.ManagedList, databaseKind string,
-	connectionStringHandler func(context.Context, *api.Client, resource.Managed) error,
-	databasesHandler func(resource.ManagedList, *Cmd, bool) error,
-	caCertHandler func(resource.Managed) (string, error),
+	connectionString func(resource.Managed, map[string][]byte) (string, error),
+	printList func(resource.ManagedList, *Cmd, bool) error,
+	caCert func(resource.Managed) (string, error),
 ) error {
-	if cmd.out == nil {
-		cmd.out = get.writer
-	}
-
 	if len(databaseResources.GetItems()) == 0 {
 		return get.printEmptyMessage(databaseKind, client.Project)
 	}
 
-	if cmd.Name != "" && cmd.PrintConnectionString {
-		return connectionStringHandler(ctx, client, databaseResources.GetItems()[0])
-	}
-
 	if cmd.Name != "" && cmd.PrintUser {
-		return cmd.printSecret(cmd.out, ctx, client, databaseResources.GetItems()[0], func(db, _ string) string { return db })
+		return cmd.printSecret(get.writer, ctx, client, databaseResources.GetItems()[0], func(db, _ string) string { return db })
 	}
 
 	if cmd.Name != "" && cmd.PrintPassword {
-		return cmd.printSecret(cmd.out, ctx, client, databaseResources.GetItems()[0], func(_, pw string) string { return pw })
+		return cmd.printSecret(get.writer, ctx, client, databaseResources.GetItems()[0], func(_, pw string) string { return pw })
 	}
-	if cmd.Name != "" && cmd.PrintCACert {
-		ca, err := caCertHandler(databaseResources.GetItems()[0])
+
+	if cmd.Name != "" && cmd.PrintConnectionString {
+		secrets, err := getConnectionSecretMap(ctx, client, databaseResources.GetItems()[0])
 		if err != nil {
 			return err
 		}
-		return printBase64(cmd.out, ca)
-	}
-	if cmd.Name != "" && cmd.PrintCACert {
-		ca, err := caCertHandler(databaseResources.GetItems()[0])
+
+		str, err := connectionString(databaseResources.GetItems()[0], secrets)
 		if err != nil {
 			return err
 		}
-		return printBase64(cmd.out, ca)
+
+		_, err = fmt.Fprintln(get.writer, str)
+		return err
+	}
+
+	if cmd.Name != "" && cmd.PrintCACert {
+		ca, err := caCert(databaseResources.GetItems()[0])
+		if err != nil {
+			return err
+		}
+		return printBase64(get.writer, ca)
 	}
 
 	switch get.Format {
 	case full:
-		return databasesHandler(databaseResources, get, true)
+		return printList(databaseResources, get, true)
 	case noHeader:
-		return databasesHandler(databaseResources, get, false)
+		return printList(databaseResources, get, false)
 	case yamlOut:
 		return format.PrettyPrintObjects(databaseResources.GetItems(), format.PrintOpts{Out: get.writer})
 	case jsonOut:
