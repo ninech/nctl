@@ -40,17 +40,17 @@ func (cmd *mySQLCmd) print(ctx context.Context, client *api.Client, list client.
 	)
 }
 
-func (cmd *mySQLCmd) printMySQLInstances(resources []resource.Managed, get *Cmd, header bool) error {
+func (cmd *mySQLCmd) printMySQLInstances(resources resource.ManagedList, get *Cmd, header bool) error {
+	dbs, ok := resources.(*storage.MySQLList)
+	if !ok {
+		return fmt.Errorf("expected %T, got %T", &storage.MySQLList{}, dbs)
+	}
+
 	if header {
 		get.writeHeader("NAME", "FQDN", "LOCATION", "MACHINE TYPE")
 	}
 
-	for _, mg := range resources {
-		db, ok := mg.(*storage.MySQL)
-		if !ok {
-			return fmt.Errorf("expected mysql, got %T", mg)
-		}
-
+	for _, db := range dbs.Items {
 		get.writeTabRow(db.Namespace, db.Name, db.Status.AtProvider.FQDN, string(db.Spec.ForProvider.Location), db.Spec.ForProvider.MachineType.String())
 	}
 

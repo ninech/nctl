@@ -22,7 +22,7 @@ type databaseCmd struct {
 func (cmd *databaseCmd) run(ctx context.Context, client *api.Client, get *Cmd,
 	databaseResources resource.ManagedList, databaseKind string,
 	connectionStringHandler func(context.Context, *api.Client, resource.Managed) error,
-	databasesHandler func([]resource.Managed, *Cmd, bool) error,
+	databasesHandler func(resource.ManagedList, *Cmd, bool) error,
 	caCertHandler func(resource.Managed) (string, error),
 ) error {
 	if cmd.out == nil {
@@ -61,9 +61,9 @@ func (cmd *databaseCmd) run(ctx context.Context, client *api.Client, get *Cmd,
 
 	switch get.Format {
 	case full:
-		return databasesHandler(databaseResources.GetItems(), get, true)
+		return databasesHandler(databaseResources, get, true)
 	case noHeader:
-		return databasesHandler(databaseResources.GetItems(), get, false)
+		return databasesHandler(databaseResources, get, false)
 	case yamlOut:
 		return format.PrettyPrintObjects(databaseResources.GetItems(), format.PrintOpts{Out: get.writer})
 	case jsonOut:

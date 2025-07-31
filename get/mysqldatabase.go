@@ -43,26 +43,18 @@ func (cmd *mysqlDatabaseCmd) print(ctx context.Context, client *api.Client, list
 	)
 }
 
-func (cmd *mysqlDatabaseCmd) printMySQLDatabases(databases []resource.Managed, get *Cmd, header bool) error {
+func (cmd *mysqlDatabaseCmd) printMySQLDatabases(resources resource.ManagedList, get *Cmd, header bool) error {
+	dbs, ok := resources.(*storage.MySQLDatabaseList)
+	if !ok {
+		return fmt.Errorf("expected %T, got %T", &storage.MySQLDatabaseList{}, dbs)
+	}
+
 	if header {
 		get.writeHeader("NAME", "FQDN", "LOCATION", "COLLATION", "SIZE", "CONNECTIONS")
 	}
 
-	for _, mg := range databases {
-		db, ok := mg.(*storage.MySQLDatabase)
-		if !ok {
-			return fmt.Errorf("expected %T, got %T", &storage.MySQLDatabase{}, mg)
-		}
-
-		get.writeTabRow(
-			db.Namespace,
-			db.Name,
-			db.Status.AtProvider.FQDN,
-			string(db.Spec.ForProvider.Location),
-			db.Spec.ForProvider.CharacterSet.Collation,
-			db.Status.AtProvider.Size.String(),
-			strconv.FormatUint(uint64(db.Status.AtProvider.Connections), 10),
-		)
+	for _, db := range dbs.Items {
+		get.writeTabRow(db.Namespace, db.Name, db.Status.AtProvider.FQDN, string(db.Spec.ForProvider.Location), db.Spec.ForProvider.CharacterSet.Collation, db.Status.AtProvider.Size.String(), strconv.FormatUint(uint64(db.Status.AtProvider.Connections), 10))
 	}
 
 	return get.tabWriter.Flush()
