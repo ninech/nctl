@@ -561,7 +561,7 @@ func TestApplicationWait(t *testing.T) {
 					errors <- err
 				}
 
-				app.Status.AtProvider.Hosts = []apps.VerificationStatus{{Name: "host.example.org"}}
+				app.Status.AtProvider.Hosts = meta.DNSVerificationStatusEntries{{Name: "host.example.org"}}
 				app.Status.AtProvider.CNAMETarget = "some.target.example.org"
 				app.Status.AtProvider.BasicAuthSecret = &meta.LocalReference{Name: basicAuth.Name}
 				app.Status.AtProvider.LatestRelease = release2.Name
