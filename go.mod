@@ -1,8 +1,6 @@
 module github.com/ninech/nctl
 
-go 1.24.2
-
-toolchain go1.24.4
+go 1.24.5
 
 require (
 	github.com/alecthomas/kong v1.11.0
@@ -21,7 +19,7 @@ require (
 	github.com/grafana/dskit v0.0.0-20250617101305-c93a1bb09ecb
 	github.com/grafana/loki/v3 v3.0.0-20250730143308-a3380f6480b7
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/int128/kubelogin v1.32.4
+	github.com/int128/kubelogin v1.34.0
 	github.com/jotaen/kong-completion v0.0.6
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 	github.com/lucasepe/codename v0.2.1-0.20230220151621-5e31bf1e775f

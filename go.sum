@@ -444,8 +444,8 @@ github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/influxdata/tdigest v0.0.2-0.20210216194612-fc98d27c9e8b h1:i44CesU68ZBRvtCjBi3QSosCIKrjmMbYlQMFAwVLds4=
 github.com/influxdata/tdigest v0.0.2-0.20210216194612-fc98d27c9e8b/go.mod h1:Z0kXnxzbTC2qrx4NaIzYkE1k66+6oEDQTvL95hQFh5Y=
-github.com/int128/kubelogin v1.32.4 h1:6V1/xOSY74IJW8/tI5BBC7dpd3rpS8f/HNR/NMazFPw=
-github.com/int128/kubelogin v1.32.4/go.mod h1:gmq/qSPBo2xstTBbopSMcuWg5FHCYyRAgkJBTpkoSTQ=
+github.com/int128/kubelogin v1.34.0 h1:0VcCfxygw451AvjE5emPN4XppnqU8yqniVHIoxmiu4M=
+github.com/int128/kubelogin v1.34.0/go.mod h1:1TGh0C2IWCvim4c1bZ0zfhjQml7iMm+OjQueGzzvaF8=
 github.com/int128/listener v1.3.0 h1:ZFePbpzFUt1i6hBSY15rzqo8tHZHJPPQkqCtgOAwS8g=
 github.com/int128/listener v1.3.0/go.mod h1:zF9mx2wn+2J/7Idmxi5kgqrGgERr6vr8fK8KqENrRZ0=
 github.com/int128/oauth2cli v1.17.0 h1:i1r9uuTuRzlLAc2iaVQEDtjLPtD9ZftLJEQI0geaUOo=
