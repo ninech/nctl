@@ -13,7 +13,9 @@ import (
 
 type openSearchCmd struct {
 	resourceCmd
-	PrintToken bool `help:"Print the bearer token of the Account. Requires name to be set." default:"false"`
+	PrintPassword bool `help:"Print the password of the OpenSearch BasicAuth User. Requires name to be set." xor:"print"`
+	PrintUser     bool `help:"Print the name of the OpenSearch BasicAuth User. Requires name to be set." xor:"print"`
+	PrintPort     bool `help:"Print the port of the OpenSearch instance. Requires name to be set." xor:"print"`
 
 	out io.Writer
 }
@@ -21,18 +23,26 @@ type openSearchCmd struct {
 func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
 	cmd.out = defaultOut(cmd.out)
 
-	openSearchList := &storage.OpenSearchList{}
+	if cmd.Name != "" && cmd.PrintUser {
+		fmt.Fprintln(cmd.out, storage.OpenSearchUser)
+		return nil
+	}
 
+	if cmd.Name != "" && cmd.PrintPort {
+		fmt.Fprintln(cmd.out, storage.OpenSearchHTTPPort)
+		return nil
+	}
+
+	openSearchList := &storage.OpenSearchList{}
 	if err := get.list(ctx, client, openSearchList, api.MatchName(cmd.Name)); err != nil {
 		return err
 	}
-
 	if len(openSearchList.Items) == 0 {
 		get.printEmptyMessage(cmd.out, storage.OpenSearchKind, client.Project)
 		return nil
 	}
 
-	if cmd.Name != "" && cmd.PrintToken {
+	if cmd.Name != "" && cmd.PrintPassword {
 		return cmd.printPassword(ctx, client, &openSearchList.Items[0])
 	}
 
@@ -58,17 +68,49 @@ func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client, get *Cmd)
 }
 
 func (cmd *openSearchCmd) printOpenSearchInstances(list []storage.OpenSearch, get *Cmd, header bool) error {
-	w := tabwriter.NewWriter(cmd.out, 0, 0, 7, ' ', 0)
+	w := tabwriter.NewWriter(cmd.out, 0, 0, 4, ' ', 0)
 
 	if header {
-		get.writeHeader(w, "NAME", "FQDN", "TLS", "MACHINE TYPE")
+		get.writeHeader(w, "NAME", "FQDN", "PORT", "MACHINE TYPE", "CLUSTER TYPE", "DISK SIZE", "HEALTH")
 	}
 
 	for _, openSearch := range list {
-		get.writeTabRow(w, openSearch.Namespace, openSearch.Name, openSearch.Status.AtProvider.FQDN, "true", openSearch.Spec.ForProvider.MachineType.String())
+		get.writeTabRow(
+			w,
+			openSearch.Namespace,
+			openSearch.Name,
+			openSearch.Status.AtProvider.FQDN,
+			fmt.Sprintf("%d", storage.OpenSearchHTTPPort),
+			openSearch.Spec.ForProvider.MachineType.String(),
+			string(openSearch.Spec.ForProvider.ClusterType),
+			openSearch.Status.AtProvider.DiskSize.String(),
+			cmd.getClusterHealth(openSearch.Status.AtProvider.ClusterHealth),
+		)
 	}
 
 	return w.Flush()
+}
+
+func (cmd *openSearchCmd) getClusterHealth(clusterHealth storage.OpenSearchClusterHealth) string {
+	worstStatus := storage.OpenSearchHealthStatusGreen
+
+	// If no indices, assume healthy
+	if len(clusterHealth.Indices) == 0 {
+		return string(worstStatus)
+	}
+	// Determine the worst status of all indices
+	for _, idx := range clusterHealth.Indices {
+		switch idx.Status {
+		case storage.OpenSearchHealthStatusRed:
+			worstStatus = storage.OpenSearchHealthStatusRed
+		case storage.OpenSearchHealthStatusYellow:
+			if worstStatus != storage.OpenSearchHealthStatusRed {
+				worstStatus = storage.OpenSearchHealthStatusYellow
+			}
+		}
+	}
+
+	return string(worstStatus)
 }
 
 func (cmd *openSearchCmd) printPassword(ctx context.Context, client *api.Client, openSearch *storage.OpenSearch) error {

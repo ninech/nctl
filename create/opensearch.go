@@ -14,11 +14,10 @@ import (
 
 type openSearchCmd struct {
 	resourceCmd
-	Location                string                        `help:"Location where the OpenSearch instance is created." placeholder:"nine-es34"`
-	MachineType             string                        `help:"MachineType specifies the type of machine to use for the OpenSearch instance." placeholder:"e.g. nine-search-s"`
-	ClusterType             storage.OpenSearchClusterType `help:"ClusterType specifies the type of OpenSearch cluster to create. Options: single, multi" placeholder:"single"`
-	AllowedCidrs            []meta.IPv4CIDR               `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance." placeholder:"203.0.113.1/32"`
-	PublicNetworkingEnabled *bool                         `help:"Specifies if the service should be available without service connection." placeholder:"true"`
+	Location     string                        `help:"Location where the OpenSearch instance is created." placeholder:"nine-es34"`
+	MachineType  string                        `help:"MachineType specifies the type of machine to use for the OpenSearch instance." placeholder:"nine-search-s"`
+	ClusterType  storage.OpenSearchClusterType `help:"ClusterType specifies the type of OpenSearch cluster to create. Options: single, multi" placeholder:"single"`
+	AllowedCidrs []meta.IPv4CIDR               `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance." placeholder:"203.0.113.1/32"`
 }
 
 func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client) error {
@@ -66,11 +65,10 @@ func (cmd *openSearchCmd) newOpenSearch(namespace string) (*storage.OpenSearch, 
 				},
 			},
 			ForProvider: storage.OpenSearchParameters{
-				Location:                meta.LocationName(cmd.Location),
-				MachineType:             infra.NewMachineType(cmd.MachineType),
-				ClusterType:             cmd.ClusterType,
-				AllowedCIDRs:            cmd.AllowedCidrs,
-				PublicNetworkingEnabled: cmd.PublicNetworkingEnabled,
+				Location:     meta.LocationName(cmd.Location),
+				MachineType:  infra.NewMachineType(cmd.MachineType),
+				ClusterType:  cmd.ClusterType,
+				AllowedCIDRs: cmd.AllowedCidrs,
 			},
 		},
 	}
