@@ -101,13 +101,3 @@ func (cmd *openSearchCmd) getClusterHealth(clusterHealth storage.OpenSearchClust
 
 	return worstStatus
 }
-
-func (cmd *openSearchCmd) printPassword(ctx context.Context, client *api.Client, openSearch *storage.OpenSearch, out *output) error {
-	pw, err := getConnectionSecret(ctx, client, storage.OpenSearchUser, openSearch)
-	if err != nil {
-		return err
-	}
-
-	fmt.Fprintln(out.writer, pw)
-	return nil
-}
