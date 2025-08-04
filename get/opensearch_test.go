@@ -316,7 +316,7 @@ func TestGetClusterHealth(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := cmd.getClusterHealth(tt.clusterHealth)
+			got := string(cmd.getClusterHealth(tt.clusterHealth))
 			if got != tt.want {
 				t.Errorf("getClusterHealth() = %v, want %v", got, tt.want)
 			}
