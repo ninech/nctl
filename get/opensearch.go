@@ -14,6 +14,7 @@ type openSearchCmd struct {
 	resourceCmd
 	PrintPassword bool `help:"Print the password of the OpenSearch BasicAuth User. Requires name to be set." xor:"print"`
 	PrintUser     bool `help:"Print the name of the OpenSearch BasicAuth User. Requires name to be set." xor:"print"`
+	PrintCACert   bool `help:"Print the ca certificate. Requires name to be set." xor:"print"`
 }
 
 func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
@@ -48,6 +49,10 @@ func (cmd *openSearchCmd) print(ctx context.Context, client *api.Client, list cl
 		}
 		fmt.Fprintln(out.writer, pw)
 		return nil
+	}
+
+	if cmd.Name != "" && cmd.PrintCACert {
+		return printBase64(out.writer, openSearchList.Items[0].Status.AtProvider.CACert)
 	}
 
 	switch out.Format {

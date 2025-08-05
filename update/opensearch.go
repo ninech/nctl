@@ -14,13 +14,12 @@ import (
 
 type openSearchCmd struct {
 	resourceCmd
-	MachineType             *string          `help:"MachineType configures OpenSearch to use a specified machine type." placeholder:"nine-search-m"`
-	AllowedCidrs            *[]meta.IPv4CIDR `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance." placeholder:"203.0.113.1/32"`
-	PublicNetworkingEnabled *bool            `help:"Specifies if the service should be available without service connection."`
+	MachineType  *string          `help:"MachineType configures OpenSearch to use a specified machine type." placeholder:"nine-search-m"`
+	AllowedCidrs *[]meta.IPv4CIDR `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance." placeholder:"203.0.113.1/32"`
 }
 
 func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client) error {
-	if cmd.MachineType == nil && cmd.AllowedCidrs == nil && cmd.PublicNetworkingEnabled == nil {
+	if cmd.MachineType == nil && cmd.AllowedCidrs == nil {
 		return fmt.Errorf("at least one parameter must be provided to update the OpenSearch instance")
 	}
 
@@ -47,9 +46,6 @@ func (cmd *openSearchCmd) applyUpdates(openSearch *storage.OpenSearch) error {
 	}
 	if cmd.AllowedCidrs != nil {
 		openSearch.Spec.ForProvider.AllowedCIDRs = *cmd.AllowedCidrs
-	}
-	if cmd.PublicNetworkingEnabled != nil {
-		openSearch.Spec.ForProvider.PublicNetworkingEnabled = cmd.PublicNetworkingEnabled
 	}
 
 	return nil
