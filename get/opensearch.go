@@ -12,9 +12,10 @@ import (
 
 type openSearchCmd struct {
 	resourceCmd
-	PrintPassword bool `help:"Print the password of the OpenSearch BasicAuth User. Requires name to be set." xor:"print"`
-	PrintUser     bool `help:"Print the name of the OpenSearch BasicAuth User. Requires name to be set." xor:"print"`
-	PrintCACert   bool `help:"Print the ca certificate. Requires name to be set." xor:"print"`
+	PrintPassword     bool `help:"Print the password of the OpenSearch BasicAuth User. Requires name to be set." xor:"print"`
+	PrintUser         bool `help:"Print the name of the OpenSearch BasicAuth User. Requires name to be set." xor:"print"`
+	PrintCACert       bool `help:"Print the ca certificate. Requires name to be set." xor:"print"`
+	PrintAllowedCIDRS bool `help:"Print the allowed CIDRs for the OpenSearch instance." xor:"print"`
 }
 
 func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
@@ -53,6 +54,17 @@ func (cmd *openSearchCmd) print(ctx context.Context, client *api.Client, list cl
 
 	if cmd.Name != "" && cmd.PrintCACert {
 		return printBase64(out.writer, openSearchList.Items[0].Status.AtProvider.CACert)
+	}
+
+	if cmd.PrintAllowedCIDRS {
+		if cmd.Name == "" {
+			return fmt.Errorf("instance name is required when using --print-allowed-cidrs")
+		}
+		allowedCIDRs := openSearchList.Items[0].Spec.ForProvider.AllowedCIDRs
+		for _, cidr := range allowedCIDRs {
+			fmt.Fprintln(out.writer, string(cidr))
+		}
+		return nil
 	}
 
 	switch out.Format {
