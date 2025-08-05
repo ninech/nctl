@@ -33,12 +33,21 @@ func (cmd *openSearchCmd) print(ctx context.Context, client *api.Client, list cl
 		return out.printEmptyMessage(storage.OpenSearchKind, client.Project)
 	}
 
-	if cmd.Name != "" && cmd.PrintUser {
-		return cmd.printSecret(out.writer, ctx, client, &openSearchList.Items[0], func(db, _ string) string { return db })
+	if cmd.PrintUser {
+		fmt.Fprintln(out.writer, storage.OpenSearchUser)
+		return nil
 	}
 
-	if cmd.Name != "" && cmd.PrintPassword {
-		return cmd.printSecret(out.writer, ctx, client, &openSearchList.Items[0], func(_, pw string) string { return pw })
+	if cmd.PrintPassword {
+		if cmd.Name == "" {
+			return fmt.Errorf("instance name is required when using --print-password")
+		}
+		pw, err := getConnectionSecret(ctx, client, storage.OpenSearchUser, &openSearchList.Items[0])
+		if err != nil {
+			return err
+		}
+		fmt.Fprintln(out.writer, pw)
+		return nil
 	}
 
 	switch out.Format {
