@@ -15,12 +15,12 @@ import (
 type openSearchCmd struct {
 	resourceCmd
 	MachineType  *string          `help:"MachineType configures OpenSearch to use a specified machine type." placeholder:"nine-search-m"`
-	AllowedCidrs *[]meta.IPv4CIDR `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance." placeholder:"203.0.113.1/32"`
+	AllowedCidrs *[]meta.IPv4CIDR `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the cluster." placeholder:"203.0.113.1/32"`
 }
 
 func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client) error {
 	if cmd.MachineType == nil && cmd.AllowedCidrs == nil {
-		return fmt.Errorf("at least one parameter must be provided to update the OpenSearch instance")
+		return fmt.Errorf("at least one parameter must be provided to update the OpenSearch cluster")
 	}
 
 	openSearch := &storage.OpenSearch{
