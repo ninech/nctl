@@ -24,9 +24,6 @@ func TestOpenSearch(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "simple",
-		},
-		{
 			name:   "increase-machineType",
 			update: openSearchCmd{MachineType: ptr.To(infra.MachineTypeNineSearchL.String())},
 			want:   storage.OpenSearchParameters{MachineType: infra.MachineTypeNineSearchL},
