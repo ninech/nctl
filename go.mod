@@ -26,7 +26,7 @@ require (
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 	github.com/lucasepe/codename v0.2.1-0.20230220151621-5e31bf1e775f
 	github.com/mattn/go-isatty v0.0.20
-	github.com/moby/moby v28.2.2+incompatible
+	github.com/moby/moby v28.3.3+incompatible
 	github.com/moby/term v0.5.2
 	github.com/ninech/apis v0.0.0-20250731150359-821fc9ecc6ab
 	github.com/posener/complete v1.2.3
