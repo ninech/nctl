@@ -2,10 +2,10 @@ package create
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
@@ -91,9 +91,7 @@ func TestKeyValueStore(t *testing.T) {
 				return
 			}
 
-			if !reflect.DeepEqual(created.Spec.ForProvider, tt.want) {
-				t.Fatalf("expected KeyValueStore.Spec.ForProvider = %v, got: %v", created.Spec.ForProvider, tt.want)
-			}
+			require.True(t, cmp.Equal(tt.want, created.Spec.ForProvider))
 		})
 	}
 }
