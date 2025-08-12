@@ -1,11 +1,9 @@
 module github.com/ninech/nctl
 
-go 1.24.2
-
-toolchain go1.24.4
+go 1.24.5
 
 require (
-	github.com/alecthomas/kong v1.11.0
+	github.com/alecthomas/kong v1.12.1
 	github.com/charmbracelet/bubbles v0.21.0
 	github.com/charmbracelet/bubbletea v1.3.5
 	github.com/charmbracelet/lipgloss v1.1.0
@@ -14,19 +12,19 @@ require (
 	github.com/fatih/color v1.18.0
 	github.com/gobuffalo/flect v1.0.3
 	github.com/goccy/go-yaml v1.18.0
-	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
 	github.com/grafana/dskit v0.0.0-20250617101305-c93a1bb09ecb
 	github.com/grafana/loki/v3 v3.0.0-20250730143308-a3380f6480b7
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/int128/kubelogin v1.32.4
+	github.com/int128/kubelogin v1.34.0
 	github.com/jotaen/kong-completion v0.0.6
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 	github.com/lucasepe/codename v0.2.1-0.20230220151621-5e31bf1e775f
 	github.com/mattn/go-isatty v0.0.20
-	github.com/moby/moby v28.2.2+incompatible
+	github.com/moby/moby v28.3.3+incompatible
 	github.com/moby/term v0.5.2
 	github.com/ninech/apis v0.0.0-20250731150359-821fc9ecc6ab
 	github.com/posener/complete v1.2.3
@@ -36,11 +34,11 @@ require (
 	golang.org/x/crypto v0.40.0
 	golang.org/x/exp v0.0.0-20250606033433-dcc06ee1d476
 	gotest.tools v2.2.0+incompatible
-	k8s.io/api v0.33.2
+	k8s.io/api v0.33.3
 	k8s.io/apimachinery v0.33.3
-	k8s.io/client-go v0.33.2
-	k8s.io/kubectl v0.33.1
-	k8s.io/metrics v0.33.1
+	k8s.io/client-go v0.33.3
+	k8s.io/kubectl v0.33.3
+	k8s.io/metrics v0.33.3
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
 	sigs.k8s.io/controller-runtime v0.21.0
 	sigs.k8s.io/yaml v1.5.0
@@ -145,7 +143,6 @@ require (
 	github.com/gogo/googleapis v1.4.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/gogo/status v1.1.1 // indirect
-	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
 	github.com/google/btree v1.1.3 // indirect
@@ -341,9 +338,9 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apiextensions-apiserver v0.33.2 // indirect
-	k8s.io/cli-runtime v0.33.1 // indirect
-	k8s.io/code-generator v0.33.2 // indirect
-	k8s.io/component-base v0.33.2 // indirect
+	k8s.io/cli-runtime v0.33.3 // indirect
+	k8s.io/code-generator v0.33.3 // indirect
+	k8s.io/component-base v0.33.3 // indirect
 	k8s.io/gengo/v2 v2.0.0-20250704022524-ddb642e17a28 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250701173324-9bd5c66d9911 // indirect
