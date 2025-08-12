@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	credreader "github.com/int128/kubelogin/pkg/credentialplugin/reader"
 	"github.com/int128/kubelogin/pkg/credentialplugin/writer"
 	"github.com/int128/kubelogin/pkg/infrastructure/browser"
@@ -182,7 +182,7 @@ func GetUserInfoFromToken(tokenString string) (*UserInfo, error) {
 		Email  string   `json:"email"`
 		Groups []string `json:"groups"`
 		Sub    string   `json:"sub"`
-		jwt.StandardClaims
+		jwt.RegisteredClaims
 	}
 	token, _, err := new(jwt.Parser).ParseUnverified(tokenString, &authClaims{})
 	if err != nil {
