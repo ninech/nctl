@@ -99,18 +99,7 @@ func (c *Client) ListObjects(ctx context.Context, list runtimeclient.ObjectList,
 		return nil
 	}
 
-	// we now need a bit of reflection code from the apimachinery package
-	// as the ObjectList interface provides no way to get or set the list
-	// items directly.
-
-	// we need to get a pointer to the items field of the list and turn it
-	// into a reflect value so that we can change the items in case we want
-	// to search in all projects.
-	itemsPtr, err := meta.GetItemsPtr(list)
-	if err != nil {
-		return err
-	}
-	items, err := conversion.EnforcePtr(itemsPtr)
+	items, err := itemsFromObjectList(list)
 	if err != nil {
 		return err
 	}
@@ -260,4 +249,17 @@ func (c *Client) Projects(ctx context.Context, onlyName string) ([]management.Pr
 		return nil, err
 	}
 	return projectList.Items, nil
+}
+
+func itemsFromObjectList(list runtimeclient.ObjectList) (reflect.Value, error) {
+	// we need a bit of reflection code from the apimachinery package as the
+	// ObjectList interface provides no way to get or set the list items
+	// directly. We need to get a pointer to the items field of the list and
+	// turn it into a reflect value so that we can change the items in case we
+	// want to search in all projects.
+	itemsPtr, err := meta.GetItemsPtr(list)
+	if err != nil {
+		return reflect.Value{}, err
+	}
+	return conversion.EnforcePtr(itemsPtr)
 }
