@@ -88,6 +88,7 @@ func TestApplication(t *testing.T) {
 				Size:                ptr.To("mini"),
 				Hosts:               []string{"custom.example.org", "custom2.example.org"},
 				Port:                ptr.To(int32(1337)),
+				HealthProbe:         healthProbe{PeriodSeconds: int32(7), Path: "/he"},
 				Replicas:            ptr.To(int32(42)),
 				BasicAuth:           ptr.To(false),
 				Env:                 map[string]string{"hello": "world"},
@@ -103,6 +104,8 @@ func TestApplication(t *testing.T) {
 				assert.Equal(t, cmd.Hosts, app.Spec.ForProvider.Hosts)
 				assert.Equal(t, apps.ApplicationSize(*cmd.Size), app.Spec.ForProvider.Config.Size)
 				assert.Equal(t, *cmd.Port, *app.Spec.ForProvider.Config.Port)
+				assert.Equal(t, cmd.HealthProbe.PeriodSeconds, *app.Spec.ForProvider.Config.HealthProbe.PeriodSeconds)
+				assert.Equal(t, cmd.HealthProbe.Path, app.Spec.ForProvider.Config.HealthProbe.HTTPGet.Path)
 				assert.Equal(t, *cmd.Replicas, *app.Spec.ForProvider.Config.Replicas)
 				assert.Equal(t, *cmd.BasicAuth, *app.Spec.ForProvider.Config.EnableBasicAuth)
 				assert.Equal(t, util.EnvVarsFromMap(cmd.Env), app.Spec.ForProvider.Config.Env)
