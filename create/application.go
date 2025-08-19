@@ -38,6 +38,7 @@ type applicationCmd struct {
 	Git                      gitConfig         `embed:"" prefix:"git-"`
 	Size                     *string           `help:"Size of the application (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
 	Port                     *int32            `help:"Port the application is listening on (defaults to ${app_default_port})." placeholder:"${app_default_port}"`
+	HealthProbe              healthProbe       `embed:"" prefix:"health-probe-"`
 	Replicas                 *int32            `help:"Amount of replicas of the running application (defaults to ${app_default_replicas})." placeholder:"${app_default_replicas}"`
 	Hosts                    []string          `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
 	BasicAuth                *bool             `help:"Enable/Disable basic authentication for the application (defaults to ${app_default_basic_auth})." placeholder:"${app_default_basic_auth}"`
@@ -63,6 +64,11 @@ type gitConfig struct {
 	Password              *string `help:"Password to use when authenticating to the git repository over HTTPS. In case of GitHub or GitLab, this can also be an access token." env:"GIT_PASSWORD"`
 	SSHPrivateKey         *string `help:"Private key in PEM format to connect to the git repository via SSH." env:"GIT_SSH_PRIVATE_KEY" xor:"SSH_KEY"`
 	SSHPrivateKeyFromFile *string `help:"Path to a file containing a private key in PEM format to connect to the git repository via SSH." env:"GIT_SSH_PRIVATE_KEY_FROM_FILE" xor:"SSH_KEY" predictor:"file"`
+}
+
+type healthProbe struct {
+	PeriodSeconds int32  `placeholder:"${app_default_health_probe_period_seconds}" help:"How often (in seconds) to perform the custom health probe. Minimum is 1." default:"${app_default_health_probe_period_seconds}"`
+	Path          string `help:"URL path on the application's HTTP server used for the custom health probe. The platform performs an HTTP GET on this path to determine health. The app should return a non-success status during startup and once healthy, return a success HTTP status. Any code 200-399 indicates success; any other code indicates failure."`
 }
 
 type deployJob struct {
@@ -343,7 +349,26 @@ func (app *applicationCmd) config() apps.Config {
 	if app.Replicas != nil {
 		config.Replicas = app.Replicas
 	}
+
+	app.HealthProbe.applyCreate(&config)
+
 	return config
+}
+
+func (h healthProbe) ToProbePatch() util.ProbePatch {
+	var pp util.ProbePatch
+
+	if p := strings.TrimSpace(h.Path); p != "" {
+		pp.Path = util.OptString{State: util.Set, Val: p}
+	}
+	if h.PeriodSeconds > 0 {
+		pp.PeriodSeconds = util.OptInt32{State: util.Set, Val: h.PeriodSeconds}
+	}
+	return pp
+}
+
+func (h healthProbe) applyCreate(cfg *apps.Config) {
+	util.ApplyProbePatch(cfg, h.ToProbePatch())
 }
 
 func (app *applicationCmd) newApplication(project string) *apps.Application {
@@ -659,6 +684,8 @@ func ApplicationKongVars() (kong.Vars, error) {
 		return nil, errors.New("no default application basic authentication settings found")
 	}
 	result["app_default_basic_auth"] = strconv.FormatBool(*apps.DefaultConfig.EnableBasicAuth)
+
+	result["app_default_health_probe_period_seconds"] = "10"
 
 	result["app_default_deploy_job_timeout"] = "5m"
 	result["app_default_deploy_job_retries"] = "3"
