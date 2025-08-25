@@ -68,6 +68,58 @@ func TestProjectConfigs(t *testing.T) {
 			project:            "ns-3",
 			expectExactMessage: ptr.To("no ProjectConfigs found in project ns-3\n"),
 		},
+		"sensitive env var is masked": {
+			get: &Cmd{
+				output: output{
+					Format: full,
+				},
+			},
+			project: "ns-4",
+			createdConfigs: []client.Object{
+				&apps.ProjectConfig{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "ns-4",
+						Namespace: "ns-4",
+					},
+					Spec: apps.ProjectConfigSpec{
+						ForProvider: apps.ProjectConfigParameters{
+							Config: apps.Config{
+								Env: util.EnvVarsFromMap(map[string]string{"poo": "orange"}, util.Sensitive()),
+							},
+						},
+					},
+				},
+			},
+			expectExactMessage: ptr.To(
+				"PROJECT    NAME    SIZE    REPLICAS    PORT    ENVIRONMENT_VARIABLES    BASIC_AUTH    DEPLOY_JOB    AGE\nns-4       ns-4                                poo=*****                false         <none>        292y\n",
+			),
+		},
+		"non-sensitive env var is shown": {
+			get: &Cmd{
+				output: output{
+					Format: full,
+				},
+			},
+			project: "ns-5",
+			createdConfigs: []client.Object{
+				&apps.ProjectConfig{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "ns-5",
+						Namespace: "ns-5",
+					},
+					Spec: apps.ProjectConfigSpec{
+						ForProvider: apps.ProjectConfigParameters{
+							Config: apps.Config{
+								Env: util.EnvVarsFromMap(map[string]string{"goo": "banana"}),
+							},
+						},
+					},
+				},
+			},
+			expectExactMessage: ptr.To(
+				"PROJECT    NAME    SIZE    REPLICAS    PORT    ENVIRONMENT_VARIABLES    BASIC_AUTH    DEPLOY_JOB    AGE\nns-5       ns-5                                goo=banana               false         <none>        292y\n",
+			),
+		},
 	}
 
 	for name, tc := range cases {
