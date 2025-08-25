@@ -440,6 +440,34 @@ func TestApplication(t *testing.T) {
 				assert.Nil(t, app.Spec.ForProvider.Git.Auth)
 			},
 		},
+		"with sensitive env": {
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Name: "sensitive-env-test",
+				},
+				Git: gitConfig{
+					URL:      "https://github.com/ninech/doesnotexist.git",
+					SubPath:  "/my/app",
+					Revision: "superbug",
+				},
+				SensitiveEnv:        map[string]string{"secret": "orange"},
+				SensitiveBuildEnv:   map[string]string{"build_secret": "banana"},
+				SkipRepoAccessCheck: true,
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				env := util.EnvVarByName(app.Spec.ForProvider.Config.Env, "secret")
+				require.NotNil(t, env)
+				require.NotNil(t, env.Sensitive)
+				assert.True(t, *env.Sensitive)
+				assert.Equal(t, "orange", env.Value)
+
+				buildEnv := util.EnvVarByName(app.Spec.ForProvider.BuildEnv, "build_secret")
+				require.NotNil(t, buildEnv)
+				require.NotNil(t, buildEnv.Sensitive)
+				assert.True(t, *buildEnv.Sensitive)
+				assert.Equal(t, "banana", buildEnv.Value)
+			},
+		},
 	}
 
 	for name, tc := range cases {
