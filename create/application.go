@@ -42,7 +42,9 @@ type applicationCmd struct {
 	Hosts                    []string          `help:"Host names where the app can be accessed. If empty, the app will just be accessible on a generated host name on the deploio.app domain."`
 	BasicAuth                *bool             `help:"Enable/Disable basic authentication for the app (defaults to ${app_default_basic_auth})." placeholder:"${app_default_basic_auth}"`
 	Env                      map[string]string `help:"Environment variables which are passed to the app at runtime."`
+	SensitiveEnv             map[string]string `help:"Sensitive environment variables which are passed to the app at runtime."`
 	BuildEnv                 map[string]string `help:"Environment variables which are passed to the app build process."`
+	SensitiveBuildEnv        map[string]string `help:"Sensitive environment variables which are passed to the app build process."`
 	DeployJob                deployJob         `embed:"" prefix:"deploy-job-"`
 	WorkerJob                workerJob         `embed:"" prefix:"worker-job-"`
 	ScheduledJob             scheduledJob      `embed:"" prefix:"scheduled-job-"`
@@ -273,6 +275,28 @@ func spinnerMessage(msg, icon string, sleepTime time.Duration) error {
 	return spinner.Stop()
 }
 
+func combineEnvVars(plain, sensitive map[string]string) []apps.EnvVar {
+	var allEnvVars []apps.EnvVar
+
+	for key, value := range plain {
+		allEnvVars = append(allEnvVars, apps.EnvVar{
+			Name:      key,
+			Value:     value,
+			Sensitive: ptr.To(false),
+		})
+	}
+
+	for key, value := range sensitive {
+		allEnvVars = append(allEnvVars, apps.EnvVar{
+			Name:      key,
+			Value:     value,
+			Sensitive: ptr.To(true),
+		})
+	}
+
+	return allEnvVars
+}
+
 func (app *applicationCmd) config() apps.Config {
 	var deployJob *apps.DeployJob
 
@@ -288,10 +312,9 @@ func (app *applicationCmd) config() apps.Config {
 			},
 		}
 	}
-
 	config := apps.Config{
 		EnableBasicAuth: app.BasicAuth,
-		Env:             util.EnvVarsFromMap(app.Env),
+		Env:             combineEnvVars(app.Env, app.SensitiveEnv),
 		DeployJob:       deployJob,
 	}
 
@@ -358,7 +381,7 @@ func (app *applicationCmd) newApplication(project string) *apps.Application {
 				},
 				Hosts:    app.Hosts,
 				Config:   app.config(),
-				BuildEnv: util.EnvVarsFromMap(app.BuildEnv),
+				BuildEnv: combineEnvVars(app.BuildEnv, app.SensitiveBuildEnv),
 				DockerfileBuild: apps.DockerfileBuild{
 					Enabled:        app.DockerfileBuild.Enabled,
 					DockerfilePath: app.DockerfileBuild.Path,

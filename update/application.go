@@ -35,9 +35,15 @@ type applicationCmd struct {
 	BasicAuth               *bool             `help:"Enable/Disable basic authentication for the application."`
 	ChangeBasicAuthPassword *bool             `help:"Generate a new basic auth password."`
 	Env                     map[string]string `help:"Environment variables which are passed to the app at runtime."`
+	SensitiveEnv            map[string]string `help:"Sensitive environment variables which are passed to the app at runtime."`
 	DeleteEnv               *[]string         `help:"Runtime environment variables names which are to be deleted."`
+	DeleteSensitiveEnv      *[]string         `help:"Sensitive runtime environment variables which are to be deleted."`
+
 	BuildEnv                map[string]string `help:"Environment variables names which are passed to the app build process."`
+	SensitiveBuildEnv       map[string]string `help:"Sensitive environment variables names which are passed to the app build process."`
 	DeleteBuildEnv          *[]string         `help:"Build environment variables which are to be deleted."`
+	DeleteSensitiveBuildEnv *[]string         `help:"Sensitive build environment variables which are to be deleted."`
+
 	// DeployJob, ScheduledJob and WorkerJob are embedded pointers to
 	// structs. Due to the usage of kong these pointers will never be `nil`.
 	// So checking for `nil` values can not be used to find out if some of
@@ -263,31 +269,54 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 		app.Spec.ForProvider.Language = apps.Language(*cmd.Language)
 	}
 
-	runtimeEnv := make(map[string]string)
-	if cmd.Env != nil {
-		runtimeEnv = cmd.Env
+	var deleteRuntimeEnv []string
+	if cmd.DeleteEnv != nil {
+		deleteRuntimeEnv = *cmd.DeleteEnv
 	}
+	var deleteSensitiveRuntimeEnv []string
+	if cmd.DeleteSensitiveEnv != nil {
+		deleteSensitiveRuntimeEnv = *cmd.DeleteSensitiveEnv
+	}
+
+	runtimeEnv := cmd.Env
+	if runtimeEnv == nil {
+		runtimeEnv = make(map[string]string)
+	}
+
+	sensitiveRuntimeEnv := cmd.SensitiveEnv
+	if sensitiveRuntimeEnv == nil {
+		sensitiveRuntimeEnv = make(map[string]string)
+	}
+
 	if cmd.RetryRelease != nil && *cmd.RetryRelease {
 		runtimeEnv[ReleaseTrigger] = triggerTimestamp()
 	}
-	var delEnv []string
-	if cmd.DeleteEnv != nil {
-		delEnv = *cmd.DeleteEnv
-	}
-	app.Spec.ForProvider.Config.Env = util.UpdateEnvVars(app.Spec.ForProvider.Config.Env, runtimeEnv, delEnv)
 
-	buildEnv := make(map[string]string)
-	if cmd.BuildEnv != nil {
-		buildEnv = cmd.BuildEnv
+	app.Spec.ForProvider.Config.Env = updateEnvVars(app.Spec.ForProvider.Config.Env, runtimeEnv, sensitiveRuntimeEnv, deleteRuntimeEnv, deleteSensitiveRuntimeEnv)
+
+	var delBuildEnv []string
+	if cmd.DeleteBuildEnv != nil {
+		delBuildEnv = *cmd.DeleteBuildEnv
 	}
+	var delSensitiveBuildEnv []string
+	if cmd.DeleteSensitiveBuildEnv != nil {
+		delSensitiveBuildEnv = *cmd.DeleteSensitiveBuildEnv
+	}
+
+	buildEnv := cmd.BuildEnv
+	if buildEnv == nil {
+		buildEnv = make(map[string]string)
+	}
+	sensitiveBuildEnv := cmd.SensitiveBuildEnv
+	if sensitiveBuildEnv == nil {
+		sensitiveBuildEnv = make(map[string]string)
+	}
+
 	if cmd.RetryBuild != nil && *cmd.RetryBuild {
 		buildEnv[BuildTrigger] = triggerTimestamp()
 	}
-	var buildDelEnv []string
-	if cmd.DeleteBuildEnv != nil {
-		buildDelEnv = *cmd.DeleteBuildEnv
-	}
-	app.Spec.ForProvider.BuildEnv = util.UpdateEnvVars(app.Spec.ForProvider.BuildEnv, buildEnv, buildDelEnv)
+
+	app.Spec.ForProvider.BuildEnv = updateEnvVars(app.Spec.ForProvider.BuildEnv, buildEnv, sensitiveBuildEnv, delBuildEnv, delSensitiveBuildEnv)
 
 	if cmd.Pause != nil && *cmd.Pause {
 		app.Spec.ForProvider.Paused = *cmd.Pause
@@ -433,4 +462,40 @@ func warnIfDockerfileNotEnabled(app *apps.Application, flag string) {
 	if !app.Spec.ForProvider.DockerfileBuild.Enabled {
 		format.PrintWarningf("updating %s has no effect as dockerfile builds are not enabled on this app\n", flag)
 	}
+}
+func updateEnvVars(
+	current []apps.EnvVar,
+	plain, sensitive map[string]string,
+	deletePlain, deleteSensitive []string,
+) []apps.EnvVar {
+	envMap := make(map[string]apps.EnvVar)
+	for _, env := range current {
+		envMap[env.Name] = env
+	}
+
+	for _, key := range deletePlain {
+		delete(envMap, key)
+	}
+	for _, key := range deleteSensitive {
+		delete(envMap, key)
+	}
+	for key, value := range plain {
+		envMap[key] = apps.EnvVar{
+			Name:      key,
+			Value:     value,
+			Sensitive: ptr.To(false),
+		}
+	}
+	for key, value := range sensitive {
+		envMap[key] = apps.EnvVar{
+			Name:      key,
+			Value:     value,
+			Sensitive: ptr.To(true),
+		}
+	}
+	var updatedEnvVars []apps.EnvVar
+	for _, env := range envMap {
+		updatedEnvVars = append(updatedEnvVars, env)
+	}
+	return updatedEnvVars
 }
