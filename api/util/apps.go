@@ -69,15 +69,27 @@ func VerifiedAppHosts(app *apps.Application) []string {
 	return verifiedHosts
 }
 
-func EnvVarsFromMap(env map[string]string) apps.EnvVars {
+type EnvVarModifier func(envVar *apps.EnvVar)
+
+func EnvVarsFromMap(env map[string]string, options ...EnvVarModifier) apps.EnvVars {
 	vars := apps.EnvVars{}
 	for k, v := range env {
-		vars = append(vars, apps.EnvVar{Name: k, Value: v})
+		envVar := apps.EnvVar{Name: k, Value: v}
+		for _, opt := range options {
+			opt(&envVar)
+		}
+		vars = append(vars, envVar)
 	}
 	return vars
 }
 
-func UpdateEnvVars(oldEnvs []apps.EnvVar, newEnvs map[string]string, toDelete []string) apps.EnvVars {
+func Sensitive() EnvVarModifier {
+	return func(envVar *apps.EnvVar) {
+		envVar.Sensitive = ptr.To(true)
+	}
+}
+
+func UpdateEnvVars(oldEnvs []apps.EnvVar, newEnvs, sensitiveEnvs map[string]string, toDelete []string) apps.EnvVars {
 	if len(newEnvs) == 0 && len(toDelete) == 0 {
 		return oldEnvs
 	}
@@ -89,6 +101,10 @@ func UpdateEnvVars(oldEnvs []apps.EnvVar, newEnvs map[string]string, toDelete []
 
 	new := EnvVarsFromMap(newEnvs)
 	for _, v := range new {
+		envMap[v.Name] = v
+	}
+	sensitive := EnvVarsFromMap(sensitiveEnvs, Sensitive())
+	for _, v := range sensitive {
 		envMap[v.Name] = v
 	}
 
