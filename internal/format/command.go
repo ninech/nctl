@@ -10,9 +10,8 @@ import (
 )
 
 const (
-	LoginCommand          = "auth login"
-	LogoutCommand         = "auth logout"
-	SetOrgCommand         = "auth set-org"
+	LoginCommand          = "login"
+	LogoutCommand         = "logout"
 	getApplicationCommand = "get application"
 )
 

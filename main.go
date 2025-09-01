@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"reflect"
@@ -74,7 +73,8 @@ func main() {
 
 	kongVars, err := kongVariables()
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 	nctl := &rootCommand{}
 	parser := kong.Must(
@@ -87,16 +87,29 @@ func main() {
 		kong.BindTo(ctx, (*context.Context)(nil)),
 	)
 
-	completion.Register(
-		parser,
+	predictors := []completion.Option{
 		completion.WithPredictor("file", complete.PredictFiles("*")),
-		completion.WithPredictor("resource_name", predictor.NewResourceName(ctx, defaultAPICluster)),
-		completion.WithPredictor("project_name", predictor.NewResourceNameWithKind(
-			ctx, defaultAPICluster, management.SchemeGroupVersion.WithKind(
-				reflect.TypeOf(management.ProjectList{}).Name(),
-			)),
-		),
-	)
+	}
+	apiClientRequired := false
+	if noAPIClientRequired(strings.Join(os.Args[1:], " ")) {
+		// complete needs all used predictors to be defined, so we just use
+		// [complete.PredictNothing] for those that would require an API client.
+		predictors = append(predictors,
+			completion.WithPredictor("resource_name", complete.PredictNothing),
+			completion.WithPredictor("project_name", complete.PredictNothing),
+		)
+	} else {
+		apiClientRequired = true
+		predictors = append(predictors,
+			completion.WithPredictor("resource_name", predictor.NewResourceName(ctx, defaultAPICluster)),
+			completion.WithPredictor("project_name", predictor.NewResourceNameWithKind(
+				ctx, defaultAPICluster, management.SchemeGroupVersion.WithKind(
+					reflect.TypeOf(management.ProjectList{}).Name(),
+				)),
+			),
+		)
+	}
+	completion.Register(parser, predictors...)
 
 	kongCtx, err := parser.Parse(os.Args[1:])
 	if err != nil {
@@ -118,50 +131,36 @@ func main() {
 		parser.FatalIfErrorf(err)
 	}
 
-	// handle the login/oidc cmds separately as we should not try to get the
-	// API client if we're not logged in.
-	command, err := os.Executable()
-	if err != nil {
-		kongCtx.Fatalf("can not identify executable path of %s: %v", util.NctlName, err)
+	binds := []any{ctx}
+	if apiClientRequired {
+		client, err := api.New(ctx, nctl.APICluster, nctl.Project, api.LogClient(ctx, nctl.LogAPIAddress, nctl.LogAPIInsecure))
+		if err != nil {
+			fmt.Println(err)
+			fmt.Printf("\nUnable to get API client, are you logged in?\n\nUse `%s` to login.\n", format.Command().Login())
+			os.Exit(1)
+		}
+		binds = append(binds, client)
 	}
 
-	if strings.HasPrefix(kongCtx.Command(), format.LoginCommand) {
-		tk := &api.DefaultTokenGetter{}
-		kongCtx.FatalIfErrorf(nctl.Auth.Login.Run(ctx, command, tk))
-		return
-	}
-
-	if strings.HasPrefix(kongCtx.Command(), format.LogoutCommand) {
-		tk := &api.DefaultTokenGetter{}
-		kongCtx.FatalIfErrorf(nctl.Auth.Logout.Run(ctx, command, tk))
-		return
-	}
-
-	if strings.HasPrefix(kongCtx.Command(), auth.OIDCCmdName) {
-		kongCtx.FatalIfErrorf(nctl.Auth.OIDC.Run(ctx, os.Stdout))
-		return
-	}
-
-	if strings.HasPrefix(kongCtx.Command(), "completions") {
-		kongCtx.FatalIfErrorf(nctl.Completions.Run(kongCtx))
-		return
-	}
-
-	client, err := api.New(ctx, nctl.APICluster, nctl.Project, api.LogClient(ctx, nctl.LogAPIAddress, nctl.LogAPIInsecure))
-	if err != nil {
-		fmt.Println(err)
-		fmt.Printf("\nUnable to get API client, are you logged in?\n\nUse `%s` to login.\n", format.Command().Login())
-		os.Exit(1)
-	}
-
-	err = kongCtx.Run(ctx, client)
-	if err != nil {
+	if err := kongCtx.Run(binds...); err != nil {
 		if k8serrors.IsForbidden(err) && !nctl.Verbose {
-			err = errors.New("permission denied: are you part of the organization?")
+			err = errors.New("permission denied: verify in Cockpit Access Management that you a member of the organization")
 		}
 		kongCtx.FatalIfErrorf(err)
 	}
+}
 
+// noAPIClientRequired returns true if the command does not need to (or can't)
+// require an API client.
+func noAPIClientRequired(command string) bool {
+	return matchCommand(command, auth.CmdName, format.LoginCommand) ||
+		matchCommand(command, auth.CmdName, format.LogoutCommand) ||
+		matchCommand(command, auth.CmdName, auth.OIDCCmdName) ||
+		matchCommand(command, "completions")
+}
+
+func matchCommand(command string, parts ...string) bool {
+	return strings.HasPrefix(command, strings.Join(parts, " "))
 }
 
 func setupSignalHandler(ctx context.Context, cancel context.CancelFunc) {
