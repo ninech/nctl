@@ -90,7 +90,7 @@ func Sensitive() EnvVarModifier {
 }
 
 func UpdateEnvVars(oldEnvs []apps.EnvVar, newEnvs, sensitiveEnvs map[string]string, toDelete []string) apps.EnvVars {
-	if len(newEnvs) == 0 && len(toDelete) == 0 {
+	if len(newEnvs) == 0 && len(sensitiveEnvs) == 0 && len(toDelete) == 0 {
 		return oldEnvs
 	}
 
@@ -135,7 +135,11 @@ func EnvVarToString(envs apps.EnvVars) string {
 
 	var keyValuePairs []string
 	for _, env := range envs {
-		keyValuePairs = append(keyValuePairs, fmt.Sprintf("%v=%v", env.Name, env.Value))
+		if env.Sensitive != nil && *env.Sensitive {
+			keyValuePairs = append(keyValuePairs, fmt.Sprintf("%v=*****", env.Name))
+		} else {
+			keyValuePairs = append(keyValuePairs, fmt.Sprintf("%v=%v", env.Name, env.Value))
+		}
 	}
 
 	return strings.Join(keyValuePairs, ";")
