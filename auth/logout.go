@@ -25,9 +25,10 @@ type LogoutCmd struct {
 	APIURL    string `help:"The URL of the Nine API" default:"https://nineapis.ch" env:"NCTL_API_URL" name:"api-url"`
 	IssuerURL string `help:"Issuer URL is the OIDC issuer URL of the API." default:"https://auth.nine.ch/auth/realms/pub"`
 	ClientID  string `help:"Client ID is the OIDC client ID of the API." default:"nineapis.ch-f178254"`
+	tk        api.TokenGetter
 }
 
-func (l *LogoutCmd) Run(ctx context.Context, command string, tk api.TokenGetter) error {
+func (l *LogoutCmd) Run(ctx context.Context) error {
 	key := tokencache.Key{
 		Provider: oidc.Provider{
 			ClientID:  l.ClientID,
@@ -63,7 +64,7 @@ func (l *LogoutCmd) Run(ctx context.Context, command string, tk api.TokenGetter)
 		return fmt.Errorf("error creating request: %w", err)
 	}
 
-	token, err := tk.GetTokenString(ctx, l.IssuerURL, l.ClientID, false)
+	token, err := l.tokenGetter().GetTokenString(ctx, l.IssuerURL, l.ClientID, false)
 	if err != nil {
 		return fmt.Errorf("error getting token: %w", err)
 	}
@@ -89,6 +90,13 @@ func (l *LogoutCmd) Run(ctx context.Context, command string, tk api.TokenGetter)
 	format.PrintSuccessf("👋", "logged out from %s", l.APIURL)
 
 	return nil
+}
+
+func (l *LogoutCmd) tokenGetter() api.TokenGetter {
+	if l.tk != nil {
+		return l.tk
+	}
+	return &api.DefaultTokenGetter{}
 }
 
 // This function is copied from kubelogin to find out the cache filename

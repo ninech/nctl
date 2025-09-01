@@ -8,7 +8,6 @@ import (
 	"path"
 	"testing"
 
-	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/tools/clientcmd"
@@ -46,13 +45,13 @@ func TestLoginCmd(t *testing.T) {
 	os.Setenv(clientcmd.RecommendedConfigPathEnvVar, kubeconfig.Name())
 
 	apiHost := "api.example.org"
-	tk := &fakeTokenGetter{}
 	cmd := &LoginCmd{
 		APIURL:                      "https://" + apiHost,
 		IssuerURL:                   "https://auth.example.org",
 		ForceInteractiveEnvOverride: true,
+		tk:                          &fakeTokenGetter{},
 	}
-	if err := cmd.Run(context.Background(), "", tk); err != nil {
+	if err := cmd.Run(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -76,21 +75,18 @@ func TestLoginStaticToken(t *testing.T) {
 	tests := []struct {
 		name           string
 		cmd            *LoginCmd
-		tk             api.TokenGetter
 		wantToken      string
 		wantErr        bool
 		wantErrMessage string
 	}{
 		{
 			name:      "interactive environment with token",
-			cmd:       &LoginCmd{APIURL: "https://" + apiHost, APIToken: test.FakeJWTToken, Organization: "test", ForceInteractiveEnvOverride: true},
-			tk:        &fakeTokenGetter{},
+			cmd:       &LoginCmd{APIURL: "https://" + apiHost, APIToken: test.FakeJWTToken, Organization: "test", ForceInteractiveEnvOverride: true, tk: &fakeTokenGetter{}},
 			wantToken: test.FakeJWTToken,
 		},
 		{
 			name:      "non-interactive environment with token",
-			cmd:       &LoginCmd{APIURL: "https://" + apiHost, APIToken: test.FakeJWTToken, Organization: "test", ForceInteractiveEnvOverride: false},
-			tk:        &fakeTokenGetter{},
+			cmd:       &LoginCmd{APIURL: "https://" + apiHost, APIToken: test.FakeJWTToken, Organization: "test", ForceInteractiveEnvOverride: false, tk: &fakeTokenGetter{}},
 			wantToken: test.FakeJWTToken,
 		},
 		{
@@ -110,7 +106,7 @@ func TestLoginStaticToken(t *testing.T) {
 			defer os.Remove(kubeconfig.Name())
 			os.Setenv(clientcmd.RecommendedConfigPathEnvVar, kubeconfig.Name())
 
-			err = tt.cmd.Run(context.Background(), "", tt.tk)
+			err = tt.cmd.Run(context.Background())
 			checkErrorRequire(t, err, tt.wantErr, tt.wantErrMessage)
 
 			if tt.wantErr {
@@ -156,9 +152,9 @@ func TestLoginCmdWithoutExistingKubeconfig(t *testing.T) {
 		APIURL:                      "https://" + apiHost,
 		IssuerURL:                   "https://auth.example.org",
 		ForceInteractiveEnvOverride: true,
+		tk:                          &fakeTokenGetter{},
 	}
-	tk := &fakeTokenGetter{}
-	if err := cmd.Run(context.Background(), "", tk); err != nil {
+	if err := cmd.Run(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 

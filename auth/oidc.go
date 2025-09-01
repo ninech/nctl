@@ -2,8 +2,8 @@ package auth
 
 import (
 	"context"
-	"io"
 	"net/url"
+	"os"
 
 	"github.com/ninech/nctl/api"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -15,10 +15,10 @@ type OIDCCmd struct {
 	UsePKCE   bool
 }
 
-const OIDCCmdName = "auth oidc"
+const OIDCCmdName = "oidc"
 
-func (o *OIDCCmd) Run(ctx context.Context, out io.Writer) error {
-	return api.GetToken(ctx, o.IssuerURL, o.ClientID, o.UsePKCE, out)
+func (o *OIDCCmd) Run(ctx context.Context) error {
+	return api.GetToken(ctx, o.IssuerURL, o.ClientID, o.UsePKCE, os.Stdout)
 }
 
 // execConfig returns an *clientcmdapi.ExecConfig that can be used to login to
@@ -28,8 +28,8 @@ func execConfig(command, clientID string, issuerURL *url.URL) *clientcmdapi.Exec
 		APIVersion: "client.authentication.k8s.io/v1beta1",
 		Command:    command,
 		Args: []string{
-			"auth",
-			"oidc",
+			CmdName,
+			OIDCCmdName,
 			api.IssuerURLArg + issuerURL.String(),
 			api.ClientIDArg + clientID,
 			api.UsePKCEArg,

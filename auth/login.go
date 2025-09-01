@@ -25,11 +25,12 @@ type LoginCmd struct {
 	IssuerURL                   string `help:"Issuer URL is the OIDC issuer URL of the API." default:"https://auth.nine.ch/auth/realms/pub"`
 	ClientID                    string `help:"Client ID is the OIDC client ID of the API." default:"nineapis.ch-f178254"`
 	ForceInteractiveEnvOverride bool   `help:"Used for internal purposes only. Set to true to force interactive environment explicit override. Set to false to fall back to automatic interactivity detection." default:"false" hidden:""`
+	tk                          api.TokenGetter
 }
 
 const ErrNonInteractiveEnvironmentEmptyToken = "a static API token is required in non-interactive environments"
 
-func (l *LoginCmd) Run(ctx context.Context, command string, tk api.TokenGetter) error {
+func (l *LoginCmd) Run(ctx context.Context) error {
 	apiURL, err := url.Parse(l.APIURL)
 	if err != nil {
 		return err
@@ -43,6 +44,11 @@ func (l *LoginCmd) Run(ctx context.Context, command string, tk api.TokenGetter) 
 	loadingRules, err := api.LoadingRules()
 	if err != nil {
 		return err
+	}
+
+	command, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("can not identify executable path of %s: %v", util.NctlName, err)
 	}
 
 	if len(l.APIToken) != 0 {
@@ -69,7 +75,7 @@ func (l *LoginCmd) Run(ctx context.Context, command string, tk api.TokenGetter) 
 
 	usePKCE := true
 
-	token, err := tk.GetTokenString(ctx, l.IssuerURL, l.ClientID, usePKCE)
+	token, err := l.tokenGetter().GetTokenString(ctx, l.IssuerURL, l.ClientID, usePKCE)
 	if err != nil {
 		return err
 	}
@@ -96,6 +102,13 @@ func (l *LoginCmd) Run(ctx context.Context, command string, tk api.TokenGetter) 
 	}
 
 	return login(ctx, cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(org))
+}
+
+func (l *LoginCmd) tokenGetter() api.TokenGetter {
+	if l.tk != nil {
+		return l.tk
+	}
+	return &api.DefaultTokenGetter{}
 }
 
 type apiConfig struct {
