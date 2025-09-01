@@ -1,6 +1,6 @@
 module github.com/ninech/nctl
 
-go 1.24.5
+go 1.25
 
 require (
 	github.com/alecthomas/kong v1.12.1
@@ -20,7 +20,7 @@ require (
 	github.com/grafana/loki/v3 v3.0.0-20250730143308-a3380f6480b7
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/int128/kubelogin v1.34.0
-	github.com/jotaen/kong-completion v0.0.6
+	github.com/jotaen/kong-completion v0.0.7
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 	github.com/lucasepe/codename v0.2.1-0.20230220151621-5e31bf1e775f
 	github.com/mattn/go-isatty v0.0.20
@@ -29,7 +29,7 @@ require (
 	github.com/ninech/apis v0.0.0-20250731150359-821fc9ecc6ab
 	github.com/posener/complete v1.2.3
 	github.com/prometheus/common v0.65.1-0.20250703115700-7f8b2a0d32d3
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	github.com/theckman/yacspin v0.13.12
 	golang.org/x/crypto v0.40.0
 	golang.org/x/exp v0.0.0-20250606033433-dcc06ee1d476
