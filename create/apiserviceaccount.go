@@ -11,6 +11,7 @@ import (
 
 type apiServiceAccountCmd struct {
 	resourceCmd
+	OrganizationAccess bool `help:"When enabled, this service account has access to all projects in the organization. Only valid for service accounts in the organization project."`
 }
 
 func (asa *apiServiceAccountCmd) Run(ctx context.Context, client *api.Client) error {
@@ -40,6 +41,9 @@ func (asa *apiServiceAccountCmd) newAPIServiceAccount(project string) *iam.APISe
 			Namespace: project,
 		},
 		Spec: iam.APIServiceAccountSpec{
+			ForProvider: iam.APIServiceAccountParameters{
+				OrganizationAccess: asa.OrganizationAccess,
+			},
 			ResourceSpec: runtimev1.ResourceSpec{
 				WriteConnectionSecretToReference: &runtimev1.SecretReference{
 					Name:      name,
