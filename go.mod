@@ -26,13 +26,14 @@ require (
 	github.com/mattn/go-isatty v0.0.20
 	github.com/moby/moby v28.3.3+incompatible
 	github.com/moby/term v0.5.2
-	github.com/ninech/apis v0.0.0-20250829092213-a169c6254250
+	github.com/ninech/apis v0.0.0-20250902105041-acc56447497c
 	github.com/posener/complete v1.2.3
 	github.com/prometheus/common v0.65.1-0.20250703115700-7f8b2a0d32d3
 	github.com/stretchr/testify v1.10.0
 	github.com/theckman/yacspin v0.13.12
 	golang.org/x/crypto v0.40.0
 	golang.org/x/exp v0.0.0-20250606033433-dcc06ee1d476
+	golang.org/x/oauth2 v0.30.0
 	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.33.3
 	k8s.io/apimachinery v0.33.3
@@ -320,7 +321,6 @@ require (
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
 	golang.org/x/mod v0.26.0 // indirect
 	golang.org/x/net v0.42.0 // indirect
-	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect
 	golang.org/x/term v0.33.0 // indirect

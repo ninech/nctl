@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/alecthomas/kong"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
 	"github.com/ninech/nctl/api/util"
@@ -18,12 +19,17 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
+const (
+	defaultClientID  = "nineapis.ch-f178254"
+	defaultIssuerURL = "https://auth.nine.ch/auth/realms/pub"
+	defaultTokenURL  = defaultIssuerURL + "/protocol/openid-connect/token"
+)
+
 type LoginCmd struct {
-	APIURL                      string `help:"The URL of the Nine API" default:"https://nineapis.ch" env:"NCTL_API_URL" name:"api-url"`
-	APIToken                    string `help:"Use a static API token instead of using an OIDC login. You need to specify the --organization parameter as well." env:"NCTL_API_TOKEN"`
-	Organization                string `help:"The name of your organization to use when providing an API token. This parameter is only used when providing a API token. This parameter needs to be set if you use --api-token." env:"NCTL_ORGANIZATION"`
-	IssuerURL                   string `help:"Issuer URL is the OIDC issuer URL of the API." default:"https://auth.nine.ch/auth/realms/pub"`
-	ClientID                    string `help:"Client ID is the OIDC client ID of the API." default:"nineapis.ch-f178254"`
+	API                         API    `embed:"" prefix:"api-"`
+	Organization                string `help:"The name of your organization to use when providing an API client ID/secret." env:"NCTL_ORGANIZATION"`
+	IssuerURL                   string `help:"Issuer URL is the OIDC issuer URL of the API." default:"${issuer_url}" hidden:""`
+	ClientID                    string `help:"Client ID is the OIDC client ID of the API." default:"${client_id}" hidden:""`
 	ForceInteractiveEnvOverride bool   `help:"Used for internal purposes only. Set to true to force interactive environment explicit override. Set to false to fall back to automatic interactivity detection." default:"false" hidden:""`
 	tk                          api.TokenGetter
 }
@@ -31,7 +37,7 @@ type LoginCmd struct {
 const ErrNonInteractiveEnvironmentEmptyToken = "a static API token is required in non-interactive environments"
 
 func (l *LoginCmd) Run(ctx context.Context) error {
-	apiURL, err := url.Parse(l.APIURL)
+	apiURL, err := url.Parse(l.API.URL)
 	if err != nil {
 		return err
 	}
@@ -51,22 +57,34 @@ func (l *LoginCmd) Run(ctx context.Context) error {
 		return fmt.Errorf("can not identify executable path of %s: %v", util.NctlName, err)
 	}
 
-	if len(l.APIToken) != 0 {
-		if len(l.Organization) == 0 {
+	if l.API.Token != "" {
+		if l.Organization == "" {
 			return fmt.Errorf("you need to set the --organization parameter explicitly if you use --api-token")
 		}
-
-		userInfo, err := api.GetUserInfoFromToken(l.APIToken)
+		userInfo, err := api.GetUserInfoFromToken(l.API.Token)
 		if err != nil {
 			return err
 		}
-
-		cfg, err := newAPIConfig(apiURL, issuerURL, command, l.ClientID, useStaticToken(l.APIToken), withOrganization(l.Organization))
+		cfg, err := newAPIConfig(apiURL, issuerURL, command, l.ClientID, useStaticToken(l.API.Token), withOrganization(l.Organization))
 		if err != nil {
 			return err
 		}
+		return login(cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(l.Organization))
+	}
 
-		return login(ctx, cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(l.Organization))
+	if l.API.ClientID != "" {
+		if l.Organization == "" {
+			return fmt.Errorf("you need to set the --organization parameter explicitly if you use --api-client-id")
+		}
+		cfg, err := newAPIConfig(apiURL, issuerURL, command, l.API.ClientID, useClientCredentials(l.API), withOrganization(l.Organization))
+		if err != nil {
+			return err
+		}
+		userInfo, err := l.API.UserInfo(ctx)
+		if err != nil {
+			return err
+		}
+		return login(cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(l.Organization))
 	}
 
 	if !l.ForceInteractiveEnvOverride && !format.IsInteractiveEnvironment(os.Stdout) {
@@ -101,7 +119,7 @@ func (l *LoginCmd) Run(ctx context.Context) error {
 		return err
 	}
 
-	return login(ctx, cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(org))
+	return login(cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(org))
 }
 
 func (l *LoginCmd) tokenGetter() api.TokenGetter {
@@ -114,6 +132,7 @@ func (l *LoginCmd) tokenGetter() api.TokenGetter {
 type apiConfig struct {
 	name         string
 	token        string
+	api          API
 	caCert       []byte
 	organization string
 }
@@ -135,6 +154,12 @@ func setCACert(caCert []byte) apiConfigOption {
 func useStaticToken(token string) apiConfigOption {
 	return func(ac *apiConfig) {
 		ac.token = token
+	}
+}
+
+func useClientCredentials(api API) apiConfigOption {
+	return func(ac *apiConfig) {
+		ac.api = api
 	}
 }
 
@@ -185,6 +210,13 @@ func newAPIConfig(apiURL, issuerURL *url.URL, command, clientID string, opts ...
 		return clientConfig, nil
 	}
 
+	if cfg.api.ClientID != "" {
+		clientConfig.AuthInfos[cfg.name] = &clientcmdapi.AuthInfo{
+			Exec: apiExecConfig(command, cfg.api),
+		}
+		return clientConfig, nil
+	}
+
 	clientConfig.AuthInfos[cfg.name] = &clientcmdapi.AuthInfo{
 		Exec: execConfig(command, clientID, issuerURL),
 	}
@@ -214,7 +246,7 @@ func switchCurrentContext() loginOption {
 	}
 }
 
-func login(ctx context.Context, newConfig *clientcmdapi.Config, kubeconfigPath, userName string, toOrg string, opts ...loginOption) error {
+func login(newConfig *clientcmdapi.Config, kubeconfigPath, userName string, toOrg string, opts ...loginOption) error {
 	loginConfig := &loginConfig{}
 	for _, opt := range opts {
 		opt(loginConfig)
@@ -261,4 +293,13 @@ func mergeKubeConfig(from, to *clientcmdapi.Config) {
 	maps.Copy(to.Clusters, from.Clusters)
 	maps.Copy(to.AuthInfos, from.AuthInfos)
 	maps.Copy(to.Contexts, from.Contexts)
+}
+
+// LoginKongVars returns all variables which are used in the login command
+func LoginKongVars() kong.Vars {
+	result := make(kong.Vars)
+	result["client_id"] = defaultClientID
+	result["issuer_url"] = defaultIssuerURL
+	result["token_url"] = defaultTokenURL
+	return result
 }

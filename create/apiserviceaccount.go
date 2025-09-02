@@ -43,10 +43,11 @@ func (asa *apiServiceAccountCmd) newAPIServiceAccount(project string) *iam.APISe
 		Spec: iam.APIServiceAccountSpec{
 			ForProvider: iam.APIServiceAccountParameters{
 				OrganizationAccess: asa.OrganizationAccess,
+				Version:            iam.APIServiceAccountV2,
 			},
 			ResourceSpec: runtimev1.ResourceSpec{
 				WriteConnectionSecretToReference: &runtimev1.SecretReference{
-					Name:      name,
+					Name:      "asa-" + name,
 					Namespace: project,
 				},
 			},

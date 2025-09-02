@@ -15,7 +15,7 @@ type OIDCCmd struct {
 	UsePKCE   bool
 }
 
-const OIDCCmdName = "oidc"
+const OIDCCmdName = api.OIDCCmdName
 
 func (o *OIDCCmd) Run(ctx context.Context) error {
 	return api.GetToken(ctx, o.IssuerURL, o.ClientID, o.UsePKCE, os.Stdout)

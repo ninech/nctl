@@ -27,6 +27,7 @@ import (
 	"github.com/int128/kubelogin/pkg/usecases/authentication/authcode"
 	"github.com/int128/kubelogin/pkg/usecases/authentication/ropc"
 	"github.com/int128/kubelogin/pkg/usecases/credentialplugin"
+	"golang.org/x/oauth2/clientcredentials"
 	"k8s.io/client-go/pkg/apis/clientauthentication"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd/api"
@@ -34,11 +35,15 @@ import (
 )
 
 const (
-	DefaultTokenCachePath = ".kube/cache/oidc-login"
-	IssuerURLArg          = "--issuer-url="
-	ClientIDArg           = "--client-id="
-	UsePKCEArg            = "--use-pkce"
-	CustomersPrefix       = "/Customers/"
+	DefaultTokenCachePath    = ".kube/cache/oidc-login"
+	IssuerURLArg             = "--issuer-url="
+	ClientIDArg              = "--client-id="
+	ClientSecretArg          = "--client-secret="
+	TokenURLArg              = "--token-url="
+	UsePKCEArg               = "--use-pkce"
+	CustomersPrefix          = "/Customers/"
+	ClientCredentialsCmdName = "client-credentials"
+	OIDCCmdName              = "oidc"
 )
 
 var (
@@ -63,26 +68,55 @@ func GetTokenFromConfig(ctx context.Context, cfg *rest.Config) (string, error) {
 // GetTokenFromExecConfig takes the provided execConfig, parses out the args
 // and gets the token by executing the login flow.
 func GetTokenFromExecConfig(ctx context.Context, execConfig *api.ExecConfig) (string, error) {
-	var issuerURL, clientID string
-	var usePKCE bool
-	for _, arg := range execConfig.Args {
-		if after, ok := strings.CutPrefix(arg, IssuerURLArg); ok {
-			issuerURL = after
-		}
-		if after, ok := strings.CutPrefix(arg, ClientIDArg); ok {
-			clientID = after
-		}
-		if arg == UsePKCEArg {
-			usePKCE = true
-		}
+	if len(execConfig.Args) < 2 {
+		return "", fmt.Errorf("provided execConfig args are invalid, expected at least two")
 	}
 
-	if len(issuerURL) == 0 || len(clientID) == 0 {
-		return "", fmt.Errorf("provided execConfig does not include expected args %s/%s", IssuerURLArg, ClientIDArg)
+	command := execConfig.Args[1]
+	switch command {
+	case ClientCredentialsCmdName:
+		cfg := &clientcredentials.Config{}
+		for _, arg := range execConfig.Args {
+			if after, ok := strings.CutPrefix(arg, ClientIDArg); ok {
+				cfg.ClientID = after
+			}
+			if after, ok := strings.CutPrefix(arg, ClientSecretArg); ok {
+				cfg.ClientSecret = after
+			}
+			if after, ok := strings.CutPrefix(arg, TokenURLArg); ok {
+				cfg.TokenURL = after
+			}
+		}
+		if cfg.ClientID == "" || cfg.ClientSecret == "" || cfg.TokenURL == "" {
+			return "", fmt.Errorf("provided execConfig does not include expected args %s/%s/%s", ClientIDArg, ClientSecretArg, TokenURLArg)
+		}
+		token, err := cfg.Token(ctx)
+		if err != nil {
+			return "", err
+		}
+		return token.AccessToken, nil
+	case OIDCCmdName:
+		var issuerURL, clientID string
+		var usePKCE bool
+		for _, arg := range execConfig.Args {
+			if after, ok := strings.CutPrefix(arg, IssuerURLArg); ok {
+				issuerURL = after
+			}
+			if after, ok := strings.CutPrefix(arg, ClientIDArg); ok {
+				clientID = after
+			}
+			if arg == UsePKCEArg {
+				usePKCE = true
+			}
+		}
+		if issuerURL == "" || clientID == "" {
+			return "", fmt.Errorf("provided execConfig does not include expected args %s/%s", IssuerURLArg, ClientIDArg)
+		}
+		tk := DefaultTokenGetter{}
+		return tk.GetTokenString(ctx, issuerURL, clientID, usePKCE)
+	default:
+		return "", fmt.Errorf("unknown exec command provided: %s", command)
 	}
-
-	tk := DefaultTokenGetter{}
-	return tk.GetTokenString(ctx, issuerURL, clientID, usePKCE)
 }
 
 type TokenGetter interface {
