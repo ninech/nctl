@@ -3,6 +3,7 @@ package get
 import (
 	"context"
 	"fmt"
+	"io"
 
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
@@ -12,9 +13,10 @@ import (
 
 type openSearchCmd struct {
 	resourceCmd
-	PrintPassword bool `help:"Print the password of the OpenSearch BasicAuth User. Requires name to be set." xor:"print"`
-	PrintUser     bool `help:"Print the name of the OpenSearch BasicAuth User. Requires name to be set." xor:"print"`
-	PrintCACert   bool `help:"Print the ca certificate. Requires name to be set." xor:"print"`
+	PrintPassword       bool `help:"Print the password of the OpenSearch BasicAuth User. Requires name to be set." xor:"print"`
+	PrintUser           bool `help:"Print the name of the OpenSearch BasicAuth User. Requires name to be set." xor:"print"`
+	PrintCACert         bool `help:"Print the ca certificate. Requires name to be set." xor:"print"`
+	PrintSnapshotBucket bool `help:"Print the snapshot bucket name and the users who have read access to it." xor:"print"`
 }
 
 func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
@@ -44,6 +46,10 @@ func (cmd *openSearchCmd) print(ctx context.Context, client *api.Client, list cl
 
 	if cmd.Name != "" && cmd.PrintCACert {
 		return printBase64(out.writer, openSearchList.Items[0].Status.AtProvider.CACert)
+	}
+
+	if cmd.Name != "" && cmd.PrintSnapshotBucket {
+		return cmd.printSnapshotBucket(out.writer, &openSearchList.Items[0])
 	}
 
 	switch out.Format {
@@ -105,4 +111,17 @@ func (cmd *openSearchCmd) getClusterHealth(clusterHealth storage.OpenSearchClust
 	}
 
 	return worstStatus
+}
+
+func (cmd *openSearchCmd) printSnapshotBucket(writer io.Writer, openSearch *storage.OpenSearch) error {
+	bucketName := openSearch.Status.AtProvider.SnapshotsBucket.Name
+	if bucketName == "" {
+		bucketName = "No snapshot bucket found"
+	}
+
+	if _, err := fmt.Fprintln(writer, bucketName); err != nil {
+		return err
+	}
+
+	return nil
 }

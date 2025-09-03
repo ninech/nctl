@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
+	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
@@ -19,11 +20,12 @@ func TestOpenSearch(t *testing.T) {
 	ctx := context.Background()
 
 	type openSearchInstance struct {
-		name          string
-		project       string
-		machineType   infra.MachineType
-		clusterType   storage.OpenSearchClusterType
-		clusterHealth storage.OpenSearchClusterHealth
+		name           string
+		project        string
+		machineType    infra.MachineType
+		clusterType    storage.OpenSearchClusterType
+		clusterHealth  storage.OpenSearchClusterHealth
+		snapshotBucket string
 	}
 
 	tests := []struct {
@@ -115,6 +117,20 @@ func TestOpenSearch(t *testing.T) {
 			wantLines:   2,
 		},
 		{
+			name: "print snapshot bucket",
+			instances: []openSearchInstance{
+				{
+					name:           "snapshot-instance",
+					project:        test.DefaultProject,
+					machineType:    infra.MachineTypeNineSearchS,
+					snapshotBucket: "opensearch-bucketusertest-01728a",
+				},
+			},
+			get:         openSearchCmd{resourceCmd: resourceCmd{Name: "snapshot-instance"}, PrintSnapshotBucket: true},
+			wantContain: []string{"opensearch-bucketusertest-01728a"},
+			wantLines:   1,
+		},
+		{
 			name: "show-password",
 			instances: []openSearchInstance{
 				{
@@ -178,6 +194,11 @@ func TestOpenSearch(t *testing.T) {
 				// Set cluster health status if provided
 				if len(instance.clusterHealth.Indices) > 0 {
 					created.Status.AtProvider.ClusterHealth = instance.clusterHealth
+				}
+
+				// Set snapshot bucket if provided
+				if instance.snapshotBucket != "" {
+					created.Status.AtProvider.SnapshotsBucket = meta.LocalReference{Name: instance.snapshotBucket}
 				}
 
 				objects = append(objects, created, &corev1.Secret{
