@@ -13,6 +13,7 @@ import (
 	"github.com/goccy/go-yaml/lexer"
 	"github.com/goccy/go-yaml/printer"
 	"github.com/mattn/go-isatty"
+	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/theckman/yacspin"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -205,6 +206,8 @@ func prepareObject(obj any, opts PrintOpts) (any, error) {
 	}
 	objCopy := runtimeObject.DeepCopyObject()
 
+	objCopy = maskSensitiveField(objCopy)
+
 	var toPrint any = objCopy
 	if res, is := objCopy.(resource.Object); is {
 		var err error
@@ -354,4 +357,27 @@ func printerProperty(p *printer.Property) printer.PrintFunc {
 	return func() *printer.Property {
 		return p
 	}
+}
+
+func maskSensitiveField(obj runtime.Object) runtime.Object {
+	app, ok := obj.(*apps.Application)
+	if !ok {
+		return obj
+	}
+
+	appCopy := app.DeepCopy()
+
+	for i, env := range appCopy.Spec.ForProvider.Config.Env {
+		if env.Sensitive != nil && *env.Sensitive {
+			appCopy.Spec.ForProvider.Config.Env[i].Value = "*****"
+		}
+	}
+
+	for i, env := range appCopy.Spec.ForProvider.BuildEnv {
+		if env.Sensitive != nil && *env.Sensitive {
+			appCopy.Spec.ForProvider.BuildEnv[i].Value = "*****"
+		}
+	}
+
+	return appCopy
 }
