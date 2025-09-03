@@ -116,10 +116,23 @@ func (cmd *openSearchCmd) getClusterHealth(clusterHealth storage.OpenSearchClust
 func (cmd *openSearchCmd) printSnapshotBucket(writer io.Writer, openSearch *storage.OpenSearch) error {
 	bucketName := openSearch.Status.AtProvider.SnapshotsBucket.Name
 	if bucketName == "" {
-		bucketName = "No snapshot bucket found"
+		_, err := fmt.Fprintln(writer, "No snapshot bucket found")
+		return err
 	}
 
-	if _, err := fmt.Fprintln(writer, bucketName); err != nil {
+	// Determine host based on the OpenSearch instance location.
+	// If instance created in es34 -> bucket in cz42, and vice versa.
+	loc := string(openSearch.Spec.ForProvider.Location)
+	var host string
+	switch loc {
+	case "nine-es34":
+		host = "cz42.objects.nineapis.ch"
+	case "nine-cz42":
+		host = "es34.objects.nineapis.ch"
+	}
+
+	fqdn := fmt.Sprintf("https://%s/%s", host, bucketName)
+	if _, err := fmt.Fprintln(writer, fqdn); err != nil {
 		return err
 	}
 
