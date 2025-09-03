@@ -26,6 +26,7 @@ func TestOpenSearch(t *testing.T) {
 		clusterType    storage.OpenSearchClusterType
 		clusterHealth  storage.OpenSearchClusterHealth
 		snapshotBucket string
+		URL            string
 	}
 
 	tests := []struct {
@@ -123,11 +124,12 @@ func TestOpenSearch(t *testing.T) {
 					name:           "snapshot-instance",
 					project:        test.DefaultProject,
 					machineType:    infra.MachineTypeNineSearchS,
-					snapshotBucket: "opensearch-bucketusertest-01728a",
+					snapshotBucket: "snapshot-instance-012345a",
+					URL:            "https://es43.objects.nineapis.ch/snapshot-instance-012345a",
 				},
 			},
 			get:         openSearchCmd{resourceCmd: resourceCmd{Name: "snapshot-instance"}, PrintSnapshotBucket: true},
-			wantContain: []string{"opensearch-bucketusertest-01728a"},
+			wantContain: []string{"https://es43.objects.nineapis.ch/snapshot-instance-012345a"},
 			wantLines:   1,
 		},
 		{
@@ -199,6 +201,25 @@ func TestOpenSearch(t *testing.T) {
 				// Set snapshot bucket if provided
 				if instance.snapshotBucket != "" {
 					created.Status.AtProvider.SnapshotsBucket = meta.LocalReference{Name: instance.snapshotBucket}
+
+					// Add the ObjectsBucket resource to the fake client
+					objectsBucket := &storage.ObjectsBucket{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      instance.snapshotBucket,
+							Namespace: instance.project,
+						},
+						Spec: storage.ObjectsBucketSpec{
+							ForProvider: storage.ObjectsBucketParameters{
+								Location: "nine-cz42", // Set a test location
+							},
+						},
+						Status: storage.ObjectsBucketStatus{
+							AtProvider: storage.ObjectsBucketObservation{
+								URL: instance.URL,
+							},
+						},
+					}
+					objects = append(objects, objectsBucket)
 				}
 
 				objects = append(objects, created, &corev1.Secret{

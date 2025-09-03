@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -49,7 +51,7 @@ func (cmd *openSearchCmd) print(ctx context.Context, client *api.Client, list cl
 	}
 
 	if cmd.Name != "" && cmd.PrintSnapshotBucket {
-		return cmd.printSnapshotBucket(out.writer, &openSearchList.Items[0])
+		return cmd.printSnapshotBucket(out.writer, ctx, client, &openSearchList.Items[0])
 	}
 
 	switch out.Format {
@@ -113,28 +115,39 @@ func (cmd *openSearchCmd) getClusterHealth(clusterHealth storage.OpenSearchClust
 	return worstStatus
 }
 
-func (cmd *openSearchCmd) printSnapshotBucket(writer io.Writer, openSearch *storage.OpenSearch) error {
-	bucketName := openSearch.Status.AtProvider.SnapshotsBucket.Name
-	if bucketName == "" {
-		_, err := fmt.Fprintln(writer, "No snapshot bucket found")
+func (cmd *openSearchCmd) printSnapshotBucket(writer io.Writer, ctx context.Context, client *api.Client, openSearch *storage.OpenSearch) error {
+	name, err := bucketName(openSearch.Status.AtProvider.SnapshotsBucket.Name, client.Project)
+	if err != nil {
 		return err
 	}
 
-	// Determine host based on the OpenSearch instance location.
-	// If instance created in es34 -> bucket in cz42, and vice versa.
-	loc := string(openSearch.Spec.ForProvider.Location)
-	var host string
-	switch loc {
-	case "nine-es34":
-		host = "cz42.objects.nineapis.ch"
-	case "nine-cz42":
-		host = "es34.objects.nineapis.ch"
+	bucket := &storage.ObjectsBucket{}
+	if err := client.Get(ctx, name, bucket); err != nil {
+		return err
 	}
 
-	fqdn := fmt.Sprintf("https://%s/%s", host, bucketName)
-	if _, err := fmt.Fprintln(writer, fqdn); err != nil {
+	bucketURL := bucket.Status.AtProvider.URL
+	if bucketURL == "" {
+		return fmt.Errorf("no URL found in ObjectsBucket %s status", name)
+	}
+
+	if _, err := fmt.Fprintln(writer, bucketURL); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func bucketName(name, project string) (types.NamespacedName, error) {
+	parts := strings.Split(name, "/")
+	if len(parts) == 2 {
+		name = parts[0]
+		project = parts[1]
+	}
+
+	if project == "" {
+		return types.NamespacedName{}, fmt.Errorf("project cannot be empty")
+	}
+
+	return types.NamespacedName{Name: name, Namespace: project}, nil
 }
