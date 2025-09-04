@@ -2,14 +2,21 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"log"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path"
 	"testing"
+	"time"
 
+	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/oauth2"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
@@ -46,7 +53,9 @@ func TestLoginCmd(t *testing.T) {
 
 	apiHost := "api.example.org"
 	cmd := &LoginCmd{
-		APIURL:                      "https://" + apiHost,
+		API: API{
+			URL: "https://" + apiHost,
+		},
 		IssuerURL:                   "https://auth.example.org",
 		ForceInteractiveEnvOverride: true,
 		tk:                          &fakeTokenGetter{},
@@ -69,8 +78,20 @@ func TestLoginCmd(t *testing.T) {
 	checkConfig(t, merged, 2, "existing")
 }
 
-func TestLoginStaticToken(t *testing.T) {
+func TestLoginClientCredentials(t *testing.T) {
 	apiHost := "api.example.org"
+	mockTokenServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		tok := &oauth2.Token{
+			AccessToken: test.FakeJWTToken,
+			Expiry:      time.Now().Add(time.Minute),
+			ExpiresIn:   int64(time.Minute.Seconds()),
+			TokenType:   "Bearer",
+		}
+		if err := json.NewEncoder(w).Encode(tok); err != nil {
+			t.Fatal(err)
+		}
+	}))
 
 	tests := []struct {
 		name           string
@@ -80,18 +101,115 @@ func TestLoginStaticToken(t *testing.T) {
 		wantErrMessage string
 	}{
 		{
-			name:      "interactive environment with token",
-			cmd:       &LoginCmd{APIURL: "https://" + apiHost, APIToken: test.FakeJWTToken, Organization: "test", ForceInteractiveEnvOverride: true, tk: &fakeTokenGetter{}},
+			name: "login with client_id/secret",
+			cmd: &LoginCmd{
+				API: API{
+					URL:          "https://" + apiHost,
+					ClientID:     "foo",
+					ClientSecret: "bar",
+					TokenURL:     mockTokenServer.URL,
+				},
+				Organization: "test",
+			},
+		},
+		{
+			name: "login with invalid token server",
+			cmd: &LoginCmd{
+				API: API{
+					URL:          "https://" + apiHost,
+					ClientID:     "foo",
+					ClientSecret: "bar",
+					TokenURL:     "http://localhost:99999",
+				},
+				Organization: "test",
+			},
+			wantErr:        true,
+			wantErrMessage: `Post "http://localhost:99999": dial tcp: address 99999: invalid port`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			kubeconfig, err := os.CreateTemp("", "*-kubeconfig.yaml")
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer os.Remove(kubeconfig.Name())
+			os.Setenv(clientcmd.RecommendedConfigPathEnvVar, kubeconfig.Name())
+
+			err = tt.cmd.Run(context.Background())
+			checkErrorRequire(t, err, tt.wantErr, tt.wantErrMessage)
+			if tt.wantErr {
+				return
+			}
+			// read out the kubeconfig again to test the contents
+			b, err := io.ReadAll(kubeconfig)
+			if err != nil {
+				t.Fatal(err)
+			}
+			kc, err := clientcmd.Load(b)
+			if err != nil {
+				t.Fatal(err)
+			}
+			checkConfig(t, kc, 1, "")
+			if kc.AuthInfos[apiHost].Exec == nil {
+				t.Fatalf("expected kubeconfig to have execConfig")
+			}
+			assert.Equal(t, kc.AuthInfos[apiHost].Exec.Args, []string{
+				CmdName,
+				ClientCredentialsCmdName,
+				api.ClientIDArg + tt.cmd.API.ClientID,
+				api.ClientSecretArg + tt.cmd.API.ClientSecret,
+				api.TokenURLArg + mockTokenServer.URL,
+			})
+		})
+	}
+}
+
+func TestLoginStaticToken(t *testing.T) {
+	apiHost := "api.example.org"
+	tests := []struct {
+		name           string
+		cmd            *LoginCmd
+		wantToken      string
+		wantErr        bool
+		wantErrMessage string
+	}{
+		{
+			name: "interactive environment with token",
+			cmd: &LoginCmd{
+				API: API{
+					URL: "https://" + apiHost, Token: test.FakeJWTToken,
+				},
+				Organization:                "test",
+				ForceInteractiveEnvOverride: true,
+				tk:                          &fakeTokenGetter{},
+			},
 			wantToken: test.FakeJWTToken,
 		},
 		{
-			name:      "non-interactive environment with token",
-			cmd:       &LoginCmd{APIURL: "https://" + apiHost, APIToken: test.FakeJWTToken, Organization: "test", ForceInteractiveEnvOverride: false, tk: &fakeTokenGetter{}},
+			name: "non-interactive environment with token",
+			cmd: &LoginCmd{
+				API: API{
+					URL:   "https://" + apiHost,
+					Token: test.FakeJWTToken,
+				},
+				Organization:                "test",
+				ForceInteractiveEnvOverride: false,
+				tk:                          &fakeTokenGetter{},
+			},
 			wantToken: test.FakeJWTToken,
 		},
 		{
-			name:           "non-interactive environment with empty token",
-			cmd:            &LoginCmd{APIURL: "https://" + apiHost, APIToken: "", Organization: "test", ForceInteractiveEnvOverride: false},
+			name: "non-interactive environment with empty token",
+			cmd: &LoginCmd{
+				API: API{
+					URL:   "https://" + apiHost,
+					Token: "",
+				},
+				Organization:                "test",
+				ForceInteractiveEnvOverride: false,
+			},
 			wantErr:        true,
 			wantErrMessage: ErrNonInteractiveEnvironmentEmptyToken,
 		},
@@ -149,7 +267,9 @@ func TestLoginCmdWithoutExistingKubeconfig(t *testing.T) {
 
 	apiHost := "api.example.org"
 	cmd := &LoginCmd{
-		APIURL:                      "https://" + apiHost,
+		API: API{
+			URL: "https://" + apiHost,
+		},
 		IssuerURL:                   "https://auth.example.org",
 		ForceInteractiveEnvOverride: true,
 		tk:                          &fakeTokenGetter{},

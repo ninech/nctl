@@ -91,7 +91,7 @@ func (a *ClusterCmd) Run(ctx context.Context, client *api.Client) error {
 		}
 	}
 
-	if err := login(ctx, cfg, client.KubeconfigPath, userInfo.User, "", switchCurrentContext()); err != nil {
+	if err := login(cfg, client.KubeconfigPath, userInfo.User, "", switchCurrentContext()); err != nil {
 		return fmt.Errorf("error logging in to cluster %s: %w", name, err)
 	}
 

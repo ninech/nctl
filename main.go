@@ -90,16 +90,8 @@ func main() {
 	predictors := []completion.Option{
 		completion.WithPredictor("file", complete.PredictFiles("*")),
 	}
-	apiClientRequired := false
-	if noAPIClientRequired(strings.Join(os.Args[1:], " ")) {
-		// complete needs all used predictors to be defined, so we just use
-		// [complete.PredictNothing] for those that would require an API client.
-		predictors = append(predictors,
-			completion.WithPredictor("resource_name", complete.PredictNothing),
-			completion.WithPredictor("project_name", complete.PredictNothing),
-		)
-	} else {
-		apiClientRequired = true
+	apiClientRequired := !noAPIClientRequired(strings.Join(os.Args[1:], " "))
+	if apiClientRequired {
 		predictors = append(predictors,
 			completion.WithPredictor("resource_name", predictor.NewResourceName(ctx, defaultAPICluster)),
 			completion.WithPredictor("project_name", predictor.NewResourceNameWithKind(
@@ -107,6 +99,13 @@ func main() {
 					reflect.TypeOf(management.ProjectList{}).Name(),
 				)),
 			),
+		)
+	} else {
+		// complete needs all used predictors to be defined, so we just use
+		// [complete.PredictNothing] for those that would require an API client.
+		predictors = append(predictors,
+			completion.WithPredictor("resource_name", complete.PredictNothing),
+			completion.WithPredictor("project_name", complete.PredictNothing),
 		)
 	}
 	completion.Register(parser, predictors...)
@@ -156,6 +155,7 @@ func noAPIClientRequired(command string) bool {
 	return matchCommand(command, auth.CmdName, format.LoginCommand) ||
 		matchCommand(command, auth.CmdName, format.LogoutCommand) ||
 		matchCommand(command, auth.CmdName, auth.OIDCCmdName) ||
+		matchCommand(command, auth.CmdName, auth.ClientCredentialsCmdName) ||
 		matchCommand(command, "completions")
 }
 
@@ -189,7 +189,18 @@ func kongVariables() (kong.Vars, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error on application create kong vars: %w", err)
 	}
-	if err := merge(result, appCreateKongVars, create.CloudVMKongVars(), create.MySQLKongVars(), create.MySQLDatabaseKongVars(), create.PostgresKongVars(), create.PostgresDatabaseKongVars(), create.ServiceConnectionKongVars(), logs.KongVars()); err != nil {
+	if err := merge(
+		result,
+		appCreateKongVars,
+		create.CloudVMKongVars(),
+		create.MySQLKongVars(),
+		create.MySQLDatabaseKongVars(),
+		create.PostgresKongVars(),
+		create.PostgresDatabaseKongVars(),
+		create.ServiceConnectionKongVars(),
+		auth.LoginKongVars(),
+		logs.KongVars(),
+	); err != nil {
 		return nil, fmt.Errorf("error when merging kong variables: %w", err)
 	}
 
