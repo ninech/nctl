@@ -17,7 +17,7 @@ type openSearchCmd struct {
 	PrintPassword       bool `help:"Print the password of the OpenSearch BasicAuth User. Requires name to be set." xor:"print"`
 	PrintUser           bool `help:"Print the name of the OpenSearch BasicAuth User. Requires name to be set." xor:"print"`
 	PrintCACert         bool `help:"Print the ca certificate. Requires name to be set." xor:"print"`
-	PrintSnapshotBucket bool `help:"Print the connection string of the snapshot bucket." xor:"print"`
+	PrintSnapshotBucket bool `help:"Print the URL of the snapshot bucket." xor:"print"`
 }
 
 func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
