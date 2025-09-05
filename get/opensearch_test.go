@@ -210,7 +210,7 @@ func TestOpenSearch(t *testing.T) {
 						},
 						Spec: storage.ObjectsBucketSpec{
 							ForProvider: storage.ObjectsBucketParameters{
-								Location: "nine-cz42", // Set a test location
+								Location: meta.LocationNineCZ42,
 							},
 						},
 						Status: storage.ObjectsBucketStatus{
