@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"strings"
 
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
@@ -18,7 +17,7 @@ type openSearchCmd struct {
 	PrintPassword       bool `help:"Print the password of the OpenSearch BasicAuth User. Requires name to be set." xor:"print"`
 	PrintUser           bool `help:"Print the name of the OpenSearch BasicAuth User. Requires name to be set." xor:"print"`
 	PrintCACert         bool `help:"Print the ca certificate. Requires name to be set." xor:"print"`
-	PrintSnapshotBucket bool `help:"Print the snapshot bucket name and the users who have read access to it." xor:"print"`
+	PrintSnapshotBucket bool `help:"Print the connection string of the snapshot bucket." xor:"print"`
 }
 
 func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
@@ -116,38 +115,16 @@ func (cmd *openSearchCmd) getClusterHealth(clusterHealth storage.OpenSearchClust
 }
 
 func (cmd *openSearchCmd) printSnapshotBucket(writer io.Writer, ctx context.Context, client *api.Client, openSearch *storage.OpenSearch) error {
-	name, err := bucketName(openSearch.Status.AtProvider.SnapshotsBucket.Name, client.Project)
-	if err != nil {
-		return err
-	}
-
 	bucket := &storage.ObjectsBucket{}
-	if err := client.Get(ctx, name, bucket); err != nil {
+	if err := client.Get(ctx, types.NamespacedName{Name: openSearch.Status.AtProvider.SnapshotsBucket.Name, Namespace: client.Project}, bucket); err != nil {
 		return err
 	}
 
 	bucketURL := bucket.Status.AtProvider.URL
 	if bucketURL == "" {
-		return fmt.Errorf("no URL found in ObjectsBucket %s status", name)
+		return fmt.Errorf("no URL found in ObjectsBucket %s status", openSearch.Status.AtProvider.SnapshotsBucket.Name)
 	}
 
-	if _, err := fmt.Fprintln(writer, bucketURL); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func bucketName(name, project string) (types.NamespacedName, error) {
-	parts := strings.Split(name, "/")
-	if len(parts) == 2 {
-		name = parts[0]
-		project = parts[1]
-	}
-
-	if project == "" {
-		return types.NamespacedName{}, fmt.Errorf("project cannot be empty")
-	}
-
-	return types.NamespacedName{Name: name, Namespace: project}, nil
+	_, err := fmt.Fprintln(writer, bucketURL)
+	return err
 }
