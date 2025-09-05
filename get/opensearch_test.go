@@ -3,6 +3,7 @@ package get
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -26,7 +27,6 @@ func TestOpenSearch(t *testing.T) {
 		clusterType    storage.OpenSearchClusterType
 		clusterHealth  storage.OpenSearchClusterHealth
 		snapshotBucket string
-		URL            string
 	}
 
 	tests := []struct {
@@ -36,6 +36,7 @@ func TestOpenSearch(t *testing.T) {
 		// out defines the output format and will bet set to "full" if
 		// not given
 		out           outputFormat
+		want          string
 		wantContain   []string
 		wantLines     int
 		inAllProjects bool
@@ -125,12 +126,11 @@ func TestOpenSearch(t *testing.T) {
 					project:        test.DefaultProject,
 					machineType:    infra.MachineTypeNineSearchS,
 					snapshotBucket: "snapshot-instance-012345a",
-					URL:            "https://es43.objects.nineapis.ch/snapshot-instance-012345a",
 				},
 			},
-			get:         openSearchCmd{resourceCmd: resourceCmd{Name: "snapshot-instance"}, PrintSnapshotBucket: true},
-			wantContain: []string{"https://es43.objects.nineapis.ch/snapshot-instance-012345a"},
-			wantLines:   1,
+			get:       openSearchCmd{resourceCmd: resourceCmd{Name: "snapshot-instance"}, PrintSnapshotBucket: true},
+			want:      "https://nine-es34.objects.nineapis.ch/snapshot-instance-012345a",
+			wantLines: 1,
 		},
 		{
 			name: "show-password",
@@ -215,7 +215,7 @@ func TestOpenSearch(t *testing.T) {
 						},
 						Status: storage.ObjectsBucketStatus{
 							AtProvider: storage.ObjectsBucketObservation{
-								URL: instance.URL,
+								URL: strings.TrimSpace(fmt.Sprintf("https://%s.objects.nineapis.ch/%s", meta.LocationNineES34, instance.snapshotBucket)),
 							},
 						},
 					}
