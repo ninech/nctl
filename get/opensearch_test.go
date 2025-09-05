@@ -3,10 +3,12 @@ package get
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
+	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
@@ -19,11 +21,12 @@ func TestOpenSearch(t *testing.T) {
 	ctx := context.Background()
 
 	type openSearchInstance struct {
-		name          string
-		project       string
-		machineType   infra.MachineType
-		clusterType   storage.OpenSearchClusterType
-		clusterHealth storage.OpenSearchClusterHealth
+		name           string
+		project        string
+		machineType    infra.MachineType
+		clusterType    storage.OpenSearchClusterType
+		clusterHealth  storage.OpenSearchClusterHealth
+		snapshotBucket string
 	}
 
 	tests := []struct {
@@ -33,6 +36,7 @@ func TestOpenSearch(t *testing.T) {
 		// out defines the output format and will bet set to "full" if
 		// not given
 		out           outputFormat
+		want          string
 		wantContain   []string
 		wantLines     int
 		inAllProjects bool
@@ -115,6 +119,20 @@ func TestOpenSearch(t *testing.T) {
 			wantLines:   2,
 		},
 		{
+			name: "print snapshot bucket",
+			instances: []openSearchInstance{
+				{
+					name:           "snapshot-instance",
+					project:        test.DefaultProject,
+					machineType:    infra.MachineTypeNineSearchS,
+					snapshotBucket: "snapshot-instance-012345a",
+				},
+			},
+			get:       openSearchCmd{resourceCmd: resourceCmd{Name: "snapshot-instance"}, PrintSnapshotBucket: true},
+			want:      "https://nine-es34.objects.nineapis.ch/snapshot-instance-012345a",
+			wantLines: 1,
+		},
+		{
 			name: "show-password",
 			instances: []openSearchInstance{
 				{
@@ -172,12 +190,36 @@ func TestOpenSearch(t *testing.T) {
 
 			objects := []client.Object{}
 			for _, instance := range tt.instances {
-				created := test.OpenSearch(instance.name, instance.project, "nine-es34")
+				created := test.OpenSearch(instance.name, instance.project, string(meta.LocationNineES34))
 				created.Spec.ForProvider.MachineType = instance.machineType
 
 				// Set cluster health status if provided
 				if len(instance.clusterHealth.Indices) > 0 {
 					created.Status.AtProvider.ClusterHealth = instance.clusterHealth
+				}
+
+				// Set snapshot bucket if provided
+				if instance.snapshotBucket != "" {
+					created.Status.AtProvider.SnapshotsBucket = meta.LocalReference{Name: instance.snapshotBucket}
+
+					// Add the ObjectsBucket resource to the fake client
+					objectsBucket := &storage.ObjectsBucket{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      instance.snapshotBucket,
+							Namespace: instance.project,
+						},
+						Spec: storage.ObjectsBucketSpec{
+							ForProvider: storage.ObjectsBucketParameters{
+								Location: meta.LocationNineCZ42,
+							},
+						},
+						Status: storage.ObjectsBucketStatus{
+							AtProvider: storage.ObjectsBucketObservation{
+								URL: strings.TrimSpace(fmt.Sprintf("https://%s.objects.nineapis.ch/%s", meta.LocationNineES34, instance.snapshotBucket)),
+							},
+						},
+					}
+					objects = append(objects, objectsBucket)
 				}
 
 				objects = append(objects, created, &corev1.Secret{

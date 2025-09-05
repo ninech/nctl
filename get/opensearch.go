@@ -3,18 +3,21 @@ package get
 import (
 	"context"
 	"fmt"
+	"io"
 
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type openSearchCmd struct {
 	resourceCmd
-	PrintPassword bool `help:"Print the password of the OpenSearch BasicAuth User. Requires name to be set." xor:"print"`
-	PrintUser     bool `help:"Print the name of the OpenSearch BasicAuth User. Requires name to be set." xor:"print"`
-	PrintCACert   bool `help:"Print the ca certificate. Requires name to be set." xor:"print"`
+	PrintPassword       bool `help:"Print the password of the OpenSearch BasicAuth User. Requires name to be set." xor:"print"`
+	PrintUser           bool `help:"Print the name of the OpenSearch BasicAuth User. Requires name to be set." xor:"print"`
+	PrintCACert         bool `help:"Print the ca certificate. Requires name to be set." xor:"print"`
+	PrintSnapshotBucket bool `help:"Print the URL of the snapshot bucket." xor:"print"`
 }
 
 func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
@@ -44,6 +47,10 @@ func (cmd *openSearchCmd) print(ctx context.Context, client *api.Client, list cl
 
 	if cmd.Name != "" && cmd.PrintCACert {
 		return printBase64(out.writer, openSearchList.Items[0].Status.AtProvider.CACert)
+	}
+
+	if cmd.Name != "" && cmd.PrintSnapshotBucket {
+		return cmd.printSnapshotBucket(ctx, client, &openSearchList.Items[0], out.writer)
 	}
 
 	switch out.Format {
@@ -105,4 +112,24 @@ func (cmd *openSearchCmd) getClusterHealth(clusterHealth storage.OpenSearchClust
 	}
 
 	return worstStatus
+}
+
+func (cmd *openSearchCmd) printSnapshotBucket(ctx context.Context, client *api.Client, openSearch *storage.OpenSearch, writer io.Writer) error {
+	bucketName := openSearch.Status.AtProvider.SnapshotsBucket.Name
+	if bucketName == "" {
+		return fmt.Errorf("no snapshot bucket configured for OpenSearch instance %s", openSearch.Name)
+	}
+
+	bucket := &storage.ObjectsBucket{}
+	if err := client.Get(ctx, types.NamespacedName{Name: bucketName, Namespace: client.Project}, bucket); err != nil {
+		return err
+	}
+
+	bucketURL := bucket.Status.AtProvider.URL
+	if bucketURL == "" {
+		return fmt.Errorf("no URL found in ObjectsBucket %s status", bucketName)
+	}
+
+	_, err := fmt.Fprintln(writer, bucketURL)
+	return err
 }

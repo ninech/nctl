@@ -54,6 +54,13 @@ func TestOpenSearch(t *testing.T) {
 				AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")},
 			},
 		},
+		{
+			name:   "bucket-users-set",
+			update: openSearchCmd{BucketUsers: &[]string{"user1", "user2"}},
+			want: storage.OpenSearchParameters{
+				BucketUsers: []meta.LocalReference{{Name: "user1"}, {Name: "user2"}},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

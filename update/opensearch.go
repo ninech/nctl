@@ -16,10 +16,11 @@ type openSearchCmd struct {
 	resourceCmd
 	MachineType  *string          `help:"MachineType configures OpenSearch to use a specified machine type." placeholder:"nine-search-m"`
 	AllowedCidrs *[]meta.IPv4CIDR `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the cluster." placeholder:"203.0.113.1/32"`
+	BucketUsers  *[]string        `help:"BucketUsers specify the users who have read access to the OpenSearch bucket." placeholder:"user1,user2"`
 }
 
 func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client) error {
-	if cmd.MachineType == nil && cmd.AllowedCidrs == nil {
+	if cmd.MachineType == nil && cmd.AllowedCidrs == nil && cmd.BucketUsers == nil {
 		return fmt.Errorf("at least one parameter must be provided to update the OpenSearch cluster")
 	}
 
@@ -46,6 +47,13 @@ func (cmd *openSearchCmd) applyUpdates(openSearch *storage.OpenSearch) error {
 	}
 	if cmd.AllowedCidrs != nil {
 		openSearch.Spec.ForProvider.AllowedCIDRs = *cmd.AllowedCidrs
+	}
+	if cmd.BucketUsers != nil {
+		bucketUsers := make([]meta.LocalReference, len(*cmd.BucketUsers))
+		for i, user := range *cmd.BucketUsers {
+			bucketUsers[i] = meta.LocalReference{Name: user}
+		}
+		openSearch.Spec.ForProvider.BucketUsers = bucketUsers
 	}
 
 	return nil
