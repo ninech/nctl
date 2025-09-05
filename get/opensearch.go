@@ -50,7 +50,7 @@ func (cmd *openSearchCmd) print(ctx context.Context, client *api.Client, list cl
 	}
 
 	if cmd.Name != "" && cmd.PrintSnapshotBucket {
-		return cmd.printSnapshotBucket(out.writer, ctx, client, &openSearchList.Items[0])
+		return cmd.printSnapshotBucket(ctx, client, &openSearchList.Items[0], out.writer)
 	}
 
 	switch out.Format {
@@ -114,15 +114,20 @@ func (cmd *openSearchCmd) getClusterHealth(clusterHealth storage.OpenSearchClust
 	return worstStatus
 }
 
-func (cmd *openSearchCmd) printSnapshotBucket(writer io.Writer, ctx context.Context, client *api.Client, openSearch *storage.OpenSearch) error {
+func (cmd *openSearchCmd) printSnapshotBucket(ctx context.Context, client *api.Client, openSearch *storage.OpenSearch, writer io.Writer) error {
+	bucketName := openSearch.Status.AtProvider.SnapshotsBucket.Name
+	if bucketName == "" {
+		return fmt.Errorf("no snapshot bucket configured for OpenSearch instance %s", openSearch.Name)
+	}
+
 	bucket := &storage.ObjectsBucket{}
-	if err := client.Get(ctx, types.NamespacedName{Name: openSearch.Status.AtProvider.SnapshotsBucket.Name, Namespace: client.Project}, bucket); err != nil {
+	if err := client.Get(ctx, types.NamespacedName{Name: bucketName, Namespace: client.Project}, bucket); err != nil {
 		return err
 	}
 
 	bucketURL := bucket.Status.AtProvider.URL
 	if bucketURL == "" {
-		return fmt.Errorf("no URL found in ObjectsBucket %s status", openSearch.Status.AtProvider.SnapshotsBucket.Name)
+		return fmt.Errorf("no URL found in ObjectsBucket %s status", bucketName)
 	}
 
 	_, err := fmt.Fprintln(writer, bucketURL)
