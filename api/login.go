@@ -207,15 +207,18 @@ func GetToken(ctx context.Context, issuerURL, clientID string, usePKCE bool, out
 }
 
 type UserInfo struct {
-	User string
-	Orgs []string
+	User    string
+	Orgs    []string
+	Project string
 }
 
 func GetUserInfoFromToken(tokenString string) (*UserInfo, error) {
 	type authClaims struct {
-		Email  string   `json:"email"`
-		Groups []string `json:"groups"`
-		Sub    string   `json:"sub"`
+		Email        string   `json:"email"`
+		Groups       []string `json:"groups"`
+		Sub          string   `json:"sub"`
+		Organization string   `json:"organization"`
+		Project      string   `json:"project"`
 		jwt.RegisteredClaims
 	}
 	token, _, err := new(jwt.Parser).ParseUnverified(tokenString, &authClaims{})
@@ -229,6 +232,9 @@ func GetUserInfoFromToken(tokenString string) (*UserInfo, error) {
 	}
 
 	var orgs []string
+	if claims.Organization != "" {
+		orgs = append(orgs, claims.Organization)
+	}
 	for _, grp := range claims.Groups {
 		if after, ok := strings.CutPrefix(grp, CustomersPrefix); ok {
 			orgs = append(orgs, after)
@@ -242,7 +248,8 @@ func GetUserInfoFromToken(tokenString string) (*UserInfo, error) {
 	}
 
 	return &UserInfo{
-		User: acc,
-		Orgs: orgs,
+		User:    acc,
+		Orgs:    orgs,
+		Project: claims.Project,
 	}, nil
 }

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/config"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -83,7 +84,7 @@ func TestLoginClientCredentials(t *testing.T) {
 	mockTokenServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		tok := &oauth2.Token{
-			AccessToken: test.FakeJWTToken,
+			AccessToken: test.ASAJWTToken,
 			Expiry:      time.Now().Add(time.Minute),
 			ExpiresIn:   int64(time.Minute.Seconds()),
 			TokenType:   "Bearer",
@@ -94,11 +95,13 @@ func TestLoginClientCredentials(t *testing.T) {
 	}))
 
 	tests := []struct {
-		name           string
-		cmd            *LoginCmd
-		wantToken      string
-		wantErr        bool
-		wantErrMessage string
+		name                 string
+		cmd                  *LoginCmd
+		expectedOrganization string
+		expectedProject      string
+		wantToken            string
+		wantErr              bool
+		wantErrMessage       string
 	}{
 		{
 			name: "login with client_id/secret",
@@ -109,8 +112,9 @@ func TestLoginClientCredentials(t *testing.T) {
 					ClientSecret: "bar",
 					TokenURL:     mockTokenServer.URL,
 				},
-				Organization: "test",
 			},
+			expectedOrganization: "ninetest",
+			expectedProject:      "ninetest-foo",
 		},
 		{
 			name: "login with invalid token server",
@@ -121,7 +125,6 @@ func TestLoginClientCredentials(t *testing.T) {
 					ClientSecret: "bar",
 					TokenURL:     "http://localhost:99999",
 				},
-				Organization: "test",
 			},
 			wantErr:        true,
 			wantErrMessage: `Post "http://localhost:99999": dial tcp: address 99999: invalid port`,
@@ -129,7 +132,6 @@ func TestLoginClientCredentials(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 			kubeconfig, err := os.CreateTemp("", "*-kubeconfig.yaml")
 			if err != nil {
 				log.Fatal(err)
@@ -155,6 +157,10 @@ func TestLoginClientCredentials(t *testing.T) {
 			if kc.AuthInfos[apiHost].Exec == nil {
 				t.Fatalf("expected kubeconfig to have execConfig")
 			}
+			ext, err := config.ReadExtension(kubeconfig.Name(), apiHost)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedOrganization, ext.Organization)
+			assert.Equal(t, tt.expectedProject, kc.Contexts[apiHost].Namespace)
 			assert.Equal(t, kc.AuthInfos[apiHost].Exec.Args, []string{
 				CmdName,
 				ClientCredentialsCmdName,
