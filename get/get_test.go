@@ -35,15 +35,17 @@ func TestListPrint(t *testing.T) {
 			wantLines:   2,
 		},
 		"watch": {
-			out:               full,
-			existingResources: []client.Object{},
+			out: full,
+			existingResources: []client.Object{
+				test.CloudVirtualMachine("foo", test.DefaultProject, "nine-es34", infrastructure.VirtualMachinePowerState("on")),
+			},
 			toCreate: []client.Object{
 				test.CloudVirtualMachine("new", test.DefaultProject, "nine-es34", infrastructure.VirtualMachinePowerState("on")),
 				test.CloudVirtualMachine("new2", test.DefaultProject, "nine-es34", infrastructure.VirtualMachinePowerState("on")),
 				test.CloudVirtualMachine("new3", "other-project", "nine-es34", infrastructure.VirtualMachinePowerState("on")),
 			},
 			wantContain: []string{"new", "new2"},
-			wantLines:   3,
+			wantLines:   4,
 			watch:       true,
 		},
 		// TODO: watch currently does not support the all-projects or
