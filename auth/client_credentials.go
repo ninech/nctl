@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/ninech/nctl/api"
@@ -53,7 +54,19 @@ func (a *API) Oauth2Token(ctx context.Context) (*oauth2.Token, error) {
 		ClientSecret: a.ClientSecret,
 		TokenURL:     a.TokenURL,
 	}
-	return clientCredentialsCfg.Token(ctx)
+	tok, err := clientCredentialsCfg.Token(ctx)
+	if rerr, ok := err.(*oauth2.RetrieveError); ok && rerr.ErrorCode == "invalid_client" {
+		redactedClientSecret := a.ClientSecret
+		if len(a.ClientSecret) > 3 {
+			redactedClientSecret = a.ClientSecret[:3] + "<redacted>"
+		}
+		return nil, fmt.Errorf(
+			"%s: the used client ID/secret %q/%q is invalid",
+			rerr.ErrorDescription,
+			a.ClientID, redactedClientSecret,
+		)
+	}
+	return tok, err
 }
 
 func (a *API) UserInfo(ctx context.Context) (*api.UserInfo, error) {
