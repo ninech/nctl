@@ -73,18 +73,26 @@ func (l *LoginCmd) Run(ctx context.Context) error {
 	}
 
 	if l.API.ClientID != "" {
-		if l.Organization == "" {
-			return fmt.Errorf("you need to set the --organization parameter explicitly if you use --api-client-id")
-		}
-		cfg, err := newAPIConfig(apiURL, issuerURL, command, l.API.ClientID, useClientCredentials(l.API), withOrganization(l.Organization))
-		if err != nil {
-			return err
-		}
 		userInfo, err := l.API.UserInfo(ctx)
 		if err != nil {
 			return err
 		}
-		return login(cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(l.Organization))
+		if l.Organization == "" && len(userInfo.Orgs) == 0 {
+			return fmt.Errorf("unable to find organization, you need to set the --organization parameter explicitly")
+		}
+		org := l.Organization
+		if org == "" {
+			org = userInfo.Orgs[0]
+		}
+		cfg, err := newAPIConfig(apiURL, issuerURL, command, l.API.ClientID, useClientCredentials(l.API), withOrganization(org))
+		if err != nil {
+			return err
+		}
+		proj := org
+		if userInfo.Project != "" {
+			proj = userInfo.Project
+		}
+		return login(cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(proj))
 	}
 
 	if !l.ForceInteractiveEnvOverride && !format.IsInteractiveEnvironment(os.Stdout) {
