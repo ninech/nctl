@@ -35,6 +35,7 @@ type Cmd struct {
 	All                 allCmd                `cmd:"" name:"all" help:"Get project content."`
 	CloudVirtualMachine cloudVMCmd            `cmd:"" group:"infrastructure.nine.ch" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Get a CloudVM."`
 	ServiceConnection   serviceConnectionCmd  `cmd:"" group:"networking.nine.ch" name:"serviceconnection" aliases:"sc" help:"Get a ServiceConnection."`
+	BucketUser          bucketUserCmd         `cmd:"" group:"storage.nine.ch" name:"bucketuser" aliases:"bu" help:"Get BucketUser instances."`
 }
 
 type output struct {
@@ -190,8 +191,9 @@ func (cmd *resourceCmd) printSecret(out io.Writer, ctx context.Context, client *
 	}
 
 	for k, v := range secrets {
-		_, err = fmt.Fprintln(out, field(k, string(v)))
-		return err
+		if _, err = fmt.Fprintln(out, field(k, string(v))); err != nil {
+			return err
+		}
 	}
 
 	return nil
