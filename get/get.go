@@ -5,9 +5,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
@@ -15,6 +18,7 @@ import (
 	"github.com/liggitt/tabwriter"
 	"github.com/ninech/nctl/api"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 )
 
 type Cmd struct {
@@ -35,6 +39,7 @@ type Cmd struct {
 	All                 allCmd                `cmd:"" name:"all" help:"Get project content."`
 	CloudVirtualMachine cloudVMCmd            `cmd:"" group:"infrastructure.nine.ch" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Get a CloudVM."`
 	ServiceConnection   serviceConnectionCmd  `cmd:"" group:"networking.nine.ch" name:"serviceconnection" aliases:"sc" help:"Get a ServiceConnection."`
+	BucketUser          bucketUserCmd         `cmd:"" group:"storage.nine.ch" name:"bucketuser" aliases:"bu" help:"Get BucketUser instances."`
 }
 
 type output struct {
@@ -194,6 +199,44 @@ func (cmd *resourceCmd) printSecret(out io.Writer, ctx context.Context, client *
 		return err
 	}
 
+	return nil
+}
+
+func (cmd *resourceCmd) printCredentials(ctx context.Context, client *api.Client, mg resource.Managed, out *output, filter func(key string) bool) error {
+	data, err := getConnectionSecretMap(ctx, client, mg)
+	if err != nil {
+		return err
+	}
+	stringData := map[string]string{}
+	for k, v := range data {
+		if filter != nil && filter(k) {
+			continue
+		}
+		stringData[k] = string(v)
+	}
+
+	switch out.Format {
+	case full:
+		out.writeTabRow("KEY", "VALUE")
+		fallthrough
+	case noHeader:
+		for _, key := range slices.Sorted(maps.Keys(stringData)) {
+			out.writeTabRow(key, stringData[key])
+		}
+		return out.tabWriter.Flush()
+	case yamlOut:
+		b, err := yaml.Marshal(stringData)
+		if err != nil {
+			return err
+		}
+		fmt.Print(string(b))
+	case jsonOut:
+		b, err := json.MarshalIndent(stringData, "", "  ")
+		if err != nil {
+			return err
+		}
+		fmt.Println(string(b))
+	}
 	return nil
 }
 
