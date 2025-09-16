@@ -21,6 +21,7 @@ type cloudVMCmd struct {
 	Location            string            `default:"nine-es34" help:"Location where the CloudVM instance is created."`
 	MachineType         string            `default:"" help:"The machine type defines the sizing for a particular CloudVM."`
 	Hostname            string            `default:"" help:"Hostname allows to set the hostname explicitly. If unset, the name of the resource will be used as the hostname. This does not affect the DNS name."`
+	ReverseDNS          string            `default:"" help:"Allows to set the reverse DNS of the CloudVM"`
 	PowerState          string            `default:"on" help:"Specify the initial power state of the CloudVM. Set to off to create "`
 	OS                  string            `default:"" help:"OS which should be used to boot the VM. Available options: ${cloudvm_os_flavors}"`
 	BootDiskSize        string            `default:"20Gi" help:"Configures the size of the boot disk."`
@@ -90,6 +91,7 @@ func (cmd *cloudVMCmd) newCloudVM(namespace string) (*infrastructure.CloudVirtua
 				OS:          infrastructure.CloudVirtualMachineOS(infrastructure.OperatingSystem(cmd.OS)),
 				PublicKeys:  cmd.PublicKeys,
 				CloudConfig: cmd.CloudConfig,
+				ReverseDNS:  cmd.ReverseDNS,
 			},
 		},
 	}

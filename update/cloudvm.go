@@ -17,6 +17,7 @@ type cloudVMCmd struct {
 	resourceCmd
 	MachineType               string            `placeholder:"nine-standard-1" help:"The machine type defines the sizing for a particular CloudVM."`
 	Hostname                  string            `placeholder:"" help:"Hostname allows to set the hostname explicitly. If unset, the name of the resource will be used as the hostname. This does not affect the DNS name."`
+	ReverseDNS                string            `placeholder:"" help:"Allows to set the reverse DNS of the CloudVM"`
 	OS                        string            `placeholder:"ubuntu22.04" help:"OS which should be used to boot the VM."`
 	BootDiskSize              string            `placeholder:"20Gi" help:"Configures the size of the boot disk."`
 	Disks                     map[string]string `placeholder:"{}" help:"Disks specifies which additional disks to mount to the machine."`
@@ -121,6 +122,10 @@ func (cmd *cloudVMCmd) applyUpdates(cloudVM *infrastructure.CloudVirtualMachine)
 		} else {
 			cloudVM.Spec.ForProvider.Rescue.PublicKeys = keys
 		}
+	}
+
+	if cmd.ReverseDNS != "" {
+		cloudVM.Spec.ForProvider.ReverseDNS = cmd.ReverseDNS
 	}
 
 	return nil

@@ -46,6 +46,13 @@ func TestCloudVM(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:   "reverseDNS",
+			create: cloudVMCmd{ReverseDNS: "me.example.com"},
+			want: infrastructure.CloudVirtualMachineParameters{
+				ReverseDNS: "me.example.com",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

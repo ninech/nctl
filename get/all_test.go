@@ -59,7 +59,7 @@ dev    pear      Release        apps.nine.ch
 			objects:      []client.Object{testApplication("banana", "dev"), testRelease("pear", "dev")},
 			outputFormat: yamlOut,
 			projectName:  "dev",
-			output:       "apiVersion: apps.nine.ch/v1alpha1\nkind: Application\nmetadata:\n  creationTimestamp: null\n  name: banana\n  namespace: dev\nspec:\n  forProvider:\n    buildEnv: null\n    config:\n      env: null\n      port: null\n      replicas: null\n      size: \"\"\n    dockerfileBuild:\n      enabled: false\n    git:\n      revision: \"\"\n      subPath: \"\"\n      url: \"\"\n    paused: false\nstatus:\n  atProvider:\n    defaultURLs: null\n---\napiVersion: apps.nine.ch/v1alpha1\ncreationTimestampNano: 0\nkind: Release\nmetadata:\n  creationTimestamp: null\n  name: pear\n  namespace: dev\nspec:\n  forProvider:\n    build:\n      name: \"\"\n    configuration:\n      size:\n        origin: \"\"\n        value: \"\"\n    defaultHosts: null\n    image: {}\n    paused: false\nstatus:\n  atProvider:\n    owning: false\n",
+			output:       "apiVersion: apps.nine.ch/v1alpha1\nkind: Application\nmetadata:\n  creationTimestamp: null\n  name: banana\n  namespace: dev\nspec:\n  forProvider:\n    buildEnv: null\n    config:\n      env: null\n      port: null\n      replicas: null\n      size: \"\"\n    dockerfileBuild:\n      enabled: false\n    git:\n      revision: \"\"\n      subPath: \"\"\n      url: \"\"\n    paused: false\nstatus:\n  atProvider:\n    defaultURLs: null\n---\napiVersion: apps.nine.ch/v1alpha1\ncreationTimestampNano: 0\nkind: Release\nmetadata:\n  creationTimestamp: null\n  name: pear\n  namespace: dev\nspec:\n  forProvider:\n    build:\n      name: \"\"\n    configuration:\n      size:\n        origin: \"\"\n        value: \"\"\n    defaultHosts: null\n    healthProbeConfiguration: null\n    image: {}\n    paused: false\nstatus:\n  atProvider:\n    owning: false\n",
 		},
 		"all resources from one project, json format": {
 			projects:     test.Projects(organization, "dev", "staging", "prod"),
@@ -122,6 +122,7 @@ dev    pear      Release        apps.nine.ch
           }
         },
         "defaultHosts": null,
+        "healthProbeConfiguration": null,
         "image": {},
         "paused": false
       }
