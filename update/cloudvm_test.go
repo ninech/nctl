@@ -40,6 +40,16 @@ func TestCloudVM(t *testing.T) {
 				PowerState: infrastructure.VirtualMachinePowerState("on"),
 			},
 		},
+		{
+			name: "set reverse DNS",
+			create: infrastructure.CloudVirtualMachineParameters{
+				ReverseDNS: "",
+			},
+			update: cloudVMCmd{ReverseDNS: "me.example.com"},
+			want: infrastructure.CloudVirtualMachineParameters{
+				ReverseDNS: "me.example.com",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
