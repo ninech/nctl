@@ -51,7 +51,7 @@ func TestApplication(t *testing.T) {
 					Size:            initialSize,
 					Replicas:        ptr.To(int32(1)),
 					Port:            ptr.To(int32(1337)),
-					Env:             util.EnvVarsFromMap(map[string]string{"foo": "bar"}),
+					Env:             util.EnvVarsFromMap(map[string]string{"foo": "bar", "poo": "blue"}),
 					EnableBasicAuth: ptr.To(false),
 					DeployJob: &apps.DeployJob{
 						Job: apps.Job{
@@ -114,13 +114,14 @@ func TestApplication(t *testing.T) {
 					SubPath:  ptr.To("new/path"),
 					Revision: ptr.To("some-change"),
 				},
-				Size:      ptr.To("newsize"),
-				Port:      ptr.To(int32(1234)),
-				Replicas:  ptr.To(int32(999)),
-				Hosts:     &[]string{"one.example.org", "two.example.org"},
-				Env:       map[string]string{"bar": "zoo"},
-				BuildEnv:  map[string]string{"BP_GO_TARGETS": "./cmd/web-server"},
-				BasicAuth: ptr.To(true),
+				Size:         ptr.To("newsize"),
+				Port:         ptr.To(int32(1234)),
+				Replicas:     ptr.To(int32(999)),
+				Hosts:        &[]string{"one.example.org", "two.example.org"},
+				Env:          map[string]string{"bar": "zoo"},
+				SensitiveEnv: map[string]string{"secret": "orange"},
+				BuildEnv:     map[string]string{"BP_GO_TARGETS": "./cmd/web-server"},
+				BasicAuth:    ptr.To(true),
 				DeployJob: &deployJob{
 					Command: ptr.To("exit 0"), Name: ptr.To("exit"),
 					Retries: ptr.To(int32(1)), Timeout: ptr.To(time.Minute * 5),
@@ -136,8 +137,15 @@ func TestApplication(t *testing.T) {
 				assert.Equal(t, *cmd.Replicas, *updated.Spec.ForProvider.Config.Replicas)
 				assert.Equal(t, *cmd.BasicAuth, *updated.Spec.ForProvider.Config.EnableBasicAuth)
 				assert.Equal(t, *cmd.Hosts, updated.Spec.ForProvider.Hosts)
-				assert.Equal(t, util.UpdateEnvVars(existingApp.Spec.ForProvider.Config.Env, cmd.Env, nil), updated.Spec.ForProvider.Config.Env)
-				assert.Equal(t, util.UpdateEnvVars(existingApp.Spec.ForProvider.BuildEnv, cmd.BuildEnv, nil), updated.Spec.ForProvider.BuildEnv)
+				assert.Equal(t, util.UpdateEnvVars(existingApp.Spec.ForProvider.Config.Env, cmd.Env, cmd.SensitiveEnv, nil), updated.Spec.ForProvider.Config.Env)
+				assert.Equal(t, util.UpdateEnvVars(existingApp.Spec.ForProvider.BuildEnv, cmd.BuildEnv, cmd.SensitiveBuildEnv, nil), updated.Spec.ForProvider.BuildEnv)
+
+				secretKeyEnv := util.EnvVarByName(updated.Spec.ForProvider.Config.Env, "secret")
+				require.NotNil(t, secretKeyEnv, "secret environment variable should exist")
+				require.NotNil(t, secretKeyEnv.Sensitive)
+				assert.Equal(t, "orange", secretKeyEnv.Value)
+				assert.True(t, *secretKeyEnv.Sensitive)
+
 				assert.Equal(t, *cmd.DeployJob.Command, updated.Spec.ForProvider.Config.DeployJob.Command)
 				assert.Equal(t, *cmd.DeployJob.Name, updated.Spec.ForProvider.Config.DeployJob.Name)
 				assert.Equal(t, *cmd.DeployJob.Timeout, updated.Spec.ForProvider.Config.DeployJob.Timeout.Duration)
@@ -156,7 +164,13 @@ func TestApplication(t *testing.T) {
 				DeleteEnv: &[]string{"foo"},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
-				assert.Empty(t, updated.Spec.ForProvider.Config.Env)
+				foundFoo := false
+				for _, env := range updated.Spec.ForProvider.Config.Env {
+					if env.Name == "foo" {
+						foundFoo = true
+					}
+				}
+				assert.False(t, foundFoo)
 				assert.NotEmpty(t, updated.Spec.ForProvider.BuildEnv)
 			},
 		},
@@ -187,6 +201,22 @@ func TestApplication(t *testing.T) {
 				assert.NotEmpty(t, updated.Spec.ForProvider.Config.Env)
 			},
 		},
+		"update variable from normal/sensitive": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
+				SensitiveEnv: map[string]string{"poo": "blue"},
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				sensitivePoo := util.EnvVarByName(updated.Spec.ForProvider.Config.Env, "poo")
+				require.NotNil(t, sensitivePoo)
+				require.NotNil(t, sensitivePoo.Sensitive)
+				assert.True(t, *sensitivePoo.Sensitive)
+			},
+		},
+
 		"change basic auth password": {
 			orig: existingApp,
 			cmd: applicationCmd{
