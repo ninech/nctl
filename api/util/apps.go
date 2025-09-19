@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
+	meta "github.com/ninech/apis/meta/v1alpha1"
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/api"
 	corev1 "k8s.io/api/core/v1"
@@ -62,6 +63,9 @@ func uniqueStrings(source []string) []string {
 func VerifiedAppHosts(app *apps.Application) []string {
 	verifiedHosts := []string{}
 	for _, host := range app.Status.AtProvider.Hosts {
+		if host.CheckType == meta.DNSCheckType("CAA") {
+			continue
+		}
 		if host.LatestSuccess != nil && host.Error == nil {
 			verifiedHosts = append(verifiedHosts, host.Name)
 		}
