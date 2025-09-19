@@ -2,16 +2,12 @@ package get
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"maps"
-	"slices"
 
 	iam "github.com/ninech/apis/iam/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/yaml"
 )
 
 type apiServiceAccountsCmd struct {
@@ -47,7 +43,7 @@ func (asa *apiServiceAccountsCmd) print(ctx context.Context, client *api.Client,
 			return err
 		}
 		if asa.PrintCredentials {
-			return asa.printCredentials(ctx, client, sa, out)
+			return asa.printCredentials(ctx, client, sa, out, func(key string) bool { return key == iam.APIServiceAccountKubeconfigKey })
 		}
 		key := ""
 		switch sa.Spec.ForProvider.Version {
@@ -132,45 +128,5 @@ func (asa *apiServiceAccountsCmd) printSecret(ctx context.Context, client *api.C
 		return err
 	}
 	fmt.Printf("%s\n", data)
-	return nil
-}
-
-func (asa *apiServiceAccountsCmd) printCredentials(ctx context.Context, client *api.Client, sa *iam.APIServiceAccount, out *output) error {
-	data, err := getConnectionSecretMap(ctx, client, sa)
-	if err != nil {
-		return err
-	}
-	stringData := map[string]string{}
-	for k, v := range data {
-		// skip kubeconfig as it's multiline and it does not format nicely. We
-		// have a separate flag to print it.
-		if k == iam.APIServiceAccountKubeconfigKey {
-			continue
-		}
-		stringData[k] = string(v)
-	}
-
-	switch out.Format {
-	case full:
-		out.writeTabRow("KEY", "VALUE")
-		fallthrough
-	case noHeader:
-		for _, key := range slices.Sorted(maps.Keys(stringData)) {
-			out.writeTabRow(key, stringData[key])
-		}
-		return out.tabWriter.Flush()
-	case yamlOut:
-		b, err := yaml.Marshal(stringData)
-		if err != nil {
-			return err
-		}
-		fmt.Print(string(b))
-	case jsonOut:
-		b, err := json.MarshalIndent(stringData, "", "  ")
-		if err != nil {
-			return err
-		}
-		fmt.Println(string(b))
-	}
 	return nil
 }
