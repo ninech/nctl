@@ -198,6 +198,7 @@ func kongVariables() (kong.Vars, error) {
 		create.PostgresKongVars(),
 		create.PostgresDatabaseKongVars(),
 		create.ServiceConnectionKongVars(),
+		create.BucketUserKongVars(),
 		auth.LoginKongVars(),
 		logs.KongVars(),
 	); err != nil {
