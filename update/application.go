@@ -35,9 +35,13 @@ type applicationCmd struct {
 	BasicAuth               *bool             `help:"Enable/Disable basic authentication for the application."`
 	ChangeBasicAuthPassword *bool             `help:"Generate a new basic auth password."`
 	Env                     map[string]string `help:"Environment variables which are passed to the app at runtime."`
+	SensitiveEnv            map[string]string `help:"Sensitive environment variables which are passed to the app at runtime."`
 	DeleteEnv               *[]string         `help:"Runtime environment variables names which are to be deleted."`
-	BuildEnv                map[string]string `help:"Environment variables names which are passed to the app build process."`
-	DeleteBuildEnv          *[]string         `help:"Build environment variables which are to be deleted."`
+
+	BuildEnv          map[string]string `help:"Environment variables names which are passed to the app build process."`
+	SensitiveBuildEnv map[string]string `help:"Sensitive environment variables names which are passed to the app build process."`
+	DeleteBuildEnv    *[]string         `help:"Build environment variables which are to be deleted."`
+
 	// DeployJob, ScheduledJob and WorkerJob are embedded pointers to
 	// structs. Due to the usage of kong these pointers will never be `nil`.
 	// So checking for `nil` values can not be used to find out if some of
@@ -263,32 +267,53 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 		app.Spec.ForProvider.Language = apps.Language(*cmd.Language)
 	}
 
-	runtimeEnv := make(map[string]string)
-	if cmd.Env != nil {
-		runtimeEnv = cmd.Env
+	runtimeEnv := cmd.Env
+	if runtimeEnv == nil {
+		runtimeEnv = make(map[string]string)
 	}
+
+	sensitiveRuntimeEnv := cmd.SensitiveEnv
+	if sensitiveRuntimeEnv == nil {
+		sensitiveRuntimeEnv = make(map[string]string)
+	}
+
 	if cmd.RetryRelease != nil && *cmd.RetryRelease {
 		runtimeEnv[ReleaseTrigger] = triggerTimestamp()
 	}
+
 	var delEnv []string
 	if cmd.DeleteEnv != nil {
 		delEnv = *cmd.DeleteEnv
 	}
-	app.Spec.ForProvider.Config.Env = util.UpdateEnvVars(app.Spec.ForProvider.Config.Env, runtimeEnv, delEnv)
 
-	buildEnv := make(map[string]string)
-	if cmd.BuildEnv != nil {
-		buildEnv = cmd.BuildEnv
+	app.Spec.ForProvider.Config.Env = util.UpdateEnvVars(app.Spec.ForProvider.Config.Env, runtimeEnv, sensitiveRuntimeEnv, delEnv)
+
+	// build env vars
+	buildEnv := cmd.BuildEnv
+	if buildEnv == nil {
+		buildEnv = make(map[string]string)
 	}
+
+	sensitiveBuildEnv := cmd.SensitiveBuildEnv
+	if sensitiveBuildEnv == nil {
+		sensitiveBuildEnv = make(map[string]string)
+	}
+
 	if cmd.RetryBuild != nil && *cmd.RetryBuild {
 		buildEnv[BuildTrigger] = triggerTimestamp()
 	}
-	var buildDelEnv []string
-	if cmd.DeleteBuildEnv != nil {
-		buildDelEnv = *cmd.DeleteBuildEnv
-	}
-	app.Spec.ForProvider.BuildEnv = util.UpdateEnvVars(app.Spec.ForProvider.BuildEnv, buildEnv, buildDelEnv)
 
+	var delBuildEnv []string
+	if cmd.DeleteBuildEnv != nil {
+		delBuildEnv = *cmd.DeleteBuildEnv
+	}
+
+	app.Spec.ForProvider.BuildEnv = util.UpdateEnvVars(
+		app.Spec.ForProvider.BuildEnv,
+		buildEnv,
+		sensitiveBuildEnv,
+		delBuildEnv,
+	)
 	if cmd.Pause != nil && *cmd.Pause {
 		app.Spec.ForProvider.Paused = *cmd.Pause
 	}
