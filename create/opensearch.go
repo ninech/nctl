@@ -14,11 +14,12 @@ import (
 
 type openSearchCmd struct {
 	resourceCmd
-	Location     string                        `help:"Location where the OpenSearch cluster is created." placeholder:"nine-es34"`
-	ClusterType  storage.OpenSearchClusterType `help:"ClusterType specifies the type of OpenSearch cluster to create. Options: single, multi" placeholder:"single"`
-	MachineType  string                        `help:"MachineType specifies the type of machine to use for the OpenSearch cluster." placeholder:"nine-search-s"`
-	AllowedCidrs []meta.IPv4CIDR               `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the cluster." placeholder:"203.0.113.1/32"`
-	BucketUsers  []string                      `help:"BucketUsers specify the users who have read access to the OpenSearch snapshots bucket." placeholder:"user1,user2"`
+	Location                string                        `help:"Location where the OpenSearch cluster is created." placeholder:"nine-es34"`
+	ClusterType             storage.OpenSearchClusterType `help:"ClusterType specifies the type of OpenSearch cluster to create. Options: single, multi" placeholder:"single"`
+	MachineType             string                        `help:"MachineType specifies the type of machine to use for the OpenSearch cluster." placeholder:"nine-search-s"`
+	AllowedCidrs            []meta.IPv4CIDR               `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the cluster. These restrictions do not apply for service connections." placeholder:"203.0.113.1/32"`
+	BucketUsers             []string                      `help:"BucketUsers specify the users who have read access to the OpenSearch snapshots bucket." placeholder:"user1,user2"`
+	PublicNetworkingEnabled *bool                         `help:"If public networking is \"false\", it is only possible to access the service by configuring a service connection." placeholder:"true"`
 }
 
 func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client) error {
@@ -66,11 +67,12 @@ func (cmd *openSearchCmd) newOpenSearch(namespace string) (*storage.OpenSearch, 
 				},
 			},
 			ForProvider: storage.OpenSearchParameters{
-				Location:     meta.LocationName(cmd.Location),
-				MachineType:  infra.NewMachineType(cmd.MachineType),
-				ClusterType:  cmd.ClusterType,
-				AllowedCIDRs: cmd.AllowedCidrs,
-				BucketUsers:  LocalReferences(cmd.BucketUsers),
+				Location:                meta.LocationName(cmd.Location),
+				MachineType:             infra.NewMachineType(cmd.MachineType),
+				ClusterType:             cmd.ClusterType,
+				AllowedCIDRs:            cmd.AllowedCidrs,
+				BucketUsers:             LocalReferences(cmd.BucketUsers),
+				PublicNetworkingEnabled: cmd.PublicNetworkingEnabled,
 			},
 		},
 	}
