@@ -15,9 +15,10 @@ import (
 type openSearchCmd struct {
 	resourceCmd
 	Location     string                        `help:"Location where the OpenSearch cluster is created." placeholder:"nine-es34"`
-	MachineType  string                        `help:"MachineType specifies the type of machine to use for the OpenSearch cluster." placeholder:"nine-search-s"`
 	ClusterType  storage.OpenSearchClusterType `help:"ClusterType specifies the type of OpenSearch cluster to create. Options: single, multi" placeholder:"single"`
+	MachineType  string                        `help:"MachineType specifies the type of machine to use for the OpenSearch cluster." placeholder:"nine-search-s"`
 	AllowedCidrs []meta.IPv4CIDR               `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the cluster." placeholder:"203.0.113.1/32"`
+	BucketUsers  []string                      `help:"BucketUsers specify the users who have read access to the OpenSearch snapshots bucket." placeholder:"user1,user2"`
 }
 
 func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client) error {
@@ -69,9 +70,20 @@ func (cmd *openSearchCmd) newOpenSearch(namespace string) (*storage.OpenSearch, 
 				MachineType:  infra.NewMachineType(cmd.MachineType),
 				ClusterType:  cmd.ClusterType,
 				AllowedCIDRs: cmd.AllowedCidrs,
+				BucketUsers:  LocalReferences(cmd.BucketUsers),
 			},
 		},
 	}
 
 	return openSearch, nil
+}
+
+// LocalReferences converts a slice of strings to []meta.LocalReference.
+func LocalReferences(s []string) []meta.LocalReference {
+	references := make([]meta.LocalReference, len(s))
+	for i, user := range s {
+		references[i] = meta.LocalReference{Name: user}
+	}
+
+	return references
 }
