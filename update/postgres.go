@@ -3,13 +3,14 @@ package update
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/internal/file"
+	"github.com/ninech/nctl/create"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -18,7 +19,7 @@ type postgresCmd struct {
 	MachineType      *string          `placeholder:"${postgres_machine_default}" help:"Defines the sizing for a particular PostgreSQL instance. Available types: ${postgres_machine_types}"`
 	AllowedCidrs     *[]meta.IPv4CIDR `placeholder:"203.0.113.1/32" help:"Specifies the IP addresses allowed to connect to the instance." `
 	SSHKeys          []storage.SSHKey `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups."`
-	SSHKeysFile      string           `help:"Path to a file containing a list of SSH public keys (see above), separated by newlines."`
+	SSHKeysFile      *os.File         `help:"Path to a file containing a list of SSH public keys (see above), separated by newlines. Lines prefixed with # are ignored."`
 	KeepDailyBackups *int             `placeholder:"${postgres_backup_retention_days}" help:"Number of daily database backups to keep. Note that setting this to 0, backup will be disabled and existing dumps deleted immediately."`
 }
 
@@ -36,11 +37,15 @@ func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client) error {
 			return fmt.Errorf("resource is of type %T, expected %T", current, storage.Postgres{})
 		}
 
-		sshkeys, err := file.ReadSSHKeys(cmd.SSHKeysFile)
-		if err != nil {
-			return fmt.Errorf("error when reading SSH keys file: %w", err)
+		if cmd.SSHKeysFile != nil {
+			defer cmd.SSHKeysFile.Close()
+
+			keys, err := create.ParseSSHKeys(cmd.SSHKeysFile)
+			if err != nil {
+				return err
+			}
+			cmd.SSHKeys = keys
 		}
-		cmd.SSHKeys = append(cmd.SSHKeys, sshkeys...)
 
 		cmd.applyUpdates(postgres)
 		return nil

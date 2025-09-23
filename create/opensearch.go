@@ -14,7 +14,7 @@ import (
 
 type openSearchCmd struct {
 	resourceCmd
-	Location                string                        `help:"Location where the OpenSearch cluster is created." placeholder:"nine-es34"`
+	Location                meta.LocationName             `help:"Location where the OpenSearch cluster is created." placeholder:"nine-es34"`
 	ClusterType             storage.OpenSearchClusterType `help:"ClusterType specifies the type of OpenSearch cluster to create. Options: single, multi" placeholder:"single"`
 	MachineType             string                        `help:"MachineType specifies the type of machine to use for the OpenSearch cluster." placeholder:"nine-search-s"`
 	AllowedCidrs            []meta.IPv4CIDR               `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the cluster. These restrictions do not apply for service connections." placeholder:"203.0.113.1/32"`
@@ -67,7 +67,7 @@ func (cmd *openSearchCmd) newOpenSearch(namespace string) (*storage.OpenSearch, 
 				},
 			},
 			ForProvider: storage.OpenSearchParameters{
-				Location:                meta.LocationName(cmd.Location),
+				Location:                cmd.Location,
 				MachineType:             infra.NewMachineType(cmd.MachineType),
 				ClusterType:             cmd.ClusterType,
 				AllowedCIDRs:            cmd.AllowedCidrs,

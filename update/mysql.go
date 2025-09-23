@@ -3,13 +3,14 @@ package update
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/internal/file"
+	"github.com/ninech/nctl/create"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -18,7 +19,7 @@ type mySQLCmd struct {
 	MachineType           *string                                 `placeholder:"${mysql_machine_default}" help:"Defines the sizing for a particular MySQL instance. Available types: ${mysql_machine_types}"`
 	AllowedCidrs          *[]meta.IPv4CIDR                        `placeholder:"203.0.113.1/32" help:"Specifies the IP addresses allowed to connect to the instance." `
 	SSHKeys               []storage.SSHKey                        `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups."`
-	SSHKeysFile           string                                  `help:"Path to a file containing a list of SSH public keys (see above), separated by newlines."`
+	SSHKeysFile           *os.File                                `help:"Path to a file containing a list of SSH public keys (see above), separated by newlines. Lines prefixed with # are ignored."`
 	SQLMode               *[]storage.MySQLMode                    `placeholder:"\"MODE1, MODE2, ...\"" help:"Configures the sql_mode setting. Modes affect the SQL syntax MySQL supports and the data validation checks it performs. Defaults to: ${mysql_mode}"`
 	CharacterSetName      *string                                 `placeholder:"${mysql_charset}" help:"Configures the character_set_server variable."`
 	CharacterSetCollation *string                                 `placeholder:"${mysql_collation}" help:"Configures the collation_server variable."`
@@ -42,11 +43,15 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
 			return fmt.Errorf("resource is of type %T, expected %T", current, storage.MySQL{})
 		}
 
-		sshkeys, err := file.ReadSSHKeys(cmd.SSHKeysFile)
-		if err != nil {
-			return fmt.Errorf("error when reading SSH keys file: %w", err)
+		if cmd.SSHKeysFile != nil {
+			defer cmd.SSHKeysFile.Close()
+
+			keys, err := create.ParseSSHKeys(cmd.SSHKeysFile)
+			if err != nil {
+				return err
+			}
+			cmd.SSHKeys = keys
 		}
-		cmd.SSHKeys = append(cmd.SSHKeys, sshkeys...)
 
 		cmd.applyUpdates(mysql)
 		return nil

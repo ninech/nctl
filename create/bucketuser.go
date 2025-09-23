@@ -18,7 +18,7 @@ import (
 
 type bucketUserCmd struct {
 	resourceCmd
-	Location string `placeholder:"${bucketuser_location_default}" help:"Location where the BucketUser instance is created.  Available locations are: ${bucketuser_location_options}"`
+	Location meta.LocationName `placeholder:"${bucketuser_location_default}" help:"Location where the BucketUser instance is created.  Available locations are: ${bucketuser_location_options}"`
 }
 
 func (cmd *bucketUserCmd) Run(ctx context.Context, client *api.Client) error {
@@ -64,7 +64,7 @@ func (cmd *bucketUserCmd) newBucketUser(namespace string) *storage.BucketUser {
 				},
 			},
 			ForProvider: storage.BucketUserParameters{
-				Location: meta.LocationName(cmd.Location),
+				Location: cmd.Location,
 			},
 		},
 	}
