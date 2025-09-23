@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 func TestCloudVM(t *testing.T) {
@@ -29,7 +30,7 @@ func TestCloudVM(t *testing.T) {
 		{
 			name: "disks",
 			create: cloudVMCmd{
-				Disks: map[string]string{"a": "1Gi"},
+				Disks: map[string]resource.Quantity{"a": resource.MustParse("1Gi")},
 			},
 			want: infrastructure.CloudVirtualMachineParameters{
 				Disks: []infrastructure.Disk{
@@ -39,7 +40,7 @@ func TestCloudVM(t *testing.T) {
 		},
 		{
 			name:   "bootDisk",
-			create: cloudVMCmd{BootDiskSize: "1Gi"},
+			create: cloudVMCmd{BootDiskSize: ptr.To(resource.MustParse("1Gi"))},
 			want: infrastructure.CloudVirtualMachineParameters{
 				BootDisk: &infrastructure.Disk{
 					Name: "root", Size: resource.MustParse("1Gi"),
