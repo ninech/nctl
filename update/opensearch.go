@@ -9,6 +9,7 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/create"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -16,7 +17,7 @@ type openSearchCmd struct {
 	resourceCmd
 	MachineType  *string          `help:"MachineType configures OpenSearch to use a specified machine type." placeholder:"nine-search-m"`
 	AllowedCidrs *[]meta.IPv4CIDR `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the cluster." placeholder:"203.0.113.1/32"`
-	BucketUsers  *[]string        `help:"BucketUsers specify the users who have read access to the OpenSearch bucket." placeholder:"user1,user2"`
+	BucketUsers  *[]string        `help:"BucketUsers specify the users who have read access to the OpenSearch snapshots bucket." placeholder:"user1,user2"`
 }
 
 func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client) error {
@@ -49,11 +50,7 @@ func (cmd *openSearchCmd) applyUpdates(openSearch *storage.OpenSearch) error {
 		openSearch.Spec.ForProvider.AllowedCIDRs = *cmd.AllowedCidrs
 	}
 	if cmd.BucketUsers != nil {
-		bucketUsers := make([]meta.LocalReference, len(*cmd.BucketUsers))
-		for i, user := range *cmd.BucketUsers {
-			bucketUsers[i] = meta.LocalReference{Name: user}
-		}
-		openSearch.Spec.ForProvider.BucketUsers = bucketUsers
+		openSearch.Spec.ForProvider.BucketUsers = create.LocalReferences(*cmd.BucketUsers)
 	}
 
 	return nil
