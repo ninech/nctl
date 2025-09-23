@@ -2,7 +2,9 @@ package create
 
 import (
 	"context"
+	"strings"
 
+	"github.com/alecthomas/kong"
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
@@ -13,11 +15,11 @@ import (
 
 type keyValueStoreCmd struct {
 	resourceCmd
-	Location                meta.LocationName                    `placeholder:"nine-es34" help:"Location where the KeyValueStore instance is created."`
-	MemorySize              *storage.KeyValueStoreMemorySize     `help:"MemorySize configures KeyValueStore to use a specified amount of memory for the data set." placeholder:"1Gi"`
-	MaxMemoryPolicy         storage.KeyValueStoreMaxMemoryPolicy `help:"MaxMemoryPolicy specifies the exact behavior KeyValueStore follows when the maxmemory limit is reached." placeholder:"allkeys-lru"`
-	AllowedCidrs            []meta.IPv4CIDR                      `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance. These restrictions do not apply for service connections." placeholder:"203.0.113.1/32"`
-	PublicNetworkingEnabled *bool                                `help:"If public networking is \"false\", it is only possible to access the service by configuring a service connection." placeholder:"true"`
+	Location                meta.LocationName                    `placeholder:"${keyvaluestore_location_default}" help:"Location where the KeyValueStore instance is created."`
+	MemorySize              *storage.KeyValueStoreMemorySize     `placeholder:"${keyvaluestore_memorysize_default}" help:"MemorySize configures KeyValueStore to use a specified amount of memory for the data set."`
+	MaxMemoryPolicy         storage.KeyValueStoreMaxMemoryPolicy `placeholder:"${keyvaluestore_maxmemorypolicy_default}" help:"MaxMemoryPolicy specifies the exact behavior KeyValueStore follows when the maxmemory limit is reached."`
+	AllowedCidrs            []meta.IPv4CIDR                      `placeholder:"203.0.113.1/32" help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance."`
+	PublicNetworkingEnabled *bool                                `placeholder:"true" help:"Specifies if the service should be available without service connection."`
 }
 
 func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client) error {
@@ -47,6 +49,17 @@ func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client) error 
 			return false, nil
 		},
 	})
+}
+
+// KeyValueStoreKongVars returns all variables which are used in the KeyValueStore
+// create command
+func KeyValueStoreKongVars() kong.Vars {
+	result := make(kong.Vars)
+	result["keyvaluestore_memorysize_default"] = storage.KeyValueStoreMemorySizeDefault
+	result["keyvaluestore_maxmemorypolicy_default"] = string(storage.KeyValueStoreMaxMemoryPolicyDefault)
+	result["keyvaluestore_location_options"] = strings.Join(stringSlice(storage.KeyValueStoreLocationOptions), ", ")
+	result["keyvaluestore_location_default"] = string(storage.KeyValueStoreLocationDefault)
+	return result
 }
 
 func (cmd *keyValueStoreCmd) newKeyValueStore(namespace string) (*storage.KeyValueStore, error) {

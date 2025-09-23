@@ -13,10 +13,10 @@ import (
 
 type keyValueStoreCmd struct {
 	resourceCmd
-	MemorySize              *storage.KeyValueStoreMemorySize      `help:"MemorySize configures KeyValueStore to use a specified amount of memory for the data set." placeholder:"1Gi"`
-	MaxMemoryPolicy         *storage.KeyValueStoreMaxMemoryPolicy `help:"MaxMemoryPolicy specifies the exact behavior KeyValueStore follows when the maxmemory limit is reached." placeholder:"allkeys-lru"`
-	AllowedCidrs            *[]meta.IPv4CIDR                      `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance. These restrictions do not apply for service connections." placeholder:"203.0.113.1/32"`
-	PublicNetworkingEnabled *bool                                 `help:"If public networking is \"false\", it is only possible to access the service by configuring a service connection." placeholder:"true"`
+	MemorySize              *storage.KeyValueStoreMemorySize      `placeholder:"${keyvaluestore_memorysize_default}" help:"MemorySize configures KeyValueStore to use a specified amount of memory for the data set."`
+	MaxMemoryPolicy         *storage.KeyValueStoreMaxMemoryPolicy `placeholder:"${keyvaluestore_maxmemorypolicy_default}" help:"MaxMemoryPolicy specifies the exact behavior KeyValueStore follows when the maxmemory limit is reached."`
+	AllowedCidrs            *[]meta.IPv4CIDR                      `placeholder:"203.0.113.1/32" help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance."`
+	PublicNetworkingEnabled *bool                                 `placeholder:"true" help:"Specifies if the service should be available without service connection."`
 }
 
 func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client) error {

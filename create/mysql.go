@@ -119,7 +119,7 @@ func (cmd *mySQLCmd) newMySQL(namespace string) *storage.MySQL {
 // create command
 func MySQLKongVars() kong.Vars {
 	result := make(kong.Vars)
-	result["mysql_machine_types"] = strings.Join(mtStringSlice(storage.MySQLMachineTypes), ", ")
+	result["mysql_machine_types"] = strings.Join(stringerSlice(storage.MySQLMachineTypes), ", ")
 	result["mysql_machine_default"] = storage.MySQLMachineTypeDefault.String()
 	result["mysql_location_options"] = strings.Join(storage.MySQLLocationOptions, ", ")
 	result["mysql_location_default"] = string(storage.MySQLLocationDefault)
@@ -153,12 +153,4 @@ func ParseSSHKeys(file *os.File) ([]storage.SSHKey, error) {
 	}
 
 	return keys, nil
-}
-
-func mtStringSlice(machineTypes []infra.MachineType) []string {
-	types := make([]string, len(machineTypes))
-	for i, machineType := range storage.MySQLMachineTypes {
-		types[i] = machineType.String()
-	}
-	return types
 }
