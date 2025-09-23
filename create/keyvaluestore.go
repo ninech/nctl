@@ -18,8 +18,8 @@ type keyValueStoreCmd struct {
 	Location                string                               `placeholder:"nine-es34" help:"Location where the KeyValueStore instance is created."`
 	MemorySize              string                               `help:"MemorySize configures KeyValueStore to use a specified amount of memory for the data set." placeholder:"1Gi"`
 	MaxMemoryPolicy         storage.KeyValueStoreMaxMemoryPolicy `help:"MaxMemoryPolicy specifies the exact behavior KeyValueStore follows when the maxmemory limit is reached." placeholder:"allkeys-lru"`
-	AllowedCidrs            []meta.IPv4CIDR                      `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance." placeholder:"203.0.113.1/32"`
-	PublicNetworkingEnabled *bool                                `help:"Specifies if the service should be available without service connection." placeholder:"true"`
+	AllowedCidrs            []meta.IPv4CIDR                      `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance. These restrictions do not apply for service connections." placeholder:"203.0.113.1/32"`
+	PublicNetworkingEnabled *bool                                `help:"If public networking is \"false\", it is only possible to access the service by configuring a service connection." placeholder:"true"`
 }
 
 func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client) error {

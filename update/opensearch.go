@@ -15,9 +15,10 @@ import (
 
 type openSearchCmd struct {
 	resourceCmd
-	MachineType  *string          `help:"MachineType configures OpenSearch to use a specified machine type." placeholder:"nine-search-m"`
-	AllowedCidrs *[]meta.IPv4CIDR `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the cluster." placeholder:"203.0.113.1/32"`
-	BucketUsers  *[]string        `help:"BucketUsers specify the users who have read access to the OpenSearch snapshots bucket." placeholder:"user1,user2"`
+	MachineType             *string          `help:"MachineType configures OpenSearch to use a specified machine type." placeholder:"nine-search-m"`
+	AllowedCidrs            *[]meta.IPv4CIDR `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the cluster. These restrictions do not apply for service connections." placeholder:"203.0.113.1/32"`
+	BucketUsers             *[]string        `help:"BucketUsers specify the users who have read access to the OpenSearch snapshots bucket." placeholder:"user1,user2"`
+	PublicNetworkingEnabled *bool            `help:"If public networking is \"false\", it is only possible to access the service by configuring a service connection." placeholder:"true"`
 }
 
 func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client) error {
@@ -42,15 +43,18 @@ func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client) error {
 	}).Update(ctx)
 }
 
-func (cmd *openSearchCmd) applyUpdates(openSearch *storage.OpenSearch) error {
+func (cmd *openSearchCmd) applyUpdates(os *storage.OpenSearch) error {
 	if cmd.MachineType != nil {
-		openSearch.Spec.ForProvider.MachineType = infra.NewMachineType(*cmd.MachineType)
+		os.Spec.ForProvider.MachineType = infra.NewMachineType(*cmd.MachineType)
 	}
 	if cmd.AllowedCidrs != nil {
-		openSearch.Spec.ForProvider.AllowedCIDRs = *cmd.AllowedCidrs
+		os.Spec.ForProvider.AllowedCIDRs = *cmd.AllowedCidrs
 	}
 	if cmd.BucketUsers != nil {
-		openSearch.Spec.ForProvider.BucketUsers = create.LocalReferences(*cmd.BucketUsers)
+		os.Spec.ForProvider.BucketUsers = create.LocalReferences(*cmd.BucketUsers)
+	}
+	if cmd.PublicNetworkingEnabled != nil {
+		os.Spec.ForProvider.PublicNetworkingEnabled = cmd.PublicNetworkingEnabled
 	}
 
 	return nil
