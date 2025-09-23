@@ -18,18 +18,18 @@ import (
 
 type cloudVMCmd struct {
 	resourceCmd
-	Location            string            `default:"nine-es34" help:"Location where the CloudVM instance is created."`
-	MachineType         string            `default:"" help:"The machine type defines the sizing for a particular CloudVM."`
-	Hostname            string            `default:"" help:"Hostname allows to set the hostname explicitly. If unset, the name of the resource will be used as the hostname. This does not affect the DNS name."`
-	ReverseDNS          string            `default:"" help:"Allows to set the reverse DNS of the CloudVM"`
-	PowerState          string            `default:"on" help:"Specify the initial power state of the CloudVM. Set to off to create "`
-	OS                  string            `default:"" help:"OS which should be used to boot the VM. Available options: ${cloudvm_os_flavors}"`
-	BootDiskSize        string            `default:"20Gi" help:"Configures the size of the boot disk."`
-	Disks               map[string]string `default:"" help:"Disks specifies which additional disks to mount to the machine."`
-	PublicKeys          []string          `default:"" help:"SSH public keys that can be used to connect to the CloudVM as root. The keys are expected to be in SSH format as defined in RFC4253. Immutable after creation."`
-	PublicKeysFromFiles []string          `default:"" predictor:"file" help:"SSH public key files that can be used to connect to the VM as root. The keys are expected to be in SSH format as defined in RFC4253. Immutable after creation."`
-	CloudConfig         string            `default:"" help:"CloudConfig allows to pass custom cloud config data (https://cloudinit.readthedocs.io/en/latest/topics/format.html#cloud-config-data) to the cloud VM. If a CloudConfig is passed, the PublicKey parameter is ignored. Immutable after creation."`
-	CloudConfigFromFile string            `default:"" predictor:"file" help:"CloudConfig via file. Has precedence over args. CloudConfig allows to pass custom cloud config data (https://cloudinit.readthedocs.io/en/latest/topics/format.html#cloud-config-data) to the cloud VM. If a CloudConfig is passed, the PublicKey parameter is ignored. Immutable after creation."`
+	Location            string                       `default:"nine-es34" help:"Location where the CloudVM instance is created."`
+	MachineType         string                       `default:"" help:"The machine type defines the sizing for a particular CloudVM."`
+	Hostname            string                       `default:"" help:"Hostname allows to set the hostname explicitly. If unset, the name of the resource will be used as the hostname. This does not affect the DNS name."`
+	ReverseDNS          string                       `default:"" help:"Allows to set the reverse DNS of the CloudVM"`
+	PowerState          string                       `default:"on" help:"Specify the initial power state of the CloudVM. Set to off to create "`
+	OS                  string                       `default:"" help:"OS which should be used to boot the VM. Available options: ${cloudvm_os_flavors}"`
+	BootDiskSize        *resource.Quantity           `default:"20Gi" help:"Configures the size of the boot disk."`
+	Disks               map[string]resource.Quantity `default:"" help:"Disks specifies which additional disks to mount to the machine."`
+	PublicKeys          []string                     `default:"" help:"SSH public keys that can be used to connect to the CloudVM as root. The keys are expected to be in SSH format as defined in RFC4253. Immutable after creation."`
+	PublicKeysFromFiles []string                     `default:"" predictor:"file" help:"SSH public key files that can be used to connect to the VM as root. The keys are expected to be in SSH format as defined in RFC4253. Immutable after creation."`
+	CloudConfig         string                       `default:"" help:"CloudConfig allows to pass custom cloud config data (https://cloudinit.readthedocs.io/en/latest/topics/format.html#cloud-config-data) to the cloud VM. If a CloudConfig is passed, the PublicKey parameter is ignored. Immutable after creation."`
+	CloudConfigFromFile string                       `default:"" predictor:"file" help:"CloudConfig via file. Has precedence over args. CloudConfig allows to pass custom cloud config data (https://cloudinit.readthedocs.io/en/latest/topics/format.html#cloud-config-data) to the cloud VM. If a CloudConfig is passed, the PublicKey parameter is ignored. Immutable after creation."`
 }
 
 func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {
@@ -120,22 +120,13 @@ func (cmd *cloudVMCmd) newCloudVM(namespace string) (*infrastructure.CloudVirtua
 	if len(cmd.Disks) != 0 {
 		disks := []infrastructure.Disk{}
 		for name, size := range cmd.Disks {
-			q, err := resource.ParseQuantity(size)
-			if err != nil {
-				return nil, fmt.Errorf("error parsing disk size %q: %w", size, err)
-			}
-			disks = append(disks, infrastructure.Disk{Name: name, Size: q})
+			disks = append(disks, infrastructure.Disk{Name: name, Size: size})
 		}
 		cloudVM.Spec.ForProvider.Disks = disks
 	}
 
-	if len(cmd.BootDiskSize) != 0 {
-		q, err := resource.ParseQuantity(cmd.BootDiskSize)
-		if err != nil {
-			return cloudVM, fmt.Errorf("error parsing disk size %q: %w", cmd.BootDiskSize, err)
-		}
-		cloudVM.Spec.ForProvider.BootDisk = &infrastructure.Disk{Name: "root", Size: q}
-
+	if cmd.BootDiskSize != nil {
+		cloudVM.Spec.ForProvider.BootDisk = &infrastructure.Disk{Name: "root", Size: *cmd.BootDiskSize}
 	}
 
 	return cloudVM, nil

@@ -28,21 +28,14 @@ func TestKeyValueStore(t *testing.T) {
 		},
 		{
 			name:   "memorySize upgrade",
-			update: keyValueStoreCmd{MemorySize: ptr.To("1G")},
+			update: keyValueStoreCmd{MemorySize: ptr.To(storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("1G")})},
 			want:   storage.KeyValueStoreParameters{MemorySize: memorySize("1G")},
 		},
 		{
 			name:   "memorySize downgrade",
 			create: storage.KeyValueStoreParameters{MemorySize: memorySize("2G")},
-			update: keyValueStoreCmd{MemorySize: ptr.To("1G")},
+			update: keyValueStoreCmd{MemorySize: ptr.To(storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("1G")})},
 			want:   storage.KeyValueStoreParameters{MemorySize: memorySize("1G")},
-		},
-		{
-			name:    "invalid",
-			create:  storage.KeyValueStoreParameters{MemorySize: memorySize("2G")},
-			update:  keyValueStoreCmd{MemorySize: ptr.To("invalid")},
-			want:    storage.KeyValueStoreParameters{MemorySize: memorySize("2G")},
-			wantErr: true,
 		},
 		{
 			name: "maxMemoryPolicy-to-noeviction",
@@ -91,7 +84,7 @@ func TestKeyValueStore(t *testing.T) {
 			create: storage.KeyValueStoreParameters{
 				AllowedCIDRs: []meta.IPv4CIDR{"0.0.0.0/0"},
 			},
-			update: keyValueStoreCmd{MemorySize: ptr.To("1G")},
+			update: keyValueStoreCmd{MemorySize: ptr.To(storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("1G")})},
 			want: storage.KeyValueStoreParameters{
 				MemorySize:   memorySize("1G"),
 				AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")},

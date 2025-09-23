@@ -29,7 +29,7 @@ func TestKeyValueStore(t *testing.T) {
 		},
 		{
 			name:   "memorySize",
-			create: keyValueStoreCmd{MemorySize: "1G"},
+			create: keyValueStoreCmd{MemorySize: ptr.To(storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("1G")})},
 			want: storage.KeyValueStoreParameters{
 				MemorySize: &storage.KeyValueStoreMemorySize{
 					Quantity: resource.MustParse("1G"),
@@ -62,12 +62,6 @@ func TestKeyValueStore(t *testing.T) {
 			want: storage.KeyValueStoreParameters{
 				PublicNetworkingEnabled: ptr.To(true),
 			},
-		},
-		{
-			name:    "invalid",
-			create:  keyValueStoreCmd{MemorySize: "invalid"},
-			want:    storage.KeyValueStoreParameters{},
-			wantErr: true,
 		},
 	}
 	for _, tt := range tests {

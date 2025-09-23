@@ -2,13 +2,11 @@ package create
 
 import (
 	"context"
-	"fmt"
 
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 )
@@ -16,7 +14,7 @@ import (
 type keyValueStoreCmd struct {
 	resourceCmd
 	Location                string                               `placeholder:"nine-es34" help:"Location where the KeyValueStore instance is created."`
-	MemorySize              string                               `help:"MemorySize configures KeyValueStore to use a specified amount of memory for the data set." placeholder:"1Gi"`
+	MemorySize              *storage.KeyValueStoreMemorySize     `help:"MemorySize configures KeyValueStore to use a specified amount of memory for the data set." placeholder:"1Gi"`
 	MaxMemoryPolicy         storage.KeyValueStoreMaxMemoryPolicy `help:"MaxMemoryPolicy specifies the exact behavior KeyValueStore follows when the maxmemory limit is reached." placeholder:"allkeys-lru"`
 	AllowedCidrs            []meta.IPv4CIDR                      `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance. These restrictions do not apply for service connections." placeholder:"203.0.113.1/32"`
 	PublicNetworkingEnabled *bool                                `help:"If public networking is \"false\", it is only possible to access the service by configuring a service connection." placeholder:"true"`
@@ -71,17 +69,9 @@ func (cmd *keyValueStoreCmd) newKeyValueStore(namespace string) (*storage.KeyVal
 				MaxMemoryPolicy:         cmd.MaxMemoryPolicy,
 				AllowedCIDRs:            cmd.AllowedCidrs,
 				PublicNetworkingEnabled: cmd.PublicNetworkingEnabled,
+				MemorySize:              cmd.MemorySize,
 			},
 		},
-	}
-
-	if cmd.MemorySize != "" {
-		q, err := resource.ParseQuantity(cmd.MemorySize)
-		if err != nil {
-			return keyValueStore, fmt.Errorf("error parsing memory size %q: %w", cmd.MemorySize, err)
-		}
-
-		keyValueStore.Spec.ForProvider.MemorySize = &storage.KeyValueStoreMemorySize{Quantity: q}
 	}
 
 	return keyValueStore, nil
