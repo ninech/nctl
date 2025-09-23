@@ -3,6 +3,7 @@ package get
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	storage "github.com/ninech/apis/storage/v1alpha1"
@@ -47,11 +48,11 @@ func (cmd *postgresCmd) printPostgresInstances(resources resource.ManagedList, g
 	}
 
 	if header {
-		get.writeHeader("NAME", "FQDN", "LOCATION", "MACHINE TYPE")
+		get.writeHeader("NAME", "LOCATION", "VERSION", "FQDN", "MACHINE TYPE", "DISK SIZE", "DATABASES")
 	}
 
 	for _, db := range dbs.Items {
-		get.writeTabRow(db.Namespace, db.Name, db.Status.AtProvider.FQDN, string(db.Spec.ForProvider.Location), db.Spec.ForProvider.MachineType.String())
+		get.writeTabRow(db.Namespace, db.Name, string(db.Spec.ForProvider.Location), string(db.Spec.ForProvider.Version), db.Status.AtProvider.FQDN, db.Spec.ForProvider.MachineType.String(), db.Status.AtProvider.Size.String(), strconv.Itoa(len(db.Status.AtProvider.Databases)))
 	}
 
 	return get.tabWriter.Flush()

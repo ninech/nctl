@@ -52,11 +52,11 @@ func (cmd *cloudVMCmd) print(ctx context.Context, client *api.Client, list clien
 
 func (cmd *cloudVMCmd) printCloudVirtualMachineInstances(list []infrastructure.CloudVirtualMachine, out *output, header bool) error {
 	if header {
-		out.writeHeader("NAME", "FQDN", "POWER STATE", "IP ADDRESS")
+		out.writeHeader("NAME", "LOCATION", "FQDN", "POWER STATE", "IP ADDRESS")
 	}
 
-	for _, cloudvm := range list {
-		out.writeTabRow(cloudvm.Namespace, cloudvm.Name, cloudvm.Status.AtProvider.FQDN, string(cloudvm.Status.AtProvider.PowerState), cloudvm.Status.AtProvider.IPAddress)
+	for _, vm := range list {
+		out.writeTabRow(vm.Namespace, vm.Name, string(vm.Spec.ForProvider.Location), vm.Status.AtProvider.FQDN, string(vm.Status.AtProvider.PowerState), vm.Status.AtProvider.IPAddress)
 	}
 
 	return out.tabWriter.Flush()
