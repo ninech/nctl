@@ -63,11 +63,11 @@ func (cmd *keyValueStoreCmd) print(ctx context.Context, client *api.Client, list
 
 func (cmd *keyValueStoreCmd) printKeyValueStoreInstances(list []storage.KeyValueStore, out *output, header bool) error {
 	if header {
-		out.writeHeader("NAME", "FQDN", "TLS", "MEMORY SIZE")
+		out.writeHeader("NAME", "LOCATION", "VERSION", "FQDN", "MEMORY POLICY", "MEMORY SIZE")
 	}
 
-	for _, keyValueStore := range list {
-		out.writeTabRow(keyValueStore.Namespace, keyValueStore.Name, keyValueStore.Status.AtProvider.FQDN, "true", keyValueStore.Spec.ForProvider.MemorySize.String())
+	for _, kvs := range list {
+		out.writeTabRow(kvs.Namespace, kvs.Name, string(kvs.Spec.ForProvider.Location), string(kvs.Spec.ForProvider.Version), kvs.Status.AtProvider.FQDN, string(kvs.Spec.ForProvider.MaxMemoryPolicy), kvs.Spec.ForProvider.MemorySize.String())
 	}
 
 	return out.tabWriter.Flush()

@@ -58,7 +58,7 @@ func (cmd *clustersCmd) print(ctx context.Context, client *api.Client, list clie
 
 func printClusters(clusters []infrastructure.KubernetesCluster, out *output, header bool) error {
 	if header {
-		out.writeHeader("NAME", "PROVIDER", "NUM_NODES")
+		out.writeHeader("NAME", "LOCATION", "PROVIDER", "NODES")
 	}
 
 	for _, cluster := range clusters {
@@ -75,7 +75,7 @@ func printClusters(clusters []infrastructure.KubernetesCluster, out *output, hea
 		if cluster.Spec.ForProvider.VCluster != nil {
 			provider = "vcluster"
 		}
-		out.writeTabRow(cluster.Namespace, cluster.Name, provider, strconv.Itoa(numNodes))
+		out.writeTabRow(cluster.Namespace, cluster.Name, string(cluster.Spec.ForProvider.Location), provider, strconv.Itoa(numNodes))
 	}
 
 	return out.tabWriter.Flush()

@@ -76,18 +76,20 @@ func (cmd *openSearchCmd) print(ctx context.Context, client *api.Client, list cl
 
 func (cmd *openSearchCmd) printOpenSearchInstances(list []storage.OpenSearch, out *output, header bool) error {
 	if header {
-		out.writeHeader("NAME", "FQDN", "MACHINE TYPE", "CLUSTER TYPE", "DISK SIZE", "HEALTH")
+		out.writeHeader("NAME", "LOCATION", "VERSION", "FQDN", "MACHINE TYPE", "CLUSTER TYPE", "DISK SIZE", "HEALTH")
 	}
 
-	for _, openSearch := range list {
+	for _, os := range list {
 		out.writeTabRow(
-			openSearch.Namespace,
-			openSearch.Name,
-			openSearch.Status.AtProvider.FQDN,
-			openSearch.Spec.ForProvider.MachineType.String(),
-			string(openSearch.Spec.ForProvider.ClusterType),
-			openSearch.Status.AtProvider.DiskSize.String(),
-			string(cmd.getClusterHealth(openSearch.Status.AtProvider.ClusterHealth)),
+			os.Namespace,
+			os.Name,
+			string(os.Spec.ForProvider.Location),
+			string(os.Spec.ForProvider.Version),
+			os.Status.AtProvider.FQDN,
+			os.Spec.ForProvider.MachineType.String(),
+			string(os.Spec.ForProvider.ClusterType),
+			os.Status.AtProvider.DiskSize.String(),
+			string(cmd.getClusterHealth(os.Status.AtProvider.ClusterHealth)),
 		)
 	}
 
