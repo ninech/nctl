@@ -2,7 +2,9 @@ package create
 
 import (
 	"context"
+	"strings"
 
+	"github.com/alecthomas/kong"
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
@@ -14,12 +16,12 @@ import (
 
 type openSearchCmd struct {
 	resourceCmd
-	Location                meta.LocationName             `help:"Location where the OpenSearch cluster is created." placeholder:"nine-es34"`
-	ClusterType             storage.OpenSearchClusterType `help:"ClusterType specifies the type of OpenSearch cluster to create. Options: single, multi" placeholder:"single"`
-	MachineType             string                        `help:"MachineType specifies the type of machine to use for the OpenSearch cluster." placeholder:"nine-search-s"`
-	AllowedCidrs            []meta.IPv4CIDR               `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the cluster. These restrictions do not apply for service connections." placeholder:"203.0.113.1/32"`
-	BucketUsers             []string                      `help:"BucketUsers specify the users who have read access to the OpenSearch snapshots bucket." placeholder:"user1,user2"`
-	PublicNetworkingEnabled *bool                         `help:"If public networking is \"false\", it is only possible to access the service by configuring a service connection." placeholder:"true"`
+	Location                meta.LocationName             `placeholder:"${opensearch_location_default}" help:"Location where the OpenSearch cluster is created. Available locations are: ${opensearch_location_options}"`
+	ClusterType             storage.OpenSearchClusterType `placeholder:"${opensearch_cluster_type_default}" help:"ClusterType specifies the type of OpenSearch cluster to create. Available types: ${opensearch_cluster_types}"`
+	MachineType             string                        `placeholder:"${opensearch_machine_type_default}" help:"MachineType specifies the type of machine to use for the OpenSearch cluster. Available types: ${opensearch_machine_types}"`
+	AllowedCidrs            []meta.IPv4CIDR               `placeholder:"203.0.113.1/32" help:"AllowedCIDRs specify the allowed IP addresses, connecting to the cluster."`
+	BucketUsers             []string                      `placeholder:"user1,user2" help:"BucketUsers specify the users who have read access to the OpenSearch snapshots bucket."`
+	PublicNetworkingEnabled *bool                         `help:"If public networking is \"false\", it is only possible to access the service by configuring a service connection."`
 }
 
 func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client) error {
@@ -49,6 +51,20 @@ func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client) error {
 			return false, nil
 		},
 	})
+}
+
+// OpenSearchKongVars returns all variables which are used in the OpenSearch
+// create command
+func OpenSearchKongVars() kong.Vars {
+	result := make(kong.Vars)
+	result["opensearch_machine_types"] = strings.Join(stringerSlice(storage.OpenSearchMachineTypes), ", ")
+	result["opensearch_machine_type_default"] = storage.OpenSearchMachineTypeDefault.String()
+	result["opensearch_cluster_types"] = strings.Join(stringSlice(storage.OpenSearchClusterTypes), ", ")
+	result["opensearch_cluster_type_default"] = string(storage.OpenSearchClusterTypeDefault)
+	result["opensearch_location_options"] = strings.Join(stringSlice(storage.OpenSearchLocationOptions), ", ")
+	result["opensearch_location_default"] = string(storage.OpenSearchLocationDefault)
+	result["opensearch_user"] = string(storage.OpenSearchUser)
+	return result
 }
 
 func (cmd *openSearchCmd) newOpenSearch(namespace string) (*storage.OpenSearch, error) {

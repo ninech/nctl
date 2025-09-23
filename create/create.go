@@ -260,10 +260,20 @@ func getName(name string) string {
 	return codename.Generate(rand.New(rand.NewSource(time.Now().UnixNano())), 0)
 }
 
+// stringSlice converts a slice of string like elements to a slice of strings.
 func stringSlice[K ~string](elems []K) []string {
 	s := make([]string, 0, len(elems))
 	for _, elem := range elems {
 		s = append(s, string(elem))
 	}
 	return s
+}
+
+// stringerSlice converts a slice of elements implementing [fmt.Stringer] to a slice of strings.
+func stringerSlice[T fmt.Stringer](slice []T) []string {
+	strings := make([]string, 0, len(slice))
+	for _, e := range slice {
+		strings = append(strings, e.String())
+	}
+	return strings
 }

@@ -197,6 +197,8 @@ func kongVariables() (kong.Vars, error) {
 		create.MySQLDatabaseKongVars(),
 		create.PostgresKongVars(),
 		create.PostgresDatabaseKongVars(),
+		create.KeyValueStoreKongVars(),
+		create.OpenSearchKongVars(),
 		create.ServiceConnectionKongVars(),
 		create.BucketUserKongVars(),
 		auth.LoginKongVars(),
