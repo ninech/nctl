@@ -13,7 +13,7 @@ import (
 
 type keyValueStoreCmd struct {
 	resourceCmd
-	Location                string                               `placeholder:"nine-es34" help:"Location where the KeyValueStore instance is created."`
+	Location                meta.LocationName                    `placeholder:"nine-es34" help:"Location where the KeyValueStore instance is created."`
 	MemorySize              *storage.KeyValueStoreMemorySize     `help:"MemorySize configures KeyValueStore to use a specified amount of memory for the data set." placeholder:"1Gi"`
 	MaxMemoryPolicy         storage.KeyValueStoreMaxMemoryPolicy `help:"MaxMemoryPolicy specifies the exact behavior KeyValueStore follows when the maxmemory limit is reached." placeholder:"allkeys-lru"`
 	AllowedCidrs            []meta.IPv4CIDR                      `help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance. These restrictions do not apply for service connections." placeholder:"203.0.113.1/32"`
@@ -65,7 +65,7 @@ func (cmd *keyValueStoreCmd) newKeyValueStore(namespace string) (*storage.KeyVal
 				},
 			},
 			ForProvider: storage.KeyValueStoreParameters{
-				Location:                meta.LocationName(cmd.Location),
+				Location:                cmd.Location,
 				MaxMemoryPolicy:         cmd.MaxMemoryPolicy,
 				AllowedCIDRs:            cmd.AllowedCidrs,
 				PublicNetworkingEnabled: cmd.PublicNetworkingEnabled,

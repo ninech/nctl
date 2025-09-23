@@ -18,7 +18,7 @@ import (
 
 type cloudVMCmd struct {
 	resourceCmd
-	Location            string                       `default:"nine-es34" help:"Location where the CloudVM instance is created."`
+	Location            meta.LocationName            `default:"nine-es34" help:"Location where the CloudVM instance is created."`
 	MachineType         string                       `default:"" help:"The machine type defines the sizing for a particular CloudVM."`
 	Hostname            string                       `default:"" help:"Hostname allows to set the hostname explicitly. If unset, the name of the resource will be used as the hostname. This does not affect the DNS name."`
 	ReverseDNS          string                       `default:"" help:"Allows to set the reverse DNS of the CloudVM"`
@@ -84,7 +84,7 @@ func (cmd *cloudVMCmd) newCloudVM(namespace string) (*infrastructure.CloudVirtua
 				},
 			},
 			ForProvider: infrastructure.CloudVirtualMachineParameters{
-				Location:    meta.LocationName(cmd.Location),
+				Location:    cmd.Location,
 				MachineType: infrastructure.NewMachineType(cmd.MachineType),
 				Hostname:    cmd.Hostname,
 				PowerState:  infrastructure.VirtualMachinePowerState(cmd.PowerState),
