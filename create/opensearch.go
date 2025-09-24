@@ -2,6 +2,7 @@ package create
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/alecthomas/kong"
@@ -20,7 +21,7 @@ type openSearchCmd struct {
 	ClusterType      storage.OpenSearchClusterType `placeholder:"${opensearch_cluster_type_default}" help:"Type of cluster. Available types: ${opensearch_cluster_types}"`
 	MachineType      string                        `placeholder:"${opensearch_machine_type_default}" help:"Defines the sizing of an OpenSearch instance. Available types: ${opensearch_machine_types}"`
 	AllowedCidrs     []meta.IPv4CIDR               `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the public endpoint."`
-	BucketUsers      []string                      `placeholder:"user1,user2" help:"BucketUsers specify the users who have read access to the OpenSearch snapshots bucket."`
+	BucketUsers      []LocalReference              `placeholder:"user1,user2" help:"BucketUsers specify the users who have read access to the OpenSearch snapshots bucket."`
 	PublicNetworking *bool                         `negatable:"" help:"Enable or disable public networking. Enabled by default."`
 
 	// Deprecated Flags
@@ -78,6 +79,11 @@ func (cmd *openSearchCmd) newOpenSearch(namespace string) (*storage.OpenSearch, 
 		publicNetworking = cmd.PublicNetworkingEnabled
 	}
 
+	bucketUsers := make([]meta.LocalReference, 0, len(cmd.BucketUsers))
+	for _, user := range cmd.BucketUsers {
+		bucketUsers = append(bucketUsers, user.LocalReference)
+	}
+
 	openSearch := &storage.OpenSearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -95,7 +101,7 @@ func (cmd *openSearchCmd) newOpenSearch(namespace string) (*storage.OpenSearch, 
 				MachineType:             infra.NewMachineType(cmd.MachineType),
 				ClusterType:             cmd.ClusterType,
 				AllowedCIDRs:            cmd.AllowedCidrs,
-				BucketUsers:             LocalReferences(cmd.BucketUsers),
+				BucketUsers:             bucketUsers,
 				PublicNetworkingEnabled: publicNetworking,
 			},
 		},
@@ -104,12 +110,19 @@ func (cmd *openSearchCmd) newOpenSearch(namespace string) (*storage.OpenSearch, 
 	return openSearch, nil
 }
 
-// LocalReferences converts a slice of strings to []meta.LocalReference.
-func LocalReferences(s []string) []meta.LocalReference {
-	references := make([]meta.LocalReference, len(s))
-	for i, user := range s {
-		references[i] = meta.LocalReference{Name: user}
+// LocalReference references another object in the same namespace.
+type LocalReference struct {
+	meta.LocalReference
+}
+
+// UnmarshalText parses a local reference from a string.
+func (r *LocalReference) UnmarshalText(text []byte) error {
+	name := strings.TrimSpace(string(text))
+	if name == "" {
+		return fmt.Errorf("reference unmarshal error: got %q", text)
 	}
 
-	return references
+	r.Name = name
+
+	return nil
 }

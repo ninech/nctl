@@ -8,6 +8,7 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/create"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	"k8s.io/utils/ptr"
@@ -55,8 +56,11 @@ func TestOpenSearch(t *testing.T) {
 			},
 		},
 		{
-			name:   "bucket-users-set",
-			update: openSearchCmd{BucketUsers: &[]string{"user1", "user2"}},
+			name: "bucket-users-set",
+			update: openSearchCmd{BucketUsers: &[]create.LocalReference{
+				{LocalReference: meta.LocalReference{Name: "user1"}},
+				{LocalReference: meta.LocalReference{Name: "user2"}},
+			}},
 			want: storage.OpenSearchParameters{
 				BucketUsers: []meta.LocalReference{{Name: "user1"}, {Name: "user2"}},
 			},

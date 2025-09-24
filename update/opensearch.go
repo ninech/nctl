@@ -15,10 +15,10 @@ import (
 
 type openSearchCmd struct {
 	resourceCmd
-	MachineType      *string          `help:"Configures OpenSearch to use a specified machine type." placeholder:"nine-search-m"`
-	AllowedCidrs     *[]meta.IPv4CIDR `help:"IP addresses allowed to connect to the cluster. These restrictions do not apply for service connections." placeholder:"203.0.113.1/32"`
-	BucketUsers      *[]string        `help:"Users who have read access to the OpenSearch snapshots bucket." placeholder:"user1,user2"`
-	PublicNetworking *bool            `negatable:"" help:"Enable or disable public networking."`
+	MachineType      *string                  `help:"Configures OpenSearch to use a specified machine type." placeholder:"nine-search-m"`
+	AllowedCidrs     *[]meta.IPv4CIDR         `help:"IP addresses allowed to connect to the cluster. These restrictions do not apply for service connections." placeholder:"203.0.113.1/32"`
+	BucketUsers      *[]create.LocalReference `help:"Users who have read access to the OpenSearch snapshots bucket." placeholder:"user1,user2"`
+	PublicNetworking *bool                    `negatable:"" help:"Enable or disable public networking."`
 
 	// Deprecated Flags
 	PublicNetworkingEnabled *bool `hidden:"" help:"If public networking is \"false\", it is only possible to access the service by configuring a service connection."`
@@ -50,7 +50,12 @@ func (cmd *openSearchCmd) applyUpdates(os *storage.OpenSearch) error {
 		os.Spec.ForProvider.AllowedCIDRs = *cmd.AllowedCidrs
 	}
 	if cmd.BucketUsers != nil {
-		os.Spec.ForProvider.BucketUsers = create.LocalReferences(*cmd.BucketUsers)
+		bucketUsers := make([]meta.LocalReference, 0, len(*cmd.BucketUsers))
+		for _, user := range *cmd.BucketUsers {
+			bucketUsers = append(bucketUsers, user.LocalReference)
+		}
+
+		os.Spec.ForProvider.BucketUsers = bucketUsers
 	}
 
 	publicNetworking := cmd.PublicNetworking
