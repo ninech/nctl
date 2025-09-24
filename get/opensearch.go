@@ -76,7 +76,7 @@ func (cmd *openSearchCmd) print(ctx context.Context, client *api.Client, list cl
 
 func (cmd *openSearchCmd) printOpenSearchInstances(list []storage.OpenSearch, out *output, header bool) error {
 	if header {
-		out.writeHeader("NAME", "LOCATION", "VERSION", "FQDN", "MACHINE TYPE", "CLUSTER TYPE", "DISK SIZE", "HEALTH")
+		out.writeHeader("NAME", "LOCATION", "VERSION", "PRIVATE URL", "PUBLIC URL", "MACHINE TYPE", "CLUSTER TYPE", "DISK SIZE", "HEALTH")
 	}
 
 	for _, os := range list {
@@ -85,7 +85,8 @@ func (cmd *openSearchCmd) printOpenSearchInstances(list []storage.OpenSearch, ou
 			os.Name,
 			string(os.Spec.ForProvider.Location),
 			string(os.Spec.ForProvider.Version),
-			os.Status.AtProvider.FQDN,
+			string(os.Status.AtProvider.PrivateNetworkingURL),
+			string(os.Status.AtProvider.URL),
 			os.Spec.ForProvider.MachineType.String(),
 			string(os.Spec.ForProvider.ClusterType),
 			os.Status.AtProvider.DiskSize.String(),
