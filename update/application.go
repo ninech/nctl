@@ -49,14 +49,14 @@ type applicationCmd struct {
 	DeployJob                *deployJob      `embed:"" prefix:"deploy-job-"`
 	WorkerJob                *workerJob      `embed:"" prefix:"worker-job-"`
 	ScheduledJob             *scheduledJob   `embed:"" prefix:"scheduled-job-"`
-	DeleteWorkerJob          *string         `help:"Delete a worker job by name"`
-	DeleteScheduledJob       *string         `help:"Delete a scheduled job by name"`
+	DeleteWorkerJob          *string         `help:"Delete a worker job by name."`
+	DeleteScheduledJob       *string         `help:"Delete a scheduled job by name."`
 	RetryRelease             *bool           `help:"Retries release for the application." placeholder:"false"`
 	RetryBuild               *bool           `help:"Retries build for the application if set to true." placeholder:"false"`
 	Pause                    *bool           `help:"Pauses the application if set to true. Stops all costs." placeholder:"false"`
 	GitInformationServiceURL string          `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
-	SkipRepoAccessCheck      bool            `help:"Skip the git repository access check" default:"false"`
-	Debug                    bool            `help:"Enable debug messages" default:"false"`
+	SkipRepoAccessCheck      bool            `help:"Skip the git repository access check." default:"false"`
+	Debug                    bool            `help:"Enable debug messages." default:"false"`
 	Language                 *string         `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static,"`
 	DockerfileBuild          dockerfileBuild `embed:""`
 }

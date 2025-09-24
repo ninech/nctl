@@ -15,11 +15,11 @@ import (
 
 type keyValueStoreCmd struct {
 	resourceCmd
-	Location                meta.LocationName                    `placeholder:"${keyvaluestore_location_default}" help:"Location where the KeyValueStore instance is created."`
-	MemorySize              *storage.KeyValueStoreMemorySize     `placeholder:"${keyvaluestore_memorysize_default}" help:"MemorySize configures KeyValueStore to use a specified amount of memory for the data set."`
-	MaxMemoryPolicy         storage.KeyValueStoreMaxMemoryPolicy `placeholder:"${keyvaluestore_maxmemorypolicy_default}" help:"MaxMemoryPolicy specifies the exact behavior KeyValueStore follows when the maxmemory limit is reached."`
-	AllowedCidrs            []meta.IPv4CIDR                      `placeholder:"203.0.113.1/32" help:"AllowedCIDRs specify the allowed IP addresses, connecting to the instance."`
-	PublicNetworkingEnabled *bool                                `placeholder:"true" help:"Specifies if the service should be available without service connection."`
+	Location                meta.LocationName                    `placeholder:"${keyvaluestore_location_default}" help:"Where the Key-Value Store instance is created. Available locations are: ${keyvaluestore_location_options}"`
+	MemorySize              *storage.KeyValueStoreMemorySize     `placeholder:"${keyvaluestore_memorysize_default}" help:"Available amount of memory."`
+	MaxMemoryPolicy         storage.KeyValueStoreMaxMemoryPolicy `placeholder:"${keyvaluestore_maxmemorypolicy_default}" help:"Behaviour when the memory limit is reached."`
+	AllowedCidrs            []meta.IPv4CIDR                      `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the public endpoint."`
+	PublicNetworkingEnabled *bool                                `help:"If public networking is \"false\", it is only possible to access the service by configuring a service connection."`
 }
 
 func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client) error {
@@ -52,7 +52,7 @@ func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client) error 
 }
 
 // KeyValueStoreKongVars returns all variables which are used in the KeyValueStore
-// create command
+// create command.
 func KeyValueStoreKongVars() kong.Vars {
 	result := make(kong.Vars)
 	result["keyvaluestore_memorysize_default"] = storage.KeyValueStoreMemorySizeDefault

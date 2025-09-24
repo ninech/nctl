@@ -8,9 +8,9 @@ import (
 )
 
 type WhoAmICmd struct {
-	APIURL    string `help:"The URL of the Nine API" default:"https://nineapis.ch" env:"NCTL_API_URL" name:"api-url"`
-	IssuerURL string `help:"Issuer URL is the OIDC issuer URL of the API." default:"https://auth.nine.ch/auth/realms/pub"`
-	ClientID  string `help:"Client ID is the OIDC client ID of the API." default:"nineapis.ch-f178254"`
+	APIURL    string `help:"URL of the Nine API." default:"https://nineapis.ch" env:"NCTL_API_URL" name:"api-url"`
+	IssuerURL string `help:"OIDC issuer URL of the API." default:"https://auth.nine.ch/auth/realms/pub"`
+	ClientID  string `help:"OIDC client ID of the API." default:"nineapis.ch-f178254"`
 }
 
 func (s *WhoAmICmd) Run(ctx context.Context, client *api.Client) error {

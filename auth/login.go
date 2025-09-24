@@ -27,9 +27,9 @@ const (
 
 type LoginCmd struct {
 	API                         API    `embed:"" prefix:"api-"`
-	Organization                string `help:"The name of your organization to use when providing an API client ID/secret." env:"NCTL_ORGANIZATION"`
-	IssuerURL                   string `help:"Issuer URL is the OIDC issuer URL of the API." default:"${issuer_url}" hidden:""`
-	ClientID                    string `help:"Client ID is the OIDC client ID of the API." default:"${client_id}" hidden:""`
+	Organization                string `help:"Name of your organization to use when providing an API client ID/secret." env:"NCTL_ORGANIZATION"`
+	IssuerURL                   string `help:"OIDC issuer URL of the API." default:"${issuer_url}" hidden:""`
+	ClientID                    string `help:"OIDC client ID of the API." default:"${client_id}" hidden:""`
 	ForceInteractiveEnvOverride bool   `help:"Used for internal purposes only. Set to true to force interactive environment explicit override. Set to false to fall back to automatic interactivity detection." default:"false" hidden:""`
 	tk                          api.TokenGetter
 }

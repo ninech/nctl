@@ -18,7 +18,7 @@ import (
 
 type postgresDatabaseCmd struct {
 	resourceCmd
-	Location                meta.LocationName       `placeholder:"${postgresdatabase_location_default}" help:"Location where the PostgreSQL database is created. Available locations are: ${postgresdatabase_location_options}"`
+	Location                meta.LocationName       `placeholder:"${postgresdatabase_location_default}" help:"Where the PostgreSQL database is created. Available locations are: ${postgresdatabase_location_options}"`
 	PostgresDatabaseVersion storage.PostgresVersion `placeholder:"${postgresdatabase_version_default}" help:"Release version with which the PostgreSQL database is created. Available versions: ${postgresdatabase_versions}"`
 }
 

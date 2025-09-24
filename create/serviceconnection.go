@@ -20,17 +20,17 @@ import (
 
 type serviceConnectionCmd struct {
 	resourceCmd
-	Source                   TypedReference           `placeholder:"kind/name" help:"The source of the connection in the form kind/name. Allowed source kinds are: ${allowed_sources}." required:""`
-	Destination              TypedReference           `placeholder:"kind/name" help:"The destination of the connection in the form kind/name. Must be in the same project as the service connection. Allowed destination kinds are: ${allowed_destinations}." required:""`
-	SourceNamespace          string                   `help:"The source namespace of the connection. Defaults to current project."`
+	Source                   TypedReference           `placeholder:"kind/name" help:"Source of the connection in the form kind/name. Allowed source kinds are: ${allowed_sources}." required:""`
+	Destination              TypedReference           `placeholder:"kind/name" help:"Destination of the connection in the form kind/name. Must be in the same project as the service connection. Allowed destination kinds are: ${allowed_destinations}." required:""`
+	SourceNamespace          string                   `help:"Source namespace of the connection. Defaults to current project."`
 	KubernetesClusterOptions KubernetesClusterOptions `embed:"" prefix:"source-"`
 }
 
 // KubernetesClusterOptions
 // https://pkg.go.dev/github.com/ninech/apis@v0.0.0-20250708054129-4d49f7a6c606/networking/v1alpha1#KubernetesClusterOptions
 type KubernetesClusterOptions struct {
-	PodSelector       *LabelSelector `placeholder:"${label_selector_placeholder}" help:"${label_selector_requirements} Can be used to restrict which pods of the KubernetesCluster can connect to the service connection destination. If left empty, all pods are allowed. If the namespace selector is also set, then the pod selector as a whole selects the pods matching pod selector in the namespaces selected by namespace selector.\n\n${label_selector_usage}"`
-	NamespaceSelector *LabelSelector `placeholder:"${label_selector_placeholder}" help:"${label_selector_requirements} Selects namespaces using labels set on namespaces. If left empty, it selects all namespaces. It can be used to further restrict the pods selected by the PodSelector.\n\n${label_selector_usage}"`
+	PodSelector       *LabelSelector `placeholder:"${label_selector_placeholder}" help:"${label_selector_requirements} Restrict which pods of the KubernetesCluster can connect to the service connection destination. If left empty, all pods are allowed. If the namespace selector is also set, then the pod selector as a whole selects the pods matching pod selector in the namespaces selected by namespace selector.\n\n${label_selector_usage}."`
+	NamespaceSelector *LabelSelector `placeholder:"${label_selector_placeholder}" help:"${label_selector_requirements} Select namespaces using labels set on namespaces. If left empty, all namespaces are selected. Allows to further restrict the pods selected by the PodSelector.\n\n${label_selector_usage}."`
 }
 
 // APIType returns the API type [networking.KubernetesClusterOptions] of the [KubernetesClusterOptions].

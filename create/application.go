@@ -37,29 +37,29 @@ const logPrintTimeout = 10 * time.Second
 type applicationCmd struct {
 	resourceCmd
 	Git                      gitConfig         `embed:"" prefix:"git-"`
-	Size                     *string           `help:"Size of the app (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
-	Port                     *int32            `help:"Port the app is listening on (defaults to ${app_default_port})." placeholder:"${app_default_port}"`
-	Replicas                 *int32            `help:"Amount of replicas of the running app (defaults to ${app_default_replicas})." placeholder:"${app_default_replicas}"`
-	Hosts                    []string          `help:"Host names where the app can be accessed. If empty, the app will just be accessible on a generated host name on the deploio.app domain."`
-	BasicAuth                *bool             `help:"Enable/Disable basic authentication for the app (defaults to ${app_default_basic_auth})." placeholder:"${app_default_basic_auth}"`
-	Env                      map[string]string `help:"Environment variables which are passed to the app at runtime."`
-	SensitiveEnv             map[string]string `help:"Sensitive environment variables which are passed to the app at runtime."`
-	BuildEnv                 map[string]string `help:"Environment variables which are passed to the app build process."`
-	SensitiveBuildEnv        map[string]string `help:"Sensitive environment variables which are passed to the app build process."`
+	Size                     *string           `help:"Size of the application (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
+	Port                     *int32            `help:"Port the application is listening on (defaults to ${app_default_port})." placeholder:"${app_default_port}"`
+	Replicas                 *int32            `help:"Amount of replicas of the running application (defaults to ${app_default_replicas})." placeholder:"${app_default_replicas}"`
+	Hosts                    []string          `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
+	BasicAuth                *bool             `help:"Enable/Disable basic authentication for the application (defaults to ${app_default_basic_auth})." placeholder:"${app_default_basic_auth}"`
+	Env                      map[string]string `help:"Environment variables which are passed to the application at runtime."`
+	SensitiveEnv             map[string]string `help:"Sensitive environment variables which are passed to the application at runtime."`
+	BuildEnv                 map[string]string `help:"Environment variables which are passed to the application build process."`
+	SensitiveBuildEnv        map[string]string `help:"Sensitive environment variables which are passed to the application build process."`
 	DeployJob                deployJob         `embed:"" prefix:"deploy-job-"`
 	WorkerJob                workerJob         `embed:"" prefix:"worker-job-"`
 	ScheduledJob             scheduledJob      `embed:"" prefix:"scheduled-job-"`
 	GitInformationServiceURL string            `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
-	SkipRepoAccessCheck      bool              `help:"Skip the git repository access check" default:"false"`
-	Debug                    bool              `help:"Enable debug messages" default:"false"`
+	SkipRepoAccessCheck      bool              `help:"Skip the git repository access check." default:"false"`
+	Debug                    bool              `help:"Enable debug messages." default:"false"`
 	Language                 string            `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static," default:""`
 	DockerfileBuild          dockerfileBuild   `embed:""`
 }
 
 type gitConfig struct {
-	URL                   string  `required:"" help:"URL to the Git repository containing the app source. Both HTTPS and SSH formats are supported."`
-	SubPath               string  `help:"SubPath is a path in the git repo which contains the app code. If not given, the root directory of the git repo will be used."`
-	Revision              string  `default:"main" help:"Revision defines the revision of the source to deploy the app to. This can be a commit, tag or branch."`
+	URL                   string  `required:"" help:"URL to the Git repository containing the application source. Both HTTPS and SSH formats are supported."`
+	SubPath               string  `help:"SubPath is a path in the git repository which contains the application code. If not given, the root directory of the git repository will be used."`
+	Revision              string  `default:"main" help:"Revision defines the revision of the source to deploy the application to. This can be a commit, tag or branch."`
 	Username              *string `help:"Username to use when authenticating to the git repository over HTTPS." env:"GIT_USERNAME"`
 	Password              *string `help:"Password to use when authenticating to the git repository over HTTPS. In case of GitHub or GitLab, this can also be an access token." env:"GIT_PASSWORD"`
 	SSHPrivateKey         *string `help:"Private key in PEM format to connect to the git repository via SSH." env:"GIT_SSH_PRIVATE_KEY" xor:"SSH_KEY"`
@@ -74,9 +74,9 @@ type deployJob struct {
 }
 
 type workerJob struct {
-	Command string  `help:"Command to execute to start the worker." placeholder:"\"bundle exec sidekiq\""`
+	Command string  `help:"Command to execute to start the worker job." placeholder:"\"bundle exec sidekiq\""`
 	Name    string  `help:"Name of the worker job to add." placeholder:"worker-1"`
-	Size    *string `help:"Size of the worker (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
+	Size    *string `help:"Size of the worker job (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
 }
 
 type scheduledJob struct {
@@ -89,9 +89,9 @@ type scheduledJob struct {
 }
 
 type dockerfileBuild struct {
-	Enabled      bool   `name:"dockerfile" help:"${app_dockerfile_enable_help}" default:"false"`
-	Path         string `name:"dockerfile-path" help:"${app_dockerfile_path_help}" default:""`
-	BuildContext string `name:"dockerfile-build-context" help:"${app_dockerfile_build_context_help}" default:""`
+	Enabled      bool   `name:"dockerfile" help:"${app_dockerfile_enable_help}." default:"false"`
+	Path         string `name:"dockerfile-path" help:"${app_dockerfile_path_help}." default:""`
+	BuildContext string `name:"dockerfile-build-context" help:"${app_dockerfile_build_context_help}." default:""`
 }
 
 func (g gitConfig) sshPrivateKey() (*string, error) {

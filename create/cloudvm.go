@@ -3,6 +3,7 @@ package create
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -18,18 +19,18 @@ import (
 
 type cloudVMCmd struct {
 	resourceCmd
-	Location            meta.LocationName            `default:"nine-es34" help:"Location where the CloudVM instance is created."`
-	MachineType         string                       `default:"" help:"The machine type defines the sizing for a particular CloudVM."`
-	Hostname            string                       `default:"" help:"Hostname allows to set the hostname explicitly. If unset, the name of the resource will be used as the hostname. This does not affect the DNS name."`
-	ReverseDNS          string                       `default:"" help:"Allows to set the reverse DNS of the CloudVM"`
-	PowerState          string                       `default:"on" help:"Specify the initial power state of the CloudVM. Set to off to create "`
-	OS                  string                       `default:"" help:"OS which should be used to boot the VM. Available options: ${cloudvm_os_flavors}"`
-	BootDiskSize        *resource.Quantity           `default:"20Gi" help:"Configures the size of the boot disk."`
-	Disks               map[string]resource.Quantity `default:"" help:"Disks specifies which additional disks to mount to the machine."`
-	PublicKeys          []string                     `default:"" help:"SSH public keys that can be used to connect to the CloudVM as root. The keys are expected to be in SSH format as defined in RFC4253. Immutable after creation."`
-	PublicKeysFromFiles []string                     `default:"" predictor:"file" help:"SSH public key files that can be used to connect to the VM as root. The keys are expected to be in SSH format as defined in RFC4253. Immutable after creation."`
-	CloudConfig         string                       `default:"" help:"CloudConfig allows to pass custom cloud config data (https://cloudinit.readthedocs.io/en/latest/topics/format.html#cloud-config-data) to the cloud VM. If a CloudConfig is passed, the PublicKey parameter is ignored. Immutable after creation."`
-	CloudConfigFromFile string                       `default:"" predictor:"file" help:"CloudConfig via file. Has precedence over args. CloudConfig allows to pass custom cloud config data (https://cloudinit.readthedocs.io/en/latest/topics/format.html#cloud-config-data) to the cloud VM. If a CloudConfig is passed, the PublicKey parameter is ignored. Immutable after creation."`
+	Location            meta.LocationName                       `default:"nine-es34" help:"Where the CloudVM instance is created."`
+	MachineType         string                                  `default:"" help:"Defines the sizing for a particular CloudVM."`
+	Hostname            string                                  `default:"" help:"Configures the hostname explicitly. If unset, the name of the resource will be used as the hostname. This does not affect the DNS name."`
+	ReverseDNS          string                                  `default:"" help:"Configures the reverse DNS of the CloudVM."`
+	PowerState          infrastructure.VirtualMachinePowerState `default:"on" help:"Specify the initial power state of the CloudVM. Set to off to not start the VM after creation."`
+	OS                  infrastructure.OperatingSystem          `default:"" help:"Operating system to use to boot the VM. Available options: ${cloudvm_os_flavors}"`
+	BootDiskSize        *resource.Quantity                      `default:"20Gi" help:"Configures the size of the boot disk."`
+	Disks               map[string]resource.Quantity            `default:"" help:"Additional disks to mount to the machine."`
+	PublicKeys          []string                                `default:"" help:"SSH public keys to connect to the CloudVM as root. The keys are expected to be in SSH format as defined in RFC4253. Immutable after creation."`
+	PublicKeysFromFiles []*os.File                              `default:"" predictor:"file" help:"SSH public key files to connect to the VM as root. The keys are expected to be in SSH format as defined in RFC4253. Immutable after creation."`
+	CloudConfig         string                                  `default:"" help:"Pass custom cloud config data (https://cloudinit.readthedocs.io/en/latest/topics/format.html#cloud-config-data) to the cloud VM. If a CloudConfig is passed, the PublicKey parameter is ignored. Immutable after creation."`
+	CloudConfigFromFile *os.File                                `default:"" predictor:"file" help:"Pass custom cloud config data (https://cloudinit.readthedocs.io/en/latest/topics/format.html#cloud-config-data) from a file. Takes precedence. If a CloudConfig is passed, the PublicKey parameter is ignored. Immutable after creation."`
 }
 
 func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {
@@ -87,8 +88,8 @@ func (cmd *cloudVMCmd) newCloudVM(namespace string) (*infrastructure.CloudVirtua
 				Location:    cmd.Location,
 				MachineType: infrastructure.NewMachineType(cmd.MachineType),
 				Hostname:    cmd.Hostname,
-				PowerState:  infrastructure.VirtualMachinePowerState(cmd.PowerState),
-				OS:          infrastructure.CloudVirtualMachineOS(infrastructure.OperatingSystem(cmd.OS)),
+				PowerState:  cmd.PowerState,
+				OS:          infrastructure.CloudVirtualMachineOS(cmd.OS),
 				PublicKeys:  cmd.PublicKeys,
 				CloudConfig: cmd.CloudConfig,
 				ReverseDNS:  cmd.ReverseDNS,
@@ -100,19 +101,23 @@ func (cmd *cloudVMCmd) newCloudVM(namespace string) (*infrastructure.CloudVirtua
 		cloudVM.Spec.ForProvider.PublicKeys = cmd.PublicKeys
 		var keys []string
 		for _, file := range cmd.PublicKeysFromFiles {
-			b, err := os.ReadFile(file)
-			if err != nil {
-				return nil, fmt.Errorf("error reading cloudconfig file %q: %w", cmd.PublicKeysFromFiles, err)
+			if file == nil {
+				continue
+			}
+
+			b, err := io.ReadAll(file)
+			if file != nil {
+				return nil, fmt.Errorf("error reading public keys file: %w", err)
 			}
 			keys = append(keys, string(b))
 		}
 		cloudVM.Spec.ForProvider.PublicKeys = keys
 	}
 
-	if len(cmd.CloudConfigFromFile) != 0 {
-		b, err := os.ReadFile(cmd.CloudConfigFromFile)
+	if cmd.CloudConfigFromFile != nil {
+		b, err := io.ReadAll(cmd.CloudConfigFromFile)
 		if err != nil {
-			return nil, fmt.Errorf("error reading cloudconfig file %q: %w", cmd.CloudConfigFromFile, err)
+			return nil, fmt.Errorf("error reading cloudconfig file: %w", err)
 		}
 		cloudVM.Spec.ForProvider.CloudConfig = string(b)
 	}

@@ -22,8 +22,8 @@ import (
 
 type allCmd struct {
 	stdErr               io.Writer
-	Kinds                []string `help:"specify the kind of resources which should be listed"`
-	IncludeNineResources bool     `help:"show resources which are owned by Nine" default:"false"`
+	Kinds                []string `help:"Specify the kind of resources which should be listed."`
+	IncludeNineResources bool     `help:"Show resources which are owned by Nine." default:"false"`
 }
 
 func (cmd *allCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {

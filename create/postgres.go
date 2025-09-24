@@ -20,10 +20,10 @@ import (
 
 type postgresCmd struct {
 	resourceCmd
-	Location         meta.LocationName       `placeholder:"${postgres_location_default}" help:"Location where the PostgreSQL instance is created. Available locations are: ${postgres_location_options}"`
+	Location         meta.LocationName       `placeholder:"${postgres_location_default}" help:"Where the PostgreSQL instance is created. Available locations are: ${postgres_location_options}"`
 	MachineType      string                  `placeholder:"${postgres_machine_default}" help:"Defines the sizing for a particular PostgreSQL instance. Available types: ${postgres_machine_types}"`
-	AllowedCidrs     []meta.IPv4CIDR         `placeholder:"203.0.113.1/32" help:"Specifies the IP addresses allowed to connect to the instance." `
-	SSHKeys          []storage.SSHKey        `help:"Contains a list of SSH public keys, allowed to connect to the db server, in order to up-/download and directly restore database backups."`
+	AllowedCidrs     []meta.IPv4CIDR         `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the instance."`
+	SSHKeys          []storage.SSHKey        `help:"SSH public keys allowed to connect to the database server in order to up-/download and directly restore database backups."`
 	SSHKeysFile      *os.File                `predictor:"file" help:"Path to a file containing a list of SSH public keys (see above), separated by newlines. Lines prefixed with # are ignored."`
 	PostgresVersion  storage.PostgresVersion `placeholder:"${postgres_version_default}" help:"Release version with which the PostgreSQL instance is created. Available versions: ${postgres_versions}"`
 	KeepDailyBackups *int                    `placeholder:"${postgres_backup_retention_days}" help:"Number of daily database backups to keep. Note that setting this to 0, backup will be disabled and existing dumps deleted immediately."`
