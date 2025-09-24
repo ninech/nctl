@@ -22,6 +22,7 @@ type Cmd struct {
 	CloudVirtualMachine cloudVMCmd           `cmd:"" group:"infrastructure.nine.ch" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Update a CloudVM."`
 	ServiceConnection   serviceConnectionCmd `cmd:"" group:"networking.nine.ch" name:"serviceconnection" aliases:"sc" help:"Update a ServiceConnection."`
 	BucketUser          bucketUserCmd        `cmd:"" group:"storage.nine.ch" name:"bucketuser" aliases:"bu" help:"Update a BucketUser."`
+	Bucket              bucketCmd            `cmd:"" group:"storage.nine.ch" name:"bucket" help:"Update a Bucket."`
 }
 
 type resourceCmd struct {
