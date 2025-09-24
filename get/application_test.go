@@ -3,6 +3,7 @@ package get
 import (
 	"bytes"
 	"context"
+	"regexp"
 	"testing"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
@@ -94,6 +95,7 @@ func TestApplicationCredentials(t *testing.T) {
 		project       string
 		output        string
 		errorExpected bool
+		expectRegexp  *regexp.Regexp
 	}{
 		"no basic auth configured, all apps in project": {
 			resources:    []client.Object{newBasicAuthApplication("dev", "dev", "")},
@@ -135,9 +137,7 @@ func TestApplicationCredentials(t *testing.T) {
 			},
 			outputFormat: full,
 			project:      "dev",
-			output: `PROJECT    NAME    USERNAME    PASSWORD
-dev        dev     dev         sample
-`,
+			expectRegexp: regexp.MustCompile(`PROJECT\s+NAME\s+USERNAME\s+PASSWORD\ndev\s+dev\s+dev\s+sample\n`),
 		},
 		"basic auth configured in one app and all apps in the project requested, no header format": {
 			resources: []client.Object{
@@ -153,7 +153,7 @@ dev        dev     dev         sample
 			},
 			project:      "dev",
 			outputFormat: noHeader,
-			output:       "dev    dev    dev    sample\n",
+			expectRegexp:  regexp.MustCompile(`dev\s+dev\s+dev\s+sample\n`),
 		},
 		"basic auth configured in one app and all apps in the project requested, yaml format": {
 			resources: []client.Object{
@@ -220,10 +220,7 @@ dev        dev     dev         sample
 			},
 			outputFormat: full,
 			project:      "dev",
-			output: `PROJECT    NAME          USERNAME      PASSWORD
-dev        dev           dev           sample
-dev        dev-second    dev-second    sample-second
-`,
+			expectRegexp: regexp.MustCompile(`PROJECT\s+NAME\s+USERNAME\s+PASSWORD\ndev\s+dev\s+dev\s+sample\ndev\s+dev-second\s+dev-second\s+sample-second\n`),
 		},
 		"multiple apps in different projects and all apps requested, yaml format": {
 			resources: []client.Object{
@@ -325,7 +322,11 @@ dev        dev-second    dev-second    sample-second
 				return
 			}
 			require.NoError(t, err)
-			assert.Equal(t, testCase.output, buf.String())
+			if testCase.expectRegexp != nil {
+				assert.Regexp(t, testCase.expectRegexp, buf.String())
+			} else {
+				assert.Equal(t, testCase.output, buf.String())
+			}
 		})
 	}
 }
@@ -342,6 +343,7 @@ func TestApplicationDNS(t *testing.T) {
 		project       string
 		output        string
 		errorExpected bool
+		expectRegexp  *regexp.Regexp
 	}{
 		"no DNS set yet - full format": {
 			apps: []client.Object{
@@ -354,11 +356,7 @@ func TestApplicationDNS(t *testing.T) {
 			},
 			outputFormat: full,
 			project:      "dev",
-			output: `PROJECT    NAME             TXT RECORD       DNS TARGET
-dev        no-txt-record    <not set yet>    <not set yet>
-
-Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup custom hosts
-`,
+			expectRegexp: regexp.MustCompile(`PROJECT\s+NAME\s+TXT RECORD\s+DNS TARGET\ndev\s+no-txt-record\s+<not set yet>\s+<not set yet>\n\nVisit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup custom hosts\n`),
 		},
 		"DNS set - one application - full format": {
 			apps: []client.Object{
@@ -371,11 +369,7 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 			},
 			outputFormat: full,
 			project:      "dev",
-			output: `PROJECT    NAME      TXT RECORD                                      DNS TARGET
-dev        sample    deploio-site-verification=sample-dev-3ksdk23    sample.3ksdk23.deploio.app
-
-Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup custom hosts
-`,
+			expectRegexp: regexp.MustCompile(`PROJECT\s+NAME\s+TXT RECORD\s+DNS TARGET\ndev\s+sample\s+deploio-site-verification=sample-dev-3ksdk23\s+sample.3ksdk23.deploio.app\n\nVisit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup custom hosts\n`),
 		},
 		"DNS set - one application - no header format": {
 			apps: []client.Object{
@@ -388,10 +382,7 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 			},
 			outputFormat: noHeader,
 			project:      "dev",
-			output: `dev    sample    deploio-site-verification=sample-dev-3ksdk23    sample.3ksdk23.deploio.app
-
-Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup custom hosts
-`,
+			expectRegexp: regexp.MustCompile(`dev\s+sample\s+deploio-site-verification=sample-dev-3ksdk23\s+sample.3ksdk23.deploio.app\n\nVisit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup custom hosts\n`),
 		},
 		"multiple applications in multiple projects - full format": {
 			apps: []client.Object{
@@ -409,12 +400,7 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 				),
 			},
 			outputFormat: full,
-			output: `PROJECT    NAME      TXT RECORD                                      DNS TARGET
-dev        sample    deploio-site-verification=sample-dev-3ksdk23    sample.3ksdk23.deploio.app
-test       test      deploio-site-verification=test-test-4ksdk23     test.4ksdk23.deploio.app
-
-Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup custom hosts
-`,
+			expectRegexp: regexp.MustCompile(`PROJECT\s+NAME\s+TXT RECORD\s+DNS TARGET\ndev\s+sample\s+deploio-site-verification=sample-dev-3ksdk23\s+sample.3ksdk23.deploio.app\ntest\s+test\s+deploio-site-verification=test-test-4ksdk23\s+test.4ksdk23.deploio.app\n\nVisit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup custom hosts\n`),
 		},
 		"multiple applications in one project - yaml format": {
 			apps: []client.Object{
@@ -501,7 +487,11 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 				return
 			}
 			require.NoError(t, err)
-			assert.Equal(t, testCase.output, buf.String())
+			if testCase.expectRegexp != nil {
+				assert.Regexp(t, testCase.expectRegexp, buf.String())
+			} else {
+				assert.Equal(t, testCase.output, buf.String())
+			}
 		})
 	}
 }

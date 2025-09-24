@@ -161,7 +161,7 @@ func (out *output) initOut() {
 	}
 
 	if out.tabWriter == nil {
-		out.tabWriter = tabwriter.NewWriter(out.writer, 0, 0, 4, ' ', tabwriter.RememberWidths)
+		out.tabWriter = tabwriter.NewWriter(out.writer, 0, 0, 2, ' ', tabwriter.RememberWidths)
 	}
 }
 
