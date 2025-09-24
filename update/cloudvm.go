@@ -15,12 +15,12 @@ import (
 
 type cloudVMCmd struct {
 	resourceCmd
-	MachineType               string            `placeholder:"nine-standard-1" help:"The machine type defines the sizing for a particular CloudVM."`
-	Hostname                  string            `placeholder:"" help:"Hostname allows to set the hostname explicitly. If unset, the name of the resource will be used as the hostname. This does not affect the DNS name."`
-	ReverseDNS                string            `placeholder:"" help:"Allows to set the reverse DNS of the CloudVM"`
+	MachineType               string            `placeholder:"nine-standard-1" help:"Defines the sizing for a particular CloudVM."`
+	Hostname                  string            `placeholder:"" help:"Configures the hostname explicitly. If unset, the name of the resource will be used as the hostname. This does not affect the DNS name."`
+	ReverseDNS                string            `placeholder:"" help:"Allows to set the reverse DNS of the CloudVM."`
 	OS                        string            `placeholder:"ubuntu22.04" help:"OS which should be used to boot the VM."`
 	BootDiskSize              string            `placeholder:"20Gi" help:"Configures the size of the boot disk."`
-	Disks                     map[string]string `placeholder:"{}" help:"Disks specifies which additional disks to mount to the machine."`
+	Disks                     map[string]string `placeholder:"{}" help:"Additional disks to mount to the machine."`
 	On                        *bool             `help:"Turns the CloudVM on."`
 	Off                       *bool             `help:"Turns the CloudVM off immediately."`
 	Shutdown                  *bool             `help:"Shuts down the CloudVM via ACPI."`

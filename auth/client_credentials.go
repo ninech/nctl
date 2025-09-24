@@ -17,11 +17,11 @@ import (
 )
 
 type API struct {
-	URL          string `help:"The URL of the Nine API" default:"https://nineapis.ch" env:"NCTL_API_URL" hidden:""`
+	URL          string `help:"URL of the Nine API." default:"https://nineapis.ch" env:"NCTL_API_URL" hidden:""`
 	Token        string `help:"Use a static API token instead of using an OIDC login. Requires the --organization to also be set." env:"NCTL_API_TOKEN" hidden:""`
 	ClientID     string `help:"Use an API client ID to login. Requires the --organization to also be set." env:"NCTL_API_CLIENT_ID"`
 	ClientSecret string `help:"Use an API client secret to login. Requires the --organization to also be set." env:"NCTL_API_CLIENT_SECRET"`
-	TokenURL     string `help:"Override the default client token URL" hidden:"" default:"${token_url}" env:"NCTL_API_TOKEN_URL"`
+	TokenURL     string `help:"Override the default client token URL." hidden:"" default:"${token_url}" env:"NCTL_API_TOKEN_URL"`
 }
 
 type ClientCredentialsCmd struct {

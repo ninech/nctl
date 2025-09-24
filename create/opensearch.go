@@ -16,12 +16,12 @@ import (
 
 type openSearchCmd struct {
 	resourceCmd
-	Location                meta.LocationName             `placeholder:"${opensearch_location_default}" help:"Location where the OpenSearch cluster is created. Available locations are: ${opensearch_location_options}"`
-	ClusterType             storage.OpenSearchClusterType `placeholder:"${opensearch_cluster_type_default}" help:"ClusterType specifies the type of OpenSearch cluster to create. Available types: ${opensearch_cluster_types}"`
-	MachineType             string                        `placeholder:"${opensearch_machine_type_default}" help:"MachineType specifies the type of machine to use for the OpenSearch cluster. Available types: ${opensearch_machine_types}"`
-	AllowedCidrs            []meta.IPv4CIDR               `placeholder:"203.0.113.1/32" help:"AllowedCIDRs specify the allowed IP addresses, connecting to the cluster."`
-	BucketUsers             []string                      `placeholder:"user1,user2" help:"BucketUsers specify the users who have read access to the OpenSearch snapshots bucket."`
+	Location                meta.LocationName             `placeholder:"${opensearch_location_default}" help:"Where the OpenSearch cluster is created. Available locations are: ${opensearch_location_options}"`
+	ClusterType             storage.OpenSearchClusterType `placeholder:"${opensearch_cluster_type_default}" help:"Type of cluster. Available types: ${opensearch_cluster_types}"`
+	MachineType             string                        `placeholder:"${opensearch_machine_type_default}" help:"Defines the sizing of an OpenSearch instance. Available types: ${opensearch_machine_types}"`
+	AllowedCidrs            []meta.IPv4CIDR               `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the public endpoint."`
 	PublicNetworkingEnabled *bool                         `help:"If public networking is \"false\", it is only possible to access the service by configuring a service connection."`
+	BucketUsers             []string                      `placeholder:"user1,user2" help:"BucketUsers specify the users who have read access to the OpenSearch snapshots bucket."`
 }
 
 func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client) error {

@@ -44,10 +44,10 @@ type remoteCommandParameters struct {
 
 type applicationCmd struct {
 	resourceCmd
-	Stdin     bool     `name:"stdin" short:"i" help:"Pass stdin to the application" default:"true"`
-	Tty       bool     `name:"tty" short:"t" help:"Stdin is a TTY" default:"true"`
-	WorkerJob string   `name:"worker-job" short:"w" help:"Exec into worker job by name"`
-	Command   []string `arg:"" help:"command to execute" optional:""`
+	Stdin     bool     `name:"stdin" short:"i" help:"Pass stdin to the application." default:"true"`
+	Tty       bool     `name:"tty" short:"t" help:"Stdin is a TTY." default:"true"`
+	WorkerJob string   `name:"worker-job" short:"w" help:"Exec into worker job by name."`
+	Command   []string `arg:"" help:"Command to execute." optional:""`
 }
 
 // Help displays examples for the application exec command

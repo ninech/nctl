@@ -33,7 +33,7 @@ type Cmd struct {
 	MySQLDatabase       resourceCmd `cmd:"" group:"storage.nine.ch" name:"mysqldatabase" help:"Edit a MySQL database."`
 	Postgres            resourceCmd `cmd:"" group:"storage.nine.ch" name:"postgres" help:"Edit a PostgreSQL instance."`
 	PostgresDatabase    resourceCmd `cmd:"" group:"storage.nine.ch" name:"postgresdatabase" help:"Edit a PostgreSQL database."`
-	KeyValueStore       resourceCmd `cmd:"" group:"storage.nine.ch" name:"keyvaluestore" aliases:"kvs" help:"Edit a KeyValueStore instance"`
+	KeyValueStore       resourceCmd `cmd:"" group:"storage.nine.ch" name:"keyvaluestore" aliases:"kvs" help:"Edit a KeyValueStore instance."`
 	OpenSearch          resourceCmd `cmd:"" group:"storage.nine.ch" name:"opensearch" aliases:"os" help:"Edit an OpenSearch cluster."`
 	CloudVirtualMachine resourceCmd `cmd:"" group:"infrastructure.nine.ch" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Edit a CloudVM."`
 }

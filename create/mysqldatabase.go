@@ -18,8 +18,8 @@ import (
 
 type mysqlDatabaseCmd struct {
 	resourceCmd
-	Location             meta.LocationName    `placeholder:"${mysqldatabase_location_default}" help:"Location where the MySQL database is created. Available locations are: ${mysqldatabase_location_options}"`
-	MysqlDatabaseVersion storage.MySQLVersion `placeholder:"${mysqldatabase_version_default}" help:"Release version with which the MySQL database is created. Available versions: ${mysqldatabase_versions}"`
+	Location             meta.LocationName    `placeholder:"${mysqldatabase_location_default}" help:"Where the MySQL database is created. Available locations are: ${mysqldatabase_location_options}"`
+	MysqlDatabaseVersion storage.MySQLVersion `placeholder:"${mysqldatabase_version_default}" help:"Version of the MySQL database. Available versions: ${mysqldatabase_versions}"`
 	CharacterSet         string               `placeholder:"${mysqldatabase_characterset_default}" help:"Character set for the MySQL database. Available character sets: ${mysqldatabase_characterset_options}"`
 }
 

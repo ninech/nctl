@@ -15,12 +15,12 @@ import (
 
 type vclusterCmd struct {
 	resourceCmd
-	Location          meta.LocationName `default:"nine-es34" help:"Location where the vcluster is created."`
-	KubernetesVersion string            `default:"" help:"Kubernetes version to use. API default will be used if not specified."`
+	Location          meta.LocationName `default:"nine-es34" help:"Where the vCluster is created."`
+	KubernetesVersion string            `default:"" help:"Kubernetes version to use. The API default will be used if not specified."`
 	MinNodes          int               `default:"1" help:"Minimum amount of nodes."`
 	MaxNodes          int               `default:"1" help:"Maximum amount of nodes."`
-	MachineType       string            `default:"nine-standard-1" help:"Machine type to use for the nodes."`
-	NodePoolName      string            `default:"worker" help:"Name of the default node pool in the vcluster."`
+	MachineType       string            `default:"nine-standard-1" help:"Machine type to use for the vCluster nodes."`
+	NodePoolName      string            `default:"worker" help:"Name of the default node pool in the vCluster."`
 }
 
 func (vc *vclusterCmd) Run(ctx context.Context, client *api.Client) error {
