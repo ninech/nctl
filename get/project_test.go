@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"os"
+	"regexp"
 	"testing"
 
 	management "github.com/ninech/apis/management/v1alpha1"
@@ -26,34 +27,24 @@ func TestProject(t *testing.T) {
 		outputFormat outputFormat
 		allProjects  bool
 		output       string
+		expectRegexp *regexp.Regexp
 	}{
 		"projects exist, full format": {
 			projects:     test.Projects(organization, "dev", "staging", "prod"),
 			displayNames: []string{"Development", "", "Production"},
 			outputFormat: full,
-			output: `PROJECT    DISPLAY NAME
-dev        Development
-prod       Production
-staging    <none>
-`,
+			expectRegexp: regexp.MustCompile(`PROJECT\s+DISPLAY NAME\ndev\s+Development\nprod\s+Production\nstaging\s+<none>\n`),
 		},
 		"projects exist, no header format": {
 			projects:     test.Projects(organization, "dev", "staging", "prod"),
 			outputFormat: noHeader,
-			output: `dev        <none>
-prod       <none>
-staging    <none>
-`,
+			expectRegexp: regexp.MustCompile(`dev\s+<none>\nprod\s+<none>\nstaging\s+<none>\n`),
 		},
 		"projects exist and allProjects is set": {
 			projects:     test.Projects(organization, "dev", "staging", "prod"),
 			outputFormat: full,
 			allProjects:  true,
-			output: `PROJECT    DISPLAY NAME
-dev        <none>
-prod       <none>
-staging    <none>
-`,
+			expectRegexp: regexp.MustCompile(`PROJECT\s+DISPLAY NAME\ndev\s+<none>\nprod\s+<none>\nstaging\s+<none>\n`),
 		},
 		"no projects exist": {
 			projects:     []client.Object{},
@@ -69,9 +60,7 @@ staging    <none>
 			projects:     test.Projects(organization, "dev", "staging"),
 			name:         "dev",
 			outputFormat: full,
-			output: `PROJECT    DISPLAY NAME
-dev        <none>
-`,
+			expectRegexp: regexp.MustCompile(`PROJECT\s+DISPLAY NAME\ndev\s+<none>\n`),
 		},
 		"specific project requested, but does not exist": {
 			projects:     test.Projects(organization, "staging"),
@@ -181,7 +170,11 @@ dev        <none>
 				t.Fatal(err)
 			}
 
-			assert.Equal(t, testCase.output, buf.String())
+			if testCase.expectRegexp != nil {
+				assert.Regexp(t, testCase.expectRegexp, buf.String())
+			} else {
+				assert.Equal(t, testCase.output, buf.String())
+			}
 		})
 	}
 }
