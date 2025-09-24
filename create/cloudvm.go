@@ -106,7 +106,7 @@ func (cmd *cloudVMCmd) newCloudVM(namespace string) (*infrastructure.CloudVirtua
 			}
 
 			b, err := io.ReadAll(file)
-			if file != nil {
+			if err != nil {
 				return nil, fmt.Errorf("error reading public keys file: %w", err)
 			}
 			keys = append(keys, string(b))

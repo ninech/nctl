@@ -15,17 +15,16 @@ import (
 
 type openSearchCmd struct {
 	resourceCmd
-	MachineType             *string          `help:"Configures OpenSearch to use a specified machine type." placeholder:"nine-search-m"`
-	AllowedCidrs            *[]meta.IPv4CIDR `help:"IP addresses allowed to connect to the cluster. These restrictions do not apply for service connections." placeholder:"203.0.113.1/32"`
-	BucketUsers             *[]string        `help:"Users who have read access to the OpenSearch snapshots bucket." placeholder:"user1,user2"`
-	PublicNetworkingEnabled *bool            `help:"If public networking is \"false\", it is only possible to access the service by configuring a service connection." placeholder:"true"`
+	MachineType      *string          `help:"Configures OpenSearch to use a specified machine type." placeholder:"nine-search-m"`
+	AllowedCidrs     *[]meta.IPv4CIDR `help:"IP addresses allowed to connect to the cluster. These restrictions do not apply for service connections." placeholder:"203.0.113.1/32"`
+	BucketUsers      *[]string        `help:"Users who have read access to the OpenSearch snapshots bucket." placeholder:"user1,user2"`
+	PublicNetworking *bool            `negatable:"" help:"Enable or disable public networking."`
+
+	// Deprecated Flags
+	PublicNetworkingEnabled *bool `hidden:"" help:"If public networking is \"false\", it is only possible to access the service by configuring a service connection."`
 }
 
 func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client) error {
-	if cmd.MachineType == nil && cmd.AllowedCidrs == nil && cmd.BucketUsers == nil {
-		return fmt.Errorf("at least one parameter must be provided to update the OpenSearch cluster")
-	}
-
 	openSearch := &storage.OpenSearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cmd.Name,
@@ -53,8 +52,13 @@ func (cmd *openSearchCmd) applyUpdates(os *storage.OpenSearch) error {
 	if cmd.BucketUsers != nil {
 		os.Spec.ForProvider.BucketUsers = create.LocalReferences(*cmd.BucketUsers)
 	}
-	if cmd.PublicNetworkingEnabled != nil {
-		os.Spec.ForProvider.PublicNetworkingEnabled = cmd.PublicNetworkingEnabled
+
+	publicNetworking := cmd.PublicNetworking
+	if publicNetworking == nil {
+		publicNetworking = cmd.PublicNetworkingEnabled
+	}
+	if publicNetworking != nil {
+		os.Spec.ForProvider.PublicNetworkingEnabled = publicNetworking
 	}
 
 	return nil

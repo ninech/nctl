@@ -55,12 +55,49 @@ func TestKeyValueStore(t *testing.T) {
 			},
 		},
 		{
-			name: "publicNetworking",
+			name: "publicNetworking-deprecated",
 			create: keyValueStoreCmd{
 				PublicNetworkingEnabled: ptr.To(true),
 			},
 			want: storage.KeyValueStoreParameters{
 				PublicNetworkingEnabled: ptr.To(true),
+			},
+		},
+		{
+			name: "publicNetworking",
+			create: keyValueStoreCmd{
+				PublicNetworking: ptr.To(true),
+			},
+			want: storage.KeyValueStoreParameters{
+				PublicNetworkingEnabled: ptr.To(true),
+			},
+		},
+		{
+			name: "publicNetworking-disabled-deprecated",
+			create: keyValueStoreCmd{
+				PublicNetworkingEnabled: ptr.To(false),
+			},
+			want: storage.KeyValueStoreParameters{
+				PublicNetworkingEnabled: ptr.To(false),
+			},
+		},
+		{
+			name: "publicNetworking-disabled",
+			create: keyValueStoreCmd{
+				PublicNetworking: ptr.To(false),
+			},
+			want: storage.KeyValueStoreParameters{
+				PublicNetworkingEnabled: ptr.To(false),
+			},
+		},
+		{
+			name: "publicNetworking-disabled-both",
+			create: keyValueStoreCmd{
+				PublicNetworking:        ptr.To(false),
+				PublicNetworkingEnabled: ptr.To(true),
+			},
+			want: storage.KeyValueStoreParameters{
+				PublicNetworkingEnabled: ptr.To(false),
 			},
 		},
 	}

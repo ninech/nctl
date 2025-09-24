@@ -16,12 +16,15 @@ import (
 
 type openSearchCmd struct {
 	resourceCmd
-	Location                meta.LocationName             `placeholder:"${opensearch_location_default}" help:"Where the OpenSearch cluster is created. Available locations are: ${opensearch_location_options}"`
-	ClusterType             storage.OpenSearchClusterType `placeholder:"${opensearch_cluster_type_default}" help:"Type of cluster. Available types: ${opensearch_cluster_types}"`
-	MachineType             string                        `placeholder:"${opensearch_machine_type_default}" help:"Defines the sizing of an OpenSearch instance. Available types: ${opensearch_machine_types}"`
-	AllowedCidrs            []meta.IPv4CIDR               `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the public endpoint."`
-	PublicNetworkingEnabled *bool                         `help:"If public networking is \"false\", it is only possible to access the service by configuring a service connection."`
-	BucketUsers             []string                      `placeholder:"user1,user2" help:"BucketUsers specify the users who have read access to the OpenSearch snapshots bucket."`
+	Location         meta.LocationName             `placeholder:"${opensearch_location_default}" help:"Where the OpenSearch cluster is created. Available locations are: ${opensearch_location_options}"`
+	ClusterType      storage.OpenSearchClusterType `placeholder:"${opensearch_cluster_type_default}" help:"Type of cluster. Available types: ${opensearch_cluster_types}"`
+	MachineType      string                        `placeholder:"${opensearch_machine_type_default}" help:"Defines the sizing of an OpenSearch instance. Available types: ${opensearch_machine_types}"`
+	AllowedCidrs     []meta.IPv4CIDR               `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the public endpoint."`
+	BucketUsers      []string                      `placeholder:"user1,user2" help:"BucketUsers specify the users who have read access to the OpenSearch snapshots bucket."`
+	PublicNetworking *bool                         `negatable:"" help:"Enable or disable public networking. Enabled by default."`
+
+	// Deprecated Flags
+	PublicNetworkingEnabled *bool `hidden:"" help:"If public networking is \"false\", it is only possible to access the service by configuring a service connection."`
 }
 
 func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client) error {
@@ -70,6 +73,11 @@ func OpenSearchKongVars() kong.Vars {
 func (cmd *openSearchCmd) newOpenSearch(namespace string) (*storage.OpenSearch, error) {
 	name := getName(cmd.Name)
 
+	publicNetworking := cmd.PublicNetworking
+	if publicNetworking == nil {
+		publicNetworking = cmd.PublicNetworkingEnabled
+	}
+
 	openSearch := &storage.OpenSearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -88,7 +96,7 @@ func (cmd *openSearchCmd) newOpenSearch(namespace string) (*storage.OpenSearch, 
 				ClusterType:             cmd.ClusterType,
 				AllowedCIDRs:            cmd.AllowedCidrs,
 				BucketUsers:             LocalReferences(cmd.BucketUsers),
-				PublicNetworkingEnabled: cmd.PublicNetworkingEnabled,
+				PublicNetworkingEnabled: publicNetworking,
 			},
 		},
 	}

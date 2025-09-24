@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func KeyValueStore(name, project, location string) *storage.KeyValueStore {
+func KeyValueStore(name, project string, location meta.LocationName) *storage.KeyValueStore {
 	return &storage.KeyValueStore{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -21,7 +21,7 @@ func KeyValueStore(name, project, location string) *storage.KeyValueStore {
 				},
 			},
 			ForProvider: storage.KeyValueStoreParameters{
-				Location: meta.LocationName(location),
+				Location: location,
 			},
 		},
 	}
