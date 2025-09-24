@@ -87,27 +87,10 @@ func main() {
 		kong.BindTo(ctx, (*context.Context)(nil)),
 	)
 
-	predictors := []completion.Option{
-		completion.WithPredictor("file", complete.PredictFiles("*")),
-	}
 	apiClientRequired := !noAPIClientRequired(strings.Join(os.Args[1:], " "))
-	if apiClientRequired {
-		predictors = append(predictors,
-			completion.WithPredictor("resource_name", predictor.NewResourceName(ctx, defaultAPICluster)),
-			completion.WithPredictor("project_name", predictor.NewResourceNameWithKind(
-				ctx, defaultAPICluster, management.SchemeGroupVersion.WithKind(
-					reflect.TypeOf(management.ProjectList{}).Name(),
-				)),
-			),
-		)
-	} else {
-		// complete needs all used predictors to be defined, so we just use
-		// [complete.PredictNothing] for those that would require an API client.
-		predictors = append(predictors,
-			completion.WithPredictor("resource_name", complete.PredictNothing),
-			completion.WithPredictor("project_name", complete.PredictNothing),
-		)
-	}
+	predictors := append([]completion.Option{
+		completion.WithPredictor("file", complete.PredictFiles("*")),
+	}, clientPredictors(ctx, apiClientRequired)...)
 	completion.Register(parser, predictors...)
 
 	kongCtx, err := parser.Parse(os.Args[1:])
@@ -146,6 +129,31 @@ func main() {
 			err = errors.New("permission denied: verify in Cockpit Access Management that you a member of the organization")
 		}
 		kongCtx.FatalIfErrorf(err)
+	}
+}
+
+func clientPredictors(ctx context.Context, apiClientRequired bool) []completion.Option {
+	// complete needs all used predictors to be defined, so we just use
+	// [complete.PredictNothing] for those that would require an API client.
+	nothing := []completion.Option{
+		completion.WithPredictor("resource_name", complete.PredictNothing),
+		completion.WithPredictor("project_name", complete.PredictNothing),
+	}
+
+	if !apiClientRequired {
+		return nothing
+	}
+
+	client, err := predictor.NewClient(ctx, defaultAPICluster)
+	if err != nil {
+		return nothing
+	}
+
+	return []completion.Option{
+		completion.WithPredictor("resource_name", predictor.NewResourceName(client)),
+		completion.WithPredictor("project_name", predictor.NewResourceNameWithKind(client,
+			management.SchemeGroupVersion.WithKind(reflect.TypeOf(management.ProjectList{}).Name())),
+		),
 	}
 }
 
