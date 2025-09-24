@@ -118,39 +118,39 @@ func TestFile(t *testing.T) {
 			if _, err := fmt.Fprintf(f, tc.file, name, "value", runtimev1.DeletionOrphan); err != nil {
 				t.Fatal(err)
 			}
+			// The file is written, but the pointer is at the end.
+			// Close it to flush content.
+			require.NoError(t, f.Close())
 
 			opts := []Option{}
 
+			// For delete and update tests, we first create the resource.
+			if tc.delete || tc.update {
+				fileToCreate, err := os.Open(f.Name())
+				require.NoError(t, err)
+				err = File(ctx, apiClient, fileToCreate) // This will close fileToCreate
+				require.NoError(t, err)
+			}
+
 			if tc.delete {
-				// we need to ensure that the resource exists before we can delete it
-				if err := File(ctx, apiClient, f.Name()); err != nil {
-					t.Fatal(err)
-				}
 				opts = append(opts, Delete())
 			}
 
 			if tc.update {
-				// we need to ensure that the resource exists before we can update
-				if err := File(ctx, apiClient, f.Name()); err != nil {
-					t.Fatal(err)
-				}
-
-				if err := f.Truncate(0); err != nil {
-					t.Fatal(err)
-				}
-
-				if _, err := f.Seek(0, 0); err != nil {
-					t.Fatal(err)
-				}
-
-				if _, err := fmt.Fprintf(f, tc.file, name, tc.updatedAnnotation, tc.updatedSpecValue); err != nil {
-					t.Fatal(err)
-				}
+				// Re-create the file to truncate it and write the updated content.
+				updatedFile, err := os.Create(f.Name())
+				require.NoError(t, err)
+				_, err = fmt.Fprintf(updatedFile, tc.file, name, tc.updatedAnnotation, tc.updatedSpecValue)
+				require.NoError(t, err)
+				require.NoError(t, updatedFile.Close())
 
 				opts = append(opts, UpdateOnExists())
 			}
 
-			if err := File(ctx, apiClient, f.Name(), opts...); err != nil {
+			fileToApply, err := os.Open(f.Name())
+			require.NoError(t, err)
+
+			if err := File(ctx, apiClient, fileToApply, opts...); err != nil {
 				if tc.expectedErr {
 					return
 				}

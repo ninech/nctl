@@ -579,8 +579,6 @@ github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f/go.mod h1:qRW
 github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f h1:y5//uYreIhSUg3J1GEMiLbxo1LJaP8RfCpH6pymGZus=
 github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f/go.mod h1:ZdcZmHo+o7JKHSa8/e818NopupXU1YMK5fe1lsApnBw=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
-github.com/ninech/apis v0.0.0-20250919080229-7b9e4faad271 h1:EUdePYKqUvLDKRE8jGUYIwSCoYyDpuMyQIfKEMBLTmg=
-github.com/ninech/apis v0.0.0-20250919080229-7b9e4faad271/go.mod h1:v9N/4IvFju6G/Qp6BPanKG+V6VYsTFiytZs2hktr3Yk=
 github.com/ninech/apis v0.0.0-20250923145617-eda423f1b20a h1:HPjeOljDm2Nyc/Ypxu39AOgqQCQ6xqOd6sSHyUMnMyI=
 github.com/ninech/apis v0.0.0-20250923145617-eda423f1b20a/go.mod h1:v9N/4IvFju6G/Qp6BPanKG+V6VYsTFiytZs2hktr3Yk=
 github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=

@@ -3,6 +3,7 @@ package delete
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
@@ -12,7 +13,7 @@ import (
 )
 
 type Cmd struct {
-	Filename            string               `short:"f" predictor:"file"`
+	Filename            *os.File             `short:"f" predictor:"file"`
 	FromFile            fromFile             `cmd:"" default:"1" name:"-f <file>" help:"Delete any resource from a yaml or json file."`
 	VCluster            vclusterCmd          `cmd:"" group:"infrastructure.nine.ch" name:"vcluster" help:"Delete a vcluster."`
 	APIServiceAccount   apiServiceAccountCmd `cmd:"" group:"iam.nine.ch" name:"apiserviceaccount" aliases:"asa" help:"Delete an API Service Account."`

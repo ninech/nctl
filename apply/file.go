@@ -40,23 +40,19 @@ func Delete() Option {
 	}
 }
 
-func File(ctx context.Context, client *api.Client, filename string, opts ...Option) error {
-	if len(filename) == 0 {
+func File(ctx context.Context, client *api.Client, file *os.File, opts ...Option) error {
+	if file == nil {
 		return fmt.Errorf("missing flag -f, --filename=STRING")
 	}
+	defer file.Close()
 
 	cfg := &config{}
 	for _, opt := range opts {
 		opt(cfg)
 	}
 
-	f, err := os.Open(filename)
-	if err != nil {
-		return err
-	}
-
 	obj := &unstructured.Unstructured{}
-	if err := yaml.NewYAMLOrJSONDecoder(f, 4096).Decode(obj); err != nil {
+	if err := yaml.NewYAMLOrJSONDecoder(file, 4096).Decode(obj); err != nil {
 		return err
 	}
 

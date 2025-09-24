@@ -33,21 +33,11 @@ type Resource struct {
 	knownGVK *schema.GroupVersionKind
 }
 
-func NewResourceName(ctx context.Context, defaultAPICluster string) complete.Predictor {
-	// we don't want to error in our predictor so we just return an empty predictor
-	client, err := newClient(ctx, defaultAPICluster)
-	if err != nil {
-		return complete.PredictNothing
-	}
+func NewResourceName(client *api.Client) complete.Predictor {
 	return &Resource{client: client}
 }
 
-func NewResourceNameWithKind(ctx context.Context, defaultAPICluster string, gvk schema.GroupVersionKind) complete.Predictor {
-	// we can't error in our predictor so we just return an empty predictor
-	client, err := newClient(ctx, defaultAPICluster)
-	if err != nil {
-		return complete.PredictNothing
-	}
+func NewResourceNameWithKind(client *api.Client, gvk schema.GroupVersionKind) complete.Predictor {
 	return &Resource{
 		client:   client,
 		knownGVK: ptr.To(gvk),
@@ -109,7 +99,7 @@ func listKindToResource(kind string) string {
 	return flect.Pluralize(strings.TrimSuffix(strings.ToLower(kind), listSuffix))
 }
 
-func newClient(ctx context.Context, defaultAPICluster string) (*api.Client, error) {
+func NewClient(ctx context.Context, defaultAPICluster string) (*api.Client, error) {
 	// the client for the predictor requires a static token in the client config
 	// since dynamic exec config seems to break with some shells during completion.
 	// The exact reason for that is unknown.
