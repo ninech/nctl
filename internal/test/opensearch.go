@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func OpenSearch(name, project, location string) *storage.OpenSearch {
+func OpenSearch(name, project string, location meta.LocationName) *storage.OpenSearch {
 	return &storage.OpenSearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -21,7 +21,7 @@ func OpenSearch(name, project, location string) *storage.OpenSearch {
 				},
 			},
 			ForProvider: storage.OpenSearchParameters{
-				Location: meta.LocationName(location),
+				Location: location,
 			},
 		},
 	}

@@ -13,10 +13,13 @@ import (
 
 type keyValueStoreCmd struct {
 	resourceCmd
-	MemorySize              *storage.KeyValueStoreMemorySize      `placeholder:"${keyvaluestore_memorysize_default}" help:"Available amount of memory."`
-	MaxMemoryPolicy         *storage.KeyValueStoreMaxMemoryPolicy `placeholder:"${keyvaluestore_maxmemorypolicy_default}" help:"Behaviour when the memory limit is reached."`
-	AllowedCidrs            *[]meta.IPv4CIDR                      `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the public endpoint."`
-	PublicNetworkingEnabled *bool                                 `help:"If public networking is \"false\", it is only possible to access the service by configuring a service connection."`
+	MemorySize       *storage.KeyValueStoreMemorySize      `placeholder:"${keyvaluestore_memorysize_default}" help:"Available amount of memory."`
+	MaxMemoryPolicy  *storage.KeyValueStoreMaxMemoryPolicy `placeholder:"${keyvaluestore_maxmemorypolicy_default}" help:"Behaviour when the memory limit is reached."`
+	AllowedCidrs     *[]meta.IPv4CIDR                      `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the public endpoint."`
+	PublicNetworking *bool                                 `negatable:"" help:"Enable or disable public networking."`
+
+	// Deprecated Flags
+	PublicNetworkingEnabled *bool `hidden:"" help:"If public networking is \"false\", it is only possible to access the service by configuring a service connection."`
 }
 
 func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client) error {
@@ -47,8 +50,13 @@ func (cmd *keyValueStoreCmd) applyUpdates(kvs *storage.KeyValueStore) error {
 	if cmd.AllowedCidrs != nil {
 		kvs.Spec.ForProvider.AllowedCIDRs = *cmd.AllowedCidrs
 	}
-	if cmd.PublicNetworkingEnabled != nil {
-		kvs.Spec.ForProvider.PublicNetworkingEnabled = cmd.PublicNetworkingEnabled
+
+	publicNetworking := cmd.PublicNetworking
+	if publicNetworking == nil {
+		publicNetworking = cmd.PublicNetworkingEnabled
+	}
+	if publicNetworking != nil {
+		kvs.Spec.ForProvider.PublicNetworkingEnabled = publicNetworking
 	}
 
 	return nil

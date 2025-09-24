@@ -2,7 +2,6 @@ package update
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
 	meta "github.com/ninech/apis/meta/v1alpha1"
@@ -91,7 +90,7 @@ func TestKeyValueStore(t *testing.T) {
 			},
 		},
 		{
-			name: "update-public-networking",
+			name: "disable-public-networking-deprecated",
 			create: storage.KeyValueStoreParameters{
 				PublicNetworkingEnabled: ptr.To(true),
 			},
@@ -100,15 +99,37 @@ func TestKeyValueStore(t *testing.T) {
 				PublicNetworkingEnabled: ptr.To(false),
 			},
 		},
+		{
+			name: "disable-public-networking",
+			create: storage.KeyValueStoreParameters{
+				PublicNetworkingEnabled: ptr.To(true),
+			},
+			update: keyValueStoreCmd{PublicNetworking: ptr.To(false)},
+			want: storage.KeyValueStoreParameters{
+				PublicNetworkingEnabled: ptr.To(false),
+			},
+		},
+		{
+			name: "disable-public-networking-both",
+			create: storage.KeyValueStoreParameters{
+				PublicNetworkingEnabled: ptr.To(true),
+			},
+			update: keyValueStoreCmd{PublicNetworking: ptr.To(false), PublicNetworkingEnabled: ptr.To(true)},
+			want: storage.KeyValueStoreParameters{
+				PublicNetworkingEnabled: ptr.To(false),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			is := require.New(t)
+
 			tt.update.Name = "test-" + t.Name()
 
 			apiClient, err := test.SetupClient()
-			require.NoError(t, err)
+			is.NoError(err)
 
-			created := test.KeyValueStore(tt.update.Name, apiClient.Project, "nine-es34")
+			created := test.KeyValueStore(tt.update.Name, apiClient.Project, meta.LocationNineES34)
 			created.Spec.ForProvider = tt.create
 			if err := apiClient.Create(ctx, created); err != nil {
 				t.Fatalf("keyvaluestore create error, got: %s", err)
@@ -125,9 +146,7 @@ func TestKeyValueStore(t *testing.T) {
 				t.Fatalf("expected keyvaluestore to exist, got: %s", err)
 			}
 
-			if !reflect.DeepEqual(updated.Spec.ForProvider, tt.want) {
-				t.Fatalf("expected KeyValueStore.Spec.ForProvider = %v, got: %v", updated.Spec.ForProvider, tt.want)
-			}
+			is.Equal(tt.want, updated.Spec.ForProvider)
 		})
 	}
 }

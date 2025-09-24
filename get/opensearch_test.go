@@ -190,7 +190,7 @@ func TestOpenSearch(t *testing.T) {
 
 			objects := []client.Object{}
 			for _, instance := range tt.instances {
-				created := test.OpenSearch(instance.name, instance.project, string(meta.LocationNineES34))
+				created := test.OpenSearch(instance.name, instance.project, meta.LocationNineES34)
 				created.Spec.ForProvider.MachineType = instance.machineType
 
 				// Set cluster health status if provided

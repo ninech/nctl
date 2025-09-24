@@ -15,11 +15,14 @@ import (
 
 type keyValueStoreCmd struct {
 	resourceCmd
-	Location                meta.LocationName                    `placeholder:"${keyvaluestore_location_default}" help:"Where the Key-Value Store instance is created. Available locations are: ${keyvaluestore_location_options}"`
-	MemorySize              *storage.KeyValueStoreMemorySize     `placeholder:"${keyvaluestore_memorysize_default}" help:"Available amount of memory."`
-	MaxMemoryPolicy         storage.KeyValueStoreMaxMemoryPolicy `placeholder:"${keyvaluestore_maxmemorypolicy_default}" help:"Behaviour when the memory limit is reached."`
-	AllowedCidrs            []meta.IPv4CIDR                      `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the public endpoint."`
-	PublicNetworkingEnabled *bool                                `help:"If public networking is \"false\", it is only possible to access the service by configuring a service connection."`
+	Location         meta.LocationName                    `placeholder:"${keyvaluestore_location_default}" help:"Where the Key-Value Store instance is created. Available locations are: ${keyvaluestore_location_options}"`
+	MemorySize       *storage.KeyValueStoreMemorySize     `placeholder:"${keyvaluestore_memorysize_default}" help:"Available amount of memory."`
+	MaxMemoryPolicy  storage.KeyValueStoreMaxMemoryPolicy `placeholder:"${keyvaluestore_maxmemorypolicy_default}" help:"Behaviour when the memory limit is reached."`
+	AllowedCidrs     []meta.IPv4CIDR                      `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the public endpoint."`
+	PublicNetworking *bool                                `negatable:"" help:"Enable or disable public networking. Enabled by default."`
+
+	// Deprecated Flags
+	PublicNetworkingEnabled *bool `hidden:""`
 }
 
 func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client) error {
@@ -65,6 +68,11 @@ func KeyValueStoreKongVars() kong.Vars {
 func (cmd *keyValueStoreCmd) newKeyValueStore(namespace string) (*storage.KeyValueStore, error) {
 	name := getName(cmd.Name)
 
+	publicNetworking := cmd.PublicNetworking
+	if publicNetworking == nil {
+		publicNetworking = cmd.PublicNetworkingEnabled
+	}
+
 	keyValueStore := &storage.KeyValueStore{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -81,7 +89,7 @@ func (cmd *keyValueStoreCmd) newKeyValueStore(namespace string) (*storage.KeyVal
 				Location:                cmd.Location,
 				MaxMemoryPolicy:         cmd.MaxMemoryPolicy,
 				AllowedCIDRs:            cmd.AllowedCidrs,
-				PublicNetworkingEnabled: cmd.PublicNetworkingEnabled,
+				PublicNetworkingEnabled: publicNetworking,
 				MemorySize:              cmd.MemorySize,
 			},
 		},

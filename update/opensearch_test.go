@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
@@ -25,6 +24,7 @@ func TestOpenSearch(t *testing.T) {
 	}{
 		{
 			name:   "increase-machineType",
+			create: storage.OpenSearchParameters{MachineType: infra.MachineTypeNineSearchS},
 			update: openSearchCmd{MachineType: ptr.To(infra.MachineTypeNineSearchL.String())},
 			want:   storage.OpenSearchParameters{MachineType: infra.MachineTypeNineSearchL},
 		},
@@ -61,15 +61,47 @@ func TestOpenSearch(t *testing.T) {
 				BucketUsers: []meta.LocalReference{{Name: "user1"}, {Name: "user2"}},
 			},
 		},
+		{
+			name: "disable-public-networking-deprecated",
+			create: storage.OpenSearchParameters{
+				PublicNetworkingEnabled: ptr.To(true),
+			},
+			update: openSearchCmd{PublicNetworkingEnabled: ptr.To(false)},
+			want: storage.OpenSearchParameters{
+				PublicNetworkingEnabled: ptr.To(false),
+			},
+		},
+		{
+			name: "disable-public-networking",
+			create: storage.OpenSearchParameters{
+				PublicNetworkingEnabled: ptr.To(true),
+			},
+			update: openSearchCmd{PublicNetworking: ptr.To(false)},
+			want: storage.OpenSearchParameters{
+				PublicNetworkingEnabled: ptr.To(false),
+			},
+		},
+		{
+			name: "disable-public-networking-both",
+			create: storage.OpenSearchParameters{
+				PublicNetworkingEnabled: ptr.To(true),
+			},
+			update: openSearchCmd{PublicNetworking: ptr.To(false), PublicNetworkingEnabled: ptr.To(true)},
+			want: storage.OpenSearchParameters{
+				PublicNetworkingEnabled: ptr.To(false),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			is := require.New(t)
+
 			tt.update.Name = "test-" + t.Name()
 
 			apiClient, err := test.SetupClient()
-			require.NoError(t, err)
+			is.NoError(err)
 
-			created := test.OpenSearch(tt.update.Name, apiClient.Project, "nine-es34")
+			created := test.OpenSearch(tt.update.Name, apiClient.Project, meta.LocationNineES34)
 			created.Spec.ForProvider = tt.create
 			if err := apiClient.Create(ctx, created); err != nil {
 				t.Fatalf("opensearch create error, got: %s", err)
@@ -86,9 +118,7 @@ func TestOpenSearch(t *testing.T) {
 				t.Fatalf("expected openSearch to exist, got: %s", err)
 			}
 
-			if !cmp.Equal(updated.Spec.ForProvider, tt.want) {
-				t.Fatalf("expected openSearch.Spec.ForProvider = %v, got: %v", updated.Spec.ForProvider, tt.want)
-			}
+			is.EqualExportedValues(tt.want, updated.Spec.ForProvider) // As machine types contain unexported values.
 		})
 	}
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 func TestOpenSearch(t *testing.T) {
@@ -55,6 +56,52 @@ func TestOpenSearch(t *testing.T) {
 			},
 			want: storage.OpenSearchParameters{
 				AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("192.168.1.0/24")},
+			},
+		},
+		{
+			name: "publicNetworking-deprecated",
+			create: openSearchCmd{
+				PublicNetworkingEnabled: ptr.To(true),
+			},
+			want: storage.OpenSearchParameters{
+				PublicNetworkingEnabled: ptr.To(true),
+			},
+		},
+		{
+			name: "publicNetworking",
+			create: openSearchCmd{
+				PublicNetworking: ptr.To(true),
+			},
+			want: storage.OpenSearchParameters{
+				PublicNetworkingEnabled: ptr.To(true),
+			},
+		},
+		{
+			name: "publicNetworking-disabled-deprecated",
+			create: openSearchCmd{
+				PublicNetworkingEnabled: ptr.To(false),
+			},
+			want: storage.OpenSearchParameters{
+				PublicNetworkingEnabled: ptr.To(false),
+			},
+		},
+		{
+			name: "publicNetworking-disabled",
+			create: openSearchCmd{
+				PublicNetworking: ptr.To(false),
+			},
+			want: storage.OpenSearchParameters{
+				PublicNetworkingEnabled: ptr.To(false),
+			},
+		},
+		{
+			name: "publicNetworking-disabled-both",
+			create: openSearchCmd{
+				PublicNetworking:        ptr.To(false),
+				PublicNetworkingEnabled: ptr.To(true),
+			},
+			want: storage.OpenSearchParameters{
+				PublicNetworkingEnabled: ptr.To(false),
 			},
 		},
 	}
