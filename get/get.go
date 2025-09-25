@@ -39,6 +39,7 @@ type Cmd struct {
 	All                 allCmd                `cmd:"" name:"all" help:"Get project content."`
 	CloudVirtualMachine cloudVMCmd            `cmd:"" group:"infrastructure.nine.ch" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Get a CloudVM."`
 	ServiceConnection   serviceConnectionCmd  `cmd:"" group:"networking.nine.ch" name:"serviceconnection" aliases:"sc" help:"Get a ServiceConnection."`
+	Bucket              bucketCmd             `cmd:"" group:"storage.nine.ch" name:"bucket" help:"Get Bucket instances."`
 	BucketUser          bucketUserCmd         `cmd:"" group:"storage.nine.ch" name:"bucketuser" aliases:"bu" help:"Get BucketUser instances."`
 }
 
