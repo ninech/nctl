@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"os"
-	"regexp"
 	"testing"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
@@ -16,8 +15,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	sigs "sigs.k8s.io/controller-runtime/pkg/client"
-	fake "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestAllContent(t *testing.T) {
@@ -26,8 +25,8 @@ func TestAllContent(t *testing.T) {
 	organization := "evilcorp"
 
 	for name, testCase := range map[string]struct {
-		projects             []sigs.Object
-		objects              []sigs.Object
+		projects             []client.Object
+		objects              []client.Object
 		projectName          string
 		outputFormat         outputFormat
 		allProjects          bool
@@ -35,32 +34,36 @@ func TestAllContent(t *testing.T) {
 		kinds                []string
 		output               string
 		errorExpected        bool
-		expectRegexp         *regexp.Regexp
 	}{
 		"all resources from one project, full format": {
 			projects:     test.Projects(organization, "dev", "staging", "prod"),
-			objects:      []sigs.Object{testApplication("banana", "dev"), testRelease("pear", "dev")},
+			objects:      []client.Object{testApplication("banana", "dev"), testRelease("pear", "dev")},
 			outputFormat: full,
 			projectName:  "dev",
-			expectRegexp: regexp.MustCompile(`PROJECT\s+NAME\s+KIND\s+GROUP\ndev\s+banana\s+Application\s+apps.nine.ch\ndev\s+pear\s+Release\s+apps.nine.ch\n`),
+			output: `PROJECT  NAME    KIND         GROUP
+dev      banana  Application  apps.nine.ch
+dev      pear    Release      apps.nine.ch
+`,
 		},
 		"all resources from one project, no header": {
 			projects:     test.Projects(organization, "dev", "staging", "prod"),
-			objects:      []sigs.Object{testApplication("banana", "dev"), testRelease("pear", "dev")},
+			objects:      []client.Object{testApplication("banana", "dev"), testRelease("pear", "dev")},
 			outputFormat: noHeader,
 			projectName:  "dev",
-			expectRegexp: regexp.MustCompile(`dev\s+banana\s+Application\s+apps.nine.ch\ndev\s+pear\s+Release\s+apps.nine.ch\n`),
+			output: `dev  banana  Application  apps.nine.ch
+dev  pear    Release      apps.nine.ch
+`,
 		},
 		"all resources from one project, yaml format": {
 			projects:     test.Projects(organization, "dev", "staging", "prod"),
-			objects:      []sigs.Object{testApplication("banana", "dev"), testRelease("pear", "dev")},
+			objects:      []client.Object{testApplication("banana", "dev"), testRelease("pear", "dev")},
 			outputFormat: yamlOut,
 			projectName:  "dev",
 			output:       "apiVersion: apps.nine.ch/v1alpha1\nkind: Application\nmetadata:\n  creationTimestamp: null\n  name: banana\n  namespace: dev\nspec:\n  forProvider:\n    buildEnv: null\n    config:\n      env: null\n      port: null\n      replicas: null\n      size: \"\"\n    dockerfileBuild:\n      enabled: false\n    git:\n      revision: \"\"\n      subPath: \"\"\n      url: \"\"\n    paused: false\nstatus:\n  atProvider:\n    defaultURLs: null\n---\napiVersion: apps.nine.ch/v1alpha1\ncreationTimestampNano: 0\nkind: Release\nmetadata:\n  creationTimestamp: null\n  name: pear\n  namespace: dev\nspec:\n  forProvider:\n    build:\n      name: \"\"\n    configuration:\n      size:\n        origin: \"\"\n        value: \"\"\n    defaultHosts: null\n    healthProbeConfiguration: null\n    image: {}\n    paused: false\nstatus:\n  atProvider:\n    owning: false\n",
 		},
 		"all resources from one project, json format": {
 			projects:     test.Projects(organization, "dev", "staging", "prod"),
-			objects:      []sigs.Object{testApplication("banana", "dev"), testRelease("pear", "dev")},
+			objects:      []client.Object{testApplication("banana", "dev"), testRelease("pear", "dev")},
 			outputFormat: jsonOut,
 			projectName:  "dev",
 			output: `[
@@ -135,43 +138,54 @@ func TestAllContent(t *testing.T) {
 		},
 		"all projects, full format": {
 			projects: test.Projects(organization, "dev", "staging", "prod"),
-			objects: []sigs.Object{
+			objects: []client.Object{
 				testApplication("banana", "dev"), testRelease("pear", "dev"),
 				testApplication("apple", "staging"), testRelease("melon", "staging"),
 				testCluster("orange", "prod"),
 			},
 			outputFormat: full,
 			allProjects:  true,
-			expectRegexp: regexp.MustCompile(`PROJECT\s+NAME\s+KIND\s+GROUP\ndev\s+banana\s+Application\s+apps.nine.ch\ndev\s+pear\s+Release\s+apps.nine.ch\nprod\s+orange\s+KubernetesCluster\s+infrastructure.nine.ch\nstaging\s+apple\s+Application\s+apps.nine.ch\nstaging\s+melon\s+Release\s+apps.nine.ch\n`),
+			output: `PROJECT  NAME    KIND               GROUP
+dev      banana  Application        apps.nine.ch
+dev      pear    Release            apps.nine.ch
+prod     orange  KubernetesCluster  infrastructure.nine.ch
+staging  apple   Application        apps.nine.ch
+staging  melon   Release            apps.nine.ch
+`,
 		},
 		"all projects, no headers format": {
 			projects: test.Projects(organization, "dev", "staging", "prod"),
-			objects: []sigs.Object{
+			objects: []client.Object{
 				testApplication("banana", "dev"), testRelease("pear", "dev"),
 				testApplication("apple", "staging"), testRelease("melon", "staging"),
 				testCluster("orange", "prod"),
 			},
 			outputFormat: noHeader,
 			allProjects:  true,
-			expectRegexp: regexp.MustCompile(`dev\s+banana\s+Application\s+apps.nine.ch\ndev\s+pear\s+Release\s+apps.nine.ch\nprod\s+orange\s+KubernetesCluster\s+infrastructure.nine.ch\nstaging\s+apple\s+Application\s+apps.nine.ch\nstaging\s+melon\s+Release\s+apps.nine.ch\n`),
+			output: `dev      banana  Application        apps.nine.ch
+dev      pear    Release            apps.nine.ch
+prod     orange  KubernetesCluster  infrastructure.nine.ch
+staging  apple   Application        apps.nine.ch
+staging  melon   Release            apps.nine.ch
+`,
 		},
 		"empty resources of a specific project, full format": {
 			projects:     test.Projects(organization, "dev"),
-			objects:      []sigs.Object{},
+			objects:      []client.Object{},
 			outputFormat: full,
 			projectName:  "dev",
 			output:       "no Resources found in project dev\n",
 		},
 		"empty resources of all projects, full format": {
 			projects:     test.Projects(organization, "dev", "staging"),
-			objects:      []sigs.Object{},
+			objects:      []client.Object{},
 			outputFormat: full,
 			allProjects:  true,
 			output:       "no Resources found in any project\n",
 		},
 		"filter nine resources, no headers format": {
 			projects: test.Projects(organization, "dev", "staging", "prod"),
-			objects: []sigs.Object{
+			objects: []client.Object{
 				testApplication("banana", "dev"), testRelease("pear", "dev"),
 				testApplication("apple", "staging"), testRelease("melon", "staging"), testRelease("cherry", "staging"),
 				testCluster("orange", "prod"),
@@ -185,11 +199,17 @@ func TestAllContent(t *testing.T) {
 			},
 			outputFormat: noHeader,
 			allProjects:  true,
-			expectRegexp: regexp.MustCompile(`dev\s+banana\s+Application\s+apps.nine.ch\ndev\s+pear\s+Release\s+apps.nine.ch\nprod\s+orange\s+KubernetesCluster\s+infrastructure.nine.ch\nstaging\s+apple\s+Application\s+apps.nine.ch\nstaging\s+cherry\s+Release\s+apps.nine.ch\nstaging\s+melon\s+Release\s+apps.nine.ch\n`),
+			output: `dev      banana  Application        apps.nine.ch
+dev      pear    Release            apps.nine.ch
+prod     orange  KubernetesCluster  infrastructure.nine.ch
+staging  apple   Application        apps.nine.ch
+staging  cherry  Release            apps.nine.ch
+staging  melon   Release            apps.nine.ch
+`,
 		},
 		"include nine resources, no headers format": {
 			projects: test.Projects(organization, "dev", "staging", "prod"),
-			objects: []sigs.Object{
+			objects: []client.Object{
 				testApplication("banana", "dev"), testRelease("pear", "dev"),
 				testApplication("apple", "staging"), testRelease("melon", "staging"), testRelease("cherry", "staging"),
 				testCluster("orange", "prod"),
@@ -204,11 +224,18 @@ func TestAllContent(t *testing.T) {
 			outputFormat:         noHeader,
 			allProjects:          true,
 			includeNineResources: true,
-			expectRegexp:         regexp.MustCompile(`dev\s+banana\s+Application\s+apps.nine.ch\ndev\s+kiwi\s+Application\s+apps.nine.ch\ndev\s+pear\s+Release\s+apps.nine.ch\nprod\s+orange\s+KubernetesCluster\s+infrastructure.nine.ch\nstaging\s+apple\s+Application\s+apps.nine.ch\nstaging\s+cherry\s+Release\s+apps.nine.ch\nstaging\s+melon\s+Release\s+apps.nine.ch\n`),
+			output: `dev      banana  Application        apps.nine.ch
+dev      kiwi    Application        apps.nine.ch
+dev      pear    Release            apps.nine.ch
+prod     orange  KubernetesCluster  infrastructure.nine.ch
+staging  apple   Application        apps.nine.ch
+staging  cherry  Release            apps.nine.ch
+staging  melon   Release            apps.nine.ch
+`,
 		},
 		"only certain kind": {
 			projects: test.Projects(organization, "dev", "staging", "prod"),
-			objects: []sigs.Object{
+			objects: []client.Object{
 				testApplication("banana", "dev"), testRelease("pear", "dev"),
 				testApplication("apple", "staging"), testRelease("melon", "staging"), testRelease("cherry", "staging"),
 				testCluster("orange", "prod"),
@@ -216,11 +243,14 @@ func TestAllContent(t *testing.T) {
 			outputFormat: full,
 			allProjects:  true,
 			kinds:        []string{"application"},
-			expectRegexp: regexp.MustCompile(`PROJECT\s+NAME\s+KIND\s+GROUP\ndev\s+banana\s+Application\s+apps.nine.ch\nstaging\s+apple\s+Application\s+apps.nine.ch\n`),
+			output: `PROJECT  NAME    KIND         GROUP
+dev      banana  Application  apps.nine.ch
+staging  apple   Application  apps.nine.ch
+`,
 		},
 		"multiple certain kinds, no header format": {
 			projects: test.Projects(organization, "dev", "staging", "prod"),
-			objects: []sigs.Object{
+			objects: []client.Object{
 				testApplication("banana", "dev"), testRelease("pear", "dev"),
 				testApplication("apple", "staging"), testRelease("melon", "staging"), testRelease("cherry", "staging"),
 				testCluster("orange", "prod"),
@@ -229,11 +259,16 @@ func TestAllContent(t *testing.T) {
 			outputFormat: noHeader,
 			allProjects:  true,
 			kinds:        []string{"release", "kubernetescluster"},
-			expectRegexp: regexp.MustCompile(`dev\s+dragonfruit\s+KubernetesCluster\s+infrastructure.nine.ch\ndev\s+pear\s+Release\s+apps.nine.ch\nprod\s+orange\s+KubernetesCluster\s+infrastructure.nine.ch\nstaging\s+cherry\s+Release\s+apps.nine.ch\nstaging\s+melon\s+Release\s+apps.nine.ch\n`),
+			output: `dev      dragonfruit  KubernetesCluster  infrastructure.nine.ch
+dev      pear         Release            apps.nine.ch
+prod     orange       KubernetesCluster  infrastructure.nine.ch
+staging  cherry       Release            apps.nine.ch
+staging  melon        Release            apps.nine.ch
+`,
 		},
 		"not known kind leads to an error": {
 			projects:      test.Projects(organization, "dev", "staging", "prod"),
-			objects:       []sigs.Object{},
+			objects:       []client.Object{},
 			outputFormat:  noHeader,
 			allProjects:   true,
 			kinds:         []string{"jackofalltrades"},
@@ -241,13 +276,16 @@ func TestAllContent(t *testing.T) {
 		},
 		"excluded list kinds are not shown": {
 			projects: test.Projects(organization, "dev"),
-			objects: []sigs.Object{
+			objects: []client.Object{
 				testApplication("banana", "dev"), testRelease("pear", "dev"),
 				testClusterData(),
 			},
 			outputFormat: full,
 			allProjects:  true,
-			expectRegexp: regexp.MustCompile(`PROJECT\s+NAME\s+KIND\s+GROUP\ndev\s+banana\s+Application\s+apps.nine.ch\ndev\s+pear\s+Release\s+apps.nine.ch\n`),
+			output: `PROJECT  NAME    KIND         GROUP
+dev      banana  Application  apps.nine.ch
+dev      pear    Release      apps.nine.ch
+`,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -269,15 +307,15 @@ func TestAllContent(t *testing.T) {
 
 			client := fake.NewClientBuilder().
 				WithScheme(scheme).
-				WithIndex(&management.Project{}, "metadata.name", func(o sigs.Object) []string {
+				WithIndex(&management.Project{}, "metadata.name", func(o client.Object) []string {
 					return []string{o.GetName()}
 				}).
 				WithObjects(append(testCase.projects, testCase.objects...)...).Build()
 
 			apiClient := &api.Client{WithWatch: client, Project: testCase.projectName}
-			kubecfg, err := test.CreateTestKubeconfig(apiClient, organization)
+			kubeconfig, err := test.CreateTestKubeconfig(apiClient, organization)
 			require.NoError(t, err)
-			defer os.Remove(kubecfg)
+			defer os.Remove(kubeconfig)
 
 			cmd := allCmd{
 				IncludeNineResources: testCase.includeNineResources,
@@ -290,11 +328,7 @@ func TestAllContent(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			if testCase.expectRegexp != nil {
-				assert.Regexp(t, testCase.expectRegexp, outputBuffer.String())
-			} else {
-				assert.Equal(t, testCase.output, outputBuffer.String())
-			}
+			assert.Equal(t, testCase.output, outputBuffer.String())
 		})
 	}
 }
