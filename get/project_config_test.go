@@ -3,7 +3,6 @@ package get
 import (
 	"bytes"
 	"context"
-	"regexp"
 	"testing"
 	"time"
 
@@ -26,7 +25,6 @@ func TestProjectConfigs(t *testing.T) {
 		createdConfigs             []client.Object
 		expectExactMessage         *string
 		expectedLineAmountInOutput *int
-		expectRegexp               *regexp.Regexp
 	}{
 		"get configs for all projects": {
 			get: &Cmd{
@@ -34,16 +32,16 @@ func TestProjectConfigs(t *testing.T) {
 					Format:      full,
 					AllProjects: true,
 				},
+			},
+			project: "ns-1",
+			createdConfigs: []client.Object{
+				fakeProjectConfig(time.Second*10, "ns-1", "ns-1"),
+				fakeProjectConfig(time.Second*12, "ns-2", "ns-2"),
+				fakeProjectConfig(time.Second*13, "ns-3", "ns-3"),
+			},
+			// we expect the header line and 3 project configs
+			expectedLineAmountInOutput: ptr.To(4),
 		},
-		project: "ns-1",
-		createdConfigs: []client.Object{
-			fakeProjectConfig(time.Second*10, "ns-1", "ns-1"),
-			fakeProjectConfig(time.Second*12, "ns-2", "ns-2"),
-			fakeProjectConfig(time.Second*13, "ns-3", "ns-3"),
-		},
-		// we expect the header line and 3 project configs
-		expectedLineAmountInOutput: ptr.To(4),
-	},
 		"get config for current project": {
 			get: &Cmd{
 				output: output{
@@ -92,7 +90,9 @@ func TestProjectConfigs(t *testing.T) {
 					},
 				},
 			},
-			expectRegexp: regexp.MustCompile(`PROJECT\s+NAME\s+SIZE\s+REPLICAS\s+PORT\s+ENVIRONMENT_VARIABLES\s+BASIC_AUTH\s+DEPLOY_JOB\s+AGE\nns-4\s+ns-4\s+poo=\*\*\*\*\*\s+false\s+<none>\s+292y\n`),
+			expectExactMessage: ptr.To(
+				"PROJECT  NAME  SIZE  REPLICAS  PORT  ENVIRONMENT_VARIABLES  BASIC_AUTH  DEPLOY_JOB  AGE\nns-4     ns-4                        poo=*****              false       <none>      292y\n",
+			),
 		},
 		"non-sensitive env var is shown": {
 			get: &Cmd{
@@ -116,7 +116,9 @@ func TestProjectConfigs(t *testing.T) {
 					},
 				},
 			},
-			expectRegexp: regexp.MustCompile(`PROJECT\s+NAME\s+SIZE\s+REPLICAS\s+PORT\s+ENVIRONMENT_VARIABLES\s+BASIC_AUTH\s+DEPLOY_JOB\s+AGE\nns-5\s+ns-5\s+goo=banana\s+false\s+<none>\s+292y\n`),
+			expectExactMessage: ptr.To(
+				"PROJECT  NAME  SIZE  REPLICAS  PORT  ENVIRONMENT_VARIABLES  BASIC_AUTH  DEPLOY_JOB  AGE\nns-5     ns-5                        goo=banana             false       <none>      292y\n",
+			),
 		},
 	}
 
@@ -142,13 +144,10 @@ func TestProjectConfigs(t *testing.T) {
 				assert.Equal(t, *tc.expectedLineAmountInOutput, test.CountLines(buf.String()), buf.String())
 			}
 
-			if tc.expectExactMessage != nil {
-				assert.Equal(t, *tc.expectExactMessage, buf.String(), buf.String())
+			if tc.expectExactMessage == nil {
+				return
 			}
-
-			if tc.expectRegexp != nil {
-				assert.Regexp(t, tc.expectRegexp, buf.String(), buf.String())
-			}
+			assert.Equal(t, buf.String(), *tc.expectExactMessage, buf.String())
 		})
 	}
 }
