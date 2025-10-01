@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -277,9 +276,9 @@ func spinnerMessage(msg, icon string, sleepTime time.Duration) error {
 }
 
 func combineEnvVars(plain, sensitive map[string]string) apps.EnvVars {
-	return slices.Concat(
+	return append(
 		util.EnvVarsFromMap(plain),
-		util.EnvVarsFromMap(sensitive, util.Sensitive()),
+		util.EnvVarsFromMap(sensitive, util.Sensitive())...,
 	)
 }
 
