@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
@@ -30,6 +31,8 @@ type applicationCmd struct {
 	Git                     *gitConfig        `embed:"" prefix:"git-"`
 	Size                    *string           `help:"Size of the app."`
 	Port                    *int32            `help:"Port the app is listening on."`
+	HealthProbe             *healthProbe      `embed:"" prefix:"health-probe-"`
+	DeleteHealthProbe       *bool             `help:"Delete existing custom health probe."`
 	Replicas                *int32            `help:"Amount of replicas of the running app."`
 	Hosts                   *[]string         `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
 	BasicAuth               *bool             `help:"Enable/Disable basic authentication for the application."`
@@ -90,6 +93,11 @@ func (g gitConfig) empty() bool {
 		g.Revision == nil && g.Username == nil &&
 		g.Password == nil && g.SSHPrivateKey == nil &&
 		g.SSHPrivateKeyFromFile == nil
+}
+
+type healthProbe struct {
+	PeriodSeconds *int32  `help:"How often (in seconds) to perform the custom health probe."`
+	Path          *string `help:"URL path on the application's HTTP server used for the custom health probe. The platform performs an HTTP GET on this path to determine health."`
 }
 
 type deployJob struct {
@@ -236,6 +244,12 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 	if cmd.Port != nil {
 		app.Spec.ForProvider.Config.Port = cmd.Port
 	}
+	if cmd.HealthProbe != nil {
+		cmd.HealthProbe.applyUpdates(&app.Spec.ForProvider.Config)
+	}
+	if cmd.DeleteHealthProbe != nil && *cmd.DeleteHealthProbe {
+		app.Spec.ForProvider.Config.HealthProbe = nil
+	}
 	if cmd.Replicas != nil {
 		app.Spec.ForProvider.Config.Replicas = cmd.Replicas
 	}
@@ -331,6 +345,30 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 
 func triggerTimestamp() string {
 	return time.Now().UTC().Format(time.RFC3339)
+}
+
+func (h healthProbe) ToProbePatch() util.ProbePatch {
+	var pp util.ProbePatch
+
+	if h.Path != nil {
+		if p := strings.TrimSpace(*h.Path); p == "" {
+			pp.Path = util.OptString{State: util.Clear}
+		} else {
+			pp.Path = util.OptString{State: util.Set, Val: p}
+		}
+	}
+	if h.PeriodSeconds != nil {
+		if ps := *h.PeriodSeconds; ps <= 0 {
+			pp.PeriodSeconds = util.OptInt32{State: util.Clear}
+		} else {
+			pp.PeriodSeconds = util.OptInt32{State: util.Set, Val: ps}
+		}
+	}
+	return pp
+}
+
+func (h healthProbe) applyUpdates(cfg *apps.Config) {
+	util.ApplyProbePatch(cfg, h.ToProbePatch())
 }
 
 func (job deployJob) applyUpdates(cfg *apps.Config) {

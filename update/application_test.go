@@ -116,6 +116,7 @@ func TestApplication(t *testing.T) {
 				},
 				Size:         ptr.To("newsize"),
 				Port:         ptr.To(int32(1234)),
+				HealthProbe:  &healthProbe{PeriodSeconds: ptr.To(int32(7)), Path: ptr.To("/he")},
 				Replicas:     ptr.To(int32(999)),
 				Hosts:        &[]string{"one.example.org", "two.example.org"},
 				Env:          map[string]string{"bar": "zoo"},
@@ -134,6 +135,8 @@ func TestApplication(t *testing.T) {
 				assert.Equal(t, *cmd.Git.Revision, updated.Spec.ForProvider.Git.Revision)
 				assert.Equal(t, apps.ApplicationSize(*cmd.Size), updated.Spec.ForProvider.Config.Size)
 				assert.Equal(t, *cmd.Port, *updated.Spec.ForProvider.Config.Port)
+				assert.Equal(t, cmd.HealthProbe.PeriodSeconds, updated.Spec.ForProvider.Config.HealthProbe.PeriodSeconds)
+				assert.Equal(t, *cmd.HealthProbe.Path, updated.Spec.ForProvider.Config.HealthProbe.HTTPGet.Path)
 				assert.Equal(t, *cmd.Replicas, *updated.Spec.ForProvider.Config.Replicas)
 				assert.Equal(t, *cmd.BasicAuth, *updated.Spec.ForProvider.Config.EnableBasicAuth)
 				assert.Equal(t, *cmd.Hosts, updated.Spec.ForProvider.Hosts)
@@ -153,6 +156,53 @@ func TestApplication(t *testing.T) {
 				// Retry Release/Build should be not set by default:
 				assert.Nil(t, util.EnvVarByName(updated.Spec.ForProvider.Config.Env, ReleaseTrigger))
 				assert.Nil(t, util.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
+			},
+		},
+		"reset custom health probe": {
+			orig: func() *apps.Application {
+				a := existingApp
+				a.Spec.ForProvider.Config.HealthProbe = &apps.Probe{
+					ProbeHandler: apps.ProbeHandler{
+						HTTPGet: &apps.HTTPGetAction{
+							Path: "/healthz",
+						},
+					},
+					PeriodSeconds: ptr.To(int32(9)),
+				}
+				return a
+			}(),
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
+				DeleteHealthProbe: ptr.To(true),
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				assert.Empty(t, updated.Spec.ForProvider.Config.HealthProbe)
+			},
+		},
+		"no-op when delete custom health probe set false": {
+			orig: func() *apps.Application {
+				a := existingApp
+				a.Spec.ForProvider.Config.HealthProbe = &apps.Probe{
+					ProbeHandler: apps.ProbeHandler{
+						HTTPGet: &apps.HTTPGetAction{
+							Path: "/healthz",
+						},
+					},
+					PeriodSeconds: ptr.To(int32(9)),
+				}
+				return a
+			}(),
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
+				DeleteHealthProbe: ptr.To(false),
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				assert.Equal(t, *orig.Spec.ForProvider.Config.HealthProbe.PeriodSeconds, *updated.Spec.ForProvider.Config.HealthProbe.PeriodSeconds)
+				assert.Equal(t, orig.Spec.ForProvider.Config.HealthProbe.HTTPGet.Path, updated.Spec.ForProvider.Config.HealthProbe.HTTPGet.Path)
 			},
 		},
 		"reset env variable": {
