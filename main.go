@@ -208,6 +208,8 @@ func kongVariables() (kong.Vars, error) {
 		create.KeyValueStoreKongVars(),
 		create.OpenSearchKongVars(),
 		create.ServiceConnectionKongVars(),
+		create.BucketKongVars(),
+		update.BucketKongVars(),
 		create.BucketUserKongVars(),
 		auth.LoginKongVars(),
 		logs.KongVars(),
