@@ -35,7 +35,7 @@ func (bu *bucketUserCmd) print(ctx context.Context, client *api.Client, list cli
 	user := &bucketUserList.Items[0]
 
 	if bu.printFlagSet() {
-		if bu.Name != "" {
+		if bu.Name == "" {
 			return fmt.Errorf("name needs to be set to print bucket user information")
 		}
 
