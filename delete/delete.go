@@ -28,7 +28,8 @@ type Cmd struct {
 	OpenSearch          openSearchCmd        `cmd:"" group:"storage.nine.ch" name:"opensearch" aliases:"os" help:"Delete an OpenSearch cluster."`
 	CloudVirtualMachine cloudVMCmd           `cmd:"" group:"infrastructure.nine.ch" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Delete a CloudVM."`
 	ServiceConnection   serviceConnectionCmd `cmd:"" group:"networking.nine.ch" name:"serviceconnection" aliases:"sc" help:"Delete a ServiceConnection."`
-	BucketUser          bucketUserCmd        `cmd:"" group:"storage.nine.ch" name:"bucketuser" aliases:"bu" help:"Update a BucketUser."`
+	Bucket              bucketCmd            `cmd:"" group:"storage.nine.ch" name:"bucket" help:"Delete a Bucket."`
+	BucketUser          bucketUserCmd        `cmd:"" group:"storage.nine.ch" name:"bucketuser" aliases:"bu" help:"Delete a BucketUser."`
 }
 
 type resourceCmd struct {
