@@ -46,7 +46,7 @@ jobs:
           FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
           AUR_KEY: ${{ secrets.AUR_KEY }}
       - name: Upload assets
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: nctl
           path: dist/*
