@@ -83,7 +83,7 @@ dev      <none>
 			projects:     test.Projects(organization, "dev", "staging"),
 			name:         "dev",
 			outputFormat: yamlOut,
-			output:       "apiVersion: management.nine.ch/v1alpha1\nkind: Project\nmetadata:\n  creationTimestamp: null\n  name: dev\n  namespace: evilcorp\nspec:\n  isNonProduction: false\nstatus:\n  atProvider: {}\n",
+			output:       "apiVersion: management.nine.ch/v1alpha1\nkind: Project\nmetadata:\n  name: dev\n  namespace: evilcorp\nspec:\n  isNonProduction: false\nstatus:\n  atProvider: {}\n",
 		},
 		"specific project requested, json output": {
 			projects:     test.Projects(organization, "dev", "staging"),
@@ -94,8 +94,7 @@ dev      <none>
   "apiVersion": "management.nine.ch/v1alpha1",
   "metadata": {
     "name": "dev",
-    "namespace": "evilcorp",
-    "creationTimestamp": null
+    "namespace": "evilcorp"
   },
   "spec": {
     "isNonProduction": false
@@ -115,8 +114,7 @@ dev      <none>
     "apiVersion": "management.nine.ch/v1alpha1",
     "metadata": {
       "name": "dev",
-      "namespace": "evilcorp",
-      "creationTimestamp": null
+      "namespace": "evilcorp"
     },
     "spec": {
       "isNonProduction": false
@@ -130,8 +128,7 @@ dev      <none>
     "apiVersion": "management.nine.ch/v1alpha1",
     "metadata": {
       "name": "staging",
-      "namespace": "evilcorp",
-      "creationTimestamp": null
+      "namespace": "evilcorp"
     },
     "spec": {
       "isNonProduction": false
