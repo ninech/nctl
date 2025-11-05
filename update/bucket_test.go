@@ -1,6 +1,7 @@
 package update
 
 import (
+	"maps"
 	"testing"
 	"time"
 
@@ -750,9 +751,7 @@ func runBucketUpdateNamedWithFlags(
 	}
 
 	vars := create.BucketKongVars()
-	for k, v := range BucketKongVars() {
-		vars[k] = v
-	}
+	maps.Copy(vars, BucketKongVars())
 
 	return test.RunNamedWithFlags(
 		t,
