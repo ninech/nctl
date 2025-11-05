@@ -26,7 +26,8 @@ jobs:
         with:
           version: latest
           install-go: false
-      - run: go run golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest -fix -diff -test ./...
+      - run: |
+          go run golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest -fix -diff -test ./... && go run golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest -test ./...
   spell-check:
     name: spell-check
     runs-on: ubuntu-latest
