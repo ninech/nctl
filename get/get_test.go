@@ -82,14 +82,12 @@ func TestListPrint(t *testing.T) {
 			defer cancel()
 
 			wg := sync.WaitGroup{}
-			wg.Add(1)
-			go func() {
+			wg.Go(func() {
 				if err := cmd.listPrint(ctx, apiClient, &cloudVMCmd{}); (err != nil) != tc.wantErr {
 					t.Errorf("cmd.list error = %v, wantErr %v", err, tc.wantErr)
 					t.Log(buf.String())
 				}
-				wg.Done()
-			}()
+			})
 			// delay the creation so watch is running
 			time.Sleep(time.Millisecond * 10)
 			for _, res := range tc.toCreate {
