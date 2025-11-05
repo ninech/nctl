@@ -8,7 +8,7 @@ require (
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/crossplane/crossplane-runtime v1.20.0
-	github.com/docker/docker v28.3.3+incompatible
+	github.com/docker/docker v28.5.1+incompatible
 	github.com/fatih/color v1.18.0
 	github.com/gobuffalo/flect v1.0.3
 	github.com/goccy/go-yaml v1.18.0
@@ -20,19 +20,19 @@ require (
 	github.com/grafana/loki/v3 v3.0.0-20250730143308-a3380f6480b7
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/int128/kubelogin v1.34.2
-	github.com/jotaen/kong-completion v0.0.6
+	github.com/jotaen/kong-completion v0.0.7
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 	github.com/lucasepe/codename v0.2.1-0.20230220151621-5e31bf1e775f
 	github.com/mattn/go-isatty v0.0.20
-	github.com/moby/moby v28.3.3+incompatible
+	github.com/moby/moby v28.5.1+incompatible
 	github.com/moby/term v0.5.2
-	github.com/ninech/apis v0.0.0-20251009114239-ecc40fabee87
+	github.com/ninech/apis v0.0.0-20251028130639-3aef8b148fd2
 	github.com/posener/complete v1.2.3
-	github.com/prometheus/common v0.65.1-0.20250703115700-7f8b2a0d32d3
+	github.com/prometheus/common v0.67.2
 	github.com/stretchr/testify v1.11.1
 	github.com/theckman/yacspin v0.13.12
-	golang.org/x/crypto v0.42.0
-	golang.org/x/exp v0.0.0-20250606033433-dcc06ee1d476
+	golang.org/x/crypto v0.43.0
+	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546
 	golang.org/x/oauth2 v0.32.0
 	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.34.1
@@ -40,7 +40,7 @@ require (
 	k8s.io/client-go v0.34.1
 	k8s.io/kubectl v0.34.1
 	k8s.io/metrics v0.34.1
-	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
+	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
 	sigs.k8s.io/controller-runtime v0.21.0
 	sigs.k8s.io/yaml v1.6.0
 )
@@ -315,24 +315,23 @@ require (
 	go.uber.org/goleak v1.3.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-	go.yaml.in/yaml/v2 v2.4.2 // indirect
+	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
-	golang.org/x/mod v0.28.0 // indirect
-	golang.org/x/net v0.44.0 // indirect
+	golang.org/x/mod v0.29.0 // indirect
+	golang.org/x/net v0.46.0 // indirect
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.37.0 // indirect
 	golang.org/x/term v0.36.0 // indirect
-	golang.org/x/text v0.29.0 // indirect
+	golang.org/x/text v0.30.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
-	golang.org/x/tools v0.37.0 // indirect
-	golang.org/x/tools/go/packages/packagestest v0.1.1-deprecated // indirect
+	golang.org/x/tools v0.38.0 // indirect
 	gonum.org/v1/gonum v0.8.2 // indirect
 	google.golang.org/api v0.243.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250721164621-a45f3dfb1074 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250721164621-a45f3dfb1074 // indirect
 	google.golang.org/grpc v1.74.2 // indirect
-	google.golang.org/protobuf v1.36.6 // indirect
+	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
