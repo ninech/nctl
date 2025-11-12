@@ -71,7 +71,7 @@ func TestServiceConnection(t *testing.T) {
 				SourceNamespace: "application-ns",
 			},
 			source:      "application/test-application",
-			destination: "keyvaluestore/test-kvs",
+			destination: "mysql/test-mysql",
 			want: networking.ServiceConnectionParameters{
 				Source: networking.Source{
 					Reference: meta.TypedReference{
@@ -87,12 +87,12 @@ func TestServiceConnection(t *testing.T) {
 				},
 				Destination: meta.TypedReference{
 					Reference: meta.Reference{
-						Name:      "test-kvs",
+						Name:      "test-mysql",
 						Namespace: "default",
 					},
 					GroupKind: metav1.GroupKind{
 						Group: storage.Group,
-						Kind:  storage.KeyValueStoreKind,
+						Kind:  storage.MySQLKind,
 					},
 				},
 			},
@@ -140,7 +140,7 @@ func TestServiceConnection(t *testing.T) {
 				},
 			},
 			source:      "kubernetescluster/test-cluster",
-			destination: "keyvaluestore/test-kvs",
+			destination: "postgres/test-postgres",
 			want: networking.ServiceConnectionParameters{
 				Source: networking.Source{
 					Reference: meta.TypedReference{
@@ -190,12 +190,12 @@ func TestServiceConnection(t *testing.T) {
 				},
 				Destination: meta.TypedReference{
 					Reference: meta.Reference{
-						Name:      "test-kvs",
+						Name:      "test-postgres",
 						Namespace: "default",
 					},
 					GroupKind: metav1.GroupKind{
 						Group: storage.Group,
-						Kind:  storage.KeyValueStoreKind,
+						Kind:  storage.PostgresKind,
 					},
 				},
 			},
