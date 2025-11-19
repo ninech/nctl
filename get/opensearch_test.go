@@ -203,23 +203,23 @@ func TestOpenSearch(t *testing.T) {
 					created.Status.AtProvider.SnapshotsBucket = meta.LocalReference{Name: instance.snapshotBucket}
 
 					// Add the ObjectsBucket resource to the fake client
-					objectsBucket := &storage.ObjectsBucket{
+					bucket := &storage.Bucket{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      instance.snapshotBucket,
 							Namespace: instance.project,
 						},
-						Spec: storage.ObjectsBucketSpec{
-							ForProvider: storage.ObjectsBucketParameters{
+						Spec: storage.BucketSpec{
+							ForProvider: storage.BucketParameters{
 								Location: meta.LocationNineCZ42,
 							},
 						},
-						Status: storage.ObjectsBucketStatus{
-							AtProvider: storage.ObjectsBucketObservation{
-								URL: strings.TrimSpace(fmt.Sprintf("https://%s.objects.nineapis.ch/%s", meta.LocationNineES34, instance.snapshotBucket)),
+						Status: storage.BucketStatus{
+							AtProvider: storage.BucketObservation{
+								PublicURL: strings.TrimSpace(fmt.Sprintf("https://%s.objects.nineapis.ch/%s", meta.LocationNineES34, instance.snapshotBucket)),
 							},
 						},
 					}
-					objects = append(objects, objectsBucket)
+					objects = append(objects, bucket)
 				}
 
 				objects = append(objects, created, &corev1.Secret{
