@@ -17,12 +17,13 @@ import (
 
 type openSearchCmd struct {
 	resourceCmd
-	Location         meta.LocationName             `placeholder:"${opensearch_location_default}" help:"Where the OpenSearch cluster is created. Available locations are: ${opensearch_location_options}"`
-	ClusterType      storage.OpenSearchClusterType `placeholder:"${opensearch_cluster_type_default}" help:"Type of cluster. Available types: ${opensearch_cluster_types}"`
-	MachineType      string                        `placeholder:"${opensearch_machine_type_default}" help:"Defines the sizing of an OpenSearch instance. Available types: ${opensearch_machine_types}"`
-	AllowedCidrs     []meta.IPv4CIDR               `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the public endpoint."`
-	BucketUsers      []LocalReference              `placeholder:"user1,user2" help:"BucketUsers specify the users who have read access to the OpenSearch snapshots bucket."`
-	PublicNetworking *bool                         `negatable:"" help:"Enable or disable public networking. Enabled by default."`
+	Location          meta.LocationName             `placeholder:"${opensearch_location_default}" help:"Where the OpenSearch cluster is created. Available locations are: ${opensearch_location_options}"`
+	OpensearchVersion storage.OpenSearchVersion     `placeholder:"${opensearch_version_default}" help:"Version of the OpenSearch cluster. Available versions: ${opensearch_versions}"`
+	ClusterType       storage.OpenSearchClusterType `placeholder:"${opensearch_cluster_type_default}" help:"Type of cluster. Available types: ${opensearch_cluster_types}"`
+	MachineType       string                        `placeholder:"${opensearch_machine_type_default}" help:"Defines the sizing of an OpenSearch instance. Available types: ${opensearch_machine_types}"`
+	AllowedCidrs      []meta.IPv4CIDR               `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the public endpoint."`
+	BucketUsers       []LocalReference              `placeholder:"user1,user2" help:"BucketUsers specify the users who have read access to the OpenSearch snapshots bucket."`
+	PublicNetworking  *bool                         `negatable:"" help:"Enable or disable public networking. Enabled by default."`
 
 	// Deprecated Flags
 	PublicNetworkingEnabled *bool `hidden:"" help:"If public networking is \"false\", it is only possible to access the service by configuring a service connection."`
@@ -67,6 +68,8 @@ func OpenSearchKongVars() kong.Vars {
 	result["opensearch_cluster_type_default"] = string(storage.OpenSearchClusterTypeDefault)
 	result["opensearch_location_options"] = strings.Join(stringSlice(storage.OpenSearchLocationOptions), ", ")
 	result["opensearch_location_default"] = string(storage.OpenSearchLocationDefault)
+	result["opensearch_version_default"] = string(storage.OpenSearchVersionDefault)
+	result["opensearch_versions"] = strings.Join(stringSlice(storage.OpenSearchVersions), ", ")
 	result["opensearch_user"] = string(storage.OpenSearchUser)
 	return result
 }
@@ -98,6 +101,7 @@ func (cmd *openSearchCmd) newOpenSearch(namespace string) (*storage.OpenSearch, 
 			},
 			ForProvider: storage.OpenSearchParameters{
 				Location:                cmd.Location,
+				Version:                 cmd.OpensearchVersion,
 				MachineType:             infra.NewMachineType(cmd.MachineType),
 				ClusterType:             cmd.ClusterType,
 				AllowedCIDRs:            cmd.AllowedCidrs,
