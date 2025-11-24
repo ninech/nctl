@@ -36,6 +36,13 @@ func TestOpenSearch(t *testing.T) {
 			},
 		},
 		{
+			name:   "customVersion",
+			create: openSearchCmd{OpensearchVersion: storage.OpenSearchVersion2},
+			want: storage.OpenSearchParameters{
+				Version: storage.OpenSearchVersion2,
+			},
+		},
+		{
 			name:   "multiClusterType",
 			create: openSearchCmd{ClusterType: storage.OpenSearchClusterTypeMulti},
 			want: storage.OpenSearchParameters{
