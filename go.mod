@@ -33,7 +33,7 @@ require (
 	github.com/theckman/yacspin v0.13.12
 	golang.org/x/crypto v0.45.0
 	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546
-	golang.org/x/oauth2 v0.32.0
+	golang.org/x/oauth2 v0.33.0
 	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.34.2
 	k8s.io/apimachinery v0.34.2
