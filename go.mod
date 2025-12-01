@@ -28,7 +28,7 @@ require (
 	github.com/moby/term v0.5.2
 	github.com/ninech/apis v0.0.0-20251028130639-3aef8b148fd2
 	github.com/posener/complete v1.2.3
-	github.com/prometheus/common v0.67.2
+	github.com/prometheus/common v0.67.4
 	github.com/stretchr/testify v1.11.1
 	github.com/theckman/yacspin v0.13.12
 	golang.org/x/crypto v0.45.0
