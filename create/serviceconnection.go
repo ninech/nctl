@@ -213,7 +213,7 @@ func groupVersionKindFromKind(kind string) (schema.GroupVersionKind, error) {
 func ServiceConnectionKongVars() kong.Vars {
 	result := make(kong.Vars)
 	result["allowed_sources"] = "kubernetescluster, application"
-	result["allowed_destinations"] = "keyvaluestore, mysql, postgres"
+	result["allowed_destinations"] = "keyvaluestore, mysql, postgres, mysqldatabase, postgresdatabase"
 	result["label_selector_placeholder"] = "'key1=value1,key2=value2,key3 in (value3)'"
 	result["label_selector_usage"] = "Selector (label query) to filter on, supports '=', '==', '!=', 'in', 'notin'. Matching objects must satisfy all of the specified label constraints."
 	result["label_selector_requirements"] = "Can only be set when the source is a KubernetesCluster."

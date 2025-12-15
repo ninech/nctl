@@ -152,7 +152,7 @@ func clientPredictors(ctx context.Context, apiClientRequired bool) []completion.
 	return []completion.Option{
 		completion.WithPredictor("resource_name", predictor.NewResourceName(client)),
 		completion.WithPredictor("project_name", predictor.NewResourceNameWithKind(client,
-			management.SchemeGroupVersion.WithKind(reflect.TypeOf(management.ProjectList{}).Name())),
+			management.SchemeGroupVersion.WithKind(reflect.TypeFor[management.ProjectList]().Name())),
 		),
 	}
 }
