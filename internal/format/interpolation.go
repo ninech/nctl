@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/alecthomas/kong"
 )
@@ -17,14 +18,14 @@ var interpolationRegex = regexp.MustCompile(`(\$\$)|((?:\${([[:alpha:]_][[:word:
 // function](https://github.com/alecthomas/kong/blob/v0.8.0/interpolate.go#L22)
 // was sadly not exported, so we had to copy it.
 func interpolate(s string, vars kong.Vars) (string, error) {
-	out := ""
+	var out strings.Builder
 	matches := interpolationRegex.FindAllStringSubmatch(s, -1)
 	if len(matches) == 0 {
 		return s, nil
 	}
 	for _, match := range matches {
 		if dollar := match[1]; dollar != "" {
-			out += "$"
+			out.WriteString("$")
 		} else if name := match[3]; name != "" {
 			value, ok := vars[name]
 			if !ok {
@@ -34,12 +35,12 @@ func interpolate(s string, vars kong.Vars) (string, error) {
 				}
 				value = match[4]
 			}
-			out += value
+			out.WriteString(value)
 		} else {
-			out += match[0]
+			out.WriteString(match[0])
 		}
 	}
-	return out, nil
+	return out.String(), nil
 }
 
 // InterpolateFlagPlaceholders will return a function which walks the whole kong

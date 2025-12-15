@@ -57,7 +57,7 @@ func (r *Resource) Predict(args complete.Args) []string {
 
 	ns := r.client.Project
 	// if we're looking for projects, we need to use the org as the namespace
-	if u.GetObjectKind().GroupVersionKind().Kind == reflect.TypeOf(management.ProjectList{}).Name() {
+	if u.GetObjectKind().GroupVersionKind().Kind == reflect.TypeFor[management.ProjectList]().Name() {
 		org, err := r.client.Organization()
 		if err != nil {
 			return []string{}
