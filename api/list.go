@@ -13,8 +13,14 @@ import (
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/internal/format"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/client-go/rest"
+
 	"k8s.io/apimachinery/pkg/conversion"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 type ListOpts struct {
@@ -77,6 +83,45 @@ func (opts *ListOpts) namedResourceNotFound(project string, foundInProjects ...s
 		)
 	}
 	return errors.New(errorMessage)
+}
+
+func getRestClient(restConfig *rest.Config, scheme *runtime.Scheme, gvk schema.GroupVersionKind) (rest.Interface, error) {
+	httpClient, err := rest.HTTPClientFor(restConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return apiutil.RESTClientForGVK(
+		gvk,
+		false,
+		restConfig,
+		serializer.NewCodecFactory(scheme),
+		httpClient,
+	)
+}
+
+func (c *Client) ListOfOrg(ctx context.Context, list runtimeclient.ObjectList, options ...ListOpt) error {
+	gvk, err := apiutil.GVKForObject(list, c.Scheme())
+	if err != nil {
+		return fmt.Errorf("unable to find GVK for %T in scheme: %w", list, err)
+	}
+	gvk.Group = "oforg." + gvk.Group
+	gvk.Kind = "Application"
+
+	r, err := getRestClient(c.Config, c.Scheme(), gvk)
+	if err != nil {
+		return err
+	}
+	mapping, err := c.RESTMapper().RESTMapping(schema.GroupKind{Group: gvk.Group, Kind: gvk.Kind})
+
+	if err != nil {
+		return err
+	}
+	return r.Get().
+		Name(c.Project).
+		Resource(mapping.Resource.Resource).
+		Do(ctx).
+		Into(list)
 }
 
 // ListObjects lists objects in the current client project with some

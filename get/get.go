@@ -91,7 +91,7 @@ func (cmd *Cmd) listPrint(ctx context.Context, client *api.Client, lp listPrinte
 		}))
 	}
 	list := lp.list()
-	if err := client.ListObjects(ctx, list, opts...); err != nil {
+	if err := client.ListOfOrg(ctx, list, opts...); err != nil {
 		return err
 	}
 	if cmd.Watch {
