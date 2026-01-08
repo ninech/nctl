@@ -25,7 +25,30 @@ func (s *SetProjectCmd) Run(ctx context.Context, client *api.Client) error {
 	// we get the project without using the result to be sure it exists and the
 	// user has access.
 	if err := client.Get(ctx, types.NamespacedName{Name: s.Name, Namespace: org}, &management.Project{}); err != nil {
-		if !errors.IsNotFound(err) && !errors.IsForbidden(err) {
+		if errors.IsNotFound(err) || errors.IsForbidden(err) {
+			userInfo, uiErr := api.GetUserInfoFromToken(client.Token(ctx))
+			if uiErr != nil {
+				return uiErr
+			}
+
+			for _, targetOrg := range userInfo.Orgs {
+				if targetOrg == org {
+					continue
+				}
+
+				if e := client.Get(ctx, types.NamespacedName{Name: s.Name, Namespace: targetOrg}, &management.Project{}); e == nil {
+					if err := config.SetContextOrganization(client.KubeconfigPath, client.KubeconfigContext, targetOrg); err != nil {
+						return err
+					}
+					org = targetOrg
+					err = nil
+					format.PrintWarningf("switched active Organization to %s (found Project there)\n", org)
+					break
+				}
+			}
+		}
+
+		if err != nil && !errors.IsNotFound(err) && !errors.IsForbidden(err) {
 			return err
 		}
 		if errors.IsNotFound(err) {
