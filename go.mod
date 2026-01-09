@@ -1,6 +1,6 @@
 module github.com/ninech/nctl
 
-go 1.25.2
+go 1.25.3
 
 require (
 	github.com/alecthomas/kong v1.13.0
@@ -19,7 +19,7 @@ require (
 	github.com/grafana/dskit v0.0.0-20250617101305-c93a1bb09ecb
 	github.com/grafana/loki/v3 v3.0.0-20250730143308-a3380f6480b7
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/int128/kubelogin v1.34.2
+	github.com/int128/kubelogin v1.35.0
 	github.com/jotaen/kong-completion v0.0.7
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 	github.com/lucasepe/codename v0.2.1-0.20230220151621-5e31bf1e775f
@@ -97,7 +97,7 @@ require (
 	github.com/charmbracelet/x/term v0.2.1 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
-	github.com/coreos/go-oidc/v3 v3.16.0 // indirect
+	github.com/coreos/go-oidc/v3 v3.17.0 // indirect
 	github.com/coreos/go-semver v0.3.1 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/danieljoos/wincred v1.2.2 // indirect
@@ -179,7 +179,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/influxdata/tdigest v0.0.2-0.20210216194612-fc98d27c9e8b // indirect
 	github.com/int128/listener v1.3.0 // indirect
-	github.com/int128/oauth2cli v1.17.0 // indirect
+	github.com/int128/oauth2cli v1.18.0 // indirect
 	github.com/int128/oauth2dev v1.1.0 // indirect
 	github.com/jaegertracing/jaeger-idl v0.5.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect

@@ -155,8 +155,8 @@ github.com/containerd/errdefs/pkg v0.3.0 h1:9IKJ06FvyNlexW690DXuQNx2KA2cUJXx151X
 github.com/containerd/errdefs/pkg v0.3.0/go.mod h1:NJw6s9HwNuRhnjJhM7pylWwMyAkmCQvQ4GpJHEqRLVk=
 github.com/containerd/log v0.1.0 h1:TCJt7ioM2cr/tfR8GPbGf9/VRAX8D2B4PjzCpfX540I=
 github.com/containerd/log v0.1.0/go.mod h1:VRRf09a7mHDIRezVKTRCrOq78v577GXq3bSa3EhrzVo=
-github.com/coreos/go-oidc/v3 v3.16.0 h1:qRQUCFstKpXwmEjDQTIbyY/5jF00+asXzSkmkoa/mow=
-github.com/coreos/go-oidc/v3 v3.16.0/go.mod h1:wqPbKFrVnE90vty060SB40FCJ8fTHTxSwyXJqZH+sI8=
+github.com/coreos/go-oidc/v3 v3.17.0 h1:hWBGaQfbi0iVviX4ibC7bk8OKT5qNr4klBaCHVNvehc=
+github.com/coreos/go-oidc/v3 v3.17.0/go.mod h1:wqPbKFrVnE90vty060SB40FCJ8fTHTxSwyXJqZH+sI8=
 github.com/coreos/go-semver v0.3.1 h1:yi21YpKnrx1gt5R+la8n5WgS0kCrsPp33dmEyHReZr4=
 github.com/coreos/go-semver v0.3.1/go.mod h1:irMmmIw/7yzSRPWryHsK7EYSg09caPQL03VsM8rvUec=
 github.com/coreos/go-systemd/v22 v22.5.0 h1:RrqgGjYQKalulkV8NGVIfkXQf6YYmOyiJKk8iXXhfZs=
@@ -440,12 +440,12 @@ github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/influxdata/tdigest v0.0.2-0.20210216194612-fc98d27c9e8b h1:i44CesU68ZBRvtCjBi3QSosCIKrjmMbYlQMFAwVLds4=
 github.com/influxdata/tdigest v0.0.2-0.20210216194612-fc98d27c9e8b/go.mod h1:Z0kXnxzbTC2qrx4NaIzYkE1k66+6oEDQTvL95hQFh5Y=
-github.com/int128/kubelogin v1.34.2 h1:9ocWssGjTuP+krpbbJt1GM82nk/33IWFaJqfRwe8Lgw=
-github.com/int128/kubelogin v1.34.2/go.mod h1:HBTwqxBwzG6cFvYC321cspSFgYgV223SyHpsaMkcYOI=
+github.com/int128/kubelogin v1.35.0 h1:AI6bIRNRHls0oMziHIB4fjV6yvsW0I0tONJm8AzOqaM=
+github.com/int128/kubelogin v1.35.0/go.mod h1:I3gQPj/VTvBMIINXUJlxWv8nuJ7WF8P2VgQlnkaexvk=
 github.com/int128/listener v1.3.0 h1:ZFePbpzFUt1i6hBSY15rzqo8tHZHJPPQkqCtgOAwS8g=
 github.com/int128/listener v1.3.0/go.mod h1:zF9mx2wn+2J/7Idmxi5kgqrGgERr6vr8fK8KqENrRZ0=
-github.com/int128/oauth2cli v1.17.0 h1:i1r9uuTuRzlLAc2iaVQEDtjLPtD9ZftLJEQI0geaUOo=
-github.com/int128/oauth2cli v1.17.0/go.mod h1:SpMnfW08HKxhY37064vntbBcKVhIq+0vQB8xcbnmQBM=
+github.com/int128/oauth2cli v1.18.0 h1:ECW600WoYKh5Z4gv92yNVsJ22iqzPW7u7z0dfWxMzkU=
+github.com/int128/oauth2cli v1.18.0/go.mod h1:8wWAPwFYS91aX3KKACFP//v2oLdqnugK/ndfJ6oH3xE=
 github.com/int128/oauth2dev v1.1.0 h1:6maJmtYFuc7Ga2XflFDNiZU2aY3fx8x5CDcbB2wXJUU=
 github.com/int128/oauth2dev v1.1.0/go.mod h1:sEmpj0+i7uHg+NG/XdQ7O03p1ob7UmT+f26NHwsPHvk=
 github.com/ionos-cloud/sdk-go/v6 v6.3.4 h1:jTvGl4LOF8v8OYoEIBNVwbFoqSGAFqn6vGE7sp7/BqQ=
