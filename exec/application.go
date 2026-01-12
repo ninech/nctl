@@ -172,7 +172,9 @@ func executeRemoteCommand(ctx context.Context, params remoteCommandParameters) e
 	var sizeQueue remotecommand.TerminalSizeQueue
 	if tty.Raw {
 		// this call spawns a goroutine to monitor/update the terminal size
-		sizeQueue = tty.MonitorSize(tty.GetSize())
+		sizeQueue = &terminalSizeQueueWrapper{
+			tsq: tty.MonitorSize(tty.GetSize()),
+		}
 
 		// unset stderr if it was previously set because both stdout
 		// and stderr go over params.stdout when tty is
@@ -205,7 +207,6 @@ func executeRemoteCommand(ctx context.Context, params remoteCommandParameters) e
 			Tty:               params.tty,
 			TerminalSizeQueue: sizeQueue,
 		})
-
 	}
 	return tty.Safe(fn)
 }
@@ -225,5 +226,23 @@ func replicaCommand(buildType appBuildType, command []string) []string {
 		return command
 	default:
 		return command
+	}
+}
+
+// terminalSizeQueueWrapper implements the [remotecommand.TerminalSizeQueue] interface.
+type terminalSizeQueueWrapper struct {
+	tsq term.TerminalSizeQueue
+}
+
+// Next returns the new terminal size after the terminal has been resized. It returns nil when
+// monitoring has been stopped.
+func (t *terminalSizeQueueWrapper) Next() *remotecommand.TerminalSize {
+	size := t.tsq.Next()
+	if size == nil {
+		return nil
+	}
+	return &remotecommand.TerminalSize{
+		Width:  size.Width,
+		Height: size.Height,
 	}
 }

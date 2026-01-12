@@ -19,9 +19,11 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 	if err != nil {
 		return err
 	}
-
 	if len(projectList) == 0 {
 		return get.printEmptyMessage(management.ProjectKind, "")
+	}
+	for i := range projectList {
+		projectList[i].SetGroupVersionKind(management.SchemeGroupVersion.WithKind(management.ProjectKind))
 	}
 
 	// we sort alphabetically to have a deterministic output
