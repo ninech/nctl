@@ -15,10 +15,6 @@ func Projects(organization string, names ...string) []client.Object {
 				Name:      name,
 				Namespace: organization,
 			},
-			TypeMeta: metav1.TypeMeta{
-				Kind:       management.ProjectKind,
-				APIVersion: management.SchemeGroupVersion.String(),
-			},
 			Spec: management.ProjectSpec{},
 		})
 	}
