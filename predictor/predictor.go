@@ -64,6 +64,13 @@ func (r *Resource) Predict(args complete.Args) []string {
 		}
 		ns = org
 	}
+	// if there is a project set in the args use this
+	for i, arg := range args.All {
+		if (arg == "-p" || arg == "--project") && i+1 < len(args.All) {
+			ns = args.All[i+1]
+			break
+		}
+	}
 
 	if err := r.client.List(ctx, u, client.InNamespace(ns)); err != nil {
 		return []string{}
