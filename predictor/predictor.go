@@ -65,11 +65,8 @@ func (r *Resource) Predict(args complete.Args) []string {
 		ns = org
 	}
 	// if there is a project set in the args use this
-	for i, arg := range args.All {
-		if (arg == "-p" || arg == "--project") && i+1 < len(args.All) {
-			ns = args.All[i+1]
-			break
-		}
+	if p := findProject(); p != "" {
+		ns = p
 	}
 
 	if err := r.client.List(ctx, u, client.InNamespace(ns)); err != nil {
@@ -104,6 +101,27 @@ func (r *Resource) findKind(arg string) schema.GroupVersionKind {
 
 func listKindToResource(kind string) string {
 	return flect.Pluralize(strings.TrimSuffix(strings.ToLower(kind), listSuffix))
+}
+
+func findProject() string {
+	// try to find it in the full command line.
+	if line := os.Getenv("COMP_LINE"); line != "" {
+		parts := strings.Fields(line)
+		if p := findProjectInSlice(parts); p != "" {
+			return p
+		}
+	}
+
+	return ""
+}
+
+func findProjectInSlice(args []string) string {
+	for i, arg := range args {
+		if (arg == "-p" || arg == "--project") && i+1 < len(args) {
+			return args[i+1]
+		}
+	}
+	return ""
 }
 
 func NewClient(ctx context.Context, defaultAPICluster string) (*api.Client, error) {
