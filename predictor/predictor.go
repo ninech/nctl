@@ -63,10 +63,11 @@ func (r *Resource) Predict(args complete.Args) []string {
 			return []string{}
 		}
 		ns = org
-	}
-	// if there is a project set in the args use this
-	if p := findProject(); p != "" {
-		ns = p
+	} else {
+		// if there is a project set in the args use this
+		if p := findProject(); p != "" {
+			ns = p
+		}
 	}
 
 	if err := r.client.List(ctx, u, client.InNamespace(ns)); err != nil {
