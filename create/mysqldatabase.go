@@ -17,9 +17,10 @@ import (
 
 type mysqlDatabaseCmd struct {
 	resourceCmd
-	Location             meta.LocationName    `placeholder:"${mysqldatabase_location_default}" help:"Where the MySQL database is created. Available locations are: ${mysqldatabase_location_options}"`
-	MysqlDatabaseVersion storage.MySQLVersion `placeholder:"${mysqldatabase_version_default}" help:"Version of the MySQL database. Available versions: ${mysqldatabase_versions}"`
-	CharacterSet         string               `placeholder:"${mysqldatabase_characterset_default}" help:"Character set for the MySQL database. Available character sets: ${mysqldatabase_characterset_options}"`
+	Location             meta.LocationName                      `placeholder:"${mysqldatabase_location_default}" help:"Where the MySQL database is created. Available locations are: ${mysqldatabase_location_options}"`
+	MysqlDatabaseVersion storage.MySQLVersion                   `placeholder:"${mysqldatabase_version_default}" help:"Version of the MySQL database. Available versions: ${mysqldatabase_versions}"`
+	CharacterSet         string                                 `placeholder:"${mysqldatabase_characterset_default}" help:"Character set for the MySQL database. Available character sets: ${mysqldatabase_characterset_options}"`
+	BackupSchedule       storage.DatabaseBackupScheduleCalendar `placeholder:"${mysqldatabase_backupschedule_default}" help:"Backup schedule for the MySQL database. Available schedules: ${mysqldatabase_backupschedule_options}"`
 }
 
 func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error {
@@ -76,6 +77,7 @@ func (cmd *mysqlDatabaseCmd) newMySQLDatabase(namespace string) *storage.MySQLDa
 				CharacterSet: storage.MySQLCharacterSet{
 					Name: cmd.CharacterSet,
 				},
+				BackupSchedule: cmd.BackupSchedule,
 			},
 		},
 	}
@@ -93,6 +95,8 @@ func MySQLDatabaseKongVars() kong.Vars {
 	result["mysqldatabase_versions"] = strings.Join(stringSlice(storage.MySQLDatabaseVersions), ", ")
 	result["mysqldatabase_characterset_default"] = "utf8mb4"
 	result["mysqldatabase_characterset_options"] = strings.Join([]string{"utf8mb4"}, ", ")
+	result["mysqldatabase_backupschedule_default"] = string(storage.DatabaseBackupScheduleCalendarDaily)
+	result["mysqldatabase_backupschedule_options"] = strings.Join(stringSlice(storage.DatabaseBackupScheduleCalendars), ", ")
 
 	return result
 }
