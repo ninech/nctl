@@ -65,7 +65,12 @@ func (r *Resource) Predict(args complete.Args) []string {
 		ns = org
 	} else {
 		// if there is a project set in the args use this
-		if p := findProject(); p != "" {
+		p, incomplete := findProject()
+		if incomplete {
+			// user is still typing the project flag, don't complete resources
+			return []string{}
+		}
+		if p != "" {
 			ns = p
 		}
 	}
@@ -104,18 +109,29 @@ func listKindToResource(kind string) string {
 	return flect.Pluralize(strings.TrimSuffix(strings.ToLower(kind), listSuffix))
 }
 
-func findProject() string {
-	// try to find it in the full command line.
+// findProject extracts the project from COMP_LINE. It returns the project name
+// and a boolean indicating if the project flag is incomplete (user is still
+// typing it).
+func findProject() (string, bool) {
 	if line := os.Getenv("COMP_LINE"); line != "" {
 		parts := strings.Fields(line)
+		// if the last argument is -p or --project, the user is still
+		// specifying the project, so we shouldn't complete resources yet
+		if len(parts) > 0 {
+			last := parts[len(parts)-1]
+			if last == "-p" || last == "--project" {
+				return "", true
+			}
+		}
 		if p := findProjectInSlice(parts); p != "" {
-			return p
+			return p, false
 		}
 	}
 
-	return ""
+	return "", false
 }
 
+// findProjectInSlice searches for -p or --project flag and returns its value.
 func findProjectInSlice(args []string) string {
 	for i, arg := range args {
 		if (arg == "-p" || arg == "--project") && i+1 < len(args) {
