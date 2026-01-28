@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 version: 2
 
 before:
@@ -19,15 +20,15 @@ builds:
       - -X main.commit={{.Commit}}
       - -X main.date={{.Date}}
 checksum:
-  name_template: 'checksums.txt'
+  name_template: "checksums.txt"
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
 changelog:
   sort: asc
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
+      - "^docs:"
+      - "^test:"
 
 release:
   draft: true
@@ -40,7 +41,7 @@ archives:
       - completions/*
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
 
 brews:
   - name: nctl
@@ -86,7 +87,6 @@ brews:
     # Default is false.
     skip_upload: false
 
-# .goreleaser.yaml
 aurs:
   - name: nctl-bin
     homepage: "https://github.com/ninech/nctl"
@@ -116,7 +116,7 @@ nfpms:
       - rpm
     package_name: nctl
     file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    maintainer: 'Nine Platform Team <platform@nine.ch>'
+    maintainer: "Nine Platform Team <platform@nine.ch>"
 
 publishers:
   - name: fury.io
