@@ -71,7 +71,7 @@ func (r *Resource) Predict(args complete.Args) []string {
 		ns = org
 	} else {
 		// if there is a project set in the args use this
-		p, incomplete := findProject()
+		p, incomplete := findProject(args)
 		if incomplete {
 			// user is still typing the project flag, don't complete resources
 			return []string{}
@@ -117,25 +117,18 @@ func listKindToResource(kind string) string {
 	return flect.Pluralize(strings.TrimSuffix(strings.ToLower(kind), listSuffix))
 }
 
-// findProject extracts the project from COMP_LINE. It returns the project name
-// and a boolean indicating if the project flag is incomplete (user is still
-// typing it).
-func findProject() (string, bool) {
-	if line := os.Getenv("COMP_LINE"); line != "" {
-		parts := strings.Fields(line)
-		// if the last argument is -p or --project, the user is still
-		// specifying the project, so we shouldn't complete resources yet
-		if len(parts) > 0 {
-			last := parts[len(parts)-1]
-			if last == "-p" || last == "--project" {
-				return "", true
-			}
-		}
-		if p := findProjectInSlice(parts); p != "" {
-			return p, false
-		}
+// findProject extracts the project from the completion args. It returns the
+// project name and a boolean indicating if the project flag is incomplete
+// (user is still typing it).
+func findProject(args complete.Args) (string, bool) {
+	// if the last completed argument is -p or --project, the user is still
+	// specifying the project, so we shouldn't complete resources yet
+	if args.LastCompleted == "-p" || args.LastCompleted == "--project" {
+		return "", true
 	}
-
+	if p := findProjectInSlice(args.All); p != "" {
+		return p, false
+	}
 	return "", false
 }
 
