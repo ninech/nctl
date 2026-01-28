@@ -13,7 +13,7 @@ import (
 )
 
 type SetProjectCmd struct {
-	Name string `arg:"" help:"Name of the default project to be used." predictor:"project_name"`
+	Name string `arg:"" help:"Name of the default project to be used." completion-predictor:"project_name"`
 }
 
 func (s *SetProjectCmd) Run(ctx context.Context, client *api.Client) error {

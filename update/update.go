@@ -26,7 +26,7 @@ type Cmd struct {
 }
 
 type resourceCmd struct {
-	Name string `arg:"" predictor:"resource_name" help:"Name of the resource to update."`
+	Name string `arg:"" completion-predictor:"resource_name" help:"Name of the resource to update."`
 }
 
 type updater struct {

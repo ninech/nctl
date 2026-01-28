@@ -481,8 +481,8 @@ github.com/jaegertracing/jaeger-idl v0.6.0 h1:LOVQfVby9ywdMPI9n3hMwKbyLVV3BL1XH2
 github.com/jaegertracing/jaeger-idl v0.6.0/go.mod h1:mpW0lZfG907/+o5w5OlnNnig7nHJGT3SfKmRqC42HGQ=
 github.com/jmespath/go-jmespath v0.4.0 h1:BEgLn5cpjn8UN1mAw4NjwDrS35OdebyEtFe+9YPoQUg=
 github.com/jmespath/go-jmespath v0.4.0/go.mod h1:T8mJZnbsbmF+m6zOOFylbeCJqk5+pHWvzYPziyZiYoo=
-github.com/jotaen/kong-completion v0.0.7 h1:l2UrG51q0gWD8Ph0CykBvGOb1YlXDc789AQnWkq+U9M=
-github.com/jotaen/kong-completion v0.0.7/go.mod h1:dtitX9zCkffI5AON0IKsqHOFEEaL/S2AudgzJfCVFA4=
+github.com/jotaen/kong-completion v0.0.11 h1:ZRyQt+IwjcAObbiyxJZ3YR7r/o/f6HYidTK1+7YNtnE=
+github.com/jotaen/kong-completion v0.0.11/go.mod h1:dyIG20e3qq128SUBtF8jzI7YtkfzjWMlgbqkAJd6xHQ=
 github.com/jpillora/backoff v1.0.0 h1:uvFg412JmmHBHw7iwprIxkPMI+sGQ4kzOWsMeHnm2EA=
 github.com/jpillora/backoff v1.0.0/go.mod h1:J/6gKK9jxlEcS3zixgDgUAsiuZ7yrSoa/FX5e0EB2j4=
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=

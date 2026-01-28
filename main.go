@@ -33,7 +33,7 @@ import (
 )
 
 type flags struct {
-	Project        string           `help:"Limit commands to a specific project." short:"p" predictor:"project_name"`
+	Project        string           `help:"Limit commands to a specific project." short:"p" completion-predictor:"project_name"`
 	APICluster     string           `help:"Context name of the API cluster." default:"${api_cluster}" env:"NCTL_API_CLUSTER" hidden:""`
 	LogAPIAddress  string           `help:"Address of the deplo.io logging API server." default:"https://logs.deplo.io" env:"NCTL_LOG_ADDR" hidden:""`
 	LogAPIInsecure bool             `help:"Don't verify TLS connection to the logging API server." hidden:"" default:"false" env:"NCTL_LOG_INSECURE"`

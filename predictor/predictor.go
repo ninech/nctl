@@ -126,10 +126,43 @@ func findProject(args complete.Args) (string, bool) {
 	if args.LastCompleted == "-p" || args.LastCompleted == "--project" {
 		return "", true
 	}
+
+	// try to find project in args.All first
 	if p := findProjectInSlice(args.All); p != "" {
 		return p, false
 	}
+
+	// Fall back to parsing COMP_LINE if args.All is empty.
+	//
+	// When completing positional arguments in nested subcommands like
+	// "nctl exec application <name>", the posener/complete library slices
+	// args.All as it descends through each subcommand (nctl -> exec ->
+	// application). By the time our predictor is called, args.All is empty
+	// because all arguments have been "consumed" by the subcommand matching.
+	// COMP_LINE always contains the full command line, so we use it as a
+	// fallback to find the --project flag.
+	if p := findProjectInSlice(argsFromENV()); p != "" {
+		return p, false
+	}
+
 	return "", false
+}
+
+// argsFromENV returns all arguments in command line (not including the command itself)
+//
+// When completing positional arguments in nested subcommands like
+// "nctl exec application <name>", the posener/complete library slices
+// args.All as it descends through each subcommand (nctl -> exec ->
+// application). By the time our predictor is called, args.All is empty
+// because all arguments have been "consumed" by the subcommand matching.
+// COMP_LINE always contains the full command line, so we use it as a
+// fallback to find the --project flag.
+func argsFromENV() []string {
+	if line := os.Getenv("COMP_LINE"); line != "" {
+		return strings.Fields(line)
+	}
+
+	return nil
 }
 
 // findProjectInSlice searches for -p or --project flag and returns its value.

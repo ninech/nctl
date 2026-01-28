@@ -5,5 +5,5 @@ type Cmd struct {
 }
 
 type resourceCmd struct {
-	Name string `arg:"" predictor:"resource_name" help:"Name of the application to exec command/shell in." required:""`
+	Name string `arg:"" completion-predictor:"resource_name" help:"Name of the application to exec command/shell in." required:""`
 }

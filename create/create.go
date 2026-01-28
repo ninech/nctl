@@ -21,7 +21,7 @@ import (
 )
 
 type Cmd struct {
-	Filename            *os.File             `short:"f" help:"Create any resource from a yaml or json file." predictor:"file"`
+	Filename            *os.File             `short:"f" help:"Create any resource from a yaml or json file." completion-predictor:"file"`
 	FromFile            fromFile             `cmd:"" default:"1" name:"-f <file>" help:"Create any resource from a yaml or json file."`
 	VCluster            vclusterCmd          `cmd:"" group:"infrastructure.nine.ch" name:"vcluster" help:"Create a new vcluster."`
 	APIServiceAccount   apiServiceAccountCmd `cmd:"" group:"iam.nine.ch" name:"apiserviceaccount" aliases:"asa" help:"Create a new API Service Account."`
