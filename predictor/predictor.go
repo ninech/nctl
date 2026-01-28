@@ -1,3 +1,4 @@
+// Package predictor provides shell completion predictors for nctl resources.
 package predictor
 
 import (
@@ -28,15 +29,19 @@ var argResourceMap = map[string]string{
 	"clusters": "kubernetesclusters",
 }
 
+// Resource is a predictor that completes resource names by querying the API.
 type Resource struct {
 	client   *api.Client
 	knownGVK *schema.GroupVersionKind
 }
 
+// NewResourceName returns a predictor that infers the resource kind from the
+// command arguments.
 func NewResourceName(client *api.Client) complete.Predictor {
 	return &Resource{client: client}
 }
 
+// NewResourceNameWithKind returns a predictor for a specific resource kind.
 func NewResourceNameWithKind(client *api.Client, gvk schema.GroupVersionKind) complete.Predictor {
 	return &Resource{
 		client:   client,
@@ -44,6 +49,7 @@ func NewResourceNameWithKind(client *api.Client, gvk schema.GroupVersionKind) co
 	}
 }
 
+// Predict returns a list of resource names for shell completion.
 func (r *Resource) Predict(args complete.Args) []string {
 	u := &unstructured.UnstructuredList{}
 	if r.knownGVK != nil {
@@ -63,6 +69,16 @@ func (r *Resource) Predict(args complete.Args) []string {
 			return []string{}
 		}
 		ns = org
+	} else {
+		// if there is a project set in the args use this
+		p, incomplete := findProject(args)
+		if incomplete {
+			// user is still typing the project flag, don't complete resources
+			return []string{}
+		}
+		if p != "" {
+			ns = p
+		}
 	}
 
 	if err := r.client.List(ctx, u, client.InNamespace(ns)); err != nil {
@@ -77,6 +93,7 @@ func (r *Resource) Predict(args complete.Args) []string {
 	return resources
 }
 
+// findKind looks up the GroupVersionKind for a given resource argument.
 func (r *Resource) findKind(arg string) schema.GroupVersionKind {
 	if v, ok := argResourceMap[arg]; ok {
 		arg = v
@@ -95,14 +112,40 @@ func (r *Resource) findKind(arg string) schema.GroupVersionKind {
 	return schema.GroupVersionKind{}
 }
 
+// listKindToResource converts a list kind name to its resource name.
 func listKindToResource(kind string) string {
 	return flect.Pluralize(strings.TrimSuffix(strings.ToLower(kind), listSuffix))
 }
 
+// findProject extracts the project from the completion args. It returns the
+// project name and a boolean indicating if the project flag is incomplete
+// (user is still typing it).
+func findProject(args complete.Args) (string, bool) {
+	// if the last completed argument is -p or --project, the user is still
+	// specifying the project, so we shouldn't complete resources yet
+	if args.LastCompleted == "-p" || args.LastCompleted == "--project" {
+		return "", true
+	}
+	if p := findProjectInSlice(args.All); p != "" {
+		return p, false
+	}
+	return "", false
+}
+
+// findProjectInSlice searches for -p or --project flag and returns its value.
+func findProjectInSlice(args []string) string {
+	for i, arg := range args {
+		if (arg == "-p" || arg == "--project") && i+1 < len(args) {
+			return args[i+1]
+		}
+	}
+	return ""
+}
+
+// NewClient creates an API client configured for shell completion. It uses a
+// static token since dynamic exec config breaks with some shells during
+// completion.
 func NewClient(ctx context.Context, defaultAPICluster string) (*api.Client, error) {
-	// the client for the predictor requires a static token in the client config
-	// since dynamic exec config seems to break with some shells during completion.
-	// The exact reason for that is unknown.
 	apiCluster := defaultAPICluster
 	if v, ok := os.LookupEnv("NCTL_API_CLUSTER"); ok {
 		apiCluster = v
