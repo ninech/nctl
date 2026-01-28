@@ -26,7 +26,7 @@ type cloudVMCmd struct {
 	Shutdown                  *bool             `help:"Shuts down the CloudVM via ACPI."`
 	BootRescue                *bool             `help:"Boot CloudVM into a live rescue environment."`
 	RescuePublicKeys          []string          `placeholder:"ssh-ed25519" help:"SSH public keys that can be used to connect to the CloudVM while booted into rescue. The keys are expected to be in SSH format as defined in RFC4253."`
-	RescuePublicKeysFromFiles []string          `placeholder:"~/.ssh/id_ed25519.pub" predictor:"file" help:"SSH public key files that can be used to connect to the CloudVM while booted into rescue. The keys are expected to be in SSH format as defined in RFC4253."`
+	RescuePublicKeysFromFiles []string          `placeholder:"~/.ssh/id_ed25519.pub" completion-predictor:"file" help:"SSH public key files that can be used to connect to the CloudVM while booted into rescue. The keys are expected to be in SSH format as defined in RFC4253."`
 }
 
 func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {

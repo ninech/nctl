@@ -13,7 +13,7 @@ import (
 )
 
 type Cmd struct {
-	Filename            *os.File             `short:"f" predictor:"file"`
+	Filename            *os.File             `short:"f" completion-predictor:"file"`
 	FromFile            fromFile             `cmd:"" default:"1" name:"-f <file>" help:"Delete any resource from a yaml or json file."`
 	VCluster            vclusterCmd          `cmd:"" group:"infrastructure.nine.ch" name:"vcluster" help:"Delete a vcluster."`
 	APIServiceAccount   apiServiceAccountCmd `cmd:"" group:"iam.nine.ch" name:"apiserviceaccount" aliases:"asa" help:"Delete an API Service Account."`
@@ -33,7 +33,7 @@ type Cmd struct {
 }
 
 type resourceCmd struct {
-	Name        string        `arg:"" predictor:"resource_name" help:"Name of the resource to delete."`
+	Name        string        `arg:"" completion-predictor:"resource_name" help:"Name of the resource to delete."`
 	Force       bool          `default:"false" help:"Do not ask for confirmation of deletion."`
 	Wait        bool          `default:"true" help:"Wait until resource is fully deleted."`
 	WaitTimeout time.Duration `default:"5m" help:"Duration to wait for the deletion. Only relevant if wait is set."`

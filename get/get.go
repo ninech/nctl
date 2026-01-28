@@ -53,7 +53,7 @@ type output struct {
 }
 
 type resourceCmd struct {
-	Name string `arg:"" predictor:"resource_name" help:"Name of the resource to get. If omitted all in the project will be listed." default:""`
+	Name string `arg:"" completion-predictor:"resource_name" help:"Name of the resource to get. If omitted all in the project will be listed." default:""`
 }
 
 type outputFormat string
