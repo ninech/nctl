@@ -8,13 +8,9 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
 	"github.com/ninech/nctl/internal/format"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-const ProjectOrganizationAnnotation = "management.nine.ch/organization"
 
 type SetProjectCmd struct {
 	Name string `arg:"" help:"Name of the default project to be used." completion-predictor:"project_name"`
@@ -26,20 +22,18 @@ func (s *SetProjectCmd) Run(ctx context.Context, apiClient *api.Client) error {
 		return err
 	}
 
+	// we get the project without using the result to be sure it exists and the user has access.
 	err = apiClient.Get(ctx, types.NamespacedName{Name: s.Name, Namespace: org}, &management.Project{})
 
 	if errors.IsNotFound(err) || errors.IsForbidden(err) {
-		proj, findErr := GetProjectFromNamespace(ctx, apiClient, s.Name)
-		if findErr == nil && proj != nil {
-			targetOrg := proj.Namespace
-			if targetOrg != org {
-				if err := config.SetContextOrganization(apiClient.KubeconfigPath, apiClient.KubeconfigContext, targetOrg); err != nil {
-					return err
-				}
-				org = targetOrg
-				err = nil
-				fmt.Println(format.SuccessMessagef("🏢", "Found project in org %s, switching...", org))
+		foundOrg, findErr := orgFromProject(ctx, apiClient, s.Name)
+		if findErr == nil {
+			if err := config.SetContextOrganization(apiClient.KubeconfigPath, apiClient.KubeconfigContext, foundOrg); err != nil {
+				return err
 			}
+			org = foundOrg
+			err = nil
+			format.PrintWarningf("Found project in org %s, switching...\n", org)
 		}
 	}
 
@@ -61,26 +55,18 @@ func (s *SetProjectCmd) Run(ctx context.Context, apiClient *api.Client) error {
 	return nil
 }
 
-func GetOrgNameFromNamespace(ctx context.Context, c client.Reader, name string) (string, error) {
-	ns := &corev1.Namespace{}
-	if err := c.Get(ctx, types.NamespacedName{Name: name}, ns); err != nil {
-		return "", fmt.Errorf("could not get project namespace: %w", err)
-	}
-	orgName, ok := ns.Annotations[ProjectOrganizationAnnotation]
-	if ok {
-		return orgName, nil
-	}
-	return name, nil
-}
-
-func GetProjectFromNamespace(ctx context.Context, c client.Reader, namespace string) (*management.Project, error) {
-	org, err := GetOrgNameFromNamespace(ctx, c, namespace)
+func orgFromProject(ctx context.Context, apiClient *api.Client, projectName string) (string, error) {
+	userInfo, err := api.GetUserInfoFromToken(apiClient.Token(ctx))
 	if err != nil {
-		return nil, fmt.Errorf("can not get organization for namespace %s: %w", namespace, err)
+		return "", fmt.Errorf("could not get user info from token: %w", err)
 	}
-	proj := &management.Project{}
-	if err := c.Get(ctx, types.NamespacedName{Name: namespace, Namespace: org}, proj); err != nil {
-		return nil, fmt.Errorf("can not get project for namespace %s: %w", namespace, err)
+
+	for _, org := range userInfo.Orgs {
+		proj := &management.Project{}
+		if err := apiClient.Get(ctx, types.NamespacedName{Name: projectName, Namespace: org}, proj); err == nil {
+			return org, nil
+		}
 	}
-	return proj, nil
+
+	return "", fmt.Errorf("could not find project %s in any available organization", projectName)
 }
