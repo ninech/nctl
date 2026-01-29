@@ -26,17 +26,7 @@ func (s *SetProjectCmd) Run(ctx context.Context, apiClient *api.Client) error {
 	err = apiClient.Get(ctx, types.NamespacedName{Name: s.Name, Namespace: org}, &management.Project{})
 
 	if err != nil {
-		if errors.IsNotFound(err) || errors.IsForbidden(err) {
-			foundOrg, findErr := orgFromProject(ctx, apiClient, s.Name)
-			if findErr == nil {
-				if err := config.SetContextOrganization(apiClient.KubeconfigPath, apiClient.KubeconfigContext, foundOrg); err != nil {
-					return err
-				}
-				org = foundOrg
-				err = nil
-				format.PrintWarningf("Found project in org %s, switching...\n", org)
-			}
-		}
+		org, err = trySwitchOrg(ctx, apiClient, s.Name, org, err)
 
 		if err != nil {
 			if !errors.IsNotFound(err) && !errors.IsForbidden(err) {
@@ -55,6 +45,24 @@ func (s *SetProjectCmd) Run(ctx context.Context, apiClient *api.Client) error {
 
 	fmt.Println(format.SuccessMessagef("📝", "set active Project to %s", s.Name))
 	return nil
+}
+
+func trySwitchOrg(ctx context.Context, apiClient *api.Client, projectName string, currentOrg string, originalErr error) (string, error) {
+	if !errors.IsNotFound(originalErr) && !errors.IsForbidden(originalErr) {
+		return currentOrg, originalErr
+	}
+
+	foundOrg, findErr := orgFromProject(ctx, apiClient, projectName)
+	if findErr != nil {
+		return currentOrg, originalErr
+	}
+
+	if err := config.SetContextOrganization(apiClient.KubeconfigPath, apiClient.KubeconfigContext, foundOrg); err != nil {
+		return currentOrg, err
+	}
+
+	format.PrintWarningf("Found project in org %s, switching...\n", foundOrg)
+	return foundOrg, nil
 }
 
 func orgFromProject(ctx context.Context, apiClient *api.Client, projectName string) (string, error) {
