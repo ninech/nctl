@@ -25,25 +25,27 @@ func (s *SetProjectCmd) Run(ctx context.Context, apiClient *api.Client) error {
 	// we get the project without using the result to be sure it exists and the user has access.
 	err = apiClient.Get(ctx, types.NamespacedName{Name: s.Name, Namespace: org}, &management.Project{})
 
-	if errors.IsNotFound(err) || errors.IsForbidden(err) {
-		foundOrg, findErr := orgFromProject(ctx, apiClient, s.Name)
-		if findErr == nil {
-			if err := config.SetContextOrganization(apiClient.KubeconfigPath, apiClient.KubeconfigContext, foundOrg); err != nil {
-				return err
-			}
-			org = foundOrg
-			err = nil
-			format.PrintWarningf("Found project in org %s, switching...\n", org)
-		}
-	}
-
 	if err != nil {
-		if !errors.IsNotFound(err) && !errors.IsForbidden(err) {
-			return err
-		} else if errors.IsNotFound(err) {
-			format.PrintWarningf("did not find Project %s in your Organization %s.\n", s.Name, org)
-		} else if errors.IsForbidden(err) {
-			format.PrintWarningf("you are not allowed to get the Project %s, you might not have access to all resources.\n", s.Name)
+		if errors.IsNotFound(err) || errors.IsForbidden(err) {
+			foundOrg, findErr := orgFromProject(ctx, apiClient, s.Name)
+			if findErr == nil {
+				if err := config.SetContextOrganization(apiClient.KubeconfigPath, apiClient.KubeconfigContext, foundOrg); err != nil {
+					return err
+				}
+				org = foundOrg
+				err = nil
+				format.PrintWarningf("Found project in org %s, switching...\n", org)
+			}
+		}
+
+		if err != nil {
+			if !errors.IsNotFound(err) && !errors.IsForbidden(err) {
+				return err
+			} else if errors.IsNotFound(err) {
+				format.PrintWarningf("did not find Project %s in your Organization %s.\n", s.Name, org)
+			} else if errors.IsForbidden(err) {
+				format.PrintWarningf("you are not allowed to get the Project %s, you might not have access to all resources.\n", s.Name)
+			}
 		}
 	}
 
