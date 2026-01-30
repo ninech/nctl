@@ -22,20 +22,15 @@ func (s *SetProjectCmd) Run(ctx context.Context, apiClient *api.Client) error {
 		return err
 	}
 
-	// we get the project without using the result to be sure it exists and the user has access.
-	err = apiClient.Get(ctx, types.NamespacedName{Name: s.Name, Namespace: org}, &management.Project{})
+	// Ensure the project exists. Try switching otherwise.
+	if err := apiClient.Get(ctx, types.NamespacedName{Name: s.Name, Namespace: org}, &management.Project{}); err != nil {
+		if !errors.IsNotFound(err) && !errors.IsForbidden(err) {
+			return fmt.Errorf("failed to set project %s: %w", s.Name, err)
+		}
 
-	if err != nil {
-		org, err = trySwitchOrg(ctx, apiClient, s.Name, org, err)
-
-		if err != nil {
-			if !errors.IsNotFound(err) && !errors.IsForbidden(err) {
-				return err
-			} else if errors.IsNotFound(err) {
-				format.PrintWarningf("did not find Project %s in your Organization %s.\n", s.Name, org)
-			} else if errors.IsForbidden(err) {
-				format.PrintWarningf("you are not allowed to get the Project %s, you might not have access to all resources.\n", s.Name)
-			}
+		format.PrintWarningf("Project does not exist in organization %s, checking other organizations...\n", org)
+		if err := trySwitchOrg(ctx, apiClient, s.Name); err != nil {
+			return fmt.Errorf("failed to switch organization: %w", err)
 		}
 	}
 
@@ -43,29 +38,24 @@ func (s *SetProjectCmd) Run(ctx context.Context, apiClient *api.Client) error {
 		return err
 	}
 
-	fmt.Println(format.SuccessMessagef("📝", "set active Project to %s", s.Name))
+	fmt.Println(format.SuccessMessagef("📝", "set active Project to %s in organization %s", s.Name, org))
 	return nil
 }
 
-func trySwitchOrg(ctx context.Context, apiClient *api.Client, projectName string, currentOrg string, originalErr error) (string, error) {
-	if !errors.IsNotFound(originalErr) && !errors.IsForbidden(originalErr) {
-		return currentOrg, originalErr
+func trySwitchOrg(ctx context.Context, apiClient *api.Client, project string) error {
+	org, err := orgFromProject(ctx, apiClient, project)
+	if err != nil {
+		return err
 	}
 
-	foundOrg, findErr := orgFromProject(ctx, apiClient, projectName)
-	if findErr != nil {
-		return currentOrg, originalErr
+	if err := config.SetContextOrganization(apiClient.KubeconfigPath, apiClient.KubeconfigContext, org); err != nil {
+		return err
 	}
 
-	if err := config.SetContextOrganization(apiClient.KubeconfigPath, apiClient.KubeconfigContext, foundOrg); err != nil {
-		return currentOrg, err
-	}
-
-	format.PrintWarningf("Found project in org %s, switching...\n", foundOrg)
-	return foundOrg, nil
+	return nil
 }
 
-func orgFromProject(ctx context.Context, apiClient *api.Client, projectName string) (string, error) {
+func orgFromProject(ctx context.Context, apiClient *api.Client, project string) (string, error) {
 	userInfo, err := api.GetUserInfoFromToken(apiClient.Token(ctx))
 	if err != nil {
 		return "", fmt.Errorf("could not get user info from token: %w", err)
@@ -73,10 +63,16 @@ func orgFromProject(ctx context.Context, apiClient *api.Client, projectName stri
 
 	for _, org := range userInfo.Orgs {
 		proj := &management.Project{}
-		if err := apiClient.Get(ctx, types.NamespacedName{Name: projectName, Namespace: org}, proj); err == nil {
-			return org, nil
+		err := apiClient.Get(ctx, types.NamespacedName{Name: project, Namespace: org}, proj)
+		if errors.IsNotFound(err) || errors.IsForbidden(err) {
+			continue
 		}
+		if err != nil {
+			return "", fmt.Errorf("could not get project %s in org %s: %w", project, org, err)
+		}
+
+		return org, nil
 	}
 
-	return "", fmt.Errorf("could not find project %s in any available organization", projectName)
+	return "", fmt.Errorf("could not find project %s in any available organization", project)
 }
