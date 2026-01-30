@@ -49,6 +49,8 @@ func (s *SetProjectCmd) Run(ctx context.Context, apiClient *api.Client) error {
 	return nil
 }
 
+// trySwitchOrg attempts to find the organization containing the given project
+// and switches the current context to that organization.
 func trySwitchOrg(ctx context.Context, apiClient *api.Client, project string) error {
 	org, err := orgFromProject(ctx, apiClient, project)
 	if err != nil {
@@ -62,6 +64,8 @@ func trySwitchOrg(ctx context.Context, apiClient *api.Client, project string) er
 	return nil
 }
 
+// orgFromProject attempts to find the organization that contains the given project
+// by checking all organizations the user is a member of.
 func orgFromProject(ctx context.Context, apiClient *api.Client, project string) (string, error) {
 	userInfo, err := api.GetUserInfoFromToken(apiClient.Token(ctx))
 	if err != nil {
