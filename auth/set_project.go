@@ -3,6 +3,8 @@ package auth
 import (
 	"context"
 	"fmt"
+	"slices"
+	"strings"
 
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
@@ -32,6 +34,11 @@ func (s *SetProjectCmd) Run(ctx context.Context, apiClient *api.Client) error {
 		if err := trySwitchOrg(ctx, apiClient, s.Name); err != nil {
 			return fmt.Errorf("failed to switch organization: %w", err)
 		}
+
+		org, err = apiClient.Organization()
+		if err != nil {
+			return err
+		}
 	}
 
 	if err := config.SetContextProject(apiClient.KubeconfigPath, apiClient.KubeconfigContext, s.Name); err != nil {
@@ -59,6 +66,16 @@ func orgFromProject(ctx context.Context, apiClient *api.Client, project string) 
 	userInfo, err := api.GetUserInfoFromToken(apiClient.Token(ctx))
 	if err != nil {
 		return "", fmt.Errorf("could not get user info from token: %w", err)
+	}
+
+	// If we can be sure that it is is the default project, there is no need to query the API.
+	// This does not cover organizations that contain a "-".
+	if !strings.Contains(project, "-") {
+		if slices.Contains(userInfo.Orgs, project) {
+			return project, nil
+		}
+
+		return "", fmt.Errorf("could not find project %s in any available organization", project)
 	}
 
 	for _, org := range userInfo.Orgs {
