@@ -16,8 +16,8 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
-	github.com/grafana/dskit v0.0.0-20250828173137-de14cf923eeb
-	github.com/grafana/loki/v3 v3.6.3
+	github.com/grafana/dskit v0.0.0-20250917065751-798f5a8fa154
+	github.com/grafana/loki/v3 v3.6.4
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/int128/kubelogin v1.35.2
 	github.com/jotaen/kong-completion v0.0.11
