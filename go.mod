@@ -12,7 +12,7 @@ require (
 	github.com/fatih/color v1.18.0
 	github.com/gobuffalo/flect v1.0.3
 	github.com/goccy/go-yaml v1.19.2
-	github.com/golang-jwt/jwt/v5 v5.3.0
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
