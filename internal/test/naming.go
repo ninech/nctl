@@ -10,6 +10,8 @@ var (
 	AppMicro      apps.ApplicationSize = "micro"
 	AppMini       apps.ApplicationSize = "mini"
 	AppStandard1  apps.ApplicationSize = "standard-1"
+	AppStandard2  apps.ApplicationSize = "standard-2"
+	AppStandard4  apps.ApplicationSize = "standard-4"
 
 	StatusSuperseded apps.ReleaseProcessStatus = "superseded"
 	StatusAvailable  apps.ReleaseProcessStatus = "available"
