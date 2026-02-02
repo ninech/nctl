@@ -47,3 +47,15 @@ install it.
 
 * login to the API using `nctl auth login`
 * run `nctl --help` to get a list of all available commands
+
+## Development
+
+To setup the project for local development, you can run the following commands:
+
+```bash
+# Download dependencies
+go get -v -t ./...
+
+# Run tests
+go test -v ./...
+```
