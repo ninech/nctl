@@ -354,7 +354,7 @@ func TestApplicationDNS(t *testing.T) {
 			},
 			outputFormat: full,
 			project:      "dev",
-			output: `PROJECT  NAME           TXT RECORD     DNS TARGET
+			output: `PROJECT  APP NAME       TXT RECORD     DNS TARGET
 dev      no-txt-record  <not set yet>  <not set yet>
 
 Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup custom hosts
@@ -371,8 +371,8 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 			},
 			outputFormat: full,
 			project:      "dev",
-			output: `PROJECT  NAME    TXT RECORD                                    DNS TARGET
-dev      sample  deploio-site-verification=sample-dev-3ksdk23  sample.3ksdk23.deploio.app
+			output: `PROJECT  APP NAME  TXT RECORD                                    DNS TARGET
+dev      sample    deploio-site-verification=sample-dev-3ksdk23  sample.3ksdk23.deploio.app
 
 Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup custom hosts
 `,
@@ -409,9 +409,9 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 				),
 			},
 			outputFormat: full,
-			output: `PROJECT  NAME    TXT RECORD                                    DNS TARGET
-dev      sample  deploio-site-verification=sample-dev-3ksdk23  sample.3ksdk23.deploio.app
-test     test    deploio-site-verification=test-test-4ksdk23   test.4ksdk23.deploio.app
+			output: `PROJECT  APP NAME  TXT RECORD                                    DNS TARGET
+dev      sample    deploio-site-verification=sample-dev-3ksdk23  sample.3ksdk23.deploio.app
+test     test      deploio-site-verification=test-test-4ksdk23   test.4ksdk23.deploio.app
 
 Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup custom hosts
 `,
