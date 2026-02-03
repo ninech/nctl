@@ -123,12 +123,12 @@ func (cmd *openSearchCmd) printSnapshotBucket(ctx context.Context, client *api.C
 		return fmt.Errorf("no snapshot bucket configured for OpenSearch instance %s", openSearch.Name)
 	}
 
-	bucket := &storage.ObjectsBucket{}
+	bucket := &storage.Bucket{}
 	if err := client.Get(ctx, types.NamespacedName{Name: bucketName, Namespace: client.Project}, bucket); err != nil {
 		return err
 	}
 
-	bucketURL := bucket.Status.AtProvider.URL
+	bucketURL := bucket.Status.AtProvider.PublicURL
 	if bucketURL == "" {
 		return fmt.Errorf("no URL found in ObjectsBucket %s status", bucketName)
 	}
