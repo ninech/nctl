@@ -18,30 +18,30 @@ type SetProjectCmd struct {
 	Name string `arg:"" help:"Name of the default project to be used." completion-predictor:"project_name"`
 }
 
-func (s *SetProjectCmd) Run(ctx context.Context, apiClient *api.Client) error {
-	org, err := apiClient.Organization()
+func (s *SetProjectCmd) Run(ctx context.Context, client *api.Client) error {
+	org, err := client.Organization()
 	if err != nil {
 		return err
 	}
 
 	// Ensure the project exists. Try switching otherwise.
-	if err := apiClient.Get(ctx, types.NamespacedName{Name: s.Name, Namespace: org}, &management.Project{}); err != nil {
+	if err := client.Get(ctx, types.NamespacedName{Name: s.Name, Namespace: org}, &management.Project{}); err != nil {
 		if !errors.IsNotFound(err) && !errors.IsForbidden(err) {
 			return fmt.Errorf("failed to set project %s: %w", s.Name, err)
 		}
 
 		format.PrintWarningf("Project does not exist in organization %s, checking other organizations...\n", org)
-		if err := trySwitchOrg(ctx, apiClient, s.Name); err != nil {
+		if err := trySwitchOrg(ctx, client, s.Name); err != nil {
 			return fmt.Errorf("failed to switch organization: %w", err)
 		}
 
-		org, err = apiClient.Organization()
+		org, err = client.Organization()
 		if err != nil {
 			return err
 		}
 	}
 
-	if err := config.SetContextProject(apiClient.KubeconfigPath, apiClient.KubeconfigContext, s.Name); err != nil {
+	if err := config.SetContextProject(client.KubeconfigPath, client.KubeconfigContext, s.Name); err != nil {
 		return err
 	}
 
@@ -51,13 +51,13 @@ func (s *SetProjectCmd) Run(ctx context.Context, apiClient *api.Client) error {
 
 // trySwitchOrg attempts to find the organization containing the given project
 // and switches the current context to that organization.
-func trySwitchOrg(ctx context.Context, apiClient *api.Client, project string) error {
-	org, err := orgFromProject(ctx, apiClient, project)
+func trySwitchOrg(ctx context.Context, client *api.Client, project string) error {
+	org, err := orgFromProject(ctx, client, project)
 	if err != nil {
 		return err
 	}
 
-	if err := config.SetContextOrganization(apiClient.KubeconfigPath, apiClient.KubeconfigContext, org); err != nil {
+	if err := config.SetContextOrganization(client.KubeconfigPath, client.KubeconfigContext, org); err != nil {
 		return err
 	}
 
@@ -66,8 +66,8 @@ func trySwitchOrg(ctx context.Context, apiClient *api.Client, project string) er
 
 // orgFromProject attempts to find the organization that contains the given project
 // by checking all organizations the user is a member of.
-func orgFromProject(ctx context.Context, apiClient *api.Client, project string) (string, error) {
-	userInfo, err := api.GetUserInfoFromToken(apiClient.Token(ctx))
+func orgFromProject(ctx context.Context, client *api.Client, project string) (string, error) {
+	userInfo, err := api.GetUserInfoFromToken(client.Token(ctx))
 	if err != nil {
 		return "", fmt.Errorf("could not get user info from token: %w", err)
 	}
@@ -98,7 +98,7 @@ func orgFromProject(ctx context.Context, apiClient *api.Client, project string) 
 
 	for org := range orgs {
 		proj := &management.Project{}
-		err := apiClient.Get(ctx, types.NamespacedName{Name: project, Namespace: org}, proj)
+		err := client.Get(ctx, types.NamespacedName{Name: project, Namespace: org}, proj)
 		if errors.IsNotFound(err) || errors.IsForbidden(err) {
 			continue
 		}
