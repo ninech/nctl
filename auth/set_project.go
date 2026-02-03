@@ -72,9 +72,12 @@ func orgFromProject(ctx context.Context, client *api.Client, project string) (st
 		return "", fmt.Errorf("could not get user info from token: %w", err)
 	}
 
+	// Avoid unnecessary API calls if some conditions are met.
+	prefix, _, found := strings.Cut(project, "-")
+
 	// If we can be sure that it is is the default project, there is no need to query the API.
 	// This does not cover organizations that contain a "-".
-	if !strings.Contains(project, "-") {
+	if !found {
 		if slices.Contains(userInfo.Orgs, project) {
 			return project, nil
 		}
@@ -85,13 +88,14 @@ func orgFromProject(ctx context.Context, client *api.Client, project string) (st
 	// Filter the organizations to check by only considering those that match the project prefix.
 	// In most cases this will be a single organization.
 	// But in cases where the organization name contains a "-", we need to check all organizations.
-	prefix, _, _ := strings.Cut(project, "-")
 	orgs := func(yield func(string) bool) {
 		for _, org := range userInfo.Orgs {
-			if strings.HasPrefix(org, prefix) {
-				if !yield(org) {
-					return
-				}
+			if !strings.HasPrefix(org, prefix) {
+				continue
+			}
+
+			if !yield(org) {
+				return
 			}
 		}
 	}
