@@ -13,6 +13,7 @@ import (
 
 type mysqlDatabaseCmd struct {
 	resourceCmd
+	BackupSchedule *storage.DatabaseBackupScheduleCalendar `help:"Backup schedule for the MySQL database. Available schedules: daily, disabled"`
 }
 
 func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error {
@@ -36,6 +37,8 @@ func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error 
 	return upd.Update(ctx)
 }
 
-func (cmd *mysqlDatabaseCmd) applyUpdates(_ *storage.MySQLDatabase) {
-	format.PrintWarningf("there are no attributes for mysqldatabase which can be updated after creation. Applying update without any changes.\n")
+func (cmd *mysqlDatabaseCmd) applyUpdates(db *storage.MySQLDatabase) {
+	if cmd.BackupSchedule != nil {
+		db.Spec.ForProvider.Schedule = *cmd.BackupSchedule
+	}
 }

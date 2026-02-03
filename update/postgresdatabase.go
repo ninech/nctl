@@ -13,6 +13,7 @@ import (
 
 type postgresDatabaseCmd struct {
 	resourceCmd
+	BackupSchedule *storage.DatabaseBackupScheduleCalendar `help:"Backup schedule for the PostgreSQL database. Available schedules: daily, disabled"`
 }
 
 func (cmd *postgresDatabaseCmd) Run(ctx context.Context, client *api.Client) error {
@@ -36,6 +37,8 @@ func (cmd *postgresDatabaseCmd) Run(ctx context.Context, client *api.Client) err
 	return upd.Update(ctx)
 }
 
-func (cmd *postgresDatabaseCmd) applyUpdates(_ *storage.PostgresDatabase) {
-	format.PrintWarningf("there are no attributes for postgresdatabase which can be updated after creation. Applying update without any changes.\n")
+func (cmd *postgresDatabaseCmd) applyUpdates(db *storage.PostgresDatabase) {
+	if cmd.BackupSchedule != nil {
+		db.Spec.ForProvider.Schedule = *cmd.BackupSchedule
+	}
 }
