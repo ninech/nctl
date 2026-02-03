@@ -1,15 +1,27 @@
 # nctl
 
-```bash
-$ nctl --help
-Usage: nctl <command>
+[![CI](https://github.com/ninech/nctl/actions/workflows/go.yml/badge.svg)](https://github.com/ninech/nctl/actions/workflows/go.yml)
+[![Release](https://img.shields.io/github/v/release/ninech/nctl)](https://github.com/ninech/nctl/releases)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ninech/nctl)](https://goreportcard.com/report/github.com/ninech/nctl)
+[![License](https://img.shields.io/github/license/ninech/nctl)](LICENSE)
 
-Interact with Nine API resources. See https://docs.nineapis.ch for the full API docs.
+`nctl` is the command-line interface for [Nine](https://nine.ch)'s cloud platform.
+It lets you manage applications, services, storage, and more from your terminal.
 
-Run "nctl <command> --help" for more information on a command.
-```
+**[Documentation](https://docs.nine.ch/docs/nctl/)**
 
-## Setup
+## Resources
+
+| Category                   | Resources                                                          |
+| -------------------------- | ------------------------------------------------------------------ |
+| **deplo.io**               | Applications, Builds, Releases, Configs                            |
+| **storage.nine.ch**        | PostgreSQL, MySQL, OpenSearch, KeyValueStore, Buckets, BucketUsers |
+| **infrastructure.nine.ch** | Kubernetes Clusters, CloudVMs                                      |
+| **networking.nine.ch**     | ServiceConnections                                                 |
+| **iam.nine.ch**            | APIServiceAccounts                                                 |
+| **management.nine.ch**     | Projects                                                           |
+
+## Installation
 
 ```bash
 # If you have go already installed
@@ -37,13 +49,32 @@ dnf install nctl
 # Install yay: https://github.com/Jguer/yay#binary
 yay --version
 yay -S nctl-bin
+
+# EGet
+# Install eget https://github.com/zyedidia/eget
+eget ninech/nctl
 ```
 
-For Windows users, nctl is also built for arm64 and amd64. You can download the
-latest exe file from the [releases](https://github.com/ninech/nctl/releases) and
-install it.
+Binaries for macOS, Linux and Windows can be found on the [releases](https://github.com/ninech/nctl/releases) page.
 
-## Getting started
+## Getting Started
 
-* login to the API using `nctl auth login`
-* run `nctl --help` to get a list of all available commands
+1. Login to the API: `nctl auth login`
+2. Explore available commands: `nctl --help`
+
+For complete documentation, tutorials, and guides, visit **[docs.nine.ch/docs/nctl/](https://docs.nine.ch/docs/nctl/)**.
+
+## Development
+
+```bash
+make           # Build nctl
+make test      # Run tests
+make lint      # Run linters
+make lint-fix  # Run linters and fix issues
+make update    # Update dependencies
+make clean     # Remove built artifacts
+```
+
+## License
+
+[Apache 2.0](LICENSE)
