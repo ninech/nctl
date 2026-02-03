@@ -81,7 +81,6 @@ func printProject(projects []management.Project, get Cmd, header bool) error {
 
 func projectExcludes() [][]string {
 	return [][]string{
-		{"spec"},
 		{"status"},
 	}
 }
