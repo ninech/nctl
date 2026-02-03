@@ -186,7 +186,7 @@ func printDNSDetails(items []util.DNSDetail, out *output) error {
 
 func printDNSDetailsTabRow(items []util.DNSDetail, out *output) error {
 	if out.Format == full {
-		out.writeHeader("NAME", "TXT RECORD", "DNS TARGET")
+		out.writeHeader("APP NAME", "TXT RECORD", "DNS TARGET")
 	}
 
 	for _, item := range items {
