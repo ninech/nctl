@@ -1,3 +1,4 @@
+// Package auth provides commands for authentication and session management.
 package auth
 
 type Cmd struct {
