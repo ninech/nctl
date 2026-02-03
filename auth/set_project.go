@@ -82,7 +82,21 @@ func orgFromProject(ctx context.Context, apiClient *api.Client, project string) 
 		return "", fmt.Errorf("could not find project %s in any available organization", project)
 	}
 
-	for _, org := range userInfo.Orgs {
+	// Filter the organizations to check by only considering those that match the project prefix.
+	// In most cases this will be a single organization.
+	// But in cases where the organization name contains a "-", we need to check all organizations.
+	prefix, _, _ := strings.Cut(project, "-")
+	orgs := func(yield func(string) bool) {
+		for _, org := range userInfo.Orgs {
+			if strings.HasPrefix(org, prefix) {
+				if !yield(org) {
+					return
+				}
+			}
+		}
+	}
+
+	for org := range orgs {
 		proj := &management.Project{}
 		err := apiClient.Get(ctx, types.NamespacedName{Name: project, Namespace: org}, proj)
 		if errors.IsNotFound(err) || errors.IsForbidden(err) {
