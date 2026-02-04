@@ -37,7 +37,7 @@ func (cmd *bucketCmd) Run(ctx context.Context, client *api.Client) error {
 		return err
 	}
 
-	c := newCreator(client, bucket, "bucket")
+	c := cmd.newCreator(client, bucket, "bucket")
 	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
 	defer cancel()
 

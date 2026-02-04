@@ -45,12 +45,12 @@ func (cmd *releasesCmd) print(ctx context.Context, client *api.Client, list clie
 	case noHeader:
 		return cmd.printReleases(releaseList.Items, out, false)
 	case yamlOut:
-		return format.PrettyPrintObjects(releaseList.GetItems(), format.PrintOpts{Out: out.writer})
+		return format.PrettyPrintObjects(releaseList.GetItems(), format.PrintOpts{Out: &out.Writer})
 	case jsonOut:
 		return format.PrettyPrintObjects(
 			releaseList.GetItems(),
 			format.PrintOpts{
-				Out:    out.writer,
+				Out:    &out.Writer,
 				Format: format.OutputFormatTypeJSON,
 				JSONOpts: format.JSONOutputOptions{
 					PrintSingleItem: cmd.Name != "",

@@ -2,7 +2,6 @@ package get
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
@@ -36,12 +35,12 @@ func (cmd *clustersCmd) print(ctx context.Context, client *api.Client, list clie
 	case noHeader:
 		return printClusters(clusterList.Items, out, false)
 	case yamlOut:
-		return format.PrettyPrintObjects(clusterList.GetItems(), format.PrintOpts{Out: out.writer})
+		return format.PrettyPrintObjects(clusterList.GetItems(), format.PrintOpts{Out: &out.Writer})
 	case jsonOut:
 		return format.PrettyPrintObjects(
 			clusterList.GetItems(),
 			format.PrintOpts{
-				Out:    out.writer,
+				Out:    &out.Writer,
 				Format: format.OutputFormatTypeJSON,
 				JSONOpts: format.JSONOutputOptions{
 					PrintSingleItem: cmd.Name != "",
@@ -49,7 +48,7 @@ func (cmd *clustersCmd) print(ctx context.Context, client *api.Client, list clie
 			})
 	case contexts:
 		for _, cluster := range clusterList.Items {
-			fmt.Printf("%s\n", config.ContextName(&cluster))
+			out.Printf("%s\n", config.ContextName(&cluster))
 		}
 	}
 

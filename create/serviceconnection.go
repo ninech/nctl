@@ -15,7 +15,6 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/internal/format"
 )
 
 type serviceConnectionCmd struct {
@@ -26,7 +25,7 @@ type serviceConnectionCmd struct {
 	KubernetesClusterOptions KubernetesClusterOptions `embed:"" prefix:"source-"`
 }
 
-// KubernetesClusterOptions
+// KubernetesClusterOptions contains options for a KubernetesCluster source.
 // https://pkg.go.dev/github.com/ninech/apis@v0.0.0-20250708054129-4d49f7a6c606/networking/v1alpha1#KubernetesClusterOptions
 type KubernetesClusterOptions struct {
 	PodSelector       *LabelSelector `placeholder:"${label_selector_placeholder}" help:"${label_selector_requirements} Restrict which pods of the KubernetesCluster can connect to the service connection destination. If left empty, all pods are allowed. If the namespace selector is also set, then the pod selector as a whole selects the pods matching pod selector in the namespaces selected by namespace selector.\n\n${label_selector_usage}."`
@@ -106,7 +105,7 @@ func (cmd *serviceConnectionCmd) Run(ctx context.Context, client *api.Client) er
 	}
 	params := sc.Spec.ForProvider.DeepCopy()
 
-	c := newCreator(client, sc, networking.ServiceConnectionKind)
+	c := cmd.newCreator(client, sc, networking.ServiceConnectionKind)
 	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
 	defer cancel()
 
@@ -128,16 +127,17 @@ func (cmd *serviceConnectionCmd) Run(ctx context.Context, client *api.Client) er
 	}
 	if !sourceExists || !destinationExists {
 		if !sourceExists {
-			format.PrintWarningf("source %q does not yet exist\n", sc.Spec.ForProvider.Source.Reference)
+			cmd.Warningf("source %q does not yet exist\n", sc.Spec.ForProvider.Source.Reference)
 		}
 		if !destinationExists {
-			format.PrintWarningf("destination %q does not yet exist\n", sc.Spec.ForProvider.Destination)
+			cmd.Warningf("destination %q does not yet exist\n", sc.Spec.ForProvider.Destination)
 		}
 
 		return nil
 	}
 
 	return c.wait(ctx, waitStage{
+		Writer:     cmd.Writer,
 		objectList: &networking.ServiceConnectionList{},
 		onResult:   resourceAvailable,
 	},

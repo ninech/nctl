@@ -8,6 +8,7 @@ import (
 
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	iam "github.com/ninech/apis/iam/v1alpha1"
+	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -59,6 +60,7 @@ func TestFile(t *testing.T) {
 	ctx := context.Background()
 	apiClient, err := test.SetupClient()
 	require.NoError(t, err)
+	w := format.NewWriter(t.Output())
 
 	tests := map[string]struct {
 		name              string
@@ -128,7 +130,7 @@ func TestFile(t *testing.T) {
 			if tc.delete || tc.update {
 				fileToCreate, err := os.Open(f.Name())
 				require.NoError(t, err)
-				err = File(ctx, apiClient, fileToCreate) // This will close fileToCreate
+				err = File(ctx, w, apiClient, fileToCreate) // This will close fileToCreate
 				require.NoError(t, err)
 			}
 
@@ -150,7 +152,7 @@ func TestFile(t *testing.T) {
 			fileToApply, err := os.Open(f.Name())
 			require.NoError(t, err)
 
-			if err := File(ctx, apiClient, fileToApply, opts...); err != nil {
+			if err := File(ctx, w, apiClient, fileToApply, opts...); err != nil {
 				if tc.expectedErr {
 					return
 				}

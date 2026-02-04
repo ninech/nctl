@@ -1,3 +1,4 @@
+// Package copy provides commands to copy resources.
 package copy
 
 import (
@@ -5,6 +6,7 @@ import (
 	"time"
 
 	"github.com/lucasepe/codename"
+	"github.com/ninech/nctl/internal/format"
 )
 
 type Cmd struct {
@@ -12,6 +14,8 @@ type Cmd struct {
 }
 
 type resourceCmd struct {
+	format.Writer
+
 	Name          string `arg:"" help:"Name of the resource to copy." default:"" completion-predictor:"resource_name"`
 	TargetName    string `help:"Target name of the new resource. A random name is generated if omitted." default:""`
 	TargetProject string `help:"Target project of the new resource. The current project is used if omitted." default:"" completion-predictor:"project_name"`

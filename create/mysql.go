@@ -46,10 +46,10 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
 		cmd.SSHKeys = keys
 	}
 
-	fmt.Printf("Creating new mysql. This might take some time (waiting up to %s).\n", cmd.WaitTimeout)
+	cmd.Printf("Creating new mysql. This might take some time (waiting up to %s).\n", cmd.WaitTimeout)
 	mysql := cmd.newMySQL(client.Project)
 
-	c := newCreator(client, mysql, "mysql")
+	c := cmd.newCreator(client, mysql, "mysql")
 	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
 	defer cancel()
 
@@ -62,6 +62,7 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
 	}
 
 	return c.wait(ctx, waitStage{
+		Writer:     cmd.Writer,
 		objectList: &storage.MySQLList{},
 		onResult: func(event watch.Event) (bool, error) {
 			if c, ok := event.Object.(*storage.MySQL); ok {

@@ -10,11 +10,13 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
 	"github.com/ninech/nctl/internal/format"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 )
 
 type SetProjectCmd struct {
+	format.Writer
 	Name string `arg:"" help:"Name of the default project to be used." completion-predictor:"project_name"`
 }
 
@@ -25,12 +27,19 @@ func (s *SetProjectCmd) Run(ctx context.Context, client *api.Client) error {
 	}
 
 	// Ensure the project exists. Try switching otherwise.
-	if err := client.Get(ctx, types.NamespacedName{Name: s.Name, Namespace: org}, &management.Project{}); err != nil {
+	if err := client.Get(
+		ctx,
+		types.NamespacedName{Name: s.Name, Namespace: org},
+		&management.Project{},
+	); err != nil {
 		if !errors.IsNotFound(err) && !errors.IsForbidden(err) {
 			return fmt.Errorf("failed to set project %s: %w", s.Name, err)
 		}
 
-		format.PrintWarningf("Project does not exist in organization %s, checking other organizations...\n", org)
+		s.Warningf(
+			"Project does not exist in organization %s, checking other organizations...\n",
+			org,
+		)
 		if err := trySwitchOrg(ctx, client, s.Name); err != nil {
 			return fmt.Errorf("failed to switch organization: %w", err)
 		}
@@ -41,11 +50,15 @@ func (s *SetProjectCmd) Run(ctx context.Context, client *api.Client) error {
 		}
 	}
 
-	if err := config.SetContextProject(client.KubeconfigPath, client.KubeconfigContext, s.Name); err != nil {
+	if err := config.SetContextProject(
+		client.KubeconfigPath,
+		client.KubeconfigContext,
+		s.Name,
+	); err != nil {
 		return err
 	}
 
-	fmt.Println(format.SuccessMessagef("📝", "set active Project to %s in organization %s", s.Name, org))
+	s.Successf("📝", "set active Project to %s in organization %s\n", s.Name, org)
 	return nil
 }
 
@@ -57,7 +70,11 @@ func trySwitchOrg(ctx context.Context, client *api.Client, project string) error
 		return err
 	}
 
-	if err := config.SetContextOrganization(client.KubeconfigPath, client.KubeconfigContext, org); err != nil {
+	if err := config.SetContextOrganization(
+		client.KubeconfigPath,
+		client.KubeconfigContext,
+		org,
+	); err != nil {
 		return err
 	}
 

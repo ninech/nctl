@@ -35,7 +35,7 @@ func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client) error {
 		return err
 	}
 
-	c := newCreator(client, openSearch, "opensearch")
+	c := cmd.newCreator(client, openSearch, "opensearch")
 	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
 	defer cancel()
 

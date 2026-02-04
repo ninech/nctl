@@ -18,5 +18,5 @@ func (cmd *serviceConnectionCmd) Run(ctx context.Context, client *api.Client) er
 	defer cancel()
 
 	sc := &networking.ServiceConnection{ObjectMeta: metav1.ObjectMeta{Name: cmd.Name, Namespace: client.Project}}
-	return newDeleter(sc, networking.ServiceConnectionKind).deleteResource(ctx, client, cmd.WaitTimeout, cmd.Wait, cmd.Force)
+	return cmd.newDeleter(sc, networking.ServiceConnectionKind).deleteResource(ctx, client, cmd.WaitTimeout, cmd.Wait, cmd.Force)
 }

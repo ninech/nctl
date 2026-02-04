@@ -3,8 +3,6 @@ package get
 import (
 	"context"
 	"fmt"
-	"io"
-	"os"
 	"sort"
 	"strings"
 
@@ -13,6 +11,7 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
+
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -21,7 +20,6 @@ import (
 )
 
 type allCmd struct {
-	stdErr               io.Writer
 	Kinds                []string `help:"Specify the kind of resources which should be listed."`
 	IncludeNineResources bool     `help:"Show resources which are owned by Nine." default:"false"`
 }
@@ -42,7 +40,7 @@ func (cmd *allCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error 
 	}
 	// we now print all warnings to stderr
 	for _, w := range warnings {
-		fmt.Fprintf(defaultStdError(cmd.stdErr), "warning: %s\n", w)
+		get.Warningf("%s\n", w)
 	}
 
 	if len(items) == 0 {
@@ -55,9 +53,12 @@ func (cmd *allCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error 
 	case noHeader:
 		return printItems(items, *get, false)
 	case yamlOut:
-		return format.PrettyPrintObjects(items, format.PrintOpts{Out: get.writer})
+		return format.PrettyPrintObjects(items, format.PrintOpts{Out: get.Writer})
 	case jsonOut:
-		return format.PrettyPrintObjects(items, format.PrintOpts{Out: get.writer, Format: format.OutputFormatTypeJSON})
+		return format.PrettyPrintObjects(
+			items,
+			format.PrintOpts{Out: get.Writer, Format: format.OutputFormatTypeJSON},
+		)
 	}
 
 	return nil
@@ -72,7 +73,11 @@ func projectNames(projects []management.Project) []string {
 	return result
 }
 
-func (cmd *allCmd) getProjectContent(ctx context.Context, client *api.Client, projNames []string) ([]*unstructured.Unstructured, []string, error) {
+func (cmd *allCmd) getProjectContent(
+	ctx context.Context,
+	client *api.Client,
+	projNames []string,
+) ([]*unstructured.Unstructured, []string, error) {
 	var warnings []string
 	var result []*unstructured.Unstructured
 	listTypes, err := filteredListTypes(client.Scheme(), cmd.Kinds)
@@ -100,7 +105,8 @@ func (cmd *allCmd) getProjectContent(ctx context.Context, client *api.Client, pr
 					result = append(result, &item)
 					continue
 				}
-				if value, exists := item.GetLabels()[meta.NineOwnedLabelKey]; exists && value == meta.NineOwnedLabelValue {
+				if value, exists := item.GetLabels()[meta.NineOwnedLabelKey]; exists &&
+					value == meta.NineOwnedLabelValue {
 					continue
 				}
 				result = append(result, &item)
@@ -134,7 +140,12 @@ func printItems(items []*unstructured.Unstructured, get Cmd, header bool) error 
 		get.writeHeader("NAME", "KIND", "GROUP")
 	}
 	for _, item := range items {
-		get.writeTabRow(item.GetNamespace(), item.GetName(), item.GroupVersionKind().Kind, item.GroupVersionKind().Group)
+		get.writeTabRow(
+			item.GetNamespace(),
+			item.GetName(),
+			item.GroupVersionKind().Kind,
+			item.GroupVersionKind().Group,
+		)
 	}
 
 	return get.tabWriter.Flush()
@@ -192,11 +203,4 @@ func nineListTypes(s *runtime.Scheme) []schema.GroupVersionKind {
 	)
 
 	return lists
-}
-
-func defaultStdError(out io.Writer) io.Writer {
-	if out == nil {
-		return os.Stderr
-	}
-	return out
 }

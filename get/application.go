@@ -42,7 +42,7 @@ func (cmd *applicationsCmd) print(ctx context.Context, client *api.Client, list 
 	if cmd.BasicAuthCredentials {
 		creds, err := gatherCredentials(ctx, appList.Items, client)
 		if len(creds) == 0 {
-			fmt.Fprintf(out.writer, "no application with basic auth enabled found\n")
+			out.Printf("no application with basic auth enabled found\n")
 			return err
 		}
 		if printErr := printCredentials(creds, out); printErr != nil {
@@ -61,12 +61,12 @@ func (cmd *applicationsCmd) print(ctx context.Context, client *api.Client, list 
 	case noHeader:
 		return printApplication(appList.Items, out, false)
 	case yamlOut:
-		return format.PrettyPrintObjects(appList.GetItems(), format.PrintOpts{Out: out.writer})
+		return format.PrettyPrintObjects(appList.GetItems(), format.PrintOpts{Out: &out.Writer})
 	case jsonOut:
 		return format.PrettyPrintObjects(
 			appList.GetItems(),
 			format.PrintOpts{
-				Out:    out.writer,
+				Out:    &out.Writer,
 				Format: format.OutputFormatTypeJSON,
 				JSONOpts: format.JSONOutputOptions{
 					PrintSingleItem: cmd.Name != "",
@@ -115,10 +115,13 @@ func printApplication(apps []apps.Application, out *output, header bool) error {
 
 func printCredentials(creds []appCredentials, out *output) error {
 	if out.Format == yamlOut {
-		return format.PrettyPrintObjects(creds, format.PrintOpts{Out: out.writer})
+		return format.PrettyPrintObjects(creds, format.PrintOpts{Out: &out.Writer})
 	}
 	if out.Format == jsonOut {
-		return format.PrettyPrintObjects(creds, format.PrintOpts{Out: out.writer, Format: format.OutputFormatTypeJSON})
+		return format.PrettyPrintObjects(
+			creds,
+			format.PrintOpts{Out: &out.Writer, Format: format.OutputFormatTypeJSON},
+		)
 	}
 	return printCredentialsTabRow(creds, out)
 }
@@ -176,10 +179,10 @@ func join(list []string) string {
 
 func printDNSDetails(items []util.DNSDetail, out *output) error {
 	if out.Format == yamlOut {
-		return format.PrettyPrintObjects(items, format.PrintOpts{Out: out.writer})
+		return format.PrettyPrintObjects(items, format.PrintOpts{Out: &out.Writer})
 	}
 	if out.Format == jsonOut {
-		return format.PrettyPrintObjects(items, format.PrintOpts{Out: out.writer, Format: format.OutputFormatTypeJSON})
+		return format.PrettyPrintObjects(items, format.PrintOpts{Out: &out.Writer, Format: format.OutputFormatTypeJSON})
 	}
 	return printDNSDetailsTabRow(items, out)
 }
@@ -196,7 +199,7 @@ func printDNSDetailsTabRow(items []util.DNSDetail, out *output) error {
 		return err
 	}
 
-	fmt.Fprintf(out.writer, "\nVisit %s to see instructions on how to setup custom hosts\n", util.DNSSetupURL)
+	out.Printf("\nVisit %s to see instructions on how to setup custom hosts\n", util.DNSSetupURL)
 	return nil
 }
 
@@ -239,7 +242,7 @@ func (cmd *applicationsCmd) printStats(ctx context.Context, c *api.Client, appLi
 	for _, app := range appList {
 		rel, err := util.ApplicationLatestRelease(ctx, c, api.ObjectName(&app))
 		if err != nil {
-			format.PrintWarningf("unable to get latest release for app %s\n", c.Name(app.Name))
+			out.Warningf("unable to get latest release for app %s\n", c.Name(app.Name))
 			continue
 		}
 
@@ -285,8 +288,12 @@ func (cmd *applicationsCmd) printStats(ctx context.Context, c *api.Client, appLi
 
 		for _, statsObservation := range observations {
 			podMetrics := metricsv1beta1.PodMetrics{}
-			if err := runtimeClient.Get(ctx, api.NamespacedName(statsObservation.ReplicaName, app.Namespace), &podMetrics); err != nil {
-				format.PrintWarningf("unable to get metrics for replica %s\n", statsObservation.ReplicaName)
+			if err := runtimeClient.Get(
+				ctx,
+				api.NamespacedName(statsObservation.ReplicaName, app.Namespace),
+				&podMetrics,
+			); err != nil {
+				out.Warningf("unable to get metrics for replica %s\n", statsObservation.ReplicaName)
 			}
 
 			maxResources := apps.AppResources[statsObservation.size]

@@ -12,6 +12,7 @@ import (
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
+
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -39,7 +40,7 @@ func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {
 		return err
 	}
 
-	c := newCreator(client, cloudVM, infrastructure.CloudVirtualMachineKind)
+	c := cmd.newCreator(client, cloudVM, infrastructure.CloudVirtualMachineKind)
 	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
 	defer cancel()
 
@@ -59,12 +60,13 @@ func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {
 				return isAvailable(c), nil
 			}
 			return false, nil
-		}},
+		},
+	},
 	); err != nil {
 		return err
 	}
 
-	fmt.Printf("\nYour Cloud VM %s is now available, you can now connect with:\n  ssh root@%s\n\n", cloudVM.Name, cloudVM.Status.AtProvider.FQDN)
+	cmd.Printf("\nYour Cloud VM %s is now available, you can now connect with:\n  ssh root@%s\n\n", cloudVM.Name, cloudVM.Status.AtProvider.FQDN)
 
 	return nil
 }
@@ -137,8 +139,8 @@ func (cmd *cloudVMCmd) newCloudVM(namespace string) (*infrastructure.CloudVirtua
 	return cloudVM, nil
 }
 
-// ApplicationKongVars returns all variables which are used in the application
-// create command
+// CloudVMKongVars returns all variables which are used in the application
+// create command.
 func CloudVMKongVars() kong.Vars {
 	result := make(kong.Vars)
 	result["cloudvm_os_flavors"] = strings.Join(stringSlice(infrastructure.CloudVirtualMachineOperatingSystems), ", ")

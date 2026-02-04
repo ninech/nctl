@@ -26,6 +26,7 @@ const (
 )
 
 type LoginCmd struct {
+	format.Writer
 	API                         API    `embed:"" prefix:"api-"`
 	Organization                string `help:"Name of your organization to use when providing an API client ID/secret." env:"NCTL_ORGANIZATION"`
 	IssuerURL                   string `help:"OIDC issuer URL of the API." default:"${issuer_url}" hidden:""`
@@ -69,7 +70,7 @@ func (l *LoginCmd) Run(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		return login(cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(l.Organization))
+		return login(l.Writer, cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(l.Organization))
 	}
 
 	if l.API.ClientID != "" {
@@ -92,7 +93,7 @@ func (l *LoginCmd) Run(ctx context.Context) error {
 		if userInfo.Project != "" {
 			proj = userInfo.Project
 		}
-		return login(cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(proj))
+		return login(l.Writer, cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(proj))
 	}
 
 	if !l.ForceInteractiveEnvOverride && !format.IsInteractiveEnvironment(os.Stdout) {
@@ -117,9 +118,9 @@ func (l *LoginCmd) Run(ctx context.Context) error {
 
 	org := userInfo.Orgs[0]
 	if len(userInfo.Orgs) > 1 {
-		fmt.Printf("Multiple organizations found for the account %q.\n", userInfo.User)
-		fmt.Printf("Defaulting to %q\n", org)
-		printAvailableOrgsString(org, userInfo.Orgs)
+		l.Printf("Multiple organizations found for the account %q.\n", userInfo.User)
+		l.Printf("Defaulting to %q\n", org)
+		l.printAvailableOrgsString(org, userInfo.Orgs)
 	}
 
 	cfg, err := newAPIConfig(apiURL, issuerURL, command, l.ClientID, withOrganization(org))
@@ -127,7 +128,23 @@ func (l *LoginCmd) Run(ctx context.Context) error {
 		return err
 	}
 
-	return login(cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(org))
+	return login(l.Writer, cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(org))
+}
+
+func (l *LoginCmd) printAvailableOrgsString(currentorg string, orgs []string) {
+	l.Println("\nAvailable Organizations:")
+
+	for _, org := range orgs {
+		activeMarker := ""
+		if currentorg == org {
+			activeMarker = "*"
+		}
+
+		l.Printf("%s\t%s\n", activeMarker, org)
+	}
+
+	l.Printf("\nTo switch the organization use the following command:\n")
+	l.Printf("$ nctl auth set-org <org-name>\n")
 }
 
 func (l *LoginCmd) tokenGetter() api.TokenGetter {
@@ -254,7 +271,7 @@ func switchCurrentContext() loginOption {
 	}
 }
 
-func login(newConfig *clientcmdapi.Config, kubeconfigPath, userName string, toOrg string, opts ...loginOption) error {
+func login(w format.Writer, newConfig *clientcmdapi.Config, kubeconfigPath, userName string, toOrg string, opts ...loginOption) error {
 	loginConfig := &loginConfig{}
 	for _, opt := range opts {
 		opt(loginConfig)
@@ -284,15 +301,15 @@ func login(newConfig *clientcmdapi.Config, kubeconfigPath, userName string, toOr
 	}
 
 	if toOrg != "" {
-		format.PrintSuccessf("🏢", "switched to the organization %q", toOrg)
+		w.Successf("🏢", "switched to the organization %q\n", toOrg)
 	}
-	format.PrintSuccessf("📋", "added %s to kubeconfig", newConfig.CurrentContext)
+	w.Successf("📋", "added %s to kubeconfig\n", newConfig.CurrentContext)
 
 	loginMessage := fmt.Sprintf("logged into cluster %s", newConfig.CurrentContext)
 	if strings.TrimSpace(userName) != "" {
 		loginMessage = fmt.Sprintf("logged into cluster %s as %s", newConfig.CurrentContext, userName)
 	}
-	format.PrintSuccess("🚀", loginMessage)
+	w.Success("🚀", loginMessage+"\n")
 
 	return nil
 }

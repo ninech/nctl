@@ -40,7 +40,7 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 		return format.PrettyPrintObjects(
 			(&management.ProjectList{Items: projectList}).GetItems(),
 			format.PrintOpts{
-				Out:               get.writer,
+				Out:               get.Writer,
 				ExcludeAdditional: projectExcludes(),
 			},
 		)
@@ -48,7 +48,7 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 		return format.PrettyPrintObjects(
 			(&management.ProjectList{Items: projectList}).GetItems(),
 			format.PrintOpts{
-				Out:               get.writer,
+				Out:               get.Writer,
 				ExcludeAdditional: projectExcludes(),
 				Format:            format.OutputFormatTypeJSON,
 				JSONOpts: format.JSONOutputOptions{

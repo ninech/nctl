@@ -7,7 +7,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/internal/format"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -23,7 +22,7 @@ func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error 
 		},
 	}
 
-	upd := newUpdater(client, mysqlDatabase, storage.MySQLDatabaseKind, func(current resource.Managed) error {
+	upd := cmd.newUpdater(client, mysqlDatabase, storage.MySQLDatabaseKind, func(current resource.Managed) error {
 		mysqlDatabase, ok := current.(*storage.MySQLDatabase)
 		if !ok {
 			return fmt.Errorf("resource is of type %T, expected %T", current, storage.MySQLDatabase{})
@@ -37,5 +36,5 @@ func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error 
 }
 
 func (cmd *mysqlDatabaseCmd) applyUpdates(_ *storage.MySQLDatabase) {
-	format.PrintWarningf("there are no attributes for mysqldatabase which can be updated after creation. Applying update without any changes.\n")
+	cmd.Warningf("there are no attributes for mysqldatabase which can be updated after creation. Applying update without any changes.\n")
 }

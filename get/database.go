@@ -2,7 +2,6 @@ package get
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/ninech/nctl/api"
@@ -28,11 +27,23 @@ func (cmd *databaseCmd) run(ctx context.Context, client *api.Client, get *Cmd,
 	}
 
 	if cmd.Name != "" && cmd.PrintUser {
-		return cmd.printSecret(get.writer, ctx, client, databaseResources.GetItems()[0], func(db, _ string) string { return db })
+		return cmd.printSecret(
+			ctx,
+			client,
+			databaseResources.GetItems()[0],
+			&get.output,
+			func(db, _ string) string { return db },
+		)
 	}
 
 	if cmd.Name != "" && cmd.PrintPassword {
-		return cmd.printSecret(get.writer, ctx, client, databaseResources.GetItems()[0], func(_, pw string) string { return pw })
+		return cmd.printSecret(
+			ctx,
+			client,
+			databaseResources.GetItems()[0],
+			&get.output,
+			func(_, pw string) string { return pw },
+		)
 	}
 
 	if cmd.Name != "" && cmd.PrintConnectionString {
@@ -46,8 +57,8 @@ func (cmd *databaseCmd) run(ctx context.Context, client *api.Client, get *Cmd,
 			return err
 		}
 
-		_, err = fmt.Fprintln(get.writer, str)
-		return err
+		get.Println(str)
+		return nil
 	}
 
 	if cmd.Name != "" && cmd.PrintCACert {
@@ -55,7 +66,7 @@ func (cmd *databaseCmd) run(ctx context.Context, client *api.Client, get *Cmd,
 		if err != nil {
 			return err
 		}
-		return printBase64(get.writer, ca)
+		return printBase64(&get.Writer, ca)
 	}
 
 	switch get.Format {
@@ -64,12 +75,15 @@ func (cmd *databaseCmd) run(ctx context.Context, client *api.Client, get *Cmd,
 	case noHeader:
 		return printList(databaseResources, get, false)
 	case yamlOut:
-		return format.PrettyPrintObjects(databaseResources.GetItems(), format.PrintOpts{Out: get.writer})
+		return format.PrettyPrintObjects(
+			databaseResources.GetItems(),
+			format.PrintOpts{Out: get.Writer},
+		)
 	case jsonOut:
 		return format.PrettyPrintObjects(
 			databaseResources.GetItems(),
 			format.PrintOpts{
-				Out:    get.writer,
+				Out:    get.Writer,
 				Format: format.OutputFormatTypeJSON,
 				JSONOpts: format.JSONOutputOptions{
 					PrintSingleItem: cmd.Name != "",

@@ -17,6 +17,8 @@ import (
 	"github.com/gobuffalo/flect"
 	"github.com/liggitt/tabwriter"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/format"
+
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
@@ -44,15 +46,16 @@ type Cmd struct {
 }
 
 type output struct {
+	format.Writer
 	Format        outputFormat `help:"Configures list output. ${enum}" name:"output" short:"o" enum:"full,no-header,contexts,yaml,stats,json" default:"full"`
 	AllProjects   bool         `help:"apply the get over all projects." short:"A" xor:"watch"`
 	AllNamespaces bool         `help:"apply the get over all namespaces." hidden:"" xor:"watch"`
 	Watch         bool         `help:"Watch resource(s) for changes and print the updated resource." short:"w" xor:"watch"`
 	tabWriter     *tabwriter.Writer
-	writer        io.Writer
 }
 
 type resourceCmd struct {
+	format.Writer
 	Name string `arg:"" completion-predictor:"resource_name" help:"Name of the resource to get. If omitted all in the project will be listed." default:""`
 }
 
@@ -67,9 +70,36 @@ const (
 	jsonOut  outputFormat = "json"
 )
 
+// AfterApply is called by Kong after parsing to initialize the output.
 func (cmd *Cmd) AfterApply() error {
 	cmd.initOut()
 	return nil
+}
+
+// NewTestCmd creates a Cmd for testing with the given writer and output format.
+// This is a convenience helper that properly initializes the output writer.
+func NewTestCmd(w io.Writer, outFormat outputFormat, opts ...func(*Cmd)) *Cmd {
+	cmd := &Cmd{
+		output: output{
+			Writer: format.NewWriter(w),
+			Format: outFormat,
+		},
+	}
+	cmd.initOut()
+	for _, opt := range opts {
+		opt(cmd)
+	}
+	return cmd
+}
+
+// WithAllProjects is a test option that sets AllProjects to true.
+func WithAllProjects() func(*Cmd) {
+	return func(cmd *Cmd) { cmd.AllProjects = true }
+}
+
+// WithWatch is a test option that sets Watch to true.
+func WithWatch() func(*Cmd) {
+	return func(cmd *Cmd) { cmd.Watch = true }
 }
 
 // listPrinter needs to be implemented by all resources.
@@ -140,29 +170,29 @@ func (out *output) printEmptyMessage(kind, project string) error {
 	out.initOut()
 
 	if out.Format == jsonOut {
-		_, err := fmt.Fprintf(out.writer, "[]")
-		return err
+		out.Printf("[]")
+		return nil
 	}
 	if out.AllProjects {
-		_, err := fmt.Fprintf(out.writer, "no %s found in any project\n", flect.Pluralize(kind))
-		return err
+		out.Printf("no %s found in any project\n", flect.Pluralize(kind))
+		return nil
 	}
 	if project == "" {
-		_, err := fmt.Fprintf(out.writer, "no %s found\n", flect.Pluralize(kind))
-		return err
+		out.Printf("no %s found\n", flect.Pluralize(kind))
+		return nil
 	}
 
-	_, err := fmt.Fprintf(out.writer, "no %s found in project %s\n", flect.Pluralize(kind), project)
-	return err
+	out.Printf("no %s found in project %s\n", flect.Pluralize(kind), project)
+	return nil
 }
 
 func (out *output) initOut() {
-	if out.writer == nil {
-		out.writer = os.Stdout
+	if out.Writer.Writer == nil {
+		out.Writer = format.NewWriter(os.Stdout)
 	}
 
 	if out.tabWriter == nil {
-		out.tabWriter = tabwriter.NewWriter(out.writer, 0, 0, 2, ' ', tabwriter.RememberWidths)
+		out.tabWriter = tabwriter.NewWriter(&out.Writer, 0, 0, 2, ' ', tabwriter.RememberWidths)
 	}
 }
 
@@ -189,21 +219,32 @@ func getConnectionSecret(ctx context.Context, client *api.Client, key string, mg
 	return string(content), nil
 }
 
-func (cmd *resourceCmd) printSecret(out io.Writer, ctx context.Context, client *api.Client, mg resource.Managed, field func(string, string) string) error {
+func (cmd *resourceCmd) printSecret(
+	ctx context.Context,
+	client *api.Client,
+	mg resource.Managed,
+	out *output,
+	field func(string, string) string,
+) error {
 	secrets, err := getConnectionSecretMap(ctx, client, mg)
 	if err != nil {
 		return err
 	}
 
 	for k, v := range secrets {
-		_, err = fmt.Fprintln(out, field(k, string(v)))
-		return err
+		out.Println(field(k, string(v)))
 	}
 
 	return nil
 }
 
-func (cmd *resourceCmd) printCredentials(ctx context.Context, client *api.Client, mg resource.Managed, out *output, filter func(key string) bool) error {
+func (cmd *resourceCmd) printCredentials(
+	ctx context.Context,
+	client *api.Client,
+	mg resource.Managed,
+	out *output,
+	filter func(key string) bool,
+) error {
 	data, err := getConnectionSecretMap(ctx, client, mg)
 	if err != nil {
 		return err
@@ -230,13 +271,13 @@ func (cmd *resourceCmd) printCredentials(ctx context.Context, client *api.Client
 		if err != nil {
 			return err
 		}
-		fmt.Print(string(b))
+		out.Printf("%s", string(b))
 	case jsonOut:
 		b, err := json.MarshalIndent(stringData, "", "  ")
 		if err != nil {
 			return err
 		}
-		fmt.Println(string(b))
+		out.Printf("%s\n", string(b))
 	}
 	return nil
 }

@@ -8,18 +8,31 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/format"
+
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // all fields need to be pointers so we can detect if they have been set by
 // the user.
 type configCmd struct {
+	format.Writer
+
 	Size      *string           `help:"Size of the app."`
 	Port      *int32            `help:"Port the app is listening on."`
 	Replicas  *int32            `help:"Amount of replicas of the running app."`
 	Env       map[string]string `help:"Environment variables which are passed to the app at runtime."`
 	BasicAuth *bool             `help:"Enable/Disable basic authentication for applications."`
 	DeployJob *deployJob        `embed:"" prefix:"deploy-job-"`
+}
+
+func (cmd *configCmd) newUpdater(
+	client *api.Client,
+	mg resource.Managed,
+	kind string,
+	f updateFunc,
+) *updater {
+	return &updater{Writer: cmd.Writer, client: client, mg: mg, kind: kind, updateFunc: f}
 }
 
 func (cmd *configCmd) Run(ctx context.Context, client *api.Client) error {
@@ -30,7 +43,7 @@ func (cmd *configCmd) Run(ctx context.Context, client *api.Client) error {
 		},
 	}
 
-	upd := newUpdater(client, cfg, apps.ProjectConfigKind, func(current resource.Managed) error {
+	upd := cmd.newUpdater(client, cfg, apps.ProjectConfigKind, func(current resource.Managed) error {
 		cfg, ok := current.(*apps.ProjectConfig)
 		if !ok {
 			return fmt.Errorf("resource is of type %T, expected %T", current, apps.ProjectConfig{})

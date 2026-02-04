@@ -13,8 +13,8 @@ type projectCmd struct {
 	resourceCmd
 }
 
-func (proj *projectCmd) Run(ctx context.Context, client *api.Client) error {
-	ctx, cancel := context.WithTimeout(ctx, proj.WaitTimeout)
+func (cmd *projectCmd) Run(ctx context.Context, client *api.Client) error {
+	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
 	defer cancel()
 
 	org, err := client.Organization()
@@ -22,10 +22,10 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client) error {
 		return err
 	}
 
-	d := newDeleter(
+	d := cmd.newDeleter(
 		&management.Project{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      proj.Name,
+				Name:      cmd.Name,
 				Namespace: org,
 			},
 		},
@@ -37,7 +37,7 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client) error {
 	// main organization namespace
 	client.Project = org
 
-	if err := d.deleteResource(ctx, client, proj.WaitTimeout, proj.Wait, proj.Force); err != nil {
+	if err := d.deleteResource(ctx, client, cmd.WaitTimeout, cmd.Wait, cmd.Force); err != nil {
 		return fmt.Errorf("error while deleting %s: %w", management.ProjectKind, err)
 	}
 

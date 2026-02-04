@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
 	"reflect"
@@ -64,6 +65,8 @@ var (
 	version string
 	commit  string
 	date    string
+
+	writer = os.Stdout
 )
 
 func main() {
@@ -73,18 +76,21 @@ func main() {
 
 	kongVars, err := kongVariables()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintln(writer, err)
 		os.Exit(1)
 	}
 	nctl := &rootCommand{}
 	parser := kong.Must(
 		nctl,
 		kong.Name(util.NctlName),
-		kong.Description("Interact with Nine API resources. See https://docs.nineapis.ch for the full API docs."),
+		kong.Description(
+			"Interact with Nine API resources. See https://docs.nineapis.ch for the full API docs.",
+		),
 		kong.UsageOnError(),
 		kong.PostBuild(format.InterpolateFlagPlaceholders(kongVars)),
 		kongVars,
 		kong.BindTo(ctx, (*context.Context)(nil)),
+		kong.BindTo(writer, (*io.Writer)(nil)),
 	)
 
 	apiClientRequired := !noAPIClientRequired(strings.Join(os.Args[1:], " "))
@@ -105,7 +111,7 @@ func main() {
 					node = parseErr.Context.Model.Node
 				}
 				if format.MissingChildren(node) {
-					err = format.ExitIfErrorf(err, parseErr.Context.Command())
+					err = format.ExitIfErrorf(writer, err, parseErr.Context.Command())
 				}
 			}
 		}
@@ -113,12 +119,18 @@ func main() {
 		parser.FatalIfErrorf(err)
 	}
 
-	binds := []any{ctx}
+	binds := []any{ctx, kong.BindTo(writer, (*io.Writer)(nil))}
 	if apiClientRequired {
-		client, err := api.New(ctx, nctl.APICluster, nctl.Project, api.LogClient(ctx, nctl.LogAPIAddress, nctl.LogAPIInsecure))
+		client, err := api.New(
+			ctx,
+			nctl.APICluster,
+			nctl.Project,
+			api.LogClient(ctx, nctl.LogAPIAddress, nctl.LogAPIInsecure),
+			api.OutputWriter(writer),
+		)
 		if err != nil {
-			fmt.Println(err)
-			fmt.Printf("\nUnable to get API client, are you logged in?\n\nUse `%s` to login.\n", format.Command().Login())
+			fmt.Fprintln(writer, err)
+			fmt.Fprintf(writer, "\nUnable to get API client, are you logged in?\n\nUse `%s` to login.\n", format.Command().Login())
 			os.Exit(1)
 		}
 		binds = append(binds, client)
