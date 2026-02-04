@@ -2,14 +2,16 @@ package auth
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/format"
 )
 
-type PrintAccessTokenCmd struct{}
+type PrintAccessTokenCmd struct {
+	format.Writer
+}
 
-func (o *PrintAccessTokenCmd) Run(ctx context.Context, client *api.Client) error {
-	fmt.Println(client.Token(ctx))
+func (cmd *PrintAccessTokenCmd) Run(ctx context.Context, client *api.Client) error {
+	cmd.Println(client.Token(ctx))
 	return nil
 }

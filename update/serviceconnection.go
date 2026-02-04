@@ -25,7 +25,7 @@ func (cmd *serviceConnectionCmd) Run(ctx context.Context, client *api.Client) er
 		},
 	}
 
-	return newUpdater(client, sc, networking.ServiceConnectionKind, func(current resource.Managed) error {
+	return cmd.newUpdater(client, sc, networking.ServiceConnectionKind, func(current resource.Managed) error {
 		sc, ok := current.(*networking.ServiceConnection)
 		if !ok {
 			return fmt.Errorf("resource is of type %T, expected %T", current, networking.ServiceConnection{})

@@ -2,18 +2,16 @@ package create
 
 import (
 	"context"
-	"fmt"
 	"strings"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/watch"
 
 	"github.com/alecthomas/kong"
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
-
 	"github.com/ninech/nctl/api"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
 )
 
 type bucketUserCmd struct {
@@ -22,10 +20,10 @@ type bucketUserCmd struct {
 }
 
 func (cmd *bucketUserCmd) Run(ctx context.Context, client *api.Client) error {
-	fmt.Println("Creating new bucketuser.")
+	cmd.Printf("Creating new bucketuser.\n")
 	bucketuser := cmd.newBucketUser(client.Project)
 
-	c := newCreator(client, bucketuser, "bucketuser")
+	c := cmd.newCreator(client, bucketuser, "bucketuser")
 	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
 	defer cancel()
 

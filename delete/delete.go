@@ -1,3 +1,4 @@
+// Package delete provides functionality to delete resources in the nine.ch API.
 package delete
 
 import (
@@ -33,6 +34,8 @@ type Cmd struct {
 }
 
 type resourceCmd struct {
+	format.Writer
+
 	Name        string        `arg:"" completion-predictor:"resource_name" help:"Name of the resource to delete."`
 	Force       bool          `default:"false" help:"Do not ask for confirmation of deletion."`
 	Wait        bool          `default:"true" help:"Wait until resource is fully deleted."`
@@ -47,6 +50,8 @@ type cleanupFunc func(client *api.Client) error
 type promptFunc func(kind, name string) string
 
 type deleter struct {
+	format.Writer
+
 	kind    string
 	mg      resource.Managed
 	cleanup cleanupFunc
@@ -56,8 +61,13 @@ type deleter struct {
 // deleterOption allows to set options for the deletion
 type deleterOption func(*deleter)
 
-func newDeleter(mg resource.Managed, kind string, opts ...deleterOption) *deleter {
+func (cmd *resourceCmd) newDeleter(
+	mg resource.Managed,
+	kind string,
+	opts ...deleterOption,
+) *deleter {
 	d := &deleter{
+		Writer:  cmd.Writer,
 		kind:    kind,
 		mg:      mg,
 		cleanup: noCleanup,
@@ -92,7 +102,12 @@ func defaultPrompt(kind, name string) string {
 	return fmt.Sprintf("do you really want to delete the %s %q?", kind, name)
 }
 
-func (d *deleter) deleteResource(ctx context.Context, client *api.Client, waitTimeout time.Duration, wait, force bool) error {
+func (d *deleter) deleteResource(
+	ctx context.Context,
+	client *api.Client,
+	waitTimeout time.Duration,
+	wait, force bool,
+) error {
 	ctx, cancel := context.WithTimeout(ctx, waitTimeout)
 	defer cancel()
 
@@ -102,12 +117,12 @@ func (d *deleter) deleteResource(ctx context.Context, client *api.Client, waitTi
 	}
 
 	if !force {
-		ok, err := format.Confirm(d.prompt(d.kind, d.mg.GetName()))
+		ok, err := d.Confirm(d.prompt(d.kind, d.mg.GetName()))
 		if err != nil {
 			return err
 		}
 		if !ok {
-			format.PrintFailuref("", "%s deletion canceled", d.kind)
+			d.Failuref("", "%s deletion canceled", d.kind)
 			return nil
 		}
 	}
@@ -121,16 +136,16 @@ func (d *deleter) deleteResource(ctx context.Context, client *api.Client, waitTi
 			return err
 		}
 	} else {
-		format.PrintSuccessf("🗑", "%s deletion started", d.kind)
+		d.Successf("🗑", "%s deletion started", d.kind)
 	}
 
 	return d.cleanup(client)
 }
 
 func (d *deleter) waitForDeletion(ctx context.Context, client *api.Client) error {
-	spinner, err := format.NewSpinner(
-		format.ProgressMessagef("⏳", "%s is being deleted", d.kind),
-		format.ProgressMessagef("🗑", "%s deleted", d.kind),
+	spinner, err := d.Spinner(
+		format.Progressf("⏳", "%s is being deleted", d.kind),
+		format.Progressf("🗑", "%s deleted", d.kind),
 	)
 	if err != nil {
 		return err
@@ -157,7 +172,7 @@ func (d *deleter) waitForDeletion(ctx context.Context, client *api.Client) error
 			switch ctx.Err() {
 			case context.DeadlineExceeded:
 				msg := "timeout waiting for %s"
-				spinner.StopFailMessage(format.ProgressMessagef("", msg, d.kind))
+				spinner.StopFailMessage(format.Progressf("", msg, d.kind))
 				_ = spinner.StopFail()
 
 				return fmt.Errorf(msg, d.kind)

@@ -21,6 +21,7 @@ import (
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/logbox"
 	"github.com/ninech/nctl/logs"
+
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -124,27 +125,31 @@ const (
 	releaseStatusReplicaFailure = "replicaFailure"
 )
 
-func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
-	fmt.Println("Creating new application")
-	newApp := app.newApplication(client.Project)
+func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
+	cmd.Printf("Creating new application\n")
+	newApp := cmd.newApplication(client.Project)
 
-	sshPrivateKey, err := app.Git.sshPrivateKey()
+	sshPrivateKey, err := cmd.Git.sshPrivateKey()
 	if err != nil {
 		return fmt.Errorf("error when reading SSH private key: %w", err)
 	}
 	auth := util.GitAuth{
-		Username:      app.Git.Username,
-		Password:      app.Git.Password,
+		Username:      cmd.Git.Username,
+		Password:      cmd.Git.Password,
 		SSHPrivateKey: sshPrivateKey,
 	}
 
-	if !app.SkipRepoAccessCheck {
+	if !cmd.SkipRepoAccessCheck {
 		validator := &validation.RepositoryValidator{
-			GitInformationServiceURL: app.GitInformationServiceURL,
+			GitInformationServiceURL: cmd.GitInformationServiceURL,
 			Token:                    client.Token(ctx),
-			Debug:                    app.Debug,
+			Debug:                    cmd.Debug,
 		}
-		if err := validator.Validate(ctx, &newApp.Spec.ForProvider.Git.GitTarget, auth); err != nil {
+		if err := validator.Validate(
+			ctx,
+			&newApp.Spec.ForProvider.Git.GitTarget,
+			auth,
+		); err != nil {
 			return err
 		}
 	}
@@ -159,8 +164,9 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		if err := client.Create(ctx, secret); err != nil {
 			if kerrors.IsAlreadyExists(err) {
 				// only update the secret if it is managed by nctl in the first place
-				if v, exists := newApp.Annotations[util.ManagedByAnnotation]; exists && v == util.NctlName {
-					fmt.Println("updating git auth credentials")
+				if v, exists := newApp.Annotations[util.ManagedByAnnotation]; exists &&
+					v == util.NctlName {
+					cmd.Printf("updating git auth credentials\n")
 					if err := client.Get(ctx, client.Name(secret.Name), secret); err != nil {
 						return err
 					}
@@ -191,8 +197,8 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		}
 	}
 
-	c := newCreator(client, newApp, strings.ToLower(apps.ApplicationKind))
-	appWaitCtx, cancel := context.WithTimeout(ctx, app.WaitTimeout)
+	c := cmd.newCreator(client, newApp, strings.ToLower(apps.ApplicationKind))
+	appWaitCtx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
 	defer cancel()
 
 	if err := c.createResource(appWaitCtx); err != nil {
@@ -206,7 +212,7 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		return err
 	}
 
-	if !app.Wait {
+	if !cmd.Wait {
 		return nil
 	}
 
@@ -218,15 +224,8 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	); err != nil {
 		printCtx, cancel := context.WithTimeout(context.Background(), logPrintTimeout)
 		defer cancel()
-		if buildErr, ok := err.(buildError); ok {
-			if err := buildErr.printMessage(printCtx, client); err != nil {
-				return fmt.Errorf("%s: %w", buildErr, err)
-			}
-		}
-		if releaseErr, ok := err.(releaseError); ok {
-			if err := releaseErr.printMessage(printCtx, client); err != nil {
-				return fmt.Errorf("%s: %w", releaseErr, err)
-			}
+		if printErr := cmd.printErrorDetails(printCtx, client, err); printErr != nil {
+			return fmt.Errorf("%s: %w", err, printErr)
 		}
 		return err
 	}
@@ -235,12 +234,16 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		return err
 	}
 
-	if err := spinnerMessage("CO₂ compensating the app", "🌳", 2*time.Second); err != nil {
+	if err := cmd.spinnerMessage("CO₂ compensating the app", "🌳", 2*time.Second); err != nil {
 		return err
 	}
 
-	fmt.Printf("\nYour application %q is now available at:\n  https://%s\n\n", newApp.Name, newApp.Status.AtProvider.CNAMETarget)
-	printUnverifiedHostsMessage(newApp)
+	cmd.Printf(
+		"\nYour application %q is now available at:\n  https://%s\n\n",
+		newApp.Name,
+		newApp.Status.AtProvider.CNAMETarget,
+	)
+	cmd.printUnverifiedHostsMessage(newApp)
 
 	basicAuthEnabled, err := latestReleaseHasBasicAuthEnabled(ctx, client, newApp)
 	if err != nil {
@@ -263,14 +266,14 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 			format.Command().GetApplication(newApp.Name, "--basic-auth-credentials"),
 		)
 	}
-	printCredentials(basicAuth)
+	cmd.printCredentials(basicAuth)
 
 	return nil
 }
 
-func spinnerMessage(msg, icon string, sleepTime time.Duration) error {
-	fullMsg := format.ProgressMessage(icon, msg)
-	spinner, err := format.NewSpinner(fullMsg, fullMsg)
+func (cmd *applicationCmd) spinnerMessage(msg, icon string, sleepTime time.Duration) error {
+	fullMsg := format.Progress(icon, msg)
+	spinner, err := cmd.Spinner(fullMsg, fullMsg)
 	if err != nil {
 		return err
 	}
@@ -288,69 +291,70 @@ func combineEnvVars(plain, sensitive map[string]string) apps.EnvVars {
 	)
 }
 
-func (app *applicationCmd) config() apps.Config {
+func (cmd *applicationCmd) config() apps.Config {
 	var deployJob *apps.DeployJob
 
-	if len(app.DeployJob.Command) != 0 && len(app.DeployJob.Name) != 0 {
+	if len(cmd.DeployJob.Command) != 0 && len(cmd.DeployJob.Name) != 0 {
 		deployJob = &apps.DeployJob{
 			Job: apps.Job{
-				Name:    app.DeployJob.Name,
-				Command: app.DeployJob.Command,
+				Name:    cmd.DeployJob.Name,
+				Command: cmd.DeployJob.Command,
 			},
 			FiniteJob: apps.FiniteJob{
-				Retries: ptr.To(app.DeployJob.Retries),
-				Timeout: &metav1.Duration{Duration: app.DeployJob.Timeout},
+				Retries: ptr.To(cmd.DeployJob.Retries),
+				Timeout: &metav1.Duration{Duration: cmd.DeployJob.Timeout},
 			},
 		}
 	}
 	config := apps.Config{
-		EnableBasicAuth: app.BasicAuth,
-		Env:             combineEnvVars(app.Env, app.SensitiveEnv),
+		EnableBasicAuth: cmd.BasicAuth,
+		Env:             combineEnvVars(cmd.Env, cmd.SensitiveEnv),
 		DeployJob:       deployJob,
 	}
 
-	if len(app.WorkerJob.Command) != 0 && len(app.WorkerJob.Name) != 0 {
+	if len(cmd.WorkerJob.Command) != 0 && len(cmd.WorkerJob.Name) != 0 {
 		workerJob := apps.WorkerJob{
 			Job: apps.Job{
-				Name:    app.WorkerJob.Name,
-				Command: app.WorkerJob.Command,
+				Name:    cmd.WorkerJob.Name,
+				Command: cmd.WorkerJob.Command,
 			},
 		}
-		if app.WorkerJob.Size != nil {
-			workerJob.Size = ptr.To(apps.ApplicationSize(*app.WorkerJob.Size))
+		if cmd.WorkerJob.Size != nil {
+			workerJob.Size = ptr.To(apps.ApplicationSize(*cmd.WorkerJob.Size))
 		}
 		config.WorkerJobs = append(config.WorkerJobs, workerJob)
 	}
 
-	if len(app.ScheduledJob.Command) != 0 && len(app.ScheduledJob.Name) != 0 && len(app.ScheduledJob.Schedule) != 0 {
+	if len(cmd.ScheduledJob.Command) != 0 && len(cmd.ScheduledJob.Name) != 0 &&
+		len(cmd.ScheduledJob.Schedule) != 0 {
 		scheduledJob := apps.ScheduledJob{
 			FiniteJob: apps.FiniteJob{
-				Retries: &app.ScheduledJob.Retries,
-				Timeout: &metav1.Duration{Duration: app.ScheduledJob.Timeout},
+				Retries: &cmd.ScheduledJob.Retries,
+				Timeout: &metav1.Duration{Duration: cmd.ScheduledJob.Timeout},
 			},
 			Job: apps.Job{
-				Name:    app.ScheduledJob.Name,
-				Command: app.ScheduledJob.Command,
+				Name:    cmd.ScheduledJob.Name,
+				Command: cmd.ScheduledJob.Command,
 			},
-			Schedule: app.ScheduledJob.Schedule,
+			Schedule: cmd.ScheduledJob.Schedule,
 		}
-		if app.ScheduledJob.Size != nil {
-			scheduledJob.Size = ptr.To(apps.ApplicationSize(*app.ScheduledJob.Size))
+		if cmd.ScheduledJob.Size != nil {
+			scheduledJob.Size = ptr.To(apps.ApplicationSize(*cmd.ScheduledJob.Size))
 		}
 		config.ScheduledJobs = append(config.ScheduledJobs, scheduledJob)
 	}
 
-	if app.Size != nil {
-		config.Size = apps.ApplicationSize(*app.Size)
+	if cmd.Size != nil {
+		config.Size = apps.ApplicationSize(*cmd.Size)
 	}
-	if app.Port != nil {
-		config.Port = app.Port
+	if cmd.Port != nil {
+		config.Port = cmd.Port
 	}
-	if app.Replicas != nil {
-		config.Replicas = app.Replicas
+	if cmd.Replicas != nil {
+		config.Replicas = cmd.Replicas
 	}
 
-	app.HealthProbe.applyCreate(&config)
+	cmd.HealthProbe.applyCreate(&config)
 
 	return config
 }
@@ -371,8 +375,8 @@ func (h healthProbe) applyCreate(cfg *apps.Config) {
 	util.ApplyProbePatch(cfg, h.ToProbePatch())
 }
 
-func (app *applicationCmd) newApplication(project string) *apps.Application {
-	name := getName(app.Name)
+func (cmd *applicationCmd) newApplication(project string) *apps.Application {
+	name := getName(cmd.Name)
 
 	return &apps.Application{
 		ObjectMeta: metav1.ObjectMeta{
@@ -381,21 +385,21 @@ func (app *applicationCmd) newApplication(project string) *apps.Application {
 		},
 		Spec: apps.ApplicationSpec{
 			ForProvider: apps.ApplicationParameters{
-				Language: apps.Language(app.Language),
+				Language: apps.Language(cmd.Language),
 				Git: apps.ApplicationGitConfig{
 					GitTarget: apps.GitTarget{
-						URL:      app.Git.URL,
-						SubPath:  app.Git.SubPath,
-						Revision: app.Git.Revision,
+						URL:      cmd.Git.URL,
+						SubPath:  cmd.Git.SubPath,
+						Revision: cmd.Git.Revision,
 					},
 				},
-				Hosts:    app.Hosts,
-				Config:   app.config(),
-				BuildEnv: combineEnvVars(app.BuildEnv, app.SensitiveBuildEnv),
+				Hosts:    cmd.Hosts,
+				Config:   cmd.config(),
+				BuildEnv: combineEnvVars(cmd.BuildEnv, cmd.SensitiveBuildEnv),
 				DockerfileBuild: apps.DockerfileBuild{
-					Enabled:        app.DockerfileBuild.Enabled,
-					DockerfilePath: app.DockerfileBuild.Path,
-					BuildContext:   app.DockerfileBuild.BuildContext,
+					Enabled:        cmd.DockerfileBuild.Enabled,
+					DockerfilePath: cmd.DockerfileBuild.Path,
+					BuildContext:   cmd.DockerfileBuild.BuildContext,
 				},
 			},
 		},
@@ -410,11 +414,8 @@ func (b buildError) Error() string {
 	return fmt.Sprintf("build failed with status %s", b.build.Status.AtProvider.BuildStatus)
 }
 
-func (b buildError) printMessage(ctx context.Context, client *api.Client) error {
-	fmt.Printf("\nYour build has failed with status %q. Here are the last %v lines of the log:\n\n",
-		b.build.Status.AtProvider.BuildStatus, errorLogLines)
-	return printBuildLogs(ctx, client, b.build)
-}
+// Build returns the build that caused the error.
+func (b buildError) Build() *apps.Build { return b.build }
 
 func waitForBuildStart(app *apps.Application) waitStage {
 	return waitStage{
@@ -451,7 +452,11 @@ func waitForBuildStart(app *apps.Application) waitStage {
 	}
 }
 
-func waitForBuildFinish(ctx context.Context, app *apps.Application, logClient *log.Client) waitStage {
+func waitForBuildFinish(
+	ctx context.Context,
+	app *apps.Application,
+	logClient *log.Client,
+) waitStage {
 	msg := message{icon: "📦", text: "building application"}
 	p := tea.NewProgram(
 		logbox.New(15, msg.progress()),
@@ -542,11 +547,8 @@ func (r releaseError) Error() string {
 	return fmt.Sprintf("release failed with status %s", r.release.Status.AtProvider.ReleaseStatus)
 }
 
-func (r releaseError) printMessage(ctx context.Context, client *api.Client) error {
-	fmt.Printf("\nYour release has failed with status %q. Here are the last %v lines of the log:\n\n",
-		r.release.Status.AtProvider.ReleaseStatus, errorLogLines)
-	return printReleaseLogs(ctx, client, r.release)
-}
+// Release returns the release that caused the error.
+func (r releaseError) Release() *apps.Release { return r.release }
 
 func waitForRelease(app *apps.Application) waitStage {
 	return waitStage{
@@ -582,12 +584,20 @@ func waitForRelease(app *apps.Application) waitStage {
 	}
 }
 
-func latestReleaseHasBasicAuthEnabled(ctx context.Context, c runtimeclient.Reader, app *apps.Application) (bool, error) {
+func latestReleaseHasBasicAuthEnabled(
+	ctx context.Context,
+	c runtimeclient.Reader,
+	app *apps.Application,
+) (bool, error) {
 	if app.Status.AtProvider.LatestRelease == "" {
 		return false, errors.New("can not find latest release")
 	}
 	release := &apps.Release{}
-	if err := c.Get(ctx, types.NamespacedName{Name: app.Status.AtProvider.LatestRelease, Namespace: app.Namespace}, release); err != nil {
+	if err := c.Get(
+		ctx,
+		types.NamespacedName{Name: app.Status.AtProvider.LatestRelease, Namespace: app.Namespace},
+		release,
+	); err != nil {
 		return false, err
 	}
 	config := release.Spec.ForProvider.Configuration
@@ -597,22 +607,22 @@ func latestReleaseHasBasicAuthEnabled(ctx context.Context, c runtimeclient.Reade
 	return config.EnableBasicAuth.Value, nil
 }
 
-func printUnverifiedHostsMessage(app *apps.Application) {
+func (cmd *applicationCmd) printUnverifiedHostsMessage(app *apps.Application) {
 	unverifiedHosts := util.UnverifiedAppHosts(app)
 
 	if len(unverifiedHosts) != 0 {
 		dnsDetails := util.GatherDNSDetails([]apps.Application{*app})
-		fmt.Println("You configured the following hosts:")
+		cmd.Printf("You configured the following hosts:\n")
 
 		for _, name := range unverifiedHosts {
-			fmt.Printf("  %s\n", name)
+			cmd.Printf("  %s\n", name)
 		}
 
-		fmt.Print("\nYour DNS details are:\n")
-		fmt.Printf("  TXT record:\t%s\n", dnsDetails[0].TXTRecord)
-		fmt.Printf("  DNS TARGET:\t%s\n", dnsDetails[0].CNAMETarget)
+		cmd.Printf("\nYour DNS details are:\n")
+		cmd.Printf("  TXT record:\t%s\n", dnsDetails[0].TXTRecord)
+		cmd.Printf("  DNS TARGET:\t%s\n", dnsDetails[0].CNAMETarget)
 
-		fmt.Printf("\nTo make your app available on your custom hosts, please use \n"+
+		cmd.Printf("\nTo make your app available on your custom hosts, please use \n"+
 			"the DNS details and visit %s\n"+
 			"for further instructions.\n",
 			util.DNSSetupURL,
@@ -633,18 +643,51 @@ func printReleaseLogs(ctx context.Context, client *api.Client, release *apps.Rel
 	tailCtx, cancel := context.WithTimeout(ctx, errorTailTimeout)
 	defer cancel()
 	return client.Log.TailQuery(
-		tailCtx, 0, client.Log.StdOut,
-		errorLogQuery(logs.ApplicationQuery(release.Labels[util.ApplicationNameLabel], release.Namespace)),
+		tailCtx,
+		0,
+		client.Log.StdOut,
+		errorLogQuery(
+			logs.ApplicationQuery(release.Labels[util.ApplicationNameLabel], release.Namespace),
+		),
 	)
 }
 
-func printCredentials(basicAuth *util.BasicAuth) {
-	fmt.Printf("\nYou can login with the following credentials:\n"+
+func (cmd *applicationCmd) printCredentials(basicAuth *util.BasicAuth) {
+	cmd.Printf("\nYou can login with the following credentials:\n"+
 		"  username: %s\n"+
 		"  password: %s\n",
 		basicAuth.Username,
 		basicAuth.Password,
 	)
+}
+
+// printErrorDetails prints detailed error information for build and release errors.
+func (cmd *applicationCmd) printErrorDetails(
+	ctx context.Context,
+	client *api.Client,
+	err error,
+) error {
+	var buildErr buildError
+	if errors.As(err, &buildErr) {
+		cmd.Printf(
+			"\nYour build has failed with status %q. Here are the last %v lines of the log:\n\n",
+			buildErr.Build().Status.AtProvider.BuildStatus,
+			errorLogLines,
+		)
+		return printBuildLogs(ctx, client, buildErr.Build())
+	}
+
+	var releaseErr releaseError
+	if errors.As(err, &releaseErr) {
+		cmd.Printf(
+			"\nYour release has failed with status %q. Here are the last %v lines of the log:\n\n",
+			releaseErr.Release().Status.AtProvider.ReleaseStatus,
+			errorLogLines,
+		)
+		return printReleaseLogs(ctx, client, releaseErr.Release())
+	}
+
+	return nil
 }
 
 // we print the last 40 lines of the log. In most cases this should be

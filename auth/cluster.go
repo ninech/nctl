@@ -12,10 +12,13 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
 	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/format"
+
 	"k8s.io/apimachinery/pkg/types"
 )
 
 type ClusterCmd struct {
+	format.Writer
 	Name       string `arg:"" help:"Name of the cluster to authenticate with. Also accepts 'name/project' format."`
 	ExecPlugin bool   `help:"Automatically run exec plugin after writing the kubeconfig."`
 }
@@ -91,7 +94,7 @@ func (a *ClusterCmd) Run(ctx context.Context, client *api.Client) error {
 		}
 	}
 
-	if err := login(cfg, client.KubeconfigPath, userInfo.User, "", switchCurrentContext()); err != nil {
+	if err := login(a.Writer, cfg, client.KubeconfigPath, userInfo.User, "", switchCurrentContext()); err != nil {
 		return fmt.Errorf("error logging in to cluster %s: %w", name, err)
 	}
 

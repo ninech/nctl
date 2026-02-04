@@ -33,9 +33,7 @@ func TestApplication(t *testing.T) {
 	app3.Namespace = otherProject
 
 	buf := &bytes.Buffer{}
-	get := &Cmd{
-		output: output{writer: buf, Format: full},
-	}
+	get := NewTestCmd(buf, full)
 
 	apiClient, err := test.SetupClient(
 		test.WithNameIndexFor(&apps.Application{}),
@@ -295,13 +293,8 @@ dev      dev-second  dev-second  sample-second
 		t.Run(name, func(t *testing.T) {
 			testCase := testCase
 			buf := &bytes.Buffer{}
-			get := &Cmd{
-				output: output{
-					Format:      testCase.outputFormat,
-					AllProjects: testCase.project == "",
-					writer:      buf,
-				},
-			}
+			get := NewTestCmd(buf, testCase.outputFormat)
+			get.AllProjects = testCase.project == ""
 
 			apiClient, err := test.SetupClient(
 				test.WithProjectsFromResources(testCase.resources...),
@@ -472,13 +465,8 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 		t.Run(name, func(t *testing.T) {
 			testCase := testCase
 			buf := &bytes.Buffer{}
-			get := &Cmd{
-				output: output{
-					Format:      testCase.outputFormat,
-					AllProjects: testCase.project == "",
-					writer:      buf,
-				},
-			}
+			get := NewTestCmd(buf, testCase.outputFormat)
+			get.AllProjects = testCase.project == ""
 			apiClient, err := test.SetupClient(
 				test.WithProjectsFromResources(testCase.apps...),
 				test.WithObjects(testCase.apps...),

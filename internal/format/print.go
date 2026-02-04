@@ -1,3 +1,5 @@
+// Package format contains utilities for formatting and printing output,
+// including support for spinners, colored YAML/JSON, and resource stripping.
 package format
 
 import (
@@ -14,6 +16,7 @@ import (
 	"github.com/goccy/go-yaml/printer"
 	"github.com/mattn/go-isatty"
 	"github.com/theckman/yacspin"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/yaml"
@@ -39,84 +42,45 @@ type JSONOutputOptions struct {
 
 var spinnerCharset = yacspin.CharSets[24]
 
-// ProgressMessagef is a formatted message for use with a spinner.Suffix. An
+// Progress is a formatted message for use with a spinner.Suffix. An
 // icon can be added which is displayed at the end of the message.
-func ProgressMessagef(icon, format string, a ...any) string {
-	return fmt.Sprintf(" %s %s", fmt.Sprintf(format, a...), icon)
-}
-
-// ProgressMessage is a formatted message for use with a spinner.Suffix. An
-// icon can be added which is displayed at the end of the message.
-func ProgressMessage(icon, message string) string {
+func Progress(icon, message string) string {
 	return fmt.Sprintf(" %s %s", message, icon)
 }
 
-// SuccessMessagef is a formatted message for indicating a successful step.
-func SuccessMessagef(icon, format string, a ...any) string {
+// Progressf is a formatted message for use with a spinner.Suffix. An
+// icon can be added which is displayed at the end of the message.
+func Progressf(icon, format string, a ...any) string {
+	return fmt.Sprintf(" %s %s", fmt.Sprintf(format, a...), icon)
+}
+
+// successf is a formatted message for indicating a successful step.
+func successf(icon, format string, a ...any) string {
 	return fmt.Sprintf(" %s %s %s", SuccessChar, fmt.Sprintf(format, a...), icon)
 }
 
-// SuccessMessage returns a message for indicating a successful step.
-func SuccessMessage(icon, message string) string {
+// success returns a message for indicating a successful step.
+func success(icon, message string) string {
 	return fmt.Sprintf(" %s %s %s", SuccessChar, message, icon)
 }
 
-// PrintSuccessf prints a success message.
-func PrintSuccessf(icon, format string, a ...any) {
-	fmt.Print(SuccessMessagef(icon, format, a...) + "\n")
-}
-
-// PrintSuccess prints a success message.
-func PrintSuccess(icon, message string) {
-	fmt.Print(SuccessMessage(icon, message) + "\n")
-}
-
-// FailureMessagef is a formatted message for indicating a failed step.
-func FailureMessagef(icon, format string, a ...any) string {
+// failuref is a formatted message for indicating a failed step.
+func failuref(icon, format string, a ...any) string {
 	return fmt.Sprintf(" %s %s %s", FailureChar, fmt.Sprintf(format, a...), icon)
 }
 
-// PrintFailuref prints a failure message.
-func PrintFailuref(icon, format string, a ...any) {
-	fmt.Print(FailureMessagef(icon, format, a...) + "\n")
-}
-
-func PrintWarningf(msg string, a ...any) {
-	fmt.Printf(color.YellowString("Warning: ")+msg, a...)
-}
-
-// Confirm prints a confirm dialog using the supplied message and then waits
-// until prompt is confirmed or denied. Only y and yes are accepted for
-// confirmation.
-func Confirm(message string) (bool, error) {
-	var input string
-
-	fmt.Printf("%s [y|n]: ", message)
-	_, err := fmt.Scanln(&input)
-	if err != nil {
-		return false, err
-	}
-	input = strings.ToLower(input)
-
-	if input == "y" || input == "yes" {
-		return true, nil
-	}
-	return false, nil
-}
-
-// Confirmf prints a confirm dialog using format and then waits until prompt
-// is confirmed or denied. Only y and yes are accepted for confirmation.
-func Confirmf(format string, a ...any) (bool, error) {
-	return Confirm(fmt.Sprintf(format, a...))
+func warningf(msg string, a ...any) string {
+	return fmt.Sprintf(color.YellowString("Warning: ")+msg, a...)
 }
 
 // NewSpinner returns a new spinner with the default config
-func NewSpinner(message, stopMessage string) (*yacspin.Spinner, error) {
-	return yacspin.New(spinnerConfig(message, stopMessage))
+func newSpinner(w io.Writer, message, stopMessage string) (*yacspin.Spinner, error) {
+	return yacspin.New(spinnerConfig(w, message, stopMessage))
 }
 
-func spinnerConfig(message, stopMessage string) yacspin.Config {
+func spinnerConfig(w io.Writer, message, stopMessage string) yacspin.Config {
 	return yacspin.Config{
+		Writer:            w,
 		Frequency:         spinnerFrequency,
 		CharSet:           spinnerCharset,
 		Prefix:            spinnerPrefix,
@@ -269,7 +233,6 @@ func printResource(obj any, opts PrintOpts) error {
 		_, err = opts.Out.Write(output)
 		return err
 	}
-
 }
 
 // getPrinter returns a printer for printing tokens. It will have color output
@@ -343,7 +306,10 @@ func stripObj(obj resource.Object, excludeAdditional [][]string) (resource.Objec
 	for _, exclude := range excludeAdditional {
 		unstructured.RemoveNestedField(unstructuredObj, exclude...)
 	}
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObj, obj); err != nil {
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(
+		unstructuredObj,
+		obj,
+	); err != nil {
 		return nil, err
 	}
 

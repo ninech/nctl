@@ -77,7 +77,9 @@ func TestListPrint(t *testing.T) {
 			require.NoError(t, err)
 
 			buf := &bytes.Buffer{}
-			cmd := &Cmd{output: output{Format: tc.out, AllProjects: tc.inAllProjects, writer: buf, Watch: tc.watch}}
+			cmd := NewTestCmd(buf, tc.out)
+			cmd.AllProjects = tc.inAllProjects
+			cmd.Watch = tc.watch
 			ctx, cancel := context.WithTimeout(t.Context(), 20*time.Millisecond)
 			defer cancel()
 

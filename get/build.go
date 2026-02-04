@@ -55,7 +55,7 @@ func (cmd *buildCmd) print(ctx context.Context, client *api.Client, list runtime
 			return fmt.Errorf("build name has to be specified for pulling an image")
 		}
 
-		return pullImage(ctx, client, &buildList.Items[0])
+		return pullImage(ctx, client, &buildList.Items[0], out)
 	}
 
 	switch out.Format {
@@ -64,12 +64,12 @@ func (cmd *buildCmd) print(ctx context.Context, client *api.Client, list runtime
 	case noHeader:
 		return printBuild(buildList.Items, out, false)
 	case yamlOut:
-		return format.PrettyPrintObjects(buildList.GetItems(), format.PrintOpts{Out: out.writer})
+		return format.PrettyPrintObjects(buildList.GetItems(), format.PrintOpts{Out: &out.Writer})
 	case jsonOut:
 		return format.PrettyPrintObjects(
 			buildList.GetItems(),
 			format.PrintOpts{
-				Out:    out.writer,
+				Out:    &out.Writer,
 				Format: format.OutputFormatTypeJSON,
 				JSONOpts: format.JSONOutputOptions{
 					PrintSingleItem: cmd.Name != "",
@@ -95,7 +95,7 @@ func printBuild(builds []apps.Build, out *output, header bool) error {
 	return out.tabWriter.Flush()
 }
 
-func pullImage(ctx context.Context, apiClient *api.Client, build *apps.Build) error {
+func pullImage(ctx context.Context, apiClient *api.Client, build *apps.Build, out *output) error {
 	cli, err := client.NewClientWithOpts(client.WithVersion(dockerAPIVersion), client.FromEnv)
 	if err != nil {
 		return err
@@ -110,7 +110,7 @@ func pullImage(ctx context.Context, apiClient *api.Client, build *apps.Build) er
 		return err
 	}
 
-	fmt.Printf("Pulling image of build %s\n", build.Name)
+	out.Printf("Pulling image of build %s\n", build.Name)
 
 	reader, err := cli.ImagePull(ctx, ImageRef(build.Spec.ForProvider.Image), image.PullOptions{
 		RegistryAuth: registryAuth,
@@ -129,7 +129,7 @@ func pullImage(ctx context.Context, apiClient *api.Client, build *apps.Build) er
 		return fmt.Errorf("unable to tag image: %w", err)
 	}
 
-	format.PrintSuccessf("💾", "Pulled image %s", imageName(build.Spec.ForProvider.Image))
+	out.Successf("💾", "Pulled image %s\n", imageName(build.Spec.ForProvider.Image))
 
 	return nil
 }

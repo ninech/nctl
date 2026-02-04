@@ -40,10 +40,10 @@ func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client) error {
 		cmd.SSHKeys = keys
 	}
 
-	fmt.Printf("Creating new postgres. This might take some time (waiting up to %s).\n", cmd.WaitTimeout)
+	cmd.Printf("Creating new postgres. This might take some time (waiting up to %s).\n", cmd.WaitTimeout)
 	postgres := cmd.newPostgres(client.Project)
 
-	c := newCreator(client, postgres, "postgres")
+	c := cmd.newCreator(client, postgres, "postgres")
 	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
 	defer cancel()
 
@@ -56,6 +56,7 @@ func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client) error {
 	}
 
 	return c.wait(ctx, waitStage{
+		Writer:     cmd.Writer,
 		objectList: &storage.PostgresList{},
 		onResult: func(event watch.Event) (bool, error) {
 			if c, ok := event.Object.(*storage.Postgres); ok {

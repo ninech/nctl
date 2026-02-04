@@ -20,9 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var (
-	defaultCreationTime = metav1.NewTime(test.MustParseTime(time.RFC3339, "2023-03-13T14:00:00Z"))
-)
+var defaultCreationTime = metav1.NewTime(test.MustParseTime(time.RFC3339, "2023-03-13T14:00:00Z"))
 
 func TestReleases(t *testing.T) {
 	const project = test.DefaultProject
@@ -175,13 +173,8 @@ func TestReleases(t *testing.T) {
 				tc.output = full
 			}
 			buf := &bytes.Buffer{}
-			get := &Cmd{
-				output: output{
-					Format:      tc.output,
-					AllProjects: tc.inAllProjects,
-					writer:      buf,
-				},
-			}
+			get := NewTestCmd(buf, tc.output)
+			get.AllProjects = tc.inAllProjects
 
 			if err := tc.cmd.Run(ctx, apiClient, get); (err != nil) != tc.wantErr {
 				t.Errorf("releasesCmd.Run() error = %v, wantErr %v", err, tc.wantErr)

@@ -167,7 +167,9 @@ func TestKeyValueStore(t *testing.T) {
 			require.NoError(t, err)
 
 			buf := &bytes.Buffer{}
-			if err := tt.get.Run(ctx, apiClient, &Cmd{output: output{Format: tt.out, AllProjects: tt.inAllProjects, writer: buf}}); (err != nil) != tt.wantErr {
+			cmd := NewTestCmd(buf, tt.out)
+			cmd.AllProjects = tt.inAllProjects
+			if err := tt.get.Run(ctx, apiClient, cmd); (err != nil) != tt.wantErr {
 				t.Errorf("keyValueStoreCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if tt.wantErr {

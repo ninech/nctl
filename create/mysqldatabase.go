@@ -2,7 +2,6 @@ package create
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,10 +23,10 @@ type mysqlDatabaseCmd struct {
 }
 
 func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error {
-	fmt.Printf("Creating new MySQLDatabase. (waiting up to %s).\n", cmd.WaitTimeout)
+	cmd.Printf("Creating new MySQLDatabase. (waiting up to %s).\n", cmd.WaitTimeout)
 	mysqlDatabase := cmd.newMySQLDatabase(client.Project)
 
-	c := newCreator(client, mysqlDatabase, "mysqldatabase")
+	c := cmd.newCreator(client, mysqlDatabase, storage.MySQLDatabaseKind)
 	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
 	defer cancel()
 
@@ -40,6 +39,7 @@ func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error 
 	}
 
 	if err := c.wait(ctx, waitStage{
+		Writer:     cmd.Writer,
 		objectList: &storage.MySQLDatabaseList{},
 		onResult: func(event watch.Event) (bool, error) {
 			if mdb, ok := event.Object.(*storage.MySQLDatabase); ok {
@@ -51,7 +51,7 @@ func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error 
 		return err
 	}
 
-	fmt.Printf("\n Your MySQLDatabase %s is now available. You can retrieve the database, username and password with:\n\n nctl get mysqldatabase %s --print-connection-string\n\n", mysqlDatabase.Name, mysqlDatabase.Name)
+	cmd.Printf("\n Your MySQLDatabase %s is now available. You can retrieve the database, username and password with:\n\n nctl get mysqldatabase %s --print-connection-string\n\n", mysqlDatabase.Name, mysqlDatabase.Name)
 
 	return nil
 }

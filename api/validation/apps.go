@@ -1,3 +1,5 @@
+// Package validation provides functionality to validate git repositories
+// and their access configurations.
 package validation
 
 import (
@@ -15,6 +17,8 @@ import (
 
 // RepositoryValidator validates a git repository
 type RepositoryValidator struct {
+	format.Writer
+
 	GitInformationServiceURL string
 	Token                    string
 	Debug                    bool
@@ -27,7 +31,7 @@ func (v *RepositoryValidator) Validate(ctx context.Context, git *apps.GitTarget,
 		return err
 	}
 	msg := " testing repository access 🔐"
-	spinner, err := format.NewSpinner(msg, msg)
+	spinner, err := v.Spinner(msg, msg)
 	if err != nil {
 		return err
 	}

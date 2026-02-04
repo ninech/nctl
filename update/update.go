@@ -1,3 +1,4 @@
+// Package update contains the commands for updating resources.
 package update
 
 import (
@@ -26,10 +27,12 @@ type Cmd struct {
 }
 
 type resourceCmd struct {
+	format.Writer
 	Name string `arg:"" completion-predictor:"resource_name" help:"Name of the resource to update."`
 }
 
 type updater struct {
+	format.Writer
 	mg         resource.Managed
 	client     *api.Client
 	kind       string
@@ -38,8 +41,13 @@ type updater struct {
 
 type updateFunc func(current resource.Managed) error
 
-func newUpdater(client *api.Client, mg resource.Managed, kind string, f updateFunc) *updater {
-	return &updater{client: client, mg: mg, kind: kind, updateFunc: f}
+func (cmd *resourceCmd) newUpdater(
+	client *api.Client,
+	mg resource.Managed,
+	kind string,
+	f updateFunc,
+) *updater {
+	return &updater{Writer: cmd.Writer, client: client, mg: mg, kind: kind, updateFunc: f}
 }
 
 func (u *updater) Update(ctx context.Context) error {
@@ -55,6 +63,6 @@ func (u *updater) Update(ctx context.Context) error {
 		return err
 	}
 
-	format.PrintSuccessf("⬆️", "updated %s %q", u.kind, u.mg.GetName())
+	u.Successf("⬆️", "updated %s %q\n", u.kind, u.mg.GetName())
 	return nil
 }

@@ -17,5 +17,5 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
 	defer cancel()
 
 	mysql := &storage.MySQL{ObjectMeta: metav1.ObjectMeta{Name: cmd.Name, Namespace: client.Project}}
-	return newDeleter(mysql, storage.MySQLKind).deleteResource(ctx, client, cmd.WaitTimeout, cmd.Wait, cmd.Force)
+	return cmd.newDeleter(mysql, storage.MySQLKind).deleteResource(ctx, client, cmd.WaitTimeout, cmd.Wait, cmd.Force)
 }

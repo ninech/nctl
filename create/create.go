@@ -1,3 +1,4 @@
+// Package create provides functionality to create resources in the nine.ch API.
 package create
 
 import (
@@ -13,6 +14,7 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/theckman/yacspin"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
@@ -41,6 +43,8 @@ type Cmd struct {
 }
 
 type resourceCmd struct {
+	format.Writer
+
 	Name        string        `arg:"" help:"Name of the new resource. A random name is generated if omitted." default:""`
 	Wait        bool          `default:"true" help:"Wait until resource is fully created."`
 	WaitTimeout time.Duration `default:"30m" help:"Duration to wait for resource getting ready. Only relevant if wait is set."`
@@ -51,12 +55,16 @@ type resourceCmd struct {
 type resultFunc func(watch.Event) (bool, error)
 
 type creator struct {
+	format.Writer
+
 	client *api.Client
 	mg     resource.Managed
 	kind   string
 }
 
 type waitStage struct {
+	format.Writer
+
 	kind           string
 	waitMessage    *message
 	doneMessage    *message
@@ -89,19 +97,11 @@ func (m *message) progress() string {
 		return ""
 	}
 
-	return format.ProgressMessage(m.icon, m.text)
+	return format.Progress(m.icon, m.text)
 }
 
-func (m *message) printSuccess() {
-	if m.disabled {
-		return
-	}
-
-	format.PrintSuccess(m.icon, m.text)
-}
-
-func newCreator(client *api.Client, mg resource.Managed, resourceName string) *creator {
-	return &creator{client: client, mg: mg, kind: resourceName}
+func (cmd *resourceCmd) newCreator(client *api.Client, mg resource.Managed, resourceName string) *creator {
+	return &creator{client: client, mg: mg, kind: resourceName, Writer: cmd.Writer}
 }
 
 func (c *creator) createResource(ctx context.Context) error {
@@ -109,7 +109,7 @@ func (c *creator) createResource(ctx context.Context) error {
 		return fmt.Errorf("unable to create %s %q: %w", c.kind, c.mg.GetName(), err)
 	}
 
-	format.PrintSuccessf("🏗", "created %s %q in project %q", c.kind, c.mg.GetName(), c.mg.GetNamespace())
+	c.Successf("🏗", "created %s %q in project %q\n", c.kind, c.mg.GetName(), c.mg.GetNamespace())
 	return nil
 }
 
@@ -120,8 +120,9 @@ func (c *creator) wait(ctx context.Context, stages ...waitStage) error {
 		}
 
 		stage.setDefaults(c)
+		stage.Writer = c.Writer
 
-		spinner, err := format.NewSpinner(
+		spinner, err := c.Spinner(
 			stage.waitMessage.progress(),
 			stage.waitMessage.progress(),
 		)
@@ -178,7 +179,10 @@ type watchError struct {
 }
 
 func (werr watchError) Error() string {
-	return fmt.Sprintf("error watching %s, the API might be experiencing connectivity issues", werr.kind)
+	return fmt.Sprintf(
+		"error watching %s, the API might be experiencing connectivity issues",
+		werr.kind,
+	)
 }
 
 func isWatchError(err error) bool {
@@ -219,8 +223,7 @@ func (w *waitStage) watch(ctx context.Context, client *api.Client) error {
 			if done {
 				wa.Stop()
 				_ = w.spinner.Stop()
-				// print out the done message directly
-				w.doneMessage.printSuccess()
+				w.Successf(w.doneMessage.icon, "%s\n", w.doneMessage.text)
 
 				return nil
 			}
@@ -228,7 +231,7 @@ func (w *waitStage) watch(ctx context.Context, client *api.Client) error {
 			switch ctx.Err() {
 			case context.DeadlineExceeded:
 				msg := "timeout waiting for %s"
-				w.spinner.StopFailMessage(format.ProgressMessagef("", msg, w.kind))
+				w.spinner.StopFailMessage(format.Progressf("", msg, w.kind))
 				_ = w.spinner.StopFail()
 
 				return fmt.Errorf(msg, w.kind)

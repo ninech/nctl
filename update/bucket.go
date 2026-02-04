@@ -37,7 +37,7 @@ func (cmd *bucketCmd) Run(ctx context.Context, client *api.Client) error {
 		},
 	}
 
-	upd := newUpdater(client, b, storage.BucketKind, func(current resource.Managed) error {
+	upd := cmd.newUpdater(client, b, storage.BucketKind, func(current resource.Managed) error {
 		b, ok := current.(*storage.Bucket)
 		if !ok {
 			return fmt.Errorf("resource is of type %T, expected %T", current, storage.Bucket{})

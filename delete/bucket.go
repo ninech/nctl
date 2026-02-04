@@ -17,5 +17,5 @@ func (cmd *bucketCmd) Run(ctx context.Context, client *api.Client) error {
 	defer cancel()
 
 	bu := &storage.Bucket{ObjectMeta: metav1.ObjectMeta{Name: cmd.Name, Namespace: client.Project}}
-	return newDeleter(bu, storage.BucketKind).deleteResource(ctx, client, cmd.WaitTimeout, cmd.Wait, cmd.Force)
+	return cmd.newDeleter(bu, storage.BucketKind).deleteResource(ctx, client, cmd.WaitTimeout, cmd.Wait, cmd.Force)
 }

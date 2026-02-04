@@ -7,6 +7,7 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	iam "github.com/ninech/apis/iam/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -26,8 +27,9 @@ func TestDeleter(t *testing.T) {
 		test.WithObjects(asa),
 	)
 	require.NoError(t, err)
+	cmd := &apiServiceAccountCmd{resourceCmd{Writer: format.NewWriter(t.Output())}}
 
-	d := newDeleter(asa, iam.APIServiceAccountKind)
+	d := cmd.newDeleter(asa, iam.APIServiceAccountKind)
 
 	if err := d.deleteResource(ctx, apiClient, 0, false, true); err != nil {
 		t.Fatalf("error while deleting %s: %s", apps.ApplicationKind, err)

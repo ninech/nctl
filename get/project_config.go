@@ -13,8 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type configsCmd struct {
-}
+type configsCmd struct{}
 
 func (cmd *configsCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
 	return get.listPrint(ctx, client, cmd)
@@ -36,9 +35,9 @@ func (cmd *configsCmd) print(ctx context.Context, client *api.Client, list clien
 	case noHeader:
 		return printProjectConfigs(projectConfigList.Items, out, false)
 	case yamlOut:
-		return format.PrettyPrintObjects(projectConfigList.GetItems(), format.PrintOpts{Out: out.writer})
+		return format.PrettyPrintObjects(projectConfigList.GetItems(), format.PrintOpts{Out: &out.Writer})
 	case jsonOut:
-		return format.PrettyPrintObjects(projectConfigList.GetItems(), format.PrintOpts{Out: out.writer, Format: format.OutputFormatTypeJSON})
+		return format.PrettyPrintObjects(projectConfigList.GetItems(), format.PrintOpts{Out: &out.Writer, Format: format.OutputFormatTypeJSON})
 	}
 
 	return nil

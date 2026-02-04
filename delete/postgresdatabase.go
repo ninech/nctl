@@ -14,5 +14,5 @@ type postgresDatabaseCmd struct {
 
 func (cmd *postgresDatabaseCmd) Run(ctx context.Context, client *api.Client) error {
 	postgresDatabase := &storage.PostgresDatabase{ObjectMeta: metav1.ObjectMeta{Name: cmd.Name, Namespace: client.Project}}
-	return newDeleter(postgresDatabase, storage.PostgresDatabaseKind).deleteResource(ctx, client, cmd.WaitTimeout, cmd.Wait, cmd.Force)
+	return cmd.newDeleter(postgresDatabase, storage.PostgresDatabaseKind).deleteResource(ctx, client, cmd.WaitTimeout, cmd.Wait, cmd.Force)
 }

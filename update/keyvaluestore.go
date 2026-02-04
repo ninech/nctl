@@ -30,7 +30,7 @@ func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client) error 
 		},
 	}
 
-	return newUpdater(client, keyValueStore, storage.KeyValueStoreKind, func(current resource.Managed) error {
+	return cmd.newUpdater(client, keyValueStore, storage.KeyValueStoreKind, func(current resource.Managed) error {
 		keyValueStore, ok := current.(*storage.KeyValueStore)
 		if !ok {
 			return fmt.Errorf("resource is of type %T, expected %T", current, storage.KeyValueStore{})

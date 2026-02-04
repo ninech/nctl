@@ -31,7 +31,7 @@ func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client) error 
 		return err
 	}
 
-	c := newCreator(client, keyValueStore, "keyvaluestore")
+	c := cmd.newCreator(client, keyValueStore, "keyvaluestore")
 	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
 	defer cancel()
 

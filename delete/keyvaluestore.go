@@ -17,5 +17,5 @@ func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client) error 
 	defer cancel()
 
 	keyValueStore := &storage.KeyValueStore{ObjectMeta: metav1.ObjectMeta{Name: cmd.Name, Namespace: client.Project}}
-	return newDeleter(keyValueStore, storage.KeyValueStoreKind).deleteResource(ctx, client, cmd.WaitTimeout, cmd.Wait, cmd.Force)
+	return cmd.newDeleter(keyValueStore, storage.KeyValueStoreKind).deleteResource(ctx, client, cmd.WaitTimeout, cmd.Wait, cmd.Force)
 }

@@ -32,7 +32,8 @@ func TestCreate(t *testing.T) {
 
 	apiClient, err := test.SetupClient()
 	require.NoError(t, err)
-	c := newCreator(apiClient, asa, "apiserviceaccount")
+	cmd := &apiServiceAccountCmd{}
+	c := cmd.newCreator(apiClient, asa, "apiserviceaccount")
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
