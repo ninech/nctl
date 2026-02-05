@@ -14,7 +14,7 @@ type WhoAmICmd struct {
 	ClientID      string `help:"OIDC client ID of the API." default:"nineapis.ch-f178254"`
 }
 
-func (s *WhoAmICmd) Run(ctx context.Context, client *api.Client) error {
+func (cmd *WhoAmICmd) Run(ctx context.Context, client *api.Client) error {
 	org, err := client.Organization()
 	if err != nil {
 		return err
@@ -25,22 +25,22 @@ func (s *WhoAmICmd) Run(ctx context.Context, client *api.Client) error {
 		return err
 	}
 
-	s.printUserInfo(userInfo, org)
+	cmd.printUserInfo(userInfo, org)
 
 	return nil
 }
 
-func (s *WhoAmICmd) printUserInfo(userInfo *api.UserInfo, org string) {
-	s.Printf("You are currently logged in with the following account: %q\n", userInfo.User)
-	s.Printf("Your current organization: %q\n", org)
+func (cmd *WhoAmICmd) printUserInfo(userInfo *api.UserInfo, org string) {
+	cmd.Printf("You are currently logged in with the following account: %q\n", userInfo.User)
+	cmd.Printf("Your current organization: %q\n", org)
 
 	if len(userInfo.Orgs) > 0 {
-		s.printAvailableOrgsString(org, userInfo.Orgs)
+		cmd.printAvailableOrgsString(org, userInfo.Orgs)
 	}
 }
 
-func (s *WhoAmICmd) printAvailableOrgsString(currentorg string, orgs []string) {
-	s.Println("\nAvailable Organizations:")
+func (cmd *WhoAmICmd) printAvailableOrgsString(currentorg string, orgs []string) {
+	cmd.Println("\nAvailable Organizations:")
 
 	for _, org := range orgs {
 		activeMarker := ""
@@ -48,9 +48,9 @@ func (s *WhoAmICmd) printAvailableOrgsString(currentorg string, orgs []string) {
 			activeMarker = "*"
 		}
 
-		s.Printf("%s\t%s\n", activeMarker, org)
+		cmd.Printf("%s\t%s\n", activeMarker, org)
 	}
 
-	s.Printf("\nTo switch the organization use the following command:\n")
-	s.Printf("$ nctl auth set-org <org-name>\n")
+	cmd.Printf("\nTo switch the organization use the following command:\n")
+	cmd.Printf("$ nctl auth set-org <org-name>\n")
 }

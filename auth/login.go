@@ -37,13 +37,13 @@ type LoginCmd struct {
 
 const ErrNonInteractiveEnvironmentEmptyToken = "a static API token is required in non-interactive environments"
 
-func (l *LoginCmd) Run(ctx context.Context) error {
-	apiURL, err := url.Parse(l.API.URL)
+func (cmd *LoginCmd) Run(ctx context.Context) error {
+	apiURL, err := url.Parse(cmd.API.URL)
 	if err != nil {
 		return err
 	}
 
-	issuerURL, err := url.Parse(l.IssuerURL)
+	issuerURL, err := url.Parse(cmd.IssuerURL)
 	if err != nil {
 		return err
 	}
@@ -58,34 +58,34 @@ func (l *LoginCmd) Run(ctx context.Context) error {
 		return fmt.Errorf("can not identify executable path of %s: %v", util.NctlName, err)
 	}
 
-	if l.API.Token != "" {
-		if l.Organization == "" {
+	if cmd.API.Token != "" {
+		if cmd.Organization == "" {
 			return fmt.Errorf("you need to set the --organization parameter explicitly if you use --api-token")
 		}
-		userInfo, err := api.GetUserInfoFromToken(l.API.Token)
+		userInfo, err := api.GetUserInfoFromToken(cmd.API.Token)
 		if err != nil {
 			return err
 		}
-		cfg, err := newAPIConfig(apiURL, issuerURL, command, l.ClientID, useStaticToken(l.API.Token), withOrganization(l.Organization))
+		cfg, err := newAPIConfig(apiURL, issuerURL, command, cmd.ClientID, useStaticToken(cmd.API.Token), withOrganization(cmd.Organization))
 		if err != nil {
 			return err
 		}
-		return login(l.Writer, cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(l.Organization))
+		return login(cmd.Writer, cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(cmd.Organization))
 	}
 
-	if l.API.ClientID != "" {
-		userInfo, err := l.API.UserInfo(ctx)
+	if cmd.API.ClientID != "" {
+		userInfo, err := cmd.API.UserInfo(ctx)
 		if err != nil {
 			return err
 		}
-		if l.Organization == "" && len(userInfo.Orgs) == 0 {
+		if cmd.Organization == "" && len(userInfo.Orgs) == 0 {
 			return fmt.Errorf("unable to find organization, you need to set the --organization parameter explicitly")
 		}
-		org := l.Organization
+		org := cmd.Organization
 		if org == "" {
 			org = userInfo.Orgs[0]
 		}
-		cfg, err := newAPIConfig(apiURL, issuerURL, command, l.API.ClientID, useClientCredentials(l.API), withOrganization(org))
+		cfg, err := newAPIConfig(apiURL, issuerURL, command, cmd.API.ClientID, useClientCredentials(cmd.API), withOrganization(org))
 		if err != nil {
 			return err
 		}
@@ -93,16 +93,16 @@ func (l *LoginCmd) Run(ctx context.Context) error {
 		if userInfo.Project != "" {
 			proj = userInfo.Project
 		}
-		return login(l.Writer, cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(proj))
+		return login(cmd.Writer, cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(proj))
 	}
 
-	if !l.ForceInteractiveEnvOverride && !format.IsInteractiveEnvironment(os.Stdout) {
+	if !cmd.ForceInteractiveEnvOverride && !format.IsInteractiveEnvironment(os.Stdout) {
 		return errors.New(ErrNonInteractiveEnvironmentEmptyToken)
 	}
 
 	usePKCE := true
 
-	token, err := l.tokenGetter().GetTokenString(ctx, l.IssuerURL, l.ClientID, usePKCE)
+	token, err := cmd.tokenGetter().GetTokenString(ctx, cmd.IssuerURL, cmd.ClientID, usePKCE)
 	if err != nil {
 		return err
 	}
@@ -118,21 +118,21 @@ func (l *LoginCmd) Run(ctx context.Context) error {
 
 	org := userInfo.Orgs[0]
 	if len(userInfo.Orgs) > 1 {
-		l.Printf("Multiple organizations found for the account %q.\n", userInfo.User)
-		l.Printf("Defaulting to %q\n", org)
-		l.printAvailableOrgsString(org, userInfo.Orgs)
+		cmd.Printf("Multiple organizations found for the account %q.\n", userInfo.User)
+		cmd.Printf("Defaulting to %q\n", org)
+		cmd.printAvailableOrgsString(org, userInfo.Orgs)
 	}
 
-	cfg, err := newAPIConfig(apiURL, issuerURL, command, l.ClientID, withOrganization(org))
+	cfg, err := newAPIConfig(apiURL, issuerURL, command, cmd.ClientID, withOrganization(org))
 	if err != nil {
 		return err
 	}
 
-	return login(l.Writer, cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(org))
+	return login(cmd.Writer, cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(org))
 }
 
-func (l *LoginCmd) printAvailableOrgsString(currentorg string, orgs []string) {
-	l.Println("\nAvailable Organizations:")
+func (cmd *LoginCmd) printAvailableOrgsString(currentorg string, orgs []string) {
+	cmd.Println("\nAvailable Organizations:")
 
 	for _, org := range orgs {
 		activeMarker := ""
@@ -140,16 +140,16 @@ func (l *LoginCmd) printAvailableOrgsString(currentorg string, orgs []string) {
 			activeMarker = "*"
 		}
 
-		l.Printf("%s\t%s\n", activeMarker, org)
+		cmd.Printf("%s\t%s\n", activeMarker, org)
 	}
 
-	l.Printf("\nTo switch the organization use the following command:\n")
-	l.Printf("$ nctl auth set-org <org-name>\n")
+	cmd.Printf("\nTo switch the organization use the following command:\n")
+	cmd.Printf("$ nctl auth set-org <org-name>\n")
 }
 
-func (l *LoginCmd) tokenGetter() api.TokenGetter {
-	if l.tk != nil {
-		return l.tk
+func (cmd *LoginCmd) tokenGetter() api.TokenGetter {
+	if cmd.tk != nil {
+		return cmd.tk
 	}
 	return &api.DefaultTokenGetter{}
 }
