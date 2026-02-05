@@ -1,3 +1,4 @@
+// Package api provides the Kubernetes client and configuration for the nine.ch API.
 package api
 
 import (
