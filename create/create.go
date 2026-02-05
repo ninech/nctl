@@ -75,6 +75,7 @@ type waitStage struct {
 	onResult       resultFunc
 	spinner        *yacspin.Spinner
 	disableSpinner bool
+	startTime      time.Time
 	// beforeWait is a hook that is called just before the wait is being run.
 	beforeWait func()
 	// afterWait is a hook that is called after the wait to clean up.
@@ -94,12 +95,26 @@ var watchBackoff = wait.Backoff{
 	Jitter:   0.1,
 }
 
+const remainingTimeUpdateInterval = time.Second
+
 func (m *message) progress() string {
 	if m.disabled {
 		return ""
 	}
 
 	return format.Progress(m.icon, m.text)
+}
+
+// progressWithRemaining returns the progress message with the remaining time
+// from the context deadline appended.
+func (w *waitStage) progressWithRemaining(ctx context.Context) string {
+	text := w.waitMessage.text
+	if deadline, ok := ctx.Deadline(); ok {
+		if remaining := time.Until(deadline); remaining > 0 {
+			text += fmt.Sprintf(" (%s)", remaining.Truncate(time.Second))
+		}
+	}
+	return format.Progress(w.waitMessage.icon, text)
 }
 
 func (cmd *resourceCmd) newCreator(client *api.Client, mg resource.Managed, kind string) *creator {
@@ -125,8 +140,8 @@ func (c *creator) wait(ctx context.Context, stages ...waitStage) error {
 		stage.Writer = c.Writer
 
 		spinner, err := c.Spinner(
-			stage.waitMessage.progress(),
-			stage.waitMessage.progress(),
+			stage.progressWithRemaining(ctx),
+			stage.progressWithRemaining(ctx),
 		)
 		if err != nil {
 			return err
@@ -137,6 +152,7 @@ func (c *creator) wait(ctx context.Context, stages ...waitStage) error {
 			stage.beforeWait()
 		}
 
+		stage.startTime = time.Now()
 		if err := retry.OnError(watchBackoff, isWatchError, func() error {
 			return stage.wait(ctx, c.client)
 		}); err != nil {
@@ -158,10 +174,6 @@ func (w *waitStage) setDefaults(c *creator) {
 		w.waitMessage = &message{
 			text: fmt.Sprintf("waiting for %s to be ready", w.kind),
 			icon: "⏳",
-		}
-
-		if c.timeout > 0 {
-			w.waitMessage.text = w.waitMessage.text + fmt.Sprintf(" (%s)", c.timeout)
 		}
 	}
 
@@ -213,6 +225,9 @@ func (w *waitStage) watch(ctx context.Context, client *api.Client) error {
 		return watchError{kind: w.kind}
 	}
 
+	ticker := time.NewTicker(remainingTimeUpdateInterval)
+	defer ticker.Stop()
+
 	for {
 		select {
 		case res := <-wa.ResultChan():
@@ -228,11 +243,16 @@ func (w *waitStage) watch(ctx context.Context, client *api.Client) error {
 
 			if done {
 				wa.Stop()
+				elapsed := time.Since(w.startTime).Truncate(time.Second)
+				w.spinner.StopMessage(w.waitMessage.progress())
 				_ = w.spinner.Stop()
-				w.Successf(w.doneMessage.icon, "%s", w.doneMessage.text)
+				w.Successf(w.doneMessage.icon, "%s (%s)", w.doneMessage.text, elapsed)
+				w.Println()
 
 				return nil
 			}
+		case <-ticker.C:
+			w.spinner.Message(w.progressWithRemaining(ctx))
 		case <-ctx.Done():
 			switch ctx.Err() {
 			case context.DeadlineExceeded:
