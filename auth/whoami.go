@@ -35,22 +35,6 @@ func (cmd *WhoAmICmd) printUserInfo(userInfo *api.UserInfo, org string) {
 	cmd.Printf("Your current organization: %q\n", org)
 
 	if len(userInfo.Orgs) > 0 {
-		cmd.printAvailableOrgsString(org, userInfo.Orgs)
+		printAvailableOrgsString(cmd.Writer, org, userInfo.Orgs)
 	}
-}
-
-func (cmd *WhoAmICmd) printAvailableOrgsString(currentorg string, orgs []string) {
-	cmd.Println("\nAvailable Organizations:")
-
-	for _, org := range orgs {
-		activeMarker := ""
-		if currentorg == org {
-			activeMarker = "*"
-		}
-
-		cmd.Printf("%s\t%s\n", activeMarker, org)
-	}
-
-	cmd.Printf("\nTo switch the organization use the following command:\n")
-	cmd.Printf("$ nctl auth set-org <org-name>\n")
 }

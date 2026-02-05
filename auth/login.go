@@ -120,7 +120,7 @@ func (cmd *LoginCmd) Run(ctx context.Context) error {
 	if len(userInfo.Orgs) > 1 {
 		cmd.Printf("Multiple organizations found for the account %q.\n", userInfo.User)
 		cmd.Printf("Defaulting to %q\n", org)
-		cmd.printAvailableOrgsString(org, userInfo.Orgs)
+		printAvailableOrgsString(cmd.Writer, org, userInfo.Orgs)
 	}
 
 	cfg, err := newAPIConfig(apiURL, issuerURL, command, cmd.ClientID, withOrganization(org))
@@ -131,8 +131,8 @@ func (cmd *LoginCmd) Run(ctx context.Context) error {
 	return login(cmd.Writer, cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(org))
 }
 
-func (cmd *LoginCmd) printAvailableOrgsString(currentorg string, orgs []string) {
-	cmd.Println("\nAvailable Organizations:")
+func printAvailableOrgsString(w format.Writer, currentorg string, orgs []string) {
+	w.Println("\nAvailable Organizations:")
 
 	for _, org := range orgs {
 		activeMarker := ""
@@ -140,11 +140,11 @@ func (cmd *LoginCmd) printAvailableOrgsString(currentorg string, orgs []string) 
 			activeMarker = "*"
 		}
 
-		cmd.Printf("%s\t%s\n", activeMarker, org)
+		w.Printf("%s\t%s\n", activeMarker, org)
 	}
 
-	cmd.Printf("\nTo switch the organization use the following command:\n")
-	cmd.Printf("$ nctl auth set-org <org-name>\n")
+	w.Printf("\nTo switch the organization use the following command:\n")
+	w.Printf("$ nctl auth set-org <org-name>\n")
 }
 
 func (cmd *LoginCmd) tokenGetter() api.TokenGetter {
