@@ -27,8 +27,8 @@ type Cmd struct {
 }
 
 type resourceCmd struct {
-	format.Writer
-	Name string `arg:"" completion-predictor:"resource_name" help:"Name of the resource to update."`
+	format.Writer `kong:"-"`
+	Name          string `arg:"" completion-predictor:"resource_name" help:"Name of the resource to update."`
 }
 
 type updater struct {

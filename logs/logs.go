@@ -24,15 +24,15 @@ type resourceCmd struct {
 }
 
 type logsCmd struct {
-	format.Writer
-	Follow   bool          `help:"Follow the logs by live tailing." short:"f"`
-	Lines    int           `help:"Amount of lines to output." default:"50" short:"l"`
-	Since    time.Duration `help:"Duration how long to look back for logs." short:"s" default:"${log_retention}"`
-	From     time.Time     `help:"Ignore since flag and start looking for logs at this absolute time (RFC3339)." placeholder:"2025-01-01T14:00:00+01:00"`
-	To       time.Time     `help:"Ignore since flag and stop looking for logs at this absolute time (RFC3339)." placeholder:"2025-01-01T15:00:00+01:00"`
-	Output   string        `help:"Configures the log output format. ${enum}" short:"o" enum:"default,json" default:"default"`
-	NoLabels bool          `help:"Disable labels in log output."`
-	out      log.Output
+	format.Writer `kong:"-"`
+	Follow        bool          `help:"Follow the logs by live tailing." short:"f"`
+	Lines         int           `help:"Amount of lines to output." default:"50" short:"l"`
+	Since         time.Duration `help:"Duration how long to look back for logs." short:"s" default:"${log_retention}"`
+	From          time.Time     `help:"Ignore since flag and start looking for logs at this absolute time (RFC3339)." placeholder:"2025-01-01T14:00:00+01:00"`
+	To            time.Time     `help:"Ignore since flag and stop looking for logs at this absolute time (RFC3339)." placeholder:"2025-01-01T15:00:00+01:00"`
+	Output        string        `help:"Configures the log output format. ${enum}" short:"o" enum:"default,json" default:"default"`
+	NoLabels      bool          `help:"Disable labels in log output."`
+	out           log.Output
 }
 
 // 30 days, we hardcode this for now as it's not possible to customize this on

@@ -18,9 +18,9 @@ import (
 )
 
 type ClusterCmd struct {
-	format.Writer
-	Name       string `arg:"" help:"Name of the cluster to authenticate with. Also accepts 'name/project' format."`
-	ExecPlugin bool   `help:"Automatically run exec plugin after writing the kubeconfig."`
+	format.Writer `kong:"-"`
+	Name          string `arg:"" help:"Name of the cluster to authenticate with. Also accepts 'name/project' format."`
+	ExecPlugin    bool   `help:"Automatically run exec plugin after writing the kubeconfig."`
 }
 
 func (a *ClusterCmd) Run(ctx context.Context, client *api.Client) error {

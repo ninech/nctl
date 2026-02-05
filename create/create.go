@@ -43,11 +43,10 @@ type Cmd struct {
 }
 
 type resourceCmd struct {
-	format.Writer
-
-	Name        string        `arg:"" help:"Name of the new resource. A random name is generated if omitted." default:""`
-	Wait        bool          `default:"true" help:"Wait until resource is fully created."`
-	WaitTimeout time.Duration `default:"30m" help:"Duration to wait for resource getting ready. Only relevant if wait is set."`
+	format.Writer `kong:"-"`
+	Name          string        `arg:"" help:"Name of the new resource. A random name is generated if omitted." default:""`
+	Wait          bool          `default:"true" help:"Wait until resource is fully created."`
+	WaitTimeout   time.Duration `default:"30m" help:"Duration to wait for resource getting ready. Only relevant if wait is set."`
 }
 
 // resultFunc is the function called on a watch event during creation. It

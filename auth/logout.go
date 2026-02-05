@@ -22,11 +22,11 @@ import (
 )
 
 type LogoutCmd struct {
-	format.Writer
-	APIURL    string `help:"URL of the Nine API." default:"https://nineapis.ch" env:"NCTL_API_URL" name:"api-url"`
-	IssuerURL string `help:"OIDC issuer URL of the API." default:"https://auth.nine.ch/auth/realms/pub"`
-	ClientID  string `help:"OIDC client ID of the API." default:"nineapis.ch-f178254"`
-	tk        api.TokenGetter
+	format.Writer `kong:"-"`
+	APIURL        string `help:"URL of the Nine API." default:"https://nineapis.ch" env:"NCTL_API_URL" name:"api-url"`
+	IssuerURL     string `help:"OIDC issuer URL of the API." default:"https://auth.nine.ch/auth/realms/pub"`
+	ClientID      string `help:"OIDC client ID of the API." default:"nineapis.ch-f178254"`
+	tk            api.TokenGetter
 }
 
 func (l *LogoutCmd) Run(ctx context.Context) error {
