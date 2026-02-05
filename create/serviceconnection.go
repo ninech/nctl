@@ -15,6 +15,7 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/cli"
 )
 
 type serviceConnectionCmd struct {
@@ -199,13 +200,24 @@ func groupVersionKindFromKind(kind string) (schema.GroupVersionKind, error) {
 		return schema.GroupVersionKind{}, fmt.Errorf("error creating scheme: %w", err)
 	}
 
+	var availableKinds []string
 	for gvk := range scheme.AllKnownTypes() {
 		if strings.EqualFold(kind, gvk.Kind) {
 			return gvk, nil
 		}
+		// Collect non-list kinds for error message
+		if !strings.HasSuffix(gvk.Kind, "List") && gvk.Kind != "" {
+			availableKinds = append(availableKinds, strings.ToLower(gvk.Kind))
+		}
 	}
 
-	return schema.GroupVersionKind{}, fmt.Errorf("kind %s is invalid", kind)
+	return schema.GroupVersionKind{}, cli.ErrorWithContext(fmt.Errorf("kind %q is invalid", kind)).
+		WithExitCode(cli.ExitUsageError).
+		WithAvailable(availableKinds...).
+		WithSuggestions(
+			"Valid source kinds: kubernetescluster, application",
+			"Valid destination kinds: keyvaluestore, mysql, postgres, mysqldatabase, postgresdatabase",
+		)
 }
 
 // ServiceConnectionKongVars returns all variables which are used in the ServiceConnection

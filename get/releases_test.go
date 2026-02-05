@@ -74,8 +74,8 @@ func TestReleases(t *testing.T) {
 			releases: []client.Object{
 				newRelease(time.Second*10, 10, "o-a1", project, "other-app1", "pc", test.StatusAvailable),
 			},
-			wantContain: []string{"no Releases found"},
-			wantLines:   1,
+			wantErr:     true,
+			wantContain: []string{`no "Releases" found`},
 		},
 
 		"all apps, multiple releases, get all releases from all apps": {
@@ -176,10 +176,16 @@ func TestReleases(t *testing.T) {
 			get := NewTestCmd(buf, tc.output)
 			get.AllProjects = tc.inAllProjects
 
-			if err := tc.cmd.Run(ctx, apiClient, get); (err != nil) != tc.wantErr {
+			err = tc.cmd.Run(ctx, apiClient, get)
+			if (err != nil) != tc.wantErr {
 				t.Errorf("releasesCmd.Run() error = %v, wantErr %v", err, tc.wantErr)
 			}
 			if tc.wantErr {
+				for _, substr := range tc.wantContain {
+					if !strings.Contains(err.Error(), substr) {
+						t.Errorf("releasesCmd.Run() error did not contain %q, err = %v", substr, err)
+					}
+				}
 				return
 			}
 			for _, substr := range tc.wantContain {

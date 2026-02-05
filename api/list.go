@@ -3,13 +3,13 @@ package api
 import (
 	"cmp"
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 	"slices"
 	"strings"
 
 	management "github.com/ninech/apis/management/v1alpha1"
+	"github.com/ninech/nctl/internal/cli"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/conversion"
@@ -65,17 +65,25 @@ func Watch(f WatchFunc) ListOpt {
 
 func (opts *ListOpts) namedResourceNotFound(project string, foundInProjects ...string) error {
 	if opts.allProjects {
-		return fmt.Errorf("resource %q was not found in any project", opts.searchForName)
+		return cli.ErrorWithContext(fmt.Errorf("resource %q was not found in any project", opts.searchForName)).
+			WithExitCode(cli.ExitUsageError).
+			WithSuggestions("Verify the resource name is correct")
 	}
-	errorMessage := fmt.Sprintf("resource %q was not found in project %s", opts.searchForName, project)
+
 	if len(foundInProjects) > 0 {
-		errorMessage = errorMessage + fmt.Sprintf(
-			", but it was found in project(s): %s. "+
-				"Maybe you want to use the '--project' flag to specify one of these projects?",
-			strings.Join(foundInProjects, " ,"),
-		)
+		return cli.ErrorWithContext(fmt.Errorf(
+			"resource %q was not found in project %q, but was found in: %s",
+			opts.searchForName, project, strings.Join(foundInProjects, ", "),
+		)).
+			WithExitCode(cli.ExitUsageError).
+			WithContext("Project", project).
+			WithAvailable(foundInProjects...).
+			WithSuggestions("Use --project=<project> to specify a different project")
 	}
-	return errors.New(errorMessage)
+
+	return cli.ErrorWithContext(fmt.Errorf("resource %q was not found in project %q", opts.searchForName, project)).
+		WithExitCode(cli.ExitUsageError).
+		WithContext("Project", project)
 }
 
 // ListObjects lists objects in the current client project with some
@@ -198,7 +206,7 @@ func (c *Client) ListObjects(ctx context.Context, list runtimeclient.ObjectList,
 	// we found the named object at least in one different project,
 	// so we return a hint to the user to search in these projects
 	var identifiedProjects []string
-	for i := 0; i < items.Len(); i++ {
+	for i := range items.Len() {
 		// the "Items" field of a list type is a slice of types and not
 		// a slice of pointer types (e.g. "[]corev1.Pod" and not
 		// "[]*corev1.Pod"), but the clientruntime.Object interface is
@@ -219,6 +227,7 @@ func (c *Client) ListObjects(ctx context.Context, list runtimeclient.ObjectList,
 		}
 		identifiedProjects = append(identifiedProjects, obj.GetNamespace())
 	}
+
 	return opts.namedResourceNotFound(c.Project, identifiedProjects...)
 }
 

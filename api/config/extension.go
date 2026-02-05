@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"slices"
 
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
+	"github.com/ninech/nctl/internal/cli"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/clientcmd"
@@ -97,7 +99,7 @@ func readExtension(kubeconfigContent []byte, contextName string) (*Extension, er
 	}
 	context, exists := kubeconfig.Contexts[contextName]
 	if !exists {
-		return nil, fmt.Errorf("could not find context %q in kubeconfig", contextName)
+		return nil, contextNotFoundError(contextName, kubeconfig.Contexts)
 	}
 	extension, exists := context.Extensions[NctlExtensionContext]
 	if !exists {
@@ -127,7 +129,7 @@ func SetContextOrganization(kubeconfigPath string, contextName string, organizat
 	}
 	context, exists := kubeconfig.Contexts[contextName]
 	if !exists {
-		return fmt.Errorf("could not find context %q in kubeconfig", contextName)
+		return contextNotFoundError(contextName, kubeconfig.Contexts)
 	}
 	extension, exists := context.Extensions[NctlExtensionContext]
 	if !exists {
@@ -164,7 +166,7 @@ func SetContextProject(kubeconfigPath string, contextName string, project string
 	}
 	context, exists := kubeconfig.Contexts[contextName]
 	if !exists {
-		return fmt.Errorf("could not find context %q in kubeconfig", contextName)
+		return contextNotFoundError(contextName, kubeconfig.Contexts)
 	}
 	context.Namespace = project
 	return clientcmd.WriteToFile(*kubeconfig, kubeconfigPath)
@@ -178,7 +180,7 @@ func RemoveClusterFromKubeConfig(kubeconfigPath, clusterContext string) error {
 	}
 
 	if _, ok := kubeconfig.Clusters[clusterContext]; !ok {
-		return fmt.Errorf("could not find cluster %q in kubeconfig", clusterContext)
+		return clusterNotFoundError(clusterContext, kubeconfig.Clusters)
 	}
 
 	delete(kubeconfig.Clusters, clusterContext)
@@ -193,4 +195,37 @@ func RemoveClusterFromKubeConfig(kubeconfigPath, clusterContext string) error {
 // ContextName returns the kubeconfig context name for the given cluster
 func ContextName(cluster *infrastructure.KubernetesCluster) string {
 	return fmt.Sprintf("%s/%s", cluster.Name, cluster.Namespace)
+}
+
+// contextNotFoundError returns an error with available contexts listed.
+func contextNotFoundError[T any](contextName string, contexts map[string]T) error {
+	available := make([]string, 0, len(contexts))
+	for name := range contexts {
+		available = append(available, name)
+	}
+	slices.Sort(available)
+
+	return cli.ErrorWithContext(fmt.Errorf("could not find context %q in kubeconfig", contextName)).
+		WithExitCode(cli.ExitUsageError).
+		WithAvailable(available...).
+		WithSuggestions(
+			"List available contexts: kubectl config get-contexts",
+			"Login to the API: nctl auth login",
+		)
+}
+
+// clusterNotFoundError returns an error with available clusters listed.
+func clusterNotFoundError[T any](clusterName string, clusters map[string]T) error {
+	available := make([]string, 0, len(clusters))
+	for name := range clusters {
+		available = append(available, name)
+	}
+	slices.Sort(available)
+
+	return cli.ErrorWithContext(fmt.Errorf("could not find cluster %q in kubeconfig", clusterName)).
+		WithExitCode(cli.ExitUsageError).
+		WithAvailable(available...).
+		WithSuggestions(
+			"List available clusters: kubectl config get-clusters",
+		)
 }

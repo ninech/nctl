@@ -26,6 +26,7 @@ import (
 	"github.com/ninech/nctl/edit"
 	"github.com/ninech/nctl/exec"
 	"github.com/ninech/nctl/get"
+	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/logs"
 	"github.com/ninech/nctl/predictor"
@@ -143,9 +144,31 @@ func main() {
 	}
 
 	if err := kongCtx.Run(binds...); err != nil {
-		if k8serrors.IsForbidden(err) && !nctl.Verbose {
-			err = errors.New("permission denied: verify in Cockpit Access Management that you a member of the organization")
+		if k8serrors.IsForbidden(err) {
+			if client := findClient(binds); client != nil {
+				org, _ := client.Organization()
+				err = cli.ErrorWithContext(err).
+					WithExitCode(cli.ExitForbidden).
+					WithContext("Organization", org).
+					WithContext("Project", client.Project).
+					WithSuggestions(
+						"Verify in Cockpit Access Management that you are a member of the organization:\nhttps://cockpit.nine.ch/en/customer/contacts\n",
+						fmt.Sprintf("List available projects: %s", format.Command().GetProjects()),
+						fmt.Sprintf("Check your current session: %s", format.Command().WhoAmI()),
+					)
+			} else {
+				err = cli.ErrorWithContext(fmt.Errorf("permission denied: verify in Cockpit Access Management that you are a member of the organization")).
+					WithExitCode(cli.ExitForbidden)
+			}
 		}
+
+		var cliErr *cli.Error
+		if errors.As(err, &cliErr) {
+			fmt.Fprintln(writer, err.Error())
+			kongCtx.Exit(cliErr.ExitCode())
+			return
+		}
+
 		kongCtx.FatalIfErrorf(err)
 	}
 }
@@ -264,6 +287,16 @@ func merge(existing kong.Vars, additional ...kong.Vars) error {
 		}
 	}
 
+	return nil
+}
+
+// findClient searches for an *api.Client in the provided binds slice
+func findClient(binds []any) *api.Client {
+	for _, b := range binds {
+		if client, ok := b.(*api.Client); ok {
+			return client
+		}
+	}
 	return nil
 }
 

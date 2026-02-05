@@ -12,6 +12,7 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
 	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/format"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -36,12 +37,18 @@ func (a *ClusterCmd) Run(ctx context.Context, client *api.Client) error {
 
 	apiEndpoint, err := url.Parse(cluster.Status.AtProvider.APIEndpoint)
 	if err != nil {
-		return fmt.Errorf("invalid cluster API endpoint: %w", err)
+		return cli.ErrorWithContext(fmt.Errorf("invalid cluster API endpoint: %w", err)).
+			WithExitCode(cli.ExitUsageError).
+			WithContext("Endpoint", cluster.Status.AtProvider.APIEndpoint).
+			WithSuggestions("The cluster API endpoint should be a valid URL")
 	}
 
 	issuerURL, err := url.Parse(cluster.Status.AtProvider.OIDCIssuerURL)
 	if err != nil {
-		return fmt.Errorf("invalid cluster OIDC issuer url: %w", err)
+		return cli.ErrorWithContext(fmt.Errorf("invalid cluster OIDC issuer URL: %w", err)).
+			WithExitCode(cli.ExitUsageError).
+			WithContext("IssuerURL", cluster.Status.AtProvider.OIDCIssuerURL).
+			WithSuggestions("The OIDC issuer URL should be a valid URL")
 	}
 
 	caCert, err := base64.StdEncoding.DecodeString(cluster.Status.AtProvider.APICACert)

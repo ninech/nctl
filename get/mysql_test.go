@@ -38,8 +38,8 @@ func TestMySQL(t *testing.T) {
 	}{
 		{
 			name:        "simple",
-			wantContain: []string{"no MySQLs found"},
-			wantLines:   1,
+			wantErr:     true,
+			wantContain: []string{`no "MySQLs" found`},
 		},
 		{
 			name: "single instance in project",
@@ -164,10 +164,16 @@ func TestMySQL(t *testing.T) {
 			buf := &bytes.Buffer{}
 			cmd := NewTestCmd(buf, tt.out)
 			cmd.AllProjects = tt.inAllProjects
-			if err := tt.get.Run(ctx, apiClient, cmd); (err != nil) != tt.wantErr {
+			err = tt.get.Run(ctx, apiClient, cmd)
+			if (err != nil) != tt.wantErr {
 				t.Errorf("mySQLCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if tt.wantErr {
+				for _, substr := range tt.wantContain {
+					if !strings.Contains(err.Error(), substr) {
+						t.Errorf("mySQLCmd.Run() error did not contain %q, err = %v", substr, err)
+					}
+				}
 				return
 			}
 

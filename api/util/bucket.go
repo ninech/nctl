@@ -10,6 +10,7 @@ import (
 
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
+	"github.com/ninech/nctl/internal/cli"
 )
 
 const (
@@ -90,7 +91,10 @@ func normalizeRole(r string) (string, error) {
 	case string(storage.BucketRoleReader), string(storage.BucketRoleWriter):
 		return r, nil
 	default:
-		return "", fmt.Errorf("unknown %s %q (allowed: %s, %s)", PermKeyRole, r, string(storage.BucketRoleReader), string(storage.BucketRoleWriter))
+		return "", cli.ErrorWithContext(fmt.Errorf("unknown %s %q", PermKeyRole, r)).
+			WithExitCode(cli.ExitUsageError).
+			WithAvailable(string(storage.BucketRoleReader), string(storage.BucketRoleWriter)).
+			WithSuggestions("Example: --permissions=reader=user1,user2")
 	}
 }
 
@@ -619,8 +623,10 @@ func parseCORSLooseWithMask(chunks []string) (storage.CORSConfig, CORSFieldMask,
 				}
 			}
 		default:
-			return out, mask, fmt.Errorf("unknown key %q (expected %s, %s or %s)",
-				p.key, corsKeyOrigins, corsKeyResponseHeaders, corsKeyMaxAge)
+			return out, mask, cli.ErrorWithContext(fmt.Errorf("unknown CORS key %q", p.key)).
+				WithExitCode(cli.ExitUsageError).
+				WithAvailable(corsKeyOrigins, corsKeyResponseHeaders, corsKeyMaxAge).
+				WithSuggestions("Example: --cors='origins=https://example.com;max-age=3600'")
 		}
 	}
 

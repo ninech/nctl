@@ -16,6 +16,7 @@ import (
 	"github.com/gobuffalo/flect"
 	"github.com/liggitt/tabwriter"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/format"
 
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -153,22 +154,27 @@ func (out *output) writeTabRow(project string, row ...string) {
 	}
 }
 
-func (out *output) printEmptyMessage(kind, project string) error {
+func (out *output) notFound(kind, project string) error {
 	if out.Format == jsonOut {
 		out.Printf("[]")
 		return nil
 	}
+
+	pluralKind := flect.Pluralize(kind)
+	err := cli.ErrorWithContext(fmt.Errorf("no %q found", pluralKind)).
+		WithExitCode(0)
+
 	if out.AllProjects {
-		out.Printf("no %s found in any project\n", flect.Pluralize(kind))
-		return nil
-	}
-	if project == "" {
-		out.Printf("no %s found\n", flect.Pluralize(kind))
-		return nil
+		return err
 	}
 
-	out.Printf("no %s found in project %s\n", flect.Pluralize(kind), project)
-	return nil
+	if project != "" {
+		err = err.
+			WithContext("Project", project).
+			WithSuggestions(fmt.Sprintf("List all %s in your organization: %s", pluralKind, format.Command().Get(pluralKind, "--all-projects")))
+	}
+
+	return err
 }
 
 func getConnectionSecretMap(ctx context.Context, client *api.Client, mg resource.Managed) (map[string][]byte, error) {

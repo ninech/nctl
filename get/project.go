@@ -20,7 +20,7 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 		return err
 	}
 	if len(projectList) == 0 {
-		return get.printEmptyMessage(management.ProjectKind, "")
+		return get.notFound(management.ProjectKind, "")
 	}
 
 	// we sort alphabetically to have a deterministic output

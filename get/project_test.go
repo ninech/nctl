@@ -24,8 +24,9 @@ func TestProject(t *testing.T) {
 		displayNames []string
 		name         string
 		outputFormat outputFormat
-		allProjects  bool
-		output       string
+		allProjects   bool
+		output        string
+		errorContains []string
 	}{
 		"projects exist, full format": {
 			projects:     test.Projects(organization, "dev", "staging", "prod"),
@@ -56,14 +57,14 @@ staging  <none>
 `,
 		},
 		"no projects exist": {
-			projects:     []client.Object{},
-			outputFormat: full,
-			output:       "no Projects found\n",
+			projects:      []client.Object{},
+			outputFormat:  full,
+			errorContains: []string{`no "Projects" found`},
 		},
 		"no projects exist, no header format": {
-			projects:     []client.Object{},
-			outputFormat: noHeader,
-			output:       "no Projects found\n",
+			projects:      []client.Object{},
+			outputFormat:  noHeader,
+			errorContains: []string{`no "Projects" found`},
 		},
 		"specific project requested": {
 			projects:     test.Projects(organization, "dev", "staging"),
@@ -74,10 +75,10 @@ dev      <none>
 `,
 		},
 		"specific project requested, but does not exist": {
-			projects:     test.Projects(organization, "staging"),
-			name:         "dev",
-			outputFormat: full,
-			output:       "no Projects found\n",
+			projects:      test.Projects(organization, "staging"),
+			name:          "dev",
+			outputFormat:  full,
+			errorContains: []string{`no "Projects" found`},
 		},
 		"specific project requested, yaml output": {
 			projects:     test.Projects(organization, "dev", "staging"),
@@ -163,9 +164,15 @@ dev      <none>
 				},
 			}
 
-			if err := cmd.Run(ctx, apiClient, get); err != nil {
-				t.Fatal(err)
+			err = cmd.Run(ctx, apiClient, get)
+			if len(testCase.errorContains) > 0 {
+				require.Error(t, err)
+				for _, s := range testCase.errorContains {
+					assert.Contains(t, err.Error(), s)
+				}
+				return
 			}
+			require.NoError(t, err)
 
 			assert.Equal(t, testCase.output, buf.String())
 		})

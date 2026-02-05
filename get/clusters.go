@@ -26,7 +26,7 @@ func (cmd *clustersCmd) list() client.ObjectList {
 func (cmd *clustersCmd) print(ctx context.Context, client *api.Client, list client.ObjectList, out *output) error {
 	clusterList := list.(*infrastructure.KubernetesClusterList)
 	if len(clusterList.Items) == 0 {
-		return out.printEmptyMessage(infrastructure.KubernetesClusterKind, client.Project)
+		return out.notFound(infrastructure.KubernetesClusterKind, client.Project)
 	}
 
 	switch out.Format {
