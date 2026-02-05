@@ -60,6 +60,8 @@ type creator struct {
 	client *api.Client
 	mg     resource.Managed
 	kind   string
+
+	timeout time.Duration
 }
 
 type waitStage struct {
@@ -100,8 +102,8 @@ func (m *message) progress() string {
 	return format.Progress(m.icon, m.text)
 }
 
-func (cmd *resourceCmd) newCreator(client *api.Client, mg resource.Managed, resourceName string) *creator {
-	return &creator{client: client, mg: mg, kind: resourceName, Writer: cmd.Writer}
+func (cmd *resourceCmd) newCreator(client *api.Client, mg resource.Managed, kind string) *creator {
+	return &creator{client: client, mg: mg, kind: kind, timeout: cmd.WaitTimeout, Writer: cmd.Writer}
 }
 
 func (c *creator) createResource(ctx context.Context) error {
@@ -156,6 +158,10 @@ func (w *waitStage) setDefaults(c *creator) {
 		w.waitMessage = &message{
 			text: fmt.Sprintf("waiting for %s to be ready", w.kind),
 			icon: "⏳",
+		}
+
+		if c.timeout > 0 {
+			w.waitMessage.text = w.waitMessage.text + fmt.Sprintf(" (%s)", c.timeout)
 		}
 	}
 
@@ -223,7 +229,7 @@ func (w *waitStage) watch(ctx context.Context, client *api.Client) error {
 			if done {
 				wa.Stop()
 				_ = w.spinner.Stop()
-				w.Successf(w.doneMessage.icon, "%s\n", w.doneMessage.text)
+				w.Successf(w.doneMessage.icon, "%s", w.doneMessage.text)
 
 				return nil
 			}

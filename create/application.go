@@ -197,7 +197,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		}
 	}
 
-	c := cmd.newCreator(client, newApp, strings.ToLower(apps.ApplicationKind))
+	c := cmd.newCreator(client, newApp, apps.ApplicationKind)
 	appWaitCtx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
 	defer cancel()
 

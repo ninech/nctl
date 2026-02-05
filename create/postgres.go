@@ -40,10 +40,9 @@ func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client) error {
 		cmd.SSHKeys = keys
 	}
 
-	cmd.Printf("Creating new postgres. This might take some time (waiting up to %s).\n", cmd.WaitTimeout)
 	postgres := cmd.newPostgres(client.Project)
 
-	c := cmd.newCreator(client, postgres, "postgres")
+	c := cmd.newCreator(client, postgres, storage.PostgresKind)
 	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
 	defer cancel()
 

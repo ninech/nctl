@@ -23,7 +23,6 @@ type mysqlDatabaseCmd struct {
 }
 
 func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error {
-	cmd.Printf("Creating new MySQLDatabase. (waiting up to %s).\n", cmd.WaitTimeout)
 	mysqlDatabase := cmd.newMySQLDatabase(client.Project)
 
 	c := cmd.newCreator(client, mysqlDatabase, storage.MySQLDatabaseKind)
