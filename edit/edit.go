@@ -40,9 +40,8 @@ type Cmd struct {
 }
 
 type resourceCmd struct {
-	format.Writer
-
-	Name string `arg:"" completion-predictor:"resource_name" help:"Name of the resource to edit." required:""`
+	format.Writer `kong:"-"`
+	Name          string `arg:"" completion-predictor:"resource_name" help:"Name of the resource to edit." required:""`
 }
 
 const header = `# Please edit the %s below.

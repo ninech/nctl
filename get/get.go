@@ -46,7 +46,7 @@ type Cmd struct {
 }
 
 type output struct {
-	format.Writer
+	format.Writer `kong:"-"`
 	Format        outputFormat `help:"Configures list output. ${enum}" name:"output" short:"o" enum:"full,no-header,contexts,yaml,stats,json" default:"full"`
 	AllProjects   bool         `help:"apply the get over all projects." short:"A" xor:"watch"`
 	AllNamespaces bool         `help:"apply the get over all namespaces." hidden:"" xor:"watch"`
@@ -55,8 +55,8 @@ type output struct {
 }
 
 type resourceCmd struct {
-	format.Writer
-	Name string `arg:"" completion-predictor:"resource_name" help:"Name of the resource to get. If omitted all in the project will be listed." default:""`
+	format.Writer `kong:"-"`
+	Name          string `arg:"" completion-predictor:"resource_name" help:"Name of the resource to get. If omitted all in the project will be listed." default:""`
 }
 
 type outputFormat string

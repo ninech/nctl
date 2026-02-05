@@ -114,8 +114,8 @@ type workerJob struct {
 	Size    *string `help:"Size of the worker (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
 }
 
-func (wj workerJob) changesGiven() bool {
-	return wj.Command != nil || wj.Size != nil
+func (job workerJob) changesGiven() bool {
+	return job.Command != nil || job.Size != nil
 }
 
 type scheduledJob struct {
@@ -127,8 +127,8 @@ type scheduledJob struct {
 	Timeout  *time.Duration `help:"Timeout of the job." placeholder:"${app_default_scheduled_job_timeout}"`
 }
 
-func (sj scheduledJob) changesGiven() bool {
-	return sj.Command != nil || sj.Size != nil || sj.Schedule != nil
+func (job scheduledJob) changesGiven() bool {
+	return job.Command != nil || job.Size != nil || job.Schedule != nil
 }
 
 type dockerfileBuild struct {

@@ -14,11 +14,10 @@ import (
 )
 
 type configCmd struct {
-	format.Writer
-
-	Force       bool          `default:"false" help:"Do not ask for confirmation of deletion."`
-	Wait        bool          `default:"true" help:"Wait until Project Configuration is fully deleted."`
-	WaitTimeout time.Duration `default:"10s" help:"Duration to wait for the deletion. Only relevant if wait is set."`
+	format.Writer `kong:"-"`
+	Force         bool          `default:"false" help:"Do not ask for confirmation of deletion."`
+	Wait          bool          `default:"true" help:"Wait until Project Configuration is fully deleted."`
+	WaitTimeout   time.Duration `default:"10s" help:"Duration to wait for the deletion. Only relevant if wait is set."`
 }
 
 func (cmd *configCmd) newDeleter(mg resource.Managed, kind string, opts ...deleterOption) *deleter {

@@ -34,12 +34,11 @@ type Cmd struct {
 }
 
 type resourceCmd struct {
-	format.Writer
-
-	Name        string        `arg:"" completion-predictor:"resource_name" help:"Name of the resource to delete."`
-	Force       bool          `default:"false" help:"Do not ask for confirmation of deletion."`
-	Wait        bool          `default:"true" help:"Wait until resource is fully deleted."`
-	WaitTimeout time.Duration `default:"5m" help:"Duration to wait for the deletion. Only relevant if wait is set."`
+	format.Writer `kong:"-"`
+	Name          string        `arg:"" completion-predictor:"resource_name" help:"Name of the resource to delete."`
+	Force         bool          `default:"false" help:"Do not ask for confirmation of deletion."`
+	Wait          bool          `default:"true" help:"Wait until resource is fully deleted."`
+	WaitTimeout   time.Duration `default:"5m" help:"Duration to wait for the deletion. Only relevant if wait is set."`
 }
 
 // cleanupFunc is called after the resource has been deleted in order to do
@@ -50,12 +49,11 @@ type cleanupFunc func(client *api.Client) error
 type promptFunc func(kind, name string) string
 
 type deleter struct {
-	format.Writer
-
-	kind    string
-	mg      resource.Managed
-	cleanup cleanupFunc
-	prompt  promptFunc
+	format.Writer `kong:"-"`
+	kind          string
+	mg            resource.Managed
+	cleanup       cleanupFunc
+	prompt        promptFunc
 }
 
 // deleterOption allows to set options for the deletion

@@ -9,7 +9,6 @@ import (
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
-	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/format"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -17,8 +16,8 @@ import (
 )
 
 type SetProjectCmd struct {
-	format.Writer
-	Name string `arg:"" help:"Name of the default project to be used." completion-predictor:"project_name"`
+	format.Writer `kong:"-"`
+	Name          string `arg:"" help:"Name of the default project to be used." completion-predictor:"project_name"`
 }
 
 func (s *SetProjectCmd) Run(ctx context.Context, client *api.Client) error {

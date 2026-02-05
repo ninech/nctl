@@ -16,14 +16,13 @@ import (
 // all fields need to be pointers so we can detect if they have been set by
 // the user.
 type configCmd struct {
-	format.Writer
-
-	Size      *string           `help:"Size of the app."`
-	Port      *int32            `help:"Port the app is listening on."`
-	Replicas  *int32            `help:"Amount of replicas of the running app."`
-	Env       map[string]string `help:"Environment variables which are passed to the app at runtime."`
-	BasicAuth *bool             `help:"Enable/Disable basic authentication for applications."`
-	DeployJob *deployJob        `embed:"" prefix:"deploy-job-"`
+	format.Writer `kong:"-"`
+	Size          *string           `help:"Size of the app."`
+	Port          *int32            `help:"Port the app is listening on."`
+	Replicas      *int32            `help:"Amount of replicas of the running app."`
+	Env           map[string]string `help:"Environment variables which are passed to the app at runtime."`
+	BasicAuth     *bool             `help:"Enable/Disable basic authentication for applications."`
+	DeployJob     *deployJob        `embed:"" prefix:"deploy-job-"`
 }
 
 func (cmd *configCmd) newUpdater(

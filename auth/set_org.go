@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"slices"
-	"strings"
 
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
@@ -11,11 +10,11 @@ import (
 )
 
 type SetOrgCmd struct {
-	format.Writer
-	Organization string `arg:"" help:"Name of the organization to login to." default:""`
-	APIURL       string `help:"URL of the Nine API." default:"https://nineapis.ch" env:"NCTL_API_URL" name:"api-url"`
-	IssuerURL    string `help:"OIDC issuer URL of the API." default:"https://auth.nine.ch/auth/realms/pub"`
-	ClientID     string `help:"OIDC client ID of the API." default:"nineapis.ch-f178254"`
+	format.Writer `kong:"-"`
+	Organization  string `arg:"" help:"Name of the organization to login to." default:""`
+	APIURL        string `help:"URL of the Nine API." default:"https://nineapis.ch" env:"NCTL_API_URL" name:"api-url"`
+	IssuerURL     string `help:"OIDC issuer URL of the API." default:"https://auth.nine.ch/auth/realms/pub"`
+	ClientID      string `help:"OIDC client ID of the API." default:"nineapis.ch-f178254"`
 }
 
 func (cmd *SetOrgCmd) Run(ctx context.Context, client *api.Client) error {
