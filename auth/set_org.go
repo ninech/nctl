@@ -43,12 +43,15 @@ func (cmd *SetOrgCmd) Run(ctx context.Context, client *api.Client) error {
 	// permissions in the API might still allow access even if the organization
 	// is not listed in the JWT (e.g. for support staff or cross-org permissions).
 	if !slices.Contains(userInfo.Orgs, cmd.Organization) {
-		cmd.Warningf(
-			"%s is not in list of available Organizations, you might not have access to all resources.",
-			cmd.Organization,
-		)
+		cmd.Println()
+		cmd.Warningf("%s is not in list of organizations, you might not have access to all resources.", cmd.Organization)
 		printAvailableOrgsString(cmd.Writer, cmd.Organization, userInfo.Orgs)
 	}
+
+	// Show default project info (which is the same as the organization name by default)
+	cmd.Successf("📝", "Default project set to: %q", cmd.Organization)
+	cmd.Printf("\nTo set a different project: %s\n", format.Command().SetProject(""))
+	cmd.Printf("To list available projects: %s\n", format.Command().GetProjects())
 
 	return nil
 }

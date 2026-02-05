@@ -22,6 +22,7 @@ func TestProjectConfigs(t *testing.T) {
 		createdConfigs             []client.Object
 		expectExactMessage         *string
 		expectedLineAmountInOutput *int
+		errorContains              []string
 	}{
 		"get configs for all projects": {
 			get: &Cmd{
@@ -62,8 +63,8 @@ func TestProjectConfigs(t *testing.T) {
 					Format: full,
 				},
 			},
-			project:            "ns-3",
-			expectExactMessage: ptr.To("no ProjectConfigs found in project ns-3\n"),
+			project:       "ns-3",
+			errorContains: []string{`no "ProjectConfigs" found`, `Project: ns-3`},
 		},
 		"sensitive env var is masked": {
 			get: &Cmd{
@@ -134,9 +135,15 @@ func TestProjectConfigs(t *testing.T) {
 			tc.get.BeforeApply(buf)
 			cmd := configsCmd{}
 
-			if err := cmd.Run(t.Context(), apiClient, tc.get); err != nil {
-				t.Fatal(err)
+			err = cmd.Run(t.Context(), apiClient, tc.get)
+			if len(tc.errorContains) > 0 {
+				require.Error(t, err)
+				for _, s := range tc.errorContains {
+					assert.Contains(t, err.Error(), s)
+				}
+				return
 			}
+			require.NoError(t, err)
 			if tc.expectedLineAmountInOutput != nil {
 				assert.Equal(t, *tc.expectedLineAmountInOutput, test.CountLines(buf.String()), buf.String())
 			}

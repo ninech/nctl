@@ -44,7 +44,7 @@ func (cmd *allCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error 
 	}
 
 	if len(items) == 0 {
-		return get.printEmptyMessage("Resource", projectName)
+		return get.notFound("Resource", projectName)
 	}
 
 	switch get.Format {

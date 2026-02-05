@@ -36,7 +36,7 @@ func (cmd *applicationsCmd) list() client.ObjectList {
 func (cmd *applicationsCmd) print(ctx context.Context, client *api.Client, list client.ObjectList, out *output) error {
 	appList := list.(*apps.ApplicationList)
 	if len(appList.Items) == 0 {
-		return out.printEmptyMessage(apps.ApplicationKind, client.Project)
+		return out.notFound(apps.ApplicationKind, client.Project)
 	}
 
 	if cmd.BasicAuthCredentials {

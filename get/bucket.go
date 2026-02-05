@@ -41,7 +41,7 @@ func (cmd *bucketCmd) list() client.ObjectList {
 func (cmd *bucketCmd) print(ctx context.Context, client *api.Client, list client.ObjectList, out *output) error {
 	bucketList := list.(*storage.BucketList)
 	if len(bucketList.Items) == 0 {
-		return out.printEmptyMessage(storage.BucketKind, client.Project)
+		return out.notFound(storage.BucketKind, client.Project)
 	}
 	bucket := &bucketList.Items[0]
 

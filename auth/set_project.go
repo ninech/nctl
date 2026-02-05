@@ -9,6 +9,7 @@ import (
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
+	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/format"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -36,7 +37,7 @@ func (s *SetProjectCmd) Run(ctx context.Context, client *api.Client) error {
 			return fmt.Errorf("failed to set project %s: %w", s.Name, err)
 		}
 
-		s.Warningf("Project %q does not exist in organization %q, checking other organizations...",
+		s.Warningf("Project %q does not exist in organization %q, checking other organizations...\n",
 			s.Name,
 			org,
 		)
@@ -99,7 +100,10 @@ func orgFromProject(ctx context.Context, client *api.Client, project string) (st
 			return project, nil
 		}
 
-		return "", fmt.Errorf("could not find project %s in any available organization", project)
+		return "", cli.ErrorWithContext(fmt.Errorf("project %q not found", project)).
+			WithExitCode(cli.ExitUsageError).
+			WithAvailable(userInfo.Orgs...).
+			WithSuggestions(fmt.Sprintf("Project names always contain the organization name:\n%s", format.Command().SetProject("<org>-<project>")))
 	}
 
 	// Filter the organizations to check by only considering those that match the project prefix.
@@ -130,5 +134,7 @@ func orgFromProject(ctx context.Context, client *api.Client, project string) (st
 		return org, nil
 	}
 
-	return "", fmt.Errorf("could not find project %s in any available organization", project)
+	return "", cli.ErrorWithContext(fmt.Errorf("could not find project %q in any available organization", project)).
+		WithExitCode(cli.ExitUsageError).
+		WithSuggestions(format.Command().GetProjects())
 }

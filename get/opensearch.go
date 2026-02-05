@@ -39,7 +39,7 @@ func (cmd *openSearchCmd) print(
 		return fmt.Errorf("expected %T, got %T", &storage.OpenSearchList{}, list)
 	}
 	if len(openSearchList.Items) == 0 {
-		return out.printEmptyMessage(storage.OpenSearchKind, client.Project)
+		return out.notFound(storage.OpenSearchKind, client.Project)
 	}
 
 	if cmd.Name != "" && cmd.PrintUser {

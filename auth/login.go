@@ -143,8 +143,7 @@ func printAvailableOrgsString(w format.Writer, currentorg string, orgs []string)
 		w.Printf("%s\t%s\n", activeMarker, org)
 	}
 
-	w.Printf("\nTo switch the organization use the following command:\n")
-	w.Printf("$ nctl auth set-org <org-name>\n")
+	w.Println()
 }
 
 func (cmd *LoginCmd) tokenGetter() api.TokenGetter {

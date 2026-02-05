@@ -281,14 +281,14 @@ func TestParseCORSLooseWithMask(t *testing.T) {
 				"origins=https://example.com",
 				"method=GET",
 			},
-			wantErr: "unknown key",
+			wantErr: "unknown CORS key",
 		},
 		{
 			name: "error: bad segment format (loose tokenizer yields unknown key here)",
 			chunks: []string{
 				"origins:https://example.com",
 			},
-			wantErr: "unknown key",
+			wantErr: "unknown CORS key",
 		},
 	}
 

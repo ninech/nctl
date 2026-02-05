@@ -31,7 +31,7 @@ func (cmd *apiServiceAccountsCmd) list() client.ObjectList {
 func (cmd *apiServiceAccountsCmd) print(ctx context.Context, client *api.Client, list client.ObjectList, out *output) error {
 	asaList := list.(*iam.APIServiceAccountList)
 	if len(asaList.Items) == 0 {
-		return out.printEmptyMessage(iam.APIServiceAccountKind, client.Project)
+		return out.notFound(iam.APIServiceAccountKind, client.Project)
 	}
 	sa := &asaList.Items[0]
 

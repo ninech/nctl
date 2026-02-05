@@ -30,7 +30,7 @@ func (cmd *bucketUserCmd) print(ctx context.Context, client *api.Client, list cl
 	bucketUserList := list.(*storage.BucketUserList)
 
 	if len(bucketUserList.Items) == 0 {
-		return out.printEmptyMessage(storage.BucketUserKind, client.Project)
+		return out.notFound(storage.BucketUserKind, client.Project)
 	}
 
 	user := &bucketUserList.Items[0]

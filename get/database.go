@@ -23,7 +23,7 @@ func (cmd *databaseCmd) run(ctx context.Context, client *api.Client, get *Cmd,
 	caCert func(resource.Managed) (string, error),
 ) error {
 	if len(databaseResources.GetItems()) == 0 {
-		return get.printEmptyMessage(databaseKind, client.Project)
+		return get.notFound(databaseKind, client.Project)
 	}
 
 	if cmd.Name != "" && cmd.PrintUser {

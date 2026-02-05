@@ -34,6 +34,7 @@ func TestAllContent(t *testing.T) {
 		kinds                []string
 		output               string
 		errorExpected        bool
+		errorContains        []string
 	}{
 		"all resources from one project, full format": {
 			projects:     test.Projects(organization, "dev", "staging", "prod"),
@@ -168,18 +169,20 @@ staging  melon   Release            apps.nine.ch
 `,
 		},
 		"empty resources of a specific project, full format": {
-			projects:     test.Projects(organization, "dev"),
-			objects:      []client.Object{},
-			outputFormat: full,
-			projectName:  "dev",
-			output:       "no Resources found in project dev\n",
+			projects:      test.Projects(organization, "dev"),
+			objects:       []client.Object{},
+			outputFormat:  full,
+			projectName:   "dev",
+			errorExpected: true,
+			errorContains: []string{`no "Resources" found`, `Project: dev`, "get resources --all-projects"},
 		},
 		"empty resources of all projects, full format": {
-			projects:     test.Projects(organization, "dev", "staging"),
-			objects:      []client.Object{},
-			outputFormat: full,
-			allProjects:  true,
-			output:       "no Resources found in any project\n",
+			projects:      test.Projects(organization, "dev", "staging"),
+			objects:       []client.Object{},
+			outputFormat:  full,
+			allProjects:   true,
+			errorExpected: true,
+			errorContains: []string{`no "Resources" found`},
 		},
 		"filter nine resources, no headers format": {
 			projects: test.Projects(organization, "dev", "staging", "prod"),
@@ -318,6 +321,9 @@ dev      pear    Release      apps.nine.ch
 			err = cmd.Run(ctx, apiClient, get)
 			if testCase.errorExpected {
 				require.Error(t, err)
+				for _, s := range testCase.errorContains {
+					assert.Contains(t, err.Error(), s)
+				}
 				return
 			}
 			require.NoError(t, err)

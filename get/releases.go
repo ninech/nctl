@@ -34,7 +34,7 @@ func (cmd *releasesCmd) list() client.ObjectList {
 func (cmd *releasesCmd) print(ctx context.Context, client *api.Client, list client.ObjectList, out *output) error {
 	releaseList := list.(*apps.ReleaseList)
 	if len(releaseList.Items) == 0 {
-		return out.printEmptyMessage(apps.ReleaseKind, client.Project)
+		return out.notFound(apps.ReleaseKind, client.Project)
 	}
 
 	util.OrderReleaseList(releaseList, true)

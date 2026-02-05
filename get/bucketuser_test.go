@@ -35,8 +35,8 @@ func TestBucketUser(t *testing.T) {
 			name:        "simple",
 			get:         bucketUserCmd{},
 			out:         full,
-			wantContain: []string{"no BucketUsers found in project default\n"},
-			wantLines:   1,
+			wantErr:     true,
+			wantContain: []string{`no "BucketUsers" found`, `Project: default`},
 		},
 		{
 			name: "single",
@@ -129,11 +129,17 @@ func TestBucketUser(t *testing.T) {
 			buf := &bytes.Buffer{}
 			cmd := NewTestCmd(buf, tt.out)
 			cmd.AllProjects = tt.inAllProjects
-			if err := tt.get.Run(ctx, apiClient, cmd); (err != nil) != tt.wantErr {
+			err = tt.get.Run(ctx, apiClient, cmd)
+			if (err != nil) != tt.wantErr {
 				t.Errorf("bucketUserCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 				t.Log(buf.String())
 			}
 			if tt.wantErr {
+				for _, substr := range tt.wantContain {
+					if !strings.Contains(err.Error(), substr) {
+						t.Errorf("bucketUserCmd.Run() error did not contain %q, err = %v", substr, err)
+					}
+				}
 				return
 			}
 

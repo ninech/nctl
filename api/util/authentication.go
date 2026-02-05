@@ -6,6 +6,7 @@ import (
 
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/cli"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -30,11 +31,19 @@ func NewBasicAuthFromSecret(ctx context.Context, secret meta.Reference, client *
 		return nil, fmt.Errorf("error when retrieving secret: %w", err)
 	}
 	if _, ok := basicAuthSecret.Data[BasicAuthUsernameKey]; !ok {
-		return nil, fmt.Errorf("key %s not found in basic auth secret %s", BasicAuthUsernameKey, secret.Name)
+		return nil, cli.ErrorWithContext(fmt.Errorf("key %q not found in basic auth secret %q", BasicAuthUsernameKey, secret.Name)).
+			WithExitCode(cli.ExitUsageError).
+			WithContext("Secret", secret.Name).
+			WithAvailable(BasicAuthUsernameKey, BasicAuthPasswordKey).
+			WithSuggestions("Ensure the secret contains both basicAuthUsername and basicAuthPassword keys")
 	}
 
 	if _, ok := basicAuthSecret.Data[BasicAuthPasswordKey]; !ok {
-		return nil, fmt.Errorf("key %s not found in basic auth secret %s", BasicAuthPasswordKey, secret.Name)
+		return nil, cli.ErrorWithContext(fmt.Errorf("key %q not found in basic auth secret %q", BasicAuthPasswordKey, secret.Name)).
+			WithExitCode(cli.ExitUsageError).
+			WithContext("Secret", secret.Name).
+			WithAvailable(BasicAuthUsernameKey, BasicAuthPasswordKey).
+			WithSuggestions("Ensure the secret contains both basicAuthUsername and basicAuthPassword keys")
 	}
 
 	return &BasicAuth{

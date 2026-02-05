@@ -25,14 +25,15 @@ func (cmd *WhoAmICmd) Run(ctx context.Context, client *api.Client) error {
 		return err
 	}
 
-	cmd.printUserInfo(userInfo, org)
+	cmd.printUserInfo(userInfo, org, client.Project)
 
 	return nil
 }
 
-func (cmd *WhoAmICmd) printUserInfo(userInfo *api.UserInfo, org string) {
-	cmd.Infof("👤", "You are currently logged in with the following account: %q", userInfo.User)
-	cmd.Infof("🏢", "Your current organization: %q", org)
+func (cmd *WhoAmICmd) printUserInfo(userInfo *api.UserInfo, org, project string) {
+	cmd.Printf("Account: %s\n", userInfo.User)
+	cmd.Printf("Organization: %s\n", org)
+	cmd.Printf("Project: %s\n", project)
 
 	if len(userInfo.Orgs) > 0 {
 		printAvailableOrgsString(cmd.Writer, org, userInfo.Orgs)

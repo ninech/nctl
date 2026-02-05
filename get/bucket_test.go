@@ -40,8 +40,8 @@ func TestBucketGet(t *testing.T) {
 			name:        "no buckets",
 			getCmd:      bucketCmd{},
 			out:         full,
-			wantContain: []string{"no Buckets found in project default\n"},
-			wantLines:   1,
+			wantErr:     true,
+			wantContain: []string{`no "Buckets" found`, `Project: default`},
 		},
 		{
 			name: "list single",
@@ -257,6 +257,9 @@ func TestBucketGet(t *testing.T) {
 
 			if tt.wantErr {
 				require.Error(t, err)
+				for _, s := range tt.wantContain {
+					assert.Contains(t, err.Error(), s, "missing expected substring %q in error:\n%s", s, err)
+				}
 				return
 			}
 			require.NoError(t, err, buf.String())

@@ -30,7 +30,7 @@ func (cmd *keyValueStoreCmd) print(ctx context.Context, client *api.Client, list
 		return fmt.Errorf("expected %T, got %T", &storage.KeyValueStoreList{}, list)
 	}
 	if len(keyValueStoreList.Items) == 0 {
-		return out.printEmptyMessage(storage.KeyValueStoreKind, client.Project)
+		return out.notFound(storage.KeyValueStoreKind, client.Project)
 	}
 
 	if cmd.Name != "" && cmd.PrintToken {
