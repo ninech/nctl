@@ -1,3 +1,4 @@
+// Package util provides utility functions for interacting with various Nine resources.
 package util
 
 import (

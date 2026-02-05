@@ -1,3 +1,4 @@
+// Package exec provides the implementation for the exec command.
 package exec
 
 type Cmd struct {
