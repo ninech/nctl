@@ -1,3 +1,4 @@
+// Package test provides utilities and helpers for testing nctl.
 package test
 
 import (

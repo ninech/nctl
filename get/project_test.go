@@ -139,13 +139,8 @@ dev      <none>
 			testCase := testCase
 
 			buf := &bytes.Buffer{}
-			get := &Cmd{
-				output: output{
-					Format:      testCase.outputFormat,
-					AllProjects: testCase.allProjects,
-					writer:      buf,
-				},
-			}
+			get := NewTestCmd(buf, testCase.outputFormat)
+			get.AllProjects = testCase.allProjects
 
 			projects := testCase.projects
 			for i, proj := range projects {

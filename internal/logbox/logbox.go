@@ -1,3 +1,4 @@
+// Package logbox provides a UI component to display logs with a spinner.
 package logbox
 
 import (

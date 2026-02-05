@@ -2,7 +2,6 @@ package create
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	management "github.com/ninech/apis/management/v1alpha1"
@@ -15,27 +14,28 @@ type projectCmd struct {
 	DisplayName string `default:"" help:"Display Name of the project."`
 }
 
-func (proj *projectCmd) Run(ctx context.Context, client *api.Client) error {
+func (cmd *projectCmd) Run(ctx context.Context, client *api.Client) error {
 	org, err := client.Organization()
 	if err != nil {
 		return err
 	}
 
-	p := newProject(proj.Name, org, proj.DisplayName)
-	fmt.Printf("Creating new project %s for organization %s\n", p.Name, org)
-	c := newCreator(client, p, strings.ToLower(management.ProjectKind))
-	ctx, cancel := context.WithTimeout(ctx, proj.WaitTimeout)
+	p := newProject(cmd.Name, org, cmd.DisplayName)
+	cmd.Printf("Creating new project %s for organization %s\n", p.Name, org)
+	c := cmd.newCreator(client, p, strings.ToLower(management.ProjectKind))
+	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
 	defer cancel()
 
 	if err := c.createResource(ctx); err != nil {
 		return err
 	}
 
-	if !proj.Wait {
+	if !cmd.Wait {
 		return nil
 	}
 
 	return c.wait(ctx, waitStage{
+		Writer:     cmd.Writer,
 		objectList: &management.ProjectList{},
 		onResult:   resourceAvailable,
 	})

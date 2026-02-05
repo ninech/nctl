@@ -23,17 +23,17 @@ type vclusterCmd struct {
 	NodePoolName      string            `default:"worker" help:"Name of the default node pool in the vCluster."`
 }
 
-func (vc *vclusterCmd) Run(ctx context.Context, client *api.Client) error {
-	cluster := vc.newCluster(client.Project)
-	c := newCreator(client, cluster, "vcluster")
-	ctx, cancel := context.WithTimeout(ctx, vc.WaitTimeout)
+func (cmd *vclusterCmd) Run(ctx context.Context, client *api.Client) error {
+	cluster := cmd.newCluster(client.Project)
+	c := cmd.newCreator(client, cluster, "vcluster")
+	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
 	defer cancel()
 
 	if err := c.createResource(ctx); err != nil {
 		return err
 	}
 
-	if !vc.Wait {
+	if !cmd.Wait {
 		return nil
 	}
 
@@ -41,10 +41,11 @@ func (vc *vclusterCmd) Run(ctx context.Context, client *api.Client) error {
 		objectList: &infrastructure.KubernetesClusterList{},
 		onResult: func(event watch.Event) (bool, error) {
 			if c, ok := event.Object.(*infrastructure.KubernetesCluster); ok {
-				return vc.isAvailable(c), nil
+				return cmd.isAvailable(c), nil
 			}
 			return false, nil
-		}},
+		},
+	},
 	); err != nil {
 		return err
 	}
@@ -53,12 +54,12 @@ func (vc *vclusterCmd) Run(ctx context.Context, client *api.Client) error {
 	return clustercmd.Run(ctx, client)
 }
 
-func (vc *vclusterCmd) isAvailable(cluster *infrastructure.KubernetesCluster) bool {
+func (cmd *vclusterCmd) isAvailable(cluster *infrastructure.KubernetesCluster) bool {
 	return isAvailable(cluster) && len(cluster.Status.AtProvider.APIEndpoint) != 0
 }
 
-func (vc *vclusterCmd) newCluster(project string) *infrastructure.KubernetesCluster {
-	name := getName(vc.Name)
+func (cmd *vclusterCmd) newCluster(project string) *infrastructure.KubernetesCluster {
+	name := getName(cmd.Name)
 	return &infrastructure.KubernetesCluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -73,15 +74,15 @@ func (vc *vclusterCmd) newCluster(project string) *infrastructure.KubernetesClus
 			},
 			ForProvider: infrastructure.KubernetesClusterParameters{
 				VCluster: &infrastructure.VClusterSettings{
-					Version: vc.KubernetesVersion,
+					Version: cmd.KubernetesVersion,
 				},
-				Location: vc.Location,
+				Location: cmd.Location,
 				NodePools: []infrastructure.NodePool{
 					{
-						Name:        vc.NodePoolName,
-						MinNodes:    vc.MinNodes,
-						MaxNodes:    vc.MaxNodes,
-						MachineType: infrastructure.NewMachineType(vc.MachineType),
+						Name:        cmd.NodePoolName,
+						MinNodes:    cmd.MinNodes,
+						MaxNodes:    cmd.MaxNodes,
+						MachineType: infrastructure.NewMachineType(cmd.MachineType),
 					},
 				},
 			},

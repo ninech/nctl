@@ -1,3 +1,4 @@
+// Package log provides functionality to interact with the Nine logging API.
 package log
 
 import (

@@ -2,6 +2,7 @@ package update
 
 import (
 	"context"
+	"io"
 	"strings"
 	"testing"
 	"time"
@@ -636,7 +637,7 @@ func TestApplicationFlags(t *testing.T) {
 	nilFlags := &applicationCmd{}
 	vars, err := create.ApplicationKongVars()
 	require.NoError(t, err)
-	_, err = kong.Must(nilFlags, vars).Parse([]string{`testname`})
+	_, err = kong.Must(nilFlags, vars, kong.BindTo(t.Output(), (*io.Writer)(nil))).Parse([]string{`testname`})
 	require.NoError(t, err)
 
 	assert.Nil(t, nilFlags.Hosts)
@@ -644,7 +645,7 @@ func TestApplicationFlags(t *testing.T) {
 	assert.Nil(t, nilFlags.BuildEnv)
 
 	emptyFlags := &applicationCmd{}
-	_, err = kong.Must(emptyFlags, vars).Parse([]string{`testname`, `--hosts=""`, `--env=`, `--build-env=`})
+	_, err = kong.Must(emptyFlags, vars, kong.BindTo(t.Output(), (*io.Writer)(nil))).Parse([]string{`testname`, `--hosts=""`, `--env=`, `--build-env=`})
 	require.NoError(t, err)
 
 	assert.NotNil(t, emptyFlags.Hosts)

@@ -1,3 +1,4 @@
+// Package edit provides functionality to edit resources in a text editor.
 package edit
 
 import (
@@ -39,7 +40,8 @@ type Cmd struct {
 }
 
 type resourceCmd struct {
-	Name string `arg:"" completion-predictor:"resource_name" help:"Name of the resource to edit." required:""`
+	format.Writer `kong:"-"`
+	Name          string `arg:"" completion-predictor:"resource_name" help:"Name of the resource to edit." required:""`
 }
 
 const header = `# Please edit the %s below.
@@ -74,7 +76,10 @@ func (cmd *resourceCmd) Run(kong *kong.Context, ctx context.Context, c *api.Clie
 	}()
 
 	writeHeader(f, obj)
-	if err := format.PrettyPrintObjects([]client.Object{obj}, format.PrintOpts{Out: f, AllFields: true}); err != nil {
+	if err := format.PrettyPrintObjects(
+		[]client.Object{obj},
+		format.PrintOpts{Out: f, AllFields: true},
+	); err != nil {
 		return err
 	}
 	oldModTime, err := modTime(f)
@@ -133,9 +138,9 @@ func (cmd *resourceCmd) Run(kong *kong.Context, ctx context.Context, c *api.Clie
 		return editError
 	}
 	if modified {
-		format.PrintSuccessf("🏗", "updated %s", formatObj(obj))
+		cmd.Successf("🏗", "updated %s", formatObj(obj))
 	} else {
-		fmt.Printf("no changes made to %s\n", formatObj(obj))
+		cmd.Printf("no changes made to %s\n", formatObj(obj))
 	}
 	return nil
 }
@@ -162,7 +167,9 @@ func writeError(fileName string, editError error, obj client.Object) error {
 	scanner := bufio.NewScanner(f)
 	var newFileContents bytes.Buffer
 	writeHeader(&newFileContents, obj)
-	if _, err := newFileContents.WriteString(fmt.Sprintf("# %s\n", printStatusErrorDetails(editError))); err != nil {
+	if _, err := newFileContents.WriteString(
+		fmt.Sprintf("# %s\n", printStatusErrorDetails(editError)),
+	); err != nil {
 		return err
 	}
 
@@ -191,7 +198,12 @@ func writeError(fileName string, editError error, obj client.Object) error {
 }
 
 func formatObj(obj client.Object) string {
-	return fmt.Sprintf("%s %s/%s", obj.GetObjectKind().GroupVersionKind().Kind, obj.GetName(), obj.GetNamespace())
+	return fmt.Sprintf(
+		"%s %s/%s",
+		obj.GetObjectKind().GroupVersionKind().Kind,
+		obj.GetName(),
+		obj.GetNamespace(),
+	)
 }
 
 func findGVK(scheme *runtime.Scheme, names ...string) (schema.GroupVersionKind, error) {
@@ -221,5 +233,10 @@ func printStatusErrorDetails(err error) string {
 		}
 		causes = append(causes, fmt.Sprintf("# * %s", msg))
 	}
-	return fmt.Sprintf("%s %q is invalid:\n%s", s.Status().Details.Kind, s.Status().Details.Name, strings.Join(causes, "\n"))
+	return fmt.Sprintf(
+		"%s %q is invalid:\n%s",
+		s.Status().Details.Kind,
+		s.Status().Details.Name,
+		strings.Join(causes, "\n"),
+	)
 }

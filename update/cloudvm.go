@@ -37,7 +37,7 @@ func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {
 		},
 	}
 
-	if err := newUpdater(client, cloudvm, infrastructure.CloudVirtualMachineKind, func(current resource.Managed) error {
+	if err := cmd.newUpdater(client, cloudvm, infrastructure.CloudVirtualMachineKind, func(current resource.Managed) error {
 		cloudvm, ok := current.(*infrastructure.CloudVirtualMachine)
 		if !ok {
 			return fmt.Errorf("resource is of type %T, expected %T", current, infrastructure.CloudVirtualMachine{})
@@ -49,7 +49,7 @@ func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {
 	}
 
 	if cmd.BootRescue != nil && *cmd.BootRescue {
-		fmt.Println("Booting CloudVM into rescue mode. It can take a few minutes for the VM to be reachable.")
+		cmd.Println("Booting CloudVM into rescue mode. It can take a few minutes for the VM to be reachable.")
 	}
 
 	return nil

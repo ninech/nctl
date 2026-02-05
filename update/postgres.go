@@ -31,7 +31,7 @@ func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client) error {
 		},
 	}
 
-	upd := newUpdater(client, postgres, storage.PostgresKind, func(current resource.Managed) error {
+	upd := cmd.newUpdater(client, postgres, storage.PostgresKind, func(current resource.Managed) error {
 		postgres, ok := current.(*storage.Postgres)
 		if !ok {
 			return fmt.Errorf("resource is of type %T, expected %T", current, storage.Postgres{})

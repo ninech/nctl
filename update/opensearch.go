@@ -32,7 +32,7 @@ func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client) error {
 		},
 	}
 
-	return newUpdater(client, openSearch, storage.OpenSearchKind, func(current resource.Managed) error {
+	return cmd.newUpdater(client, openSearch, storage.OpenSearchKind, func(current resource.Managed) error {
 		openSearch, ok := current.(*storage.OpenSearch)
 		if !ok {
 			return fmt.Errorf("resource is of type %T, expected %T", current, storage.OpenSearch{})

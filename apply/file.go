@@ -14,11 +14,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type fromFile struct {
-}
+type fromFile struct{}
 
 func (cmd *Cmd) Run(ctx context.Context, client *api.Client, apply *Cmd) error {
-	return File(ctx, client, apply.Filename, UpdateOnExists())
+	return File(ctx, cmd.Writer, client, apply.Filename, UpdateOnExists())
 }
 
 type Option func(*config)
@@ -40,7 +39,7 @@ func Delete() Option {
 	}
 }
 
-func File(ctx context.Context, client *api.Client, file *os.File, opts ...Option) error {
+func File(ctx context.Context, w format.Writer, client *api.Client, file *os.File, opts ...Option) error {
 	if file == nil {
 		return fmt.Errorf("missing flag -f, --filename=STRING")
 	}
@@ -60,19 +59,23 @@ func File(ctx context.Context, client *api.Client, file *os.File, opts ...Option
 		if err := client.Delete(ctx, obj); err != nil {
 			return err
 		}
-		format.PrintSuccessf("🗑", "deleted %s", formatObj(obj))
+		w.Successf("🗑", "deleted %s", formatObj(obj))
 
 		return nil
 	}
 
 	if err := client.Create(ctx, obj); err != nil {
 		if errors.IsAlreadyExists(err) && cfg.updateOnExists {
-			return update(ctx, client, obj)
+			if err := update(ctx, client, obj); err != nil {
+				return err
+			}
+			w.Successf("🏗", "applied %s", formatObj(obj))
+			return nil
 		}
 		return err
 	}
 
-	format.PrintSuccessf("🏗", "created %s", formatObj(obj))
+	w.Successf("🏗", "created %s", formatObj(obj))
 	return nil
 }
 
@@ -99,7 +102,6 @@ func update(ctx context.Context, client *api.Client, obj *unstructured.Unstructu
 		return err
 	}
 
-	format.PrintSuccessf("🏗", "applied %s", formatObj(obj))
 	return nil
 }
 

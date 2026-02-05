@@ -37,14 +37,14 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		return fmt.Errorf("finding static egresses of app: %w", err)
 	}
 
-	d := newDeleter(a, apps.ApplicationKind)
+	d := app.newDeleter(a, apps.ApplicationKind)
 	if err := d.deleteResource(ctx, client, app.WaitTimeout, app.Wait, app.Force); err != nil {
 		return fmt.Errorf("error while deleting %s: %w", apps.ApplicationKind, err)
 	}
 
 	var deleteErrors []error
 	for _, s := range gitAuthSecrets {
-		if err := deleteGitAuthSecret(ctx, client, s); err != nil {
+		if err := app.deleteGitAuthSecret(ctx, client, s); err != nil {
 			deleteErrors = append(deleteErrors, err)
 		}
 	}
@@ -99,15 +99,21 @@ func findGitAuthSecrets(ctx context.Context, client *api.Client, a *apps.Applica
 	return gitAuthSecrets, nil
 }
 
-// deleteGitAuthSecrets tries to delete the passed git auth secret. It checks
+// deleteGitAuthSecret tries to delete the passed git auth secret. It checks
 // if the secret is referenced in any other application, before deleting it.
 // It will only delete secrets which have been created by nctl itself.
-func deleteGitAuthSecret(ctx context.Context, client *api.Client, secret corev1.Secret) error {
+func (app *applicationCmd) deleteGitAuthSecret(
+	ctx context.Context,
+	client *api.Client,
+	secret corev1.Secret,
+) error {
 	if err := client.Get(ctx, api.ObjectName(&secret), &secret); err != nil {
 		if kerrors.IsNotFound(err) {
 			return nil
 		}
-		return checkManuallyError(fmt.Errorf("error when checking git auth secret %q for application", secret.Name))
+		return checkManuallyError(
+			fmt.Errorf("error when checking git auth secret %q for application", secret.Name),
+		)
 	}
 	managedBy, exists := secret.Annotations[util.ManagedByAnnotation]
 	if !exists || managedBy != util.NctlName {
@@ -118,7 +124,8 @@ func deleteGitAuthSecret(ctx context.Context, client *api.Client, secret corev1.
 	appsList := &apps.ApplicationList{}
 	if err := client.List(ctx, appsList, runtimeclient.InNamespace(client.Project)); err != nil {
 		return checkManuallyError(
-			fmt.Errorf("error when checking for applications which might reference git authentication secret %q: %w",
+			fmt.Errorf(
+				"error when checking for applications which might reference git authentication secret %q: %w",
 				secret.Name,
 				err,
 			),
@@ -128,8 +135,8 @@ func deleteGitAuthSecret(ctx context.Context, client *api.Client, secret corev1.
 		if item.Spec.ForProvider.Git.Auth != nil &&
 			item.Spec.ForProvider.Git.Auth.FromSecret != nil &&
 			item.Spec.ForProvider.Git.Auth.FromSecret.Name == secret.Name {
-			fmt.Printf(
-				"will not delete git auth secret %q as it is still referenced in application %q",
+			app.Printf(
+				"will not delete git auth secret %q as it is still referenced in application %q\n",
 				secret.Name,
 				item.Name,
 			)

@@ -22,7 +22,7 @@ func (cmd *apiServiceAccountCmd) Run(ctx context.Context, client *api.Client) er
 			Namespace: client.Project,
 		},
 	}
-	return newUpdater(client, asa, iam.APIServiceAccountKind, func(current resource.Managed) error {
+	return cmd.newUpdater(client, asa, iam.APIServiceAccountKind, func(current resource.Managed) error {
 		asa, ok := current.(*iam.APIServiceAccount)
 		if !ok {
 			return fmt.Errorf("resource is of type %T, expected %T", current, iam.APIServiceAccount{})

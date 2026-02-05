@@ -14,6 +14,6 @@ type mysqlDatabaseCmd struct {
 
 func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error {
 	mysqlDatabase := &storage.MySQLDatabase{ObjectMeta: metav1.ObjectMeta{Name: cmd.Name, Namespace: client.Project}}
-	return newDeleter(mysqlDatabase, storage.MySQLDatabaseKind).
+	return cmd.newDeleter(mysqlDatabase, storage.MySQLDatabaseKind).
 		deleteResource(ctx, client, cmd.WaitTimeout, cmd.Wait, cmd.Force)
 }

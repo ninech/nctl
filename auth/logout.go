@@ -22,10 +22,11 @@ import (
 )
 
 type LogoutCmd struct {
-	APIURL    string `help:"URL of the Nine API." default:"https://nineapis.ch" env:"NCTL_API_URL" name:"api-url"`
-	IssuerURL string `help:"OIDC issuer URL of the API." default:"https://auth.nine.ch/auth/realms/pub"`
-	ClientID  string `help:"OIDC client ID of the API." default:"nineapis.ch-f178254"`
-	tk        api.TokenGetter
+	format.Writer `kong:"-"`
+	APIURL        string `help:"URL of the Nine API." default:"https://nineapis.ch" env:"NCTL_API_URL" name:"api-url"`
+	IssuerURL     string `help:"OIDC issuer URL of the API." default:"https://auth.nine.ch/auth/realms/pub"`
+	ClientID      string `help:"OIDC client ID of the API." default:"nineapis.ch-f178254"`
+	tk            api.TokenGetter
 }
 
 func (l *LogoutCmd) Run(ctx context.Context) error {
@@ -43,12 +44,15 @@ func (l *LogoutCmd) Run(ctx context.Context) error {
 	filePath := path.Join(homedir.HomeDir(), api.DefaultTokenCachePath, filename)
 
 	if _, err = os.Stat(filePath); err != nil {
-		format.PrintFailuref("🤔", "seems like you are already logged out from %s", l.APIURL)
+		l.Failuref("🤔", "seems like you are already logged out from %s", l.APIURL)
 		return nil
 	}
 
 	r := repository.Repository{}
-	cache, err := r.FindByKey(tokencache.Config{Directory: path.Join(homedir.HomeDir(), api.DefaultTokenCachePath)}, key)
+	cache, err := r.FindByKey(
+		tokencache.Config{Directory: path.Join(homedir.HomeDir(), api.DefaultTokenCachePath)},
+		key,
+	)
 	if err != nil {
 		return fmt.Errorf("error finding cache file: %w", err)
 	}
@@ -57,9 +61,17 @@ func (l *LogoutCmd) Run(ctx context.Context) error {
 	form.Add("client_id", l.ClientID)
 	form.Add("refresh_token", cache.RefreshToken)
 
-	logoutEndpoint := strings.Join([]string{l.IssuerURL, "protocol", "openid-connect", "logout"}, "/")
+	logoutEndpoint := strings.Join(
+		[]string{l.IssuerURL, "protocol", "openid-connect", "logout"},
+		"/",
+	)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, logoutEndpoint, strings.NewReader(form.Encode()))
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		logoutEndpoint,
+		strings.NewReader(form.Encode()),
+	)
 	if err != nil {
 		return fmt.Errorf("error creating request: %w", err)
 	}
@@ -87,7 +99,7 @@ func (l *LogoutCmd) Run(ctx context.Context) error {
 		return fmt.Errorf("error removing the local cache: %w", err)
 	}
 
-	format.PrintSuccessf("👋", "logged out from %s", l.APIURL)
+	l.Successf("👋", "logged out from %s", l.APIURL)
 
 	return nil
 }

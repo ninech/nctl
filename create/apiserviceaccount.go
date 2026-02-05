@@ -14,16 +14,16 @@ type apiServiceAccountCmd struct {
 	OrganizationAccess bool `help:"When enabled, this service account has access to all projects in the organization. Only valid for service accounts in the organization project."`
 }
 
-func (asa *apiServiceAccountCmd) Run(ctx context.Context, client *api.Client) error {
-	c := newCreator(client, asa.newAPIServiceAccount(client.Project), iam.APIServiceAccountKind)
-	ctx, cancel := context.WithTimeout(ctx, asa.WaitTimeout)
+func (cmd *apiServiceAccountCmd) Run(ctx context.Context, client *api.Client) error {
+	c := cmd.newCreator(client, cmd.newAPIServiceAccount(client.Project), iam.APIServiceAccountKind)
+	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
 	defer cancel()
 
 	if err := c.createResource(ctx); err != nil {
 		return err
 	}
 
-	if !asa.Wait {
+	if !cmd.Wait {
 		return nil
 	}
 
@@ -33,8 +33,8 @@ func (asa *apiServiceAccountCmd) Run(ctx context.Context, client *api.Client) er
 	})
 }
 
-func (asa *apiServiceAccountCmd) newAPIServiceAccount(project string) *iam.APIServiceAccount {
-	name := getName(asa.Name)
+func (cmd *apiServiceAccountCmd) newAPIServiceAccount(project string) *iam.APIServiceAccount {
+	name := getName(cmd.Name)
 	return &iam.APIServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -42,7 +42,7 @@ func (asa *apiServiceAccountCmd) newAPIServiceAccount(project string) *iam.APISe
 		},
 		Spec: iam.APIServiceAccountSpec{
 			ForProvider: iam.APIServiceAccountParameters{
-				OrganizationAccess: asa.OrganizationAccess,
+				OrganizationAccess: cmd.OrganizationAccess,
 				Version:            iam.APIServiceAccountV2,
 			},
 			ResourceSpec: runtimev1.ResourceSpec{

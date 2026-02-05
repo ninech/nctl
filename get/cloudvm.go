@@ -34,12 +34,12 @@ func (cmd *cloudVMCmd) print(ctx context.Context, client *api.Client, list clien
 	case noHeader:
 		return cmd.printCloudVirtualMachineInstances(cloudVMList.Items, out, false)
 	case yamlOut:
-		return format.PrettyPrintObjects(cloudVMList.GetItems(), format.PrintOpts{Out: out.writer})
+		return format.PrettyPrintObjects(cloudVMList.GetItems(), format.PrintOpts{Out: &out.Writer})
 	case jsonOut:
 		return format.PrettyPrintObjects(
 			cloudVMList.GetItems(),
 			format.PrintOpts{
-				Out:    out.writer,
+				Out:    &out.Writer,
 				Format: format.OutputFormatTypeJSON,
 				JSONOpts: format.JSONOutputOptions{
 					PrintSingleItem: cmd.Name != "",

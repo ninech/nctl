@@ -7,6 +7,7 @@ import (
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -51,7 +52,7 @@ func (bu *bucketUserCmd) print(ctx context.Context, client *api.Client, list cli
 		if bu.PrintSecretKey {
 			key = storage.BucketUserCredentialSecretKey
 		}
-		return bu.printSecret(ctx, client, user, key)
+		return bu.printSecret(ctx, client, user, key, out)
 	}
 
 	switch out.Format {
@@ -60,12 +61,15 @@ func (bu *bucketUserCmd) print(ctx context.Context, client *api.Client, list cli
 	case noHeader:
 		return bu.printBucketUserInstances(bucketUserList.Items, out, false)
 	case yamlOut:
-		return format.PrettyPrintObjects(bucketUserList.GetItems(), format.PrintOpts{Out: out.writer})
+		return format.PrettyPrintObjects(
+			bucketUserList.GetItems(),
+			format.PrintOpts{Out: &out.Writer},
+		)
 	case jsonOut:
 		return format.PrettyPrintObjects(
 			bucketUserList.GetItems(),
 			format.PrintOpts{
-				Out:    out.writer,
+				Out:    &out.Writer,
 				Format: format.OutputFormatTypeJSON,
 				JSONOpts: format.JSONOutputOptions{
 					PrintSingleItem: bu.Name != "",
@@ -76,7 +80,11 @@ func (bu *bucketUserCmd) print(ctx context.Context, client *api.Client, list cli
 	return nil
 }
 
-func (bu *bucketUserCmd) printBucketUserInstances(list []storage.BucketUser, out *output, header bool) error {
+func (bu *bucketUserCmd) printBucketUserInstances(
+	list []storage.BucketUser,
+	out *output,
+	header bool,
+) error {
 	if header {
 		out.writeHeader("NAME", "LOCATION")
 	}
@@ -92,11 +100,17 @@ func (bu *bucketUserCmd) printFlagSet() bool {
 	return bu.PrintCredentials || bu.PrintAccessKey || bu.PrintSecretKey
 }
 
-func (bu *bucketUserCmd) printSecret(ctx context.Context, client *api.Client, user *storage.BucketUser, key string) error {
+func (bu *bucketUserCmd) printSecret(
+	ctx context.Context,
+	client *api.Client,
+	user *storage.BucketUser,
+	key string,
+	out *output,
+) error {
 	data, err := getConnectionSecret(ctx, client, key, user)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%s\n", data)
+	out.Printf("%s\n", data)
 	return nil
 }

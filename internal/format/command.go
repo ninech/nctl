@@ -3,6 +3,7 @@ package format
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -62,7 +63,7 @@ func MissingChildren(node *kong.Node) bool {
 }
 
 // ExitIfErrorf prints Usage + friendly message on error (and exits).
-func ExitIfErrorf(err error, args ...any) error {
+func ExitIfErrorf(w io.Writer, err error, args ...any) error {
 	if err == nil {
 		return nil
 	}
@@ -84,7 +85,7 @@ func ExitIfErrorf(err error, args ...any) error {
 		}
 	}
 
-	fmt.Printf("\n💡 Your command: %q: %s\n", command, msg)
+	fmt.Fprintf(w, "\n💡 Your command: %q: %s\n", command, msg)
 
 	parseErr.Context.Exit(1)
 

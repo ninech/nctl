@@ -73,12 +73,12 @@ func (cmd *bucketCmd) print(ctx context.Context, client *api.Client, list client
 	case noHeader:
 		return printBucket(bucketList.Items, out, false)
 	case yamlOut:
-		return format.PrettyPrintObjects(bucketList.GetItems(), format.PrintOpts{Out: out.writer})
+		return format.PrettyPrintObjects(bucketList.GetItems(), format.PrintOpts{Out: &out.Writer})
 	case jsonOut:
 		return format.PrettyPrintObjects(
 			bucketList.GetItems(),
 			format.PrintOpts{
-				Out:    out.writer,
+				Out:    &out.Writer,
 				Format: format.OutputFormatTypeJSON,
 				JSONOpts: format.JSONOutputOptions{
 					PrintSingleItem: cmd.Name != "",
@@ -115,7 +115,7 @@ func printBucket(buckets []storage.Bucket, out *output, header bool) error {
 func printBucketPermissions(b *storage.Bucket, out *output) error {
 	perms := b.Spec.ForProvider.Permissions
 	if len(perms) == 0 {
-		fmt.Fprintf(out.writer, "No permissions defined for bucket %q\n", b.Name)
+		out.Printf("No permissions defined for bucket %q\n", b.Name)
 		return nil
 	}
 
@@ -141,7 +141,7 @@ func printBucketPermissions(b *storage.Bucket, out *output) error {
 func printBucketLifecyclePolicies(b *storage.Bucket, out *output) error {
 	rules := b.Spec.ForProvider.LifecyclePolicies
 	if len(rules) == 0 {
-		fmt.Fprintf(out.writer, "No lifecycle policies defined for bucket %q\n", b.Name)
+		out.Printf("No lifecycle policies defined for bucket %q\n", b.Name)
 		return nil
 	}
 
@@ -166,7 +166,7 @@ func printBucketLifecyclePolicies(b *storage.Bucket, out *output) error {
 func printBucketCORS(b *storage.Bucket, out *output) error {
 	cfg := b.Spec.ForProvider.CORS
 	if cfg == nil {
-		fmt.Fprintf(out.writer, "No CORS configuration defined for bucket %q\n", b.Name)
+		out.Printf("No CORS configuration defined for bucket %q\n", b.Name)
 		return nil
 	}
 
@@ -185,7 +185,7 @@ func printBucketCORS(b *storage.Bucket, out *output) error {
 func printBucketCustomHostnames(b *storage.Bucket, out *output) error {
 	hosts := b.Spec.ForProvider.CustomHostnames
 	if len(hosts) == 0 {
-		fmt.Fprintf(out.writer, "No custom hostnames defined for bucket %q\n", b.Name)
+		out.Printf("No custom hostnames defined for bucket %q\n", b.Name)
 		return nil
 	}
 
@@ -254,12 +254,14 @@ func hostHasAnyEntry(vsl meta.DNSVerificationStatusEntries, host string) bool {
 	}
 	return false
 }
+
 func joinOrDash(ss []string) string {
 	if len(ss) == 0 {
 		return "-"
 	}
 	return strings.Join(ss, ",")
 }
+
 func dashIfEmpty(s string) string {
 	if strings.TrimSpace(s) == "" {
 		return "-"

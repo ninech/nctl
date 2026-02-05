@@ -1,3 +1,4 @@
+// Package config provides the nctl specific configuration stored in the kubeconfig.
 package config
 
 import (

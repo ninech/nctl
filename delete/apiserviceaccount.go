@@ -13,18 +13,18 @@ type apiServiceAccountCmd struct {
 	resourceCmd
 }
 
-func (asa *apiServiceAccountCmd) Run(ctx context.Context, client *api.Client) error {
-	ctx, cancel := context.WithTimeout(ctx, asa.WaitTimeout)
+func (cmd *apiServiceAccountCmd) Run(ctx context.Context, client *api.Client) error {
+	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
 	defer cancel()
 
 	sa := &iam.APIServiceAccount{ObjectMeta: metav1.ObjectMeta{
-		Name:      asa.Name,
+		Name:      cmd.Name,
 		Namespace: client.Project,
 	}}
 
-	d := newDeleter(sa, iam.APIServiceAccountKind)
+	d := cmd.newDeleter(sa, iam.APIServiceAccountKind)
 
-	if err := d.deleteResource(ctx, client, asa.WaitTimeout, asa.Wait, asa.Force); err != nil {
+	if err := d.deleteResource(ctx, client, cmd.WaitTimeout, cmd.Wait, cmd.Force); err != nil {
 		return fmt.Errorf("error while deleting %s: %w", iam.APIServiceAccountKind, err)
 	}
 

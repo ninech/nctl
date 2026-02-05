@@ -14,8 +14,7 @@ import (
 var interpolationRegex = regexp.MustCompile(`(\$\$)|((?:\${([[:alpha:]_][[:word:]]*))(?:=([^}]+))?})|(\$)|([^$]+)`)
 
 // interpolate interpolates the given string s with variables from vars
-// The [upstream
-// function](https://github.com/alecthomas/kong/blob/v0.8.0/interpolate.go#L22)
+// The [upstream function](https://github.com/alecthomas/kong/blob/v0.8.0/interpolate.go#L22)
 // was sadly not exported, so we had to copy it.
 func interpolate(s string, vars kong.Vars) (string, error) {
 	var out strings.Builder

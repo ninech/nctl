@@ -28,7 +28,7 @@ func (cmd *projectCmd) Run(ctx context.Context, client *api.Client) error {
 		},
 	}
 
-	upd := newUpdater(client, project, management.ProjectKind, func(current resource.Managed) error {
+	upd := cmd.newUpdater(client, project, management.ProjectKind, func(current resource.Managed) error {
 		project, ok := current.(*management.Project)
 		if !ok {
 			return fmt.Errorf("resource is of type %T, expected %T", current, management.Project{})

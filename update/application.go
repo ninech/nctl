@@ -114,8 +114,8 @@ type workerJob struct {
 	Size    *string `help:"Size of the worker (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
 }
 
-func (wj workerJob) changesGiven() bool {
-	return wj.Command != nil || wj.Size != nil
+func (job workerJob) changesGiven() bool {
+	return job.Command != nil || job.Size != nil
 }
 
 type scheduledJob struct {
@@ -127,8 +127,8 @@ type scheduledJob struct {
 	Timeout  *time.Duration `help:"Timeout of the job." placeholder:"${app_default_scheduled_job_timeout}"`
 }
 
-func (sj scheduledJob) changesGiven() bool {
-	return sj.Command != nil || sj.Size != nil || sj.Schedule != nil
+func (job scheduledJob) changesGiven() bool {
+	return job.Command != nil || job.Size != nil || job.Schedule != nil
 }
 
 type dockerfileBuild struct {
@@ -144,7 +144,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		},
 	}
 
-	upd := newUpdater(client, app, apps.ApplicationKind, func(current resource.Managed) error {
+	upd := cmd.newUpdater(client, app, apps.ApplicationKind, func(current resource.Managed) error {
 		app, ok := current.(*apps.Application)
 		if !ok {
 			return fmt.Errorf("resource is of type %T, expected %T", current, apps.Application{})
@@ -266,16 +266,16 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 		cmd.DeployJob.applyUpdates(&app.Spec.ForProvider.Config)
 	}
 	if cmd.WorkerJob != nil && cmd.WorkerJob.changesGiven() {
-		cmd.WorkerJob.applyUpdates(&app.Spec.ForProvider.Config)
+		cmd.WorkerJob.applyUpdates(cmd.Writer, &app.Spec.ForProvider.Config)
 	}
 	if cmd.DeleteWorkerJob != nil {
-		deleteWorkerJob(*cmd.DeleteWorkerJob, &app.Spec.ForProvider.Config)
+		deleteWorkerJob(cmd.Writer, *cmd.DeleteWorkerJob, &app.Spec.ForProvider.Config)
 	}
 	if cmd.ScheduledJob != nil && cmd.ScheduledJob.changesGiven() {
-		cmd.ScheduledJob.applyUpdates(&app.Spec.ForProvider.Config)
+		cmd.ScheduledJob.applyUpdates(cmd.Writer, &app.Spec.ForProvider.Config)
 	}
 	if cmd.DeleteScheduledJob != nil {
-		deleteScheduledJob(*cmd.DeleteScheduledJob, &app.Spec.ForProvider.Config)
+		deleteScheduledJob(cmd.Writer, *cmd.DeleteScheduledJob, &app.Spec.ForProvider.Config)
 	}
 	if cmd.Language != nil {
 		app.Spec.ForProvider.Language = apps.Language(*cmd.Language)
@@ -334,12 +334,12 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 
 	if cmd.DockerfileBuild.Path != nil {
 		app.Spec.ForProvider.DockerfileBuild.DockerfilePath = *cmd.DockerfileBuild.Path
-		warnIfDockerfileNotEnabled(app, "path")
+		warnIfDockerfileNotEnabled(cmd.Writer, app, "path")
 	}
 
 	if cmd.DockerfileBuild.BuildContext != nil {
 		app.Spec.ForProvider.DockerfileBuild.BuildContext = *cmd.DockerfileBuild.BuildContext
-		warnIfDockerfileNotEnabled(app, "build context")
+		warnIfDockerfileNotEnabled(cmd.Writer, app, "build context")
 	}
 }
 
@@ -400,9 +400,9 @@ func ensureDeployJob(cfg *apps.Config) *apps.Config {
 	return cfg
 }
 
-func (job workerJob) applyUpdates(cfg *apps.Config) {
+func (job workerJob) applyUpdates(w format.Writer, cfg *apps.Config) {
 	if job.Name == nil {
-		format.PrintWarningf("you need to pass a job name to update the command or size\n")
+		w.Warningf("you need to pass a job name to update the command or size")
 		return
 	}
 	for i := range cfg.WorkerJobs {
@@ -427,7 +427,7 @@ func (job workerJob) applyUpdates(cfg *apps.Config) {
 	cfg.WorkerJobs = append(cfg.WorkerJobs, newJob)
 }
 
-func deleteWorkerJob(name string, cfg *apps.Config) {
+func deleteWorkerJob(w format.Writer, name string, cfg *apps.Config) {
 	newJobs := []apps.WorkerJob{}
 	for _, wj := range cfg.WorkerJobs {
 		if wj.Name != name {
@@ -435,15 +435,15 @@ func deleteWorkerJob(name string, cfg *apps.Config) {
 		}
 	}
 	if len(cfg.WorkerJobs) == len(newJobs) {
-		format.PrintWarningf("did not find a worker job with the name %q\n", name)
+		w.Warningf("did not find a worker job with the name %q", name)
 		return
 	}
 	cfg.WorkerJobs = newJobs
 }
 
-func (job scheduledJob) applyUpdates(cfg *apps.Config) {
+func (job scheduledJob) applyUpdates(w format.Writer, cfg *apps.Config) {
 	if job.Name == nil {
-		format.PrintWarningf("you need to pass a job name to update the command, schedule or size\n")
+		w.Warningf("you need to pass a job name to update the command, schedule or size")
 		return
 	}
 
@@ -478,7 +478,7 @@ func (job scheduledJob) applyUpdates(cfg *apps.Config) {
 	cfg.ScheduledJobs = append(cfg.ScheduledJobs, newJob)
 }
 
-func deleteScheduledJob(name string, cfg *apps.Config) {
+func deleteScheduledJob(w format.Writer, name string, cfg *apps.Config) {
 	newJobs := []apps.ScheduledJob{}
 	for _, sj := range cfg.ScheduledJobs {
 		if sj.Name != name {
@@ -486,14 +486,14 @@ func deleteScheduledJob(name string, cfg *apps.Config) {
 		}
 	}
 	if len(cfg.ScheduledJobs) == len(newJobs) {
-		format.PrintWarningf("did not find a scheduled job with the name %q\n", name)
+		w.Warningf("did not find a scheduled job with the name %q", name)
 		return
 	}
 	cfg.ScheduledJobs = newJobs
 }
 
-func warnIfDockerfileNotEnabled(app *apps.Application, flag string) {
+func warnIfDockerfileNotEnabled(w format.Writer, app *apps.Application, flag string) {
 	if !app.Spec.ForProvider.DockerfileBuild.Enabled {
-		format.PrintWarningf("updating %s has no effect as dockerfile builds are not enabled on this app\n", flag)
+		w.Warningf("updating %s has no effect as dockerfile builds are not enabled on this app", flag)
 	}
 }

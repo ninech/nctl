@@ -290,13 +290,8 @@ dev      pear    Release      apps.nine.ch
 			testCase := testCase
 
 			outputBuffer := &bytes.Buffer{}
-			get := &Cmd{
-				output: output{
-					Format:      testCase.outputFormat,
-					AllProjects: testCase.allProjects,
-					writer:      outputBuffer,
-				},
-			}
+			get := NewTestCmd(outputBuffer, testCase.outputFormat)
+			get.AllProjects = testCase.allProjects
 
 			scheme, err := api.NewScheme()
 			if err != nil {

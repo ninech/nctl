@@ -2,6 +2,7 @@ package test
 
 import (
 	"context"
+	"io"
 	"testing"
 	"time"
 
@@ -49,6 +50,7 @@ func RunNamedWithFlags(
 		kong.Name("nctl-test"),
 		vars,
 		kong.BindTo(t.Context(), (*context.Context)(nil)),
+		kong.BindTo(t.Output(), (*io.Writer)(nil)),
 	)
 
 	kctx, err := parser.Parse(args)

@@ -8,6 +8,7 @@ import (
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -134,7 +135,7 @@ func TestProjectConfigs(t *testing.T) {
 			require.NoError(t, err)
 
 			buf := &bytes.Buffer{}
-			tc.get.writer = buf
+			tc.get.Writer = format.NewWriter(buf)
 			cmd := configsCmd{}
 
 			if err := cmd.Run(ctx, apiClient, tc.get); err != nil {

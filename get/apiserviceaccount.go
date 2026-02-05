@@ -43,7 +43,13 @@ func (asa *apiServiceAccountsCmd) print(ctx context.Context, client *api.Client,
 			return err
 		}
 		if asa.PrintCredentials {
-			return asa.printCredentials(ctx, client, sa, out, func(key string) bool { return key == iam.APIServiceAccountKubeconfigKey })
+			return asa.printCredentials(
+				ctx,
+				client,
+				sa,
+				out,
+				func(key string) bool { return key == iam.APIServiceAccountKubeconfigKey },
+			)
 		}
 		key := ""
 		switch sa.Spec.ForProvider.Version {
@@ -68,7 +74,7 @@ func (asa *apiServiceAccountsCmd) print(ctx context.Context, client *api.Client,
 				key = iam.APIServiceAccountKubeconfigKey
 			}
 		}
-		return asa.printSecret(ctx, client, sa, key)
+		return asa.printSecret(ctx, client, sa, key, out)
 	}
 
 	switch out.Format {
@@ -77,11 +83,12 @@ func (asa *apiServiceAccountsCmd) print(ctx context.Context, client *api.Client,
 	case noHeader:
 		return asa.printAsa(asaList.Items, out, false)
 	case yamlOut:
-		return format.PrettyPrintObjects(asaList.GetItems(), format.PrintOpts{})
+		return format.PrettyPrintObjects(asaList.GetItems(), format.PrintOpts{Out: &out.Writer})
 	case jsonOut:
 		return format.PrettyPrintObjects(
 			asaList.GetItems(),
 			format.PrintOpts{
+				Out:    &out.Writer,
 				Format: format.OutputFormatTypeJSON,
 				JSONOpts: format.JSONOutputOptions{
 					PrintSingleItem: asa.Name != "",
@@ -100,17 +107,25 @@ func (asa *apiServiceAccountsCmd) validPrintFlags(sa *iam.APIServiceAccount) err
 		}
 	default:
 		if asa.PrintClientID || asa.PrintClientSecret || asa.PrintTokenURL {
-			return fmt.Errorf("client_id/client_secret/token_url printing is not supported for v1 APIServiceAccount")
+			return fmt.Errorf(
+				"client_id/client_secret/token_url printing is not supported for v1 APIServiceAccount",
+			)
 		}
 	}
 	return nil
 }
 
 func (asa *apiServiceAccountsCmd) printFlagSet() bool {
-	return asa.PrintToken || asa.PrintKubeconfig || asa.PrintClientID || asa.PrintClientSecret || asa.PrintTokenURL || asa.PrintCredentials
+	return asa.PrintToken || asa.PrintKubeconfig || asa.PrintClientID || asa.PrintClientSecret ||
+		asa.PrintTokenURL ||
+		asa.PrintCredentials
 }
 
-func (asa *apiServiceAccountsCmd) printAsa(sas []iam.APIServiceAccount, out *output, header bool) error {
+func (asa *apiServiceAccountsCmd) printAsa(
+	sas []iam.APIServiceAccount,
+	out *output,
+	header bool,
+) error {
 	if header {
 		out.writeHeader("NAME", "ROLE")
 	}
@@ -122,11 +137,17 @@ func (asa *apiServiceAccountsCmd) printAsa(sas []iam.APIServiceAccount, out *out
 	return out.tabWriter.Flush()
 }
 
-func (asa *apiServiceAccountsCmd) printSecret(ctx context.Context, client *api.Client, sa *iam.APIServiceAccount, key string) error {
+func (asa *apiServiceAccountsCmd) printSecret(
+	ctx context.Context,
+	client *api.Client,
+	sa *iam.APIServiceAccount,
+	key string,
+	out *output,
+) error {
 	data, err := getConnectionSecret(ctx, client, key, sa)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%s\n", data)
+	out.Printf("%s\n", data)
 	return nil
 }

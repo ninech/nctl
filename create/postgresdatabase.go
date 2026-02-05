@@ -2,7 +2,6 @@ package create
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,10 +22,9 @@ type postgresDatabaseCmd struct {
 }
 
 func (cmd *postgresDatabaseCmd) Run(ctx context.Context, client *api.Client) error {
-	fmt.Printf("Creating new PostgresDatabase. (waiting up to %s).\n", cmd.WaitTimeout)
 	postgresDatabase := cmd.newPostgresDatabase(client.Project)
 
-	c := newCreator(client, postgresDatabase, "postgresdatabase")
+	c := cmd.newCreator(client, postgresDatabase, storage.PostgresDatabaseKind)
 	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
 	defer cancel()
 
@@ -39,6 +37,7 @@ func (cmd *postgresDatabaseCmd) Run(ctx context.Context, client *api.Client) err
 	}
 
 	if err := c.wait(ctx, waitStage{
+		Writer:     cmd.Writer,
 		objectList: &storage.PostgresDatabaseList{},
 		onResult: func(event watch.Event) (bool, error) {
 			if pdb, ok := event.Object.(*storage.PostgresDatabase); ok {
@@ -50,7 +49,11 @@ func (cmd *postgresDatabaseCmd) Run(ctx context.Context, client *api.Client) err
 		return err
 	}
 
-	fmt.Printf("\n Your PostgresDatabase %s is now available. You can retrieve the database, username and password with:\n\n nctl get postgresdatabase %s --print-connection-string\n\n", postgresDatabase.Name, postgresDatabase.Name)
+	cmd.Printf(
+		"\n Your PostgresDatabase %s is now available. You can retrieve the database, username and password with:\n\n nctl get postgresdatabase %s --print-connection-string\n\n",
+		postgresDatabase.Name,
+		postgresDatabase.Name,
+	)
 
 	return nil
 }

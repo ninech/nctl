@@ -3,11 +3,11 @@ package get
 import (
 	"context"
 	"fmt"
-	"io"
 
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
+
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -15,9 +15,9 @@ import (
 type openSearchCmd struct {
 	resourceCmd
 	PrintPassword       bool `help:"Print the password of the OpenSearch BasicAuth User. Requires name to be set." xor:"print"`
-	PrintUser           bool `help:"Print the name of the OpenSearch BasicAuth User. Requires name to be set." xor:"print"`
-	PrintCACert         bool `help:"Print the ca certificate. Requires name to be set." xor:"print"`
-	PrintSnapshotBucket bool `help:"Print the URL of the snapshot bucket." xor:"print"`
+	PrintUser           bool `help:"Print the name of the OpenSearch BasicAuth User. Requires name to be set."     xor:"print"`
+	PrintCACert         bool `help:"Print the ca certificate. Requires name to be set."                            xor:"print"`
+	PrintSnapshotBucket bool `help:"Print the URL of the snapshot bucket."                                         xor:"print"`
 }
 
 func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
@@ -28,7 +28,12 @@ func (cmd *openSearchCmd) list() client.ObjectList {
 	return &storage.OpenSearchList{}
 }
 
-func (cmd *openSearchCmd) print(ctx context.Context, client *api.Client, list client.ObjectList, out *output) error {
+func (cmd *openSearchCmd) print(
+	ctx context.Context,
+	client *api.Client,
+	list client.ObjectList,
+	out *output,
+) error {
 	openSearchList, ok := list.(*storage.OpenSearchList)
 	if !ok {
 		return fmt.Errorf("expected %T, got %T", &storage.OpenSearchList{}, list)
@@ -38,19 +43,31 @@ func (cmd *openSearchCmd) print(ctx context.Context, client *api.Client, list cl
 	}
 
 	if cmd.Name != "" && cmd.PrintUser {
-		return cmd.printSecret(out.writer, ctx, client, &openSearchList.Items[0], func(user, _ string) string { return user })
+		return cmd.printSecret(
+			ctx,
+			client,
+			&openSearchList.Items[0],
+			out,
+			func(user, _ string) string { return user },
+		)
 	}
 
 	if cmd.Name != "" && cmd.PrintPassword {
-		return cmd.printSecret(out.writer, ctx, client, &openSearchList.Items[0], func(_, pw string) string { return pw })
+		return cmd.printSecret(
+			ctx,
+			client,
+			&openSearchList.Items[0],
+			out,
+			func(_, pw string) string { return pw },
+		)
 	}
 
 	if cmd.Name != "" && cmd.PrintCACert {
-		return printBase64(out.writer, openSearchList.Items[0].Status.AtProvider.CACert)
+		return printBase64(&out.Writer, openSearchList.Items[0].Status.AtProvider.CACert)
 	}
 
 	if cmd.Name != "" && cmd.PrintSnapshotBucket {
-		return cmd.printSnapshotBucket(ctx, client, &openSearchList.Items[0], out.writer)
+		return cmd.printSnapshotBucket(ctx, client, &openSearchList.Items[0], out)
 	}
 
 	switch out.Format {
@@ -59,11 +76,15 @@ func (cmd *openSearchCmd) print(ctx context.Context, client *api.Client, list cl
 	case noHeader:
 		return cmd.printOpenSearchInstances(openSearchList.Items, out, false)
 	case yamlOut:
-		return format.PrettyPrintObjects(openSearchList.GetItems(), format.PrintOpts{})
+		return format.PrettyPrintObjects(
+			openSearchList.GetItems(),
+			format.PrintOpts{Out: &out.Writer},
+		)
 	case jsonOut:
 		return format.PrettyPrintObjects(
 			openSearchList.GetItems(),
 			format.PrintOpts{
+				Out:    &out.Writer,
 				Format: format.OutputFormatTypeJSON,
 				JSONOpts: format.JSONOutputOptions{
 					PrintSingleItem: cmd.Name != "",
@@ -74,9 +95,23 @@ func (cmd *openSearchCmd) print(ctx context.Context, client *api.Client, list cl
 	return nil
 }
 
-func (cmd *openSearchCmd) printOpenSearchInstances(list []storage.OpenSearch, out *output, header bool) error {
+func (cmd *openSearchCmd) printOpenSearchInstances(
+	list []storage.OpenSearch,
+	out *output,
+	header bool,
+) error {
 	if header {
-		out.writeHeader("NAME", "LOCATION", "VERSION", "PRIVATE URL", "PUBLIC URL", "MACHINE TYPE", "CLUSTER TYPE", "DISK SIZE", "HEALTH")
+		out.writeHeader(
+			"NAME",
+			"LOCATION",
+			"VERSION",
+			"PRIVATE URL",
+			"PUBLIC URL",
+			"MACHINE TYPE",
+			"CLUSTER TYPE",
+			"DISK SIZE",
+			"HEALTH",
+		)
 	}
 
 	for _, os := range list {
@@ -97,7 +132,9 @@ func (cmd *openSearchCmd) printOpenSearchInstances(list []storage.OpenSearch, ou
 	return out.tabWriter.Flush()
 }
 
-func (cmd *openSearchCmd) getClusterHealth(clusterHealth storage.OpenSearchClusterHealth) storage.OpenSearchHealthStatus {
+func (cmd *openSearchCmd) getClusterHealth(
+	clusterHealth storage.OpenSearchClusterHealth,
+) storage.OpenSearchHealthStatus {
 	worstStatus := storage.OpenSearchHealthStatusGreen
 
 	// If no indices, assume healthy
@@ -117,14 +154,26 @@ func (cmd *openSearchCmd) getClusterHealth(clusterHealth storage.OpenSearchClust
 	return worstStatus
 }
 
-func (cmd *openSearchCmd) printSnapshotBucket(ctx context.Context, client *api.Client, openSearch *storage.OpenSearch, writer io.Writer) error {
+func (cmd *openSearchCmd) printSnapshotBucket(
+	ctx context.Context,
+	client *api.Client,
+	openSearch *storage.OpenSearch,
+	out *output,
+) error {
 	bucketName := openSearch.Status.AtProvider.SnapshotsBucket.Name
 	if bucketName == "" {
-		return fmt.Errorf("no snapshot bucket configured for OpenSearch instance %s", openSearch.Name)
+		return fmt.Errorf(
+			"no snapshot bucket configured for OpenSearch instance %s",
+			openSearch.Name,
+		)
 	}
 
 	bucket := &storage.Bucket{}
-	if err := client.Get(ctx, types.NamespacedName{Name: bucketName, Namespace: client.Project}, bucket); err != nil {
+	if err := client.Get(
+		ctx,
+		types.NamespacedName{Name: bucketName, Namespace: client.Project},
+		bucket,
+	); err != nil {
 		return err
 	}
 
@@ -133,6 +182,6 @@ func (cmd *openSearchCmd) printSnapshotBucket(ctx context.Context, client *api.C
 		return fmt.Errorf("no URL found in ObjectsBucket %s status", bucketName)
 	}
 
-	_, err := fmt.Fprintln(writer, bucketURL)
-	return err
+	out.Println(bucketURL)
+	return nil
 }

@@ -251,9 +251,9 @@ func TestBucketGet(t *testing.T) {
 
 			buf := &bytes.Buffer{}
 			cmd := tt.getCmd
-			err = cmd.Run(ctx, apiClient, &Cmd{
-				output: output{Format: tt.out, AllProjects: tt.inAllProjects, writer: buf},
-			})
+			get := NewTestCmd(buf, tt.out)
+			get.AllProjects = tt.inAllProjects
+			err = cmd.Run(ctx, apiClient, get)
 
 			if tt.wantErr {
 				require.Error(t, err)
