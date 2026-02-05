@@ -23,7 +23,7 @@ func (cmd *bucketUserCmd) Run(ctx context.Context, client *api.Client) error {
 	cmd.Printf("Creating new bucketuser.\n")
 	bucketuser := cmd.newBucketUser(client.Project)
 
-	c := cmd.newCreator(client, bucketuser, "bucketuser")
+	c := cmd.newCreator(client, bucketuser, storage.BucketUserKind)
 	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
 	defer cancel()
 

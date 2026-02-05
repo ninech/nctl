@@ -22,10 +22,9 @@ type postgresDatabaseCmd struct {
 }
 
 func (cmd *postgresDatabaseCmd) Run(ctx context.Context, client *api.Client) error {
-	cmd.Printf("Creating new PostgresDatabase. (waiting up to %s).\n", cmd.WaitTimeout)
 	postgresDatabase := cmd.newPostgresDatabase(client.Project)
 
-	c := cmd.newCreator(client, postgresDatabase, "postgresdatabase")
+	c := cmd.newCreator(client, postgresDatabase, storage.PostgresDatabaseKind)
 	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
 	defer cancel()
 

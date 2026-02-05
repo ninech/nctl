@@ -99,7 +99,7 @@ func noCleanup(client *api.Client) error {
 }
 
 func defaultPrompt(kind, name string) string {
-	return fmt.Sprintf("do you really want to delete the %s %q?", kind, name)
+	return fmt.Sprintf("Do you really want to delete the %s %q?", kind, name)
 }
 
 func (d *deleter) deleteResource(
