@@ -66,7 +66,11 @@ func File(ctx context.Context, w format.Writer, client *api.Client, file *os.Fil
 
 	if err := client.Create(ctx, obj); err != nil {
 		if errors.IsAlreadyExists(err) && cfg.updateOnExists {
-			return update(ctx, client, obj)
+			if err := update(ctx, client, obj); err != nil {
+				return err
+			}
+			w.Successf("🏗", "applied %s", formatObj(obj))
+			return nil
 		}
 		return err
 	}
