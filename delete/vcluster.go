@@ -34,7 +34,7 @@ func (cmd *vclusterCmd) Run(ctx context.Context, client *api.Client) error {
 				client.KubeconfigPath,
 				config.ContextName(cluster),
 			); err != nil {
-				cmd.Warningf("unable to remove cluster from kubeconfig: %s\n", err)
+				cmd.Warningf("unable to remove cluster from kubeconfig: %s", err)
 			}
 			return nil
 		}))

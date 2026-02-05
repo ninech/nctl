@@ -63,6 +63,6 @@ func (u *updater) Update(ctx context.Context) error {
 		return err
 	}
 
-	u.Successf("⬆️", "updated %s %q\n", u.kind, u.mg.GetName())
+	u.Successf("⬆️", "updated %s %q", u.kind, u.mg.GetName())
 	return nil
 }

@@ -127,10 +127,10 @@ func (cmd *serviceConnectionCmd) Run(ctx context.Context, client *api.Client) er
 	}
 	if !sourceExists || !destinationExists {
 		if !sourceExists {
-			cmd.Warningf("source %q does not yet exist\n", sc.Spec.ForProvider.Source.Reference)
+			cmd.Warningf("source %q does not yet exist", sc.Spec.ForProvider.Source.Reference)
 		}
 		if !destinationExists {
-			cmd.Warningf("destination %q does not yet exist\n", sc.Spec.ForProvider.Destination)
+			cmd.Warningf("destination %q does not yet exist", sc.Spec.ForProvider.Destination)
 		}
 
 		return nil

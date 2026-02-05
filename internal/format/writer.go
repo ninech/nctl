@@ -44,22 +44,22 @@ func (w *Writer) Spinner(message, stopMessage string) (*yacspin.Spinner, error) 
 
 // Successf is a formatted message for indicating a successful step.
 func (w *Writer) Successf(icon string, format string, a ...any) {
-	fmt.Fprint(w.writer(), successf(icon, format, a...))
+	fmt.Fprint(w.writer(), successf(icon, format, a...)+"\n")
 }
 
 // Success returns a message for indicating a successful step.
 func (w *Writer) Success(icon string, message string) {
-	fmt.Fprint(w.writer(), success(icon, message))
+	fmt.Fprint(w.writer(), success(icon, message)+"\n")
 }
 
 // Warningf is a formatted message for indicating a warning.
 func (w *Writer) Warningf(format string, a ...any) {
-	fmt.Fprint(w.writer(), warningf(format, a...))
+	fmt.Fprint(w.writer(), warningf(format, a...)+"\n")
 }
 
 // Failuref is a formatted message for indicating a failure.
 func (w *Writer) Failuref(icon string, format string, a ...any) {
-	fmt.Fprint(w.writer(), failuref(icon, format, a...))
+	fmt.Fprint(w.writer(), failuref(icon, format, a...)+"\n")
 }
 
 // Printf formats according to a format specifier and writes to the underlying writer.

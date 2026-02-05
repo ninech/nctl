@@ -44,7 +44,7 @@ func (l *LogoutCmd) Run(ctx context.Context) error {
 	filePath := path.Join(homedir.HomeDir(), api.DefaultTokenCachePath, filename)
 
 	if _, err = os.Stat(filePath); err != nil {
-		l.Failuref("🤔", "seems like you are already logged out from %s\n", l.APIURL)
+		l.Failuref("🤔", "seems like you are already logged out from %s", l.APIURL)
 		return nil
 	}
 
@@ -99,7 +99,7 @@ func (l *LogoutCmd) Run(ctx context.Context) error {
 		return fmt.Errorf("error removing the local cache: %w", err)
 	}
 
-	l.Successf("👋", "logged out from %s\n", l.APIURL)
+	l.Successf("👋", "logged out from %s", l.APIURL)
 
 	return nil
 }

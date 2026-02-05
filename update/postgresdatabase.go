@@ -36,5 +36,5 @@ func (cmd *postgresDatabaseCmd) Run(ctx context.Context, client *api.Client) err
 }
 
 func (cmd *postgresDatabaseCmd) applyUpdates(_ *storage.PostgresDatabase) {
-	cmd.Warningf("there are no attributes for postgresdatabase which can be updated after creation. Applying update without any changes.\n")
+	cmd.Warningf("there are no attributes for postgresdatabase which can be updated after creation. Applying update without any changes.")
 }

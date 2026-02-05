@@ -36,5 +36,5 @@ func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error 
 }
 
 func (cmd *mysqlDatabaseCmd) applyUpdates(_ *storage.MySQLDatabase) {
-	cmd.Warningf("there are no attributes for mysqldatabase which can be updated after creation. Applying update without any changes.\n")
+	cmd.Warningf("there are no attributes for mysqldatabase which can be updated after creation. Applying update without any changes.")
 }

@@ -126,7 +126,7 @@ func (c *creator) createResource(ctx context.Context) error {
 		return fmt.Errorf("unable to create %s %q: %w", c.kind, c.mg.GetName(), err)
 	}
 
-	c.Successf("🏗", "created %s %q in project %q\n", c.kind, c.mg.GetName(), c.mg.GetNamespace())
+	c.Successf("🏗", "created %s %q in project %q", c.kind, c.mg.GetName(), c.mg.GetNamespace())
 	return nil
 }
 
@@ -247,7 +247,6 @@ func (w *waitStage) watch(ctx context.Context, client *api.Client) error {
 				w.spinner.StopMessage(w.waitMessage.progress())
 				_ = w.spinner.Stop()
 				w.Successf(w.doneMessage.icon, "%s (%s)", w.doneMessage.text, elapsed)
-				w.Println()
 
 				return nil
 			}

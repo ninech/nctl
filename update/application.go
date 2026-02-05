@@ -402,7 +402,7 @@ func ensureDeployJob(cfg *apps.Config) *apps.Config {
 
 func (job workerJob) applyUpdates(w format.Writer, cfg *apps.Config) {
 	if job.Name == nil {
-		w.Warningf("you need to pass a job name to update the command or size\n")
+		w.Warningf("you need to pass a job name to update the command or size")
 		return
 	}
 	for i := range cfg.WorkerJobs {
@@ -435,7 +435,7 @@ func deleteWorkerJob(w format.Writer, name string, cfg *apps.Config) {
 		}
 	}
 	if len(cfg.WorkerJobs) == len(newJobs) {
-		w.Warningf("did not find a worker job with the name %q\n", name)
+		w.Warningf("did not find a worker job with the name %q", name)
 		return
 	}
 	cfg.WorkerJobs = newJobs
@@ -443,7 +443,7 @@ func deleteWorkerJob(w format.Writer, name string, cfg *apps.Config) {
 
 func (job scheduledJob) applyUpdates(w format.Writer, cfg *apps.Config) {
 	if job.Name == nil {
-		w.Warningf("you need to pass a job name to update the command, schedule or size\n")
+		w.Warningf("you need to pass a job name to update the command, schedule or size")
 		return
 	}
 
@@ -486,7 +486,7 @@ func deleteScheduledJob(w format.Writer, name string, cfg *apps.Config) {
 		}
 	}
 	if len(cfg.ScheduledJobs) == len(newJobs) {
-		w.Warningf("did not find a scheduled job with the name %q\n", name)
+		w.Warningf("did not find a scheduled job with the name %q", name)
 		return
 	}
 	cfg.ScheduledJobs = newJobs
@@ -494,6 +494,6 @@ func deleteScheduledJob(w format.Writer, name string, cfg *apps.Config) {
 
 func warnIfDockerfileNotEnabled(w format.Writer, app *apps.Application, flag string) {
 	if !app.Spec.ForProvider.DockerfileBuild.Enabled {
-		w.Warningf("updating %s has no effect as dockerfile builds are not enabled on this app\n", flag)
+		w.Warningf("updating %s has no effect as dockerfile builds are not enabled on this app", flag)
 	}
 }

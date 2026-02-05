@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"slices"
+	"strings"
 
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
@@ -37,6 +38,12 @@ func (cmd *SetOrgCmd) Run(ctx context.Context, client *api.Client) error {
 		return err
 	}
 
+	cmd.Successf("📝", "set active Organization to %s", cmd.Organization)
+	cmd.Println()
+
+	// We only warn if the organization is not in the user's token, as RBAC
+	// permissions in the API might still allow access even if the organization
+	// is not listed in the JWT (e.g. for support staff or cross-org permissions).
 	if !slices.Contains(userInfo.Orgs, cmd.Organization) {
 		cmd.Warningf(
 			"%s is not in list of available Organizations, you might not have access to all resources.\n",
