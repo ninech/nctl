@@ -149,7 +149,7 @@ func (c *Client) ListObjects(ctx context.Context, list runtimeclient.ObjectList,
 			tempList := reflect.New(reflect.TypeOf(list).Elem()).Interface().(runtimeclient.ObjectList)
 			tempList.GetObjectKind().SetGroupVersionKind(list.GetObjectKind().GroupVersionKind())
 			if err := c.List(ctx, tempList, append(tempOpts, runtimeclient.InNamespace(proj.Name))...); err != nil {
-				c.writer.Warningf("error when searching in project %s: %s\n", proj.Name, err)
+				c.writer.Warningf("error when searching in project %s: %s", proj.Name, err)
 				return
 			}
 			tempListItems := reflect.ValueOf(tempList).Elem().FieldByName("Items")

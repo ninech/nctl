@@ -9,9 +9,10 @@ import (
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
+	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/format"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -32,12 +33,12 @@ func (s *SetProjectCmd) Run(ctx context.Context, client *api.Client) error {
 		types.NamespacedName{Name: s.Name, Namespace: org},
 		&management.Project{},
 	); err != nil {
-		if !errors.IsNotFound(err) && !errors.IsForbidden(err) {
+		if !kerrors.IsNotFound(err) && !kerrors.IsForbidden(err) {
 			return fmt.Errorf("failed to set project %s: %w", s.Name, err)
 		}
 
-		s.Warningf(
-			"Project does not exist in organization %s, checking other organizations...\n",
+		s.Warningf("Project %q does not exist in organization %q, checking other organizations...",
+			s.Name,
 			org,
 		)
 		if err := trySwitchOrg(ctx, client, s.Name); err != nil {
@@ -58,7 +59,7 @@ func (s *SetProjectCmd) Run(ctx context.Context, client *api.Client) error {
 		return err
 	}
 
-	s.Successf("📝", "set active Project to %s in organization %s\n", s.Name, org)
+	s.Successf("📝", "set active Project to %s in organization %s", s.Name, org)
 	return nil
 }
 
@@ -120,7 +121,7 @@ func orgFromProject(ctx context.Context, client *api.Client, project string) (st
 	for org := range orgs {
 		proj := &management.Project{}
 		err := client.Get(ctx, types.NamespacedName{Name: project, Namespace: org}, proj)
-		if errors.IsNotFound(err) || errors.IsForbidden(err) {
+		if kerrors.IsNotFound(err) || kerrors.IsForbidden(err) {
 			continue
 		}
 		if err != nil {

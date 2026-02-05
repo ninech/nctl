@@ -301,15 +301,15 @@ func login(w format.Writer, newConfig *clientcmdapi.Config, kubeconfigPath, user
 	}
 
 	if toOrg != "" {
-		w.Successf("🏢", "switched to the organization %q\n", toOrg)
+		w.Successf("🏢", "switched to the organization %q", toOrg)
 	}
-	w.Successf("📋", "added %s to kubeconfig\n", newConfig.CurrentContext)
+	w.Successf("📋", "added %s to kubeconfig", newConfig.CurrentContext)
 
 	loginMessage := fmt.Sprintf("logged into cluster %s", newConfig.CurrentContext)
 	if strings.TrimSpace(userName) != "" {
 		loginMessage = fmt.Sprintf("logged into cluster %s as %s", newConfig.CurrentContext, userName)
 	}
-	w.Success("🚀", loginMessage+"\n")
+	w.Success("🚀", loginMessage)
 
 	return nil
 }

@@ -129,7 +129,7 @@ func pullImage(ctx context.Context, apiClient *api.Client, build *apps.Build, ou
 		return fmt.Errorf("unable to tag image: %w", err)
 	}
 
-	out.Successf("💾", "Pulled image %s\n", imageName(build.Spec.ForProvider.Image))
+	out.Successf("💾", "Pulled image %s", imageName(build.Spec.ForProvider.Image))
 
 	return nil
 }

@@ -242,7 +242,7 @@ func (cmd *applicationsCmd) printStats(ctx context.Context, c *api.Client, appLi
 	for _, app := range appList {
 		rel, err := util.ApplicationLatestRelease(ctx, c, api.ObjectName(&app))
 		if err != nil {
-			out.Warningf("unable to get latest release for app %s\n", c.Name(app.Name))
+			out.Warningf("unable to get latest release for app %s", c.Name(app.Name))
 			continue
 		}
 
@@ -293,7 +293,7 @@ func (cmd *applicationsCmd) printStats(ctx context.Context, c *api.Client, appLi
 				api.NamespacedName(statsObservation.ReplicaName, app.Namespace),
 				&podMetrics,
 			); err != nil {
-				out.Warningf("unable to get metrics for replica %s\n", statsObservation.ReplicaName)
+				out.Warningf("unable to get metrics for replica %s", statsObservation.ReplicaName)
 			}
 
 			maxResources := apps.AppResources[statsObservation.size]
