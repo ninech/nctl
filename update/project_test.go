@@ -1,11 +1,13 @@
 package update
 
 import (
-	"context"
+	"bytes"
+	"strings"
 	"testing"
 
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,6 +15,8 @@ import (
 )
 
 func TestProject(t *testing.T) {
+	t.Parallel()
+
 	const (
 		projectName  = "some-project"
 		organization = "org"
@@ -44,6 +48,11 @@ func TestProject(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			out := &bytes.Buffer{}
+			tc.cmd.Writer = format.NewWriter(out)
+
 			apiClient, err := test.SetupClient(
 				test.WithObjects(tc.orig),
 				test.WithOrganization(organization),
@@ -54,18 +63,24 @@ func TestProject(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			ctx := context.Background()
-			if err := tc.cmd.Run(ctx, apiClient); err != nil {
+			if err := tc.cmd.Run(t.Context(), apiClient); err != nil {
 				t.Fatal(err)
 			}
 
 			updated := &management.Project{}
-			if err := apiClient.Get(ctx, api.ObjectName(tc.orig), updated); err != nil {
+			if err := apiClient.Get(t.Context(), api.ObjectName(tc.orig), updated); err != nil {
 				t.Fatal(err)
 			}
 
 			if tc.checkProject != nil {
 				tc.checkProject(t, tc.cmd, tc.orig, updated)
+			}
+
+			if !strings.Contains(out.String(), "updated") {
+				t.Errorf("expected output to contain 'updated', got %q", out.String())
+			}
+			if !strings.Contains(out.String(), projectName) {
+				t.Errorf("expected output to contain project name '%s', got %q", projectName, out.String())
 			}
 		})
 	}

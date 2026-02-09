@@ -1,10 +1,13 @@
 package update
 
 import (
+	"bytes"
+	"strings"
 	"testing"
 
 	iam "github.com/ninech/apis/iam/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,6 +15,8 @@ import (
 )
 
 func TestAPIServiceAccount(t *testing.T) {
+	t.Parallel()
+
 	const (
 		asaName      = "some-asa"
 		organization = "org"
@@ -40,6 +45,11 @@ func TestAPIServiceAccount(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			out := &bytes.Buffer{}
+			tc.cmd.Writer = format.NewWriter(out)
+
 			apiClient, err := test.SetupClient(
 				test.WithObjects(tc.orig),
 				test.WithOrganization(organization),
@@ -61,6 +71,13 @@ func TestAPIServiceAccount(t *testing.T) {
 
 			if tc.checkAPIServiceAccount != nil {
 				tc.checkAPIServiceAccount(t, tc.cmd, tc.orig, updated)
+			}
+
+			if !strings.Contains(out.String(), "updated") {
+				t.Errorf("expected output to contain 'updated', got %q", out.String())
+			}
+			if !strings.Contains(out.String(), asaName) {
+				t.Errorf("expected output to contain %q, got %q", asaName, out.String())
 			}
 		})
 	}
