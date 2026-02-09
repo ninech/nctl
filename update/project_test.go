@@ -80,7 +80,7 @@ func TestProject(t *testing.T) {
 				t.Errorf("expected output to contain 'updated', got %q", out.String())
 			}
 			if !strings.Contains(out.String(), projectName) {
-				t.Errorf("expected output to contain project name '%s', got %q", projectName, out.String())
+				t.Errorf("expected output to contain project name %q, got %q", projectName, out.String())
 			}
 		})
 	}

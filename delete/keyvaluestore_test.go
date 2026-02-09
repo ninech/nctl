@@ -1,20 +1,23 @@
 package delete
 
 import (
-	"context"
+	"bytes"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 func TestKeyValueStore(t *testing.T) {
-	ctx := context.Background()
+	t.Parallel()
+	out := &bytes.Buffer{}
 	cmd := keyValueStoreCmd{
 		resourceCmd: resourceCmd{
+			Writer:      format.NewWriter(out),
 			Name:        "test",
 			Force:       true,
 			Wait:        false,
@@ -25,22 +28,32 @@ func TestKeyValueStore(t *testing.T) {
 	keyValueStore := test.KeyValueStore("test", test.DefaultProject, "nine-es34")
 
 	apiClient, err := test.SetupClient()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("failed to setup api client: %v", err)
+	}
 
+	ctx := t.Context()
 	if err := apiClient.Create(ctx, keyValueStore); err != nil {
-		t.Fatalf("keyvaluestore create error, got: %s", err)
+		t.Fatalf("failed to create keyvaluestore: %v", err)
 	}
 	if err := apiClient.Get(ctx, api.ObjectName(keyValueStore), keyValueStore); err != nil {
-		t.Fatalf("expected keyvaluestore to exist, got: %s", err)
+		t.Fatalf("expected keyvaluestore to exist before deletion, got error: %v", err)
 	}
 	if err := cmd.Run(ctx, apiClient); err != nil {
-		t.Fatal(err)
+		t.Fatalf("failed to run keyvaluestore delete command: %v", err)
 	}
 	err = apiClient.Get(ctx, api.ObjectName(keyValueStore), keyValueStore)
 	if err == nil {
-		t.Fatalf("expected keyvaluestore to be deleted, but exists")
+		t.Fatal("expected keyvaluestore to be deleted, but it still exists")
 	}
-	if !errors.IsNotFound(err) {
-		t.Fatalf("expected keyvaluestore to be deleted, got: %s", err.Error())
+	if !kerrors.IsNotFound(err) {
+		t.Fatalf("expected keyvaluestore to be deleted (NotFound), but got error: %v", err)
+	}
+
+	if !strings.Contains(out.String(), "deletion started") {
+		t.Errorf("expected output to contain 'deletion started', got %q", out.String())
+	}
+	if !strings.Contains(out.String(), cmd.Name) {
+		t.Errorf("expected output to contain keyvaluestore name %q, got %q", cmd.Name, out.String())
 	}
 }

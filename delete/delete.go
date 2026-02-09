@@ -148,7 +148,7 @@ func (d *deleter) deleteResource(
 			return err
 		}
 	} else {
-		d.Successf("🗑", "%s deletion started", d.kind)
+		d.Successf("🗑", "%s %q deletion started", d.kind, d.mg.GetName())
 	}
 
 	return d.cleanup(client)
@@ -156,8 +156,8 @@ func (d *deleter) deleteResource(
 
 func (d *deleter) waitForDeletion(ctx context.Context, client *api.Client) error {
 	spinner, err := d.Spinner(
-		format.Progressf("⏳", "%s is being deleted", d.kind),
-		format.Progressf("🗑", "%s deleted", d.kind),
+		format.Progressf("⏳", "%s %q is being deleted", d.kind, d.mg.GetName()),
+		format.Progressf("🗑", "%s %q deleted", d.kind, d.mg.GetName()),
 	)
 	if err != nil {
 		return err
