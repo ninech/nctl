@@ -13,36 +13,42 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestDeleter(t *testing.T) {
+func TestAPIServiceAccount(t *testing.T) {
 	t.Parallel()
+	out := &bytes.Buffer{}
+	cmd := apiServiceAccountCmd{
+		resourceCmd: resourceCmd{
+			Writer: format.NewWriter(out),
+			Name:   "test",
+			Force:  true,
+			Wait:   false,
+		},
+	}
+
 	asa := &iam.APIServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: test.DefaultProject,
 		},
-		Spec: iam.APIServiceAccountSpec{},
 	}
-	apiClient, err := test.SetupClient(
-		test.WithObjects(asa),
-	)
+	apiClient, err := test.SetupClient(test.WithObjects(asa))
 	if err != nil {
 		t.Fatalf("failed to setup api client: %v", err)
 	}
-	out := &bytes.Buffer{}
-	cmd := &apiServiceAccountCmd{resourceCmd{Writer: format.NewWriter(out)}}
-
-	d := cmd.newDeleter(asa, iam.APIServiceAccountKind)
 
 	ctx := t.Context()
-	if err := d.deleteResource(ctx, apiClient, 0, false, true); err != nil {
-		t.Fatalf("failed to delete resource: %v", err)
+	if err := cmd.Run(ctx, apiClient); err != nil {
+		t.Fatalf("failed to run apiserviceaccount delete command: %v", err)
 	}
 
 	if !kerrors.IsNotFound(apiClient.Get(ctx, api.ObjectName(asa), asa)) {
-		t.Fatal("expected resource to be deleted, but it still exists")
+		t.Fatal("expected apiserviceaccount to be deleted, but it still exists")
 	}
 
 	if !strings.Contains(out.String(), "deletion started") {
 		t.Errorf("expected output to contain 'deletion started', got %q", out.String())
+	}
+	if !strings.Contains(out.String(), cmd.Name) {
+		t.Errorf("expected output to contain apiserviceaccount name %q, got %q", cmd.Name, out.String())
 	}
 }

@@ -1,18 +1,20 @@
 package delete
 
 import (
-	"context"
+	"bytes"
+	"strings"
 	"testing"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
+	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/test"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestProjectConfig(t *testing.T) {
+	t.Parallel()
 	project := "some-project"
 
 	cfg := &apps.ProjectConfig{
@@ -23,9 +25,11 @@ func TestProjectConfig(t *testing.T) {
 		Spec: apps.ProjectConfigSpec{},
 	}
 
+	out := &bytes.Buffer{}
 	cmd := configCmd{
-		Force: true,
-		Wait:  false,
+		Writer: format.NewWriter(out),
+		Force:  true,
+		Wait:   false,
 	}
 
 	apiClient, err := test.SetupClient(
@@ -34,15 +38,22 @@ func TestProjectConfig(t *testing.T) {
 		test.WithObjects(cfg),
 	)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("failed to setup api client: %v", err)
 	}
-	ctx := context.Background()
+	ctx := t.Context()
 
 	if err := cmd.Run(ctx, apiClient); err != nil {
-		t.Fatal(err)
+		t.Fatalf("failed to run project configuration delete command: %v", err)
 	}
 
-	if !errors.IsNotFound(apiClient.Get(ctx, api.ObjectName(cfg), cfg)) {
-		t.Fatalf("expected project configuration to not exist after delete, got %s", err)
+	if !kerrors.IsNotFound(apiClient.Get(ctx, api.ObjectName(cfg), cfg)) {
+		t.Fatal("expected project configuration to be deleted, but it still exists")
+	}
+
+	if !strings.Contains(out.String(), "deletion started") {
+		t.Errorf("expected output to contain 'deletion started', got %q", out.String())
+	}
+	if !strings.Contains(out.String(), apps.ProjectConfigKind) {
+		t.Errorf("expected output to contain kind %q, got %q", apps.ProjectConfigKind, out.String())
 	}
 }

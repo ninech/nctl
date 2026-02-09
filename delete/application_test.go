@@ -1,7 +1,8 @@
 package delete
 
 import (
-	"context"
+	"bytes"
+	"strings"
 	"testing"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
@@ -9,16 +10,16 @@ import (
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestApplication(t *testing.T) {
-	ctx := context.Background()
+	t.Parallel()
 	project := "evilcorp"
 	for name, testCase := range map[string]struct {
 		testObjects    testObjectList
@@ -36,7 +37,7 @@ func TestApplication(t *testing.T) {
 			name:          "dev",
 			errorExpected: true,
 			errorCheck: func(err error) bool {
-				return errors.IsNotFound(err)
+				return kerrors.IsNotFound(err)
 			},
 		},
 		"application-with-git-auth-secret": {
@@ -142,11 +143,14 @@ func TestApplication(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			out := &bytes.Buffer{}
 			cmd := applicationCmd{
 				resourceCmd: resourceCmd{
-					Force: true,
-					Wait:  false,
-					Name:  testCase.name,
+					Writer: format.NewWriter(out),
+					Force:  true,
+					Wait:   false,
+					Name:   testCase.name,
 				},
 			}
 
@@ -155,25 +159,43 @@ func TestApplication(t *testing.T) {
 				test.WithProjectsFromResources(testCase.testObjects.clientObjects()...),
 				test.WithObjects(testCase.testObjects.clientObjects()...),
 			)
-			require.NoError(t, err)
+			if err != nil {
+				t.Fatalf("failed to setup api client: %v", err)
+			}
 
+			ctx := t.Context()
 			err = cmd.Run(ctx, apiClient)
 			if testCase.errorExpected {
-				require.Error(t, err)
-				if testCase.errorCheck != nil {
-					require.True(t, testCase.errorCheck(err))
+				if err == nil {
+					t.Fatal("expected error but got none")
 				}
-			} else {
-				require.NoError(t, err)
+				if testCase.errorCheck != nil && !testCase.errorCheck(err) {
+					t.Fatalf("error check failed for error: %v", err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
 			}
 
 			for _, delObj := range testCase.testObjects {
 				err := apiClient.Get(ctx, api.ObjectName(delObj), delObj.Object)
 				if delObj.noDeletion {
-					require.NoError(t, err)
+					if err != nil {
+						t.Errorf("expected resource %s to not be deleted, but got error: %v", delObj.GetName(), err)
+					}
 				} else {
-					require.True(t, errors.IsNotFound(err))
+					if !kerrors.IsNotFound(err) {
+						t.Errorf("expected resource %s to be deleted, but it still exists (err: %v)", delObj.GetName(), err)
+					}
 				}
+			}
+
+			if !strings.Contains(out.String(), "deletion started") {
+				t.Errorf("expected output to contain 'deletion started', got %q", out.String())
+			}
+			if !strings.Contains(out.String(), testCase.name) {
+				t.Errorf("expected output to contain application name %q, got %q", testCase.name, out.String())
 			}
 		})
 	}
