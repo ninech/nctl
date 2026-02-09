@@ -126,7 +126,6 @@ const (
 )
 
 func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
-	cmd.Printf("Creating new application\n")
 	newApp := cmd.newApplication(client.Project)
 
 	sshPrivateKey, err := cmd.Git.sshPrivateKey()
@@ -166,7 +165,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 				// only update the secret if it is managed by nctl in the first place
 				if v, exists := newApp.Annotations[util.ManagedByAnnotation]; exists &&
 					v == util.NctlName {
-					cmd.Printf("updating git auth credentials\n")
+					cmd.Successf("🔐", "updating git auth credentials")
 					if err := client.Get(ctx, client.Name(secret.Name), secret); err != nil {
 						return err
 					}

@@ -50,7 +50,7 @@ func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error 
 		return err
 	}
 
-	cmd.Printf("\n Your MySQLDatabase %s is now available. You can retrieve the database, username and password with:\n\n nctl get mysqldatabase %s --print-connection-string\n\n", mysqlDatabase.Name, mysqlDatabase.Name)
+	cmd.Successf("🚀", "Your MySQLDatabase %s is now available. You can retrieve the database, username and password with:\n\n nctl get mysqldatabase %s --print-connection-string", mysqlDatabase.Name, mysqlDatabase.Name)
 
 	return nil
 }
