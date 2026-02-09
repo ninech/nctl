@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -33,8 +32,6 @@ type Client struct {
 	Project           string
 	Log               *log.Client
 	KubeconfigContext string
-
-	writer format.Writer
 }
 
 type ClientOpt func(c *Client) error
@@ -47,7 +44,6 @@ func New(ctx context.Context, apiClusterContext, project string, opts ...ClientO
 	client := &Client{
 		Project:           project,
 		KubeconfigContext: apiClusterContext,
-		writer:            format.NewWriter(os.Stdout),
 	}
 	if err := client.loadConfig(apiClusterContext); err != nil {
 		return nil, err
@@ -73,14 +69,6 @@ func New(ctx context.Context, apiClusterContext, project string, opts ...ClientO
 	}
 
 	return client, nil
-}
-
-// OutputWriter sets the writer for the client.
-func OutputWriter(w io.Writer) ClientOpt {
-	return func(c *Client) error {
-		c.writer = format.NewWriter(w)
-		return nil
-	}
 }
 
 // LogClient sets up a log client connected to the provided address.
