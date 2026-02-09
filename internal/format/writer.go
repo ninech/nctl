@@ -73,11 +73,13 @@ func (w *Writer) Info(icon string, message string) {
 }
 
 // Printf formats according to a format specifier and writes to the underlying writer.
+// Prefer the dedicated methods if applicable.
 func (w *Writer) Printf(format string, a ...any) {
 	fmt.Fprintf(w.writer(), format, a...)
 }
 
 // Println prints a formatted message to the underlying writer.
+// Prefer the dedicated methods if applicable.
 func (w *Writer) Println(a ...any) {
 	fmt.Fprintln(w.writer(), a...)
 }
