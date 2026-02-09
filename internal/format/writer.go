@@ -8,7 +8,7 @@ import (
 	"github.com/theckman/yacspin"
 )
 
-// Writer is a wrapper around an io.Writer that provides helper methods for
+// Writer is a wrapper around an [io.Writer] that provides helper methods for
 // printing formatted messages.
 type Writer struct {
 	io.Writer
@@ -75,11 +75,11 @@ func (w *Writer) Println(a ...any) {
 // Confirm prints a confirm dialog using the supplied message and then waits
 // until prompt is confirmed or denied. Only y and yes are accepted for
 // confirmation.
-func (w *Writer) Confirm(message string) (bool, error) {
+func (w *Writer) Confirm(reader Reader, message string) (bool, error) {
 	var input string
 
 	w.Printf("%s [y|n]: ", message)
-	_, err := fmt.Scanln(&input)
+	_, err := fmt.Fscanln(reader, &input)
 	if err != nil {
 		return false, err
 	}

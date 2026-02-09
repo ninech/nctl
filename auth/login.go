@@ -26,7 +26,7 @@ const (
 )
 
 type LoginCmd struct {
-	format.Writer               `kong:"-"`
+	format.Writer               `hidden:""`
 	API                         API    `embed:"" prefix:"api-"`
 	Organization                string `help:"Name of your organization to use when providing an API client ID/secret." env:"NCTL_ORGANIZATION"`
 	IssuerURL                   string `help:"OIDC issuer URL of the API." default:"${issuer_url}" hidden:""`

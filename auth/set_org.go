@@ -10,7 +10,7 @@ import (
 )
 
 type SetOrgCmd struct {
-	format.Writer `kong:"-"`
+	format.Writer `hidden:""`
 	Organization  string `arg:"" help:"Name of the organization to login to." default:""`
 	APIURL        string `help:"URL of the Nine API." default:"https://nineapis.ch" env:"NCTL_API_URL" name:"api-url"`
 	IssuerURL     string `help:"OIDC issuer URL of the API." default:"https://auth.nine.ch/auth/realms/pub"`

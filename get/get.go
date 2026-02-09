@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"maps"
-	"os"
 	"slices"
 	"strings"
 
@@ -70,26 +69,17 @@ const (
 	jsonOut  outputFormat = "json"
 )
 
-// AfterApply is called by Kong after parsing to initialize the output.
-func (cmd *Cmd) AfterApply() error {
-	cmd.initOut()
-	return nil
-}
+// BeforeApply is called by Kong before parsing to initialize the output.
+func (cmd *Cmd) BeforeApply(writer io.Writer) error {
+	if err := cmd.output.BeforeApply(writer); err != nil {
+		return err
+	}
 
-// NewTestCmd creates a Cmd for testing with the given writer and output format.
-// This is a convenience helper that properly initializes the output writer.
-func NewTestCmd(w io.Writer, outFormat outputFormat, opts ...func(*Cmd)) *Cmd {
-	cmd := &Cmd{
-		output: output{
-			Writer: format.NewWriter(w),
-			Format: outFormat,
-		},
+	if cmd.tabWriter == nil {
+		cmd.tabWriter = tabwriter.NewWriter(writer, 0, 0, 2, ' ', tabwriter.RememberWidths)
 	}
-	cmd.initOut()
-	for _, opt := range opts {
-		opt(cmd)
-	}
-	return cmd
+
+	return nil
 }
 
 // WithAllProjects is a test option that sets AllProjects to true.
@@ -132,7 +122,6 @@ func (cmd *Cmd) listPrint(ctx context.Context, client *api.Client, lp listPrinte
 
 // writeHeader writes the header row, prepending the always shown project
 func (out *output) writeHeader(headings ...string) {
-	out.initOut()
 	// don't write header if watch is enabled and RememberedWidths is not empty,
 	// as it means we have already printed the header.
 	if out.Watch && len(out.tabWriter.RememberedWidths()) != 0 {
@@ -143,8 +132,6 @@ func (out *output) writeHeader(headings ...string) {
 
 // writeTabRow writes a row to w, prepending the passed project
 func (out *output) writeTabRow(project string, row ...string) {
-	out.initOut()
-
 	if project == "" {
 		// if the project is empty, the content should just be a "tab"
 		// so that the structure will be contained
@@ -167,8 +154,6 @@ func (out *output) writeTabRow(project string, row ...string) {
 }
 
 func (out *output) printEmptyMessage(kind, project string) error {
-	out.initOut()
-
 	if out.Format == jsonOut {
 		out.Printf("[]")
 		return nil
@@ -184,16 +169,6 @@ func (out *output) printEmptyMessage(kind, project string) error {
 
 	out.Printf("no %s found in project %s\n", flect.Pluralize(kind), project)
 	return nil
-}
-
-func (out *output) initOut() {
-	if out.Writer.Writer == nil {
-		out.Writer = format.NewWriter(os.Stdout)
-	}
-
-	if out.tabWriter == nil {
-		out.tabWriter = tabwriter.NewWriter(&out.Writer, 0, 0, 2, ' ', tabwriter.RememberWidths)
-	}
 }
 
 func getConnectionSecretMap(ctx context.Context, client *api.Client, mg resource.Managed) (map[string][]byte, error) {

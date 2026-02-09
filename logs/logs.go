@@ -4,6 +4,7 @@ package logs
 import (
 	"context"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -33,6 +34,11 @@ type logsCmd struct {
 	Output        string        `help:"Configures the log output format. ${enum}" short:"o" enum:"default,json" default:"default"`
 	NoLabels      bool          `help:"Disable labels in log output."`
 	out           log.Output
+}
+
+// BeforeApply initializes Writer from Kong's bound [io.Writer].
+func (cmd *logsCmd) BeforeApply(writer io.Writer) error {
+	return cmd.Writer.BeforeApply(writer)
 }
 
 // 30 days, we hardcode this for now as it's not possible to customize this on

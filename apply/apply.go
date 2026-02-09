@@ -9,7 +9,7 @@ import (
 )
 
 type Cmd struct {
-	format.Writer `kong:"-"`
+	format.Writer `hidden:""`
 	Filename      *os.File `short:"f" completion-predictor:"file"`
 	FromFile      fromFile `cmd:"" default:"1" name:"-f <file>" help:"Apply any resource from a yaml or json file."`
 }

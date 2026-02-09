@@ -44,6 +44,11 @@ type resourceCmd struct {
 	Name          string `arg:"" completion-predictor:"resource_name" help:"Name of the resource to edit." required:""`
 }
 
+// BeforeApply initializes Writer from Kong's bound [io.Writer].
+func (cmd *resourceCmd) BeforeApply(writer io.Writer) error {
+	return cmd.Writer.BeforeApply(writer)
+}
+
 const header = `# Please edit the %s below.
 # Lines beginning with a '#' will be ignored. If an error occurs while
 # saving this file will be reopened with the relevant failures. Note

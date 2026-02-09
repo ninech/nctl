@@ -2,13 +2,11 @@ package get
 
 import (
 	"bytes"
-	"context"
 	"testing"
 	"time"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api/util"
-	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,8 +16,6 @@ import (
 )
 
 func TestProjectConfigs(t *testing.T) {
-	ctx := context.Background()
-
 	cases := map[string]struct {
 		get                        *Cmd
 		project                    string
@@ -135,10 +131,10 @@ func TestProjectConfigs(t *testing.T) {
 			require.NoError(t, err)
 
 			buf := &bytes.Buffer{}
-			tc.get.Writer = format.NewWriter(buf)
+			tc.get.BeforeApply(buf)
 			cmd := configsCmd{}
 
-			if err := cmd.Run(ctx, apiClient, tc.get); err != nil {
+			if err := cmd.Run(t.Context(), apiClient, tc.get); err != nil {
 				t.Fatal(err)
 			}
 			if tc.expectedLineAmountInOutput != nil {

@@ -3,6 +3,7 @@ package update
 
 import (
 	"context"
+	"io"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/ninech/nctl/api"
@@ -29,6 +30,11 @@ type Cmd struct {
 type resourceCmd struct {
 	format.Writer `kong:"-"`
 	Name          string `arg:"" completion-predictor:"resource_name" help:"Name of the resource to update."`
+}
+
+// BeforeApply initializes Writer from Kong's bound [io.Writer].
+func (cmd *resourceCmd) BeforeApply(writer io.Writer) error {
+	return cmd.Writer.BeforeApply(writer)
 }
 
 type updater struct {

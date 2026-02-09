@@ -18,7 +18,7 @@ import (
 )
 
 type ClusterCmd struct {
-	format.Writer `kong:"-"`
+	format.Writer `hidden:""`
 	Name          string `arg:"" help:"Name of the cluster to authenticate with. Also accepts 'name/project' format."`
 	ExecPlugin    bool   `help:"Automatically run exec plugin after writing the kubeconfig."`
 }

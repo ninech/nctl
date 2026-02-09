@@ -68,6 +68,7 @@ var (
 	date    string
 
 	writer = os.Stdout
+	reader = os.Stdin
 )
 
 func main() {
@@ -92,6 +93,7 @@ func main() {
 		kongVars,
 		kong.BindTo(ctx, (*context.Context)(nil)),
 		kong.BindTo(writer, (*io.Writer)(nil)),
+		kong.BindTo(reader, (*io.Reader)(nil)),
 	)
 
 	apiClientRequired := !noAPIClientRequired(strings.Join(os.Args[1:], " "))
@@ -120,7 +122,11 @@ func main() {
 		parser.FatalIfErrorf(err)
 	}
 
-	binds := []any{ctx, kong.BindTo(writer, (*io.Writer)(nil))}
+	binds := []any{
+		ctx,
+		kong.BindTo(writer, (*io.Writer)(nil)),
+		kong.BindTo(reader, (*io.Reader)(nil)),
+	}
 	if apiClientRequired {
 		client, err := api.New(
 			ctx,
