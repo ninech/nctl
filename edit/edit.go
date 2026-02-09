@@ -145,7 +145,7 @@ func (cmd *resourceCmd) Run(kong *kong.Context, ctx context.Context, c *api.Clie
 	if modified {
 		cmd.Successf("🏗", "updated %s", formatObj(obj))
 	} else {
-		cmd.Printf("no changes made to %s\n", formatObj(obj))
+		cmd.Infof("", "no changes made to %s", formatObj(obj))
 	}
 	return nil
 }

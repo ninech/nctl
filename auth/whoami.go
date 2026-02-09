@@ -31,8 +31,8 @@ func (cmd *WhoAmICmd) Run(ctx context.Context, client *api.Client) error {
 }
 
 func (cmd *WhoAmICmd) printUserInfo(userInfo *api.UserInfo, org string) {
-	cmd.Printf("You are currently logged in with the following account: %q\n", userInfo.User)
-	cmd.Printf("Your current organization: %q\n", org)
+	cmd.Infof("👤", "You are currently logged in with the following account: %q", userInfo.User)
+	cmd.Infof("🏢", "Your current organization: %q", org)
 
 	if len(userInfo.Orgs) > 0 {
 		printAvailableOrgsString(cmd.Writer, org, userInfo.Orgs)

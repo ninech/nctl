@@ -237,8 +237,9 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		return err
 	}
 
-	cmd.Printf(
-		"\nYour application %q is now available at:\n  https://%s\n\n",
+	cmd.Successf(
+		"🚀",
+		"Your application %q is now available at:\n  https://%s",
 		newApp.Name,
 		newApp.Status.AtProvider.CNAMETarget,
 	)
@@ -611,21 +612,17 @@ func (cmd *applicationCmd) printUnverifiedHostsMessage(app *apps.Application) {
 
 	if len(unverifiedHosts) != 0 {
 		dnsDetails := util.GatherDNSDetails([]apps.Application{*app})
-		cmd.Printf("You configured the following hosts:\n")
+		cmd.Infof("🌐", "You configured the following hosts:")
 
 		for _, name := range unverifiedHosts {
 			cmd.Printf("  %s\n", name)
 		}
 
-		cmd.Printf("\nYour DNS details are:\n")
+		cmd.Infof("📋", "Your DNS details are:")
 		cmd.Printf("  TXT record:\t%s\n", dnsDetails[0].TXTRecord)
 		cmd.Printf("  DNS TARGET:\t%s\n", dnsDetails[0].CNAMETarget)
 
-		cmd.Printf("\nTo make your app available on your custom hosts, please use \n"+
-			"the DNS details and visit %s\n"+
-			"for further instructions.\n",
-			util.DNSSetupURL,
-		)
+		cmd.Infof("ℹ", "To make your app available on your custom hosts, please use \nthe DNS details and visit %s\nfor further instructions.", util.DNSSetupURL)
 	}
 }
 
@@ -652,12 +649,8 @@ func printReleaseLogs(ctx context.Context, client *api.Client, release *apps.Rel
 }
 
 func (cmd *applicationCmd) printCredentials(basicAuth *util.BasicAuth) {
-	cmd.Printf("\nYou can login with the following credentials:\n"+
-		"  username: %s\n"+
-		"  password: %s\n",
-		basicAuth.Username,
-		basicAuth.Password,
-	)
+	cmd.Infof("🔐", "You can login with the following credentials:")
+	cmd.Printf("  username: %s\n  password: %s\n", basicAuth.Username, basicAuth.Password)
 }
 
 // printErrorDetails prints detailed error information for build and release errors.
@@ -668,8 +661,7 @@ func (cmd *applicationCmd) printErrorDetails(
 ) error {
 	var buildErr buildError
 	if errors.As(err, &buildErr) {
-		cmd.Printf(
-			"\nYour build has failed with status %q. Here are the last %v lines of the log:\n\n",
+		cmd.Infof("❌", "Your build has failed with status %q. Here are the last %v lines of the log:",
 			buildErr.Build().Status.AtProvider.BuildStatus,
 			errorLogLines,
 		)
@@ -678,8 +670,7 @@ func (cmd *applicationCmd) printErrorDetails(
 
 	var releaseErr releaseError
 	if errors.As(err, &releaseErr) {
-		cmd.Printf(
-			"\nYour release has failed with status %q. Here are the last %v lines of the log:\n\n",
+		cmd.Infof("❌", "Your release has failed with status %q. Here are the last %v lines of the log:",
 			releaseErr.Release().Status.AtProvider.ReleaseStatus,
 			errorLogLines,
 		)

@@ -118,8 +118,8 @@ func (cmd *LoginCmd) Run(ctx context.Context) error {
 
 	org := userInfo.Orgs[0]
 	if len(userInfo.Orgs) > 1 {
-		cmd.Printf("Multiple organizations found for the account %q.\n", userInfo.User)
-		cmd.Printf("Defaulting to %q\n", org)
+		cmd.Infof("", "Multiple organizations found for the account %q.", userInfo.User)
+		cmd.Infof("", "Defaulting to %q", org)
 		printAvailableOrgsString(cmd.Writer, org, userInfo.Orgs)
 	}
 

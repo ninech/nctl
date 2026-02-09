@@ -27,6 +27,7 @@ type OutputFormatType int
 const (
 	SuccessChar      = "✓"
 	FailureChar      = "✗"
+	InfoChar         = "ℹ"
 	spinnerPrefix    = " "
 	spinnerFrequency = 100 * time.Millisecond
 
@@ -67,6 +68,16 @@ func success(icon, message string) string {
 // failuref is a formatted message for indicating a failed step.
 func failuref(icon, format string, a ...any) string {
 	return fmt.Sprintf(" %s %s %s", FailureChar, fmt.Sprintf(format, a...), icon)
+}
+
+// infof is a formatted message for providing information.
+func infof(icon, format string, a ...any) string {
+	return fmt.Sprintf(" %s %s %s", InfoChar, fmt.Sprintf(format, a...), icon)
+}
+
+// info returns a message for providing information.
+func info(icon, message string) string {
+	return fmt.Sprintf(" %s %s %s", InfoChar, message, icon)
 }
 
 func warningf(msg string, a ...any) string {

@@ -62,6 +62,16 @@ func (w *Writer) Failuref(icon string, format string, a ...any) {
 	fmt.Fprint(w.writer(), failuref(icon, format, a...)+"\n")
 }
 
+// Infof is a formatted message for providing information.
+func (w *Writer) Infof(icon string, format string, a ...any) {
+	fmt.Fprint(w.writer(), infof(icon, format, a...)+"\n")
+}
+
+// Info returns a message for providing information.
+func (w *Writer) Info(icon string, message string) {
+	fmt.Fprint(w.writer(), info(icon, message)+"\n")
+}
+
 // Printf formats according to a format specifier and writes to the underlying writer.
 func (w *Writer) Printf(format string, a ...any) {
 	fmt.Fprintf(w.writer(), format, a...)
