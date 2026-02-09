@@ -1,16 +1,16 @@
 package api
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
 	"reflect"
 	"slices"
-	"sort"
 	"strings"
-	"sync"
 
 	management "github.com/ninech/apis/management/v1alpha1"
+	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/conversion"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -135,29 +135,29 @@ func (c *Client) ListObjects(ctx context.Context, list runtimeclient.ObjectList,
 	}
 
 	projectsSize := len(projects)
-	var wg sync.WaitGroup
-	wg.Add(projectsSize)
+
+	wg := errgroup.Group{}
 	ch := make(chan ProjectItems, projectsSize)
 
 	for _, proj := range projects {
-		tempOpts := slices.Clone(opts.clientListOptions)
-		go func() {
-			defer wg.Done()
-			// we ensured the list is a pointer type and that is has an
-			// 'Items' field which is a slice above, so we don't need to do
-			// this again here and instead use the reflect functions directly.
+		wg.Go(func() error {
+			tempOpts := slices.Clone(opts.clientListOptions)
 			tempList := reflect.New(reflect.TypeOf(list).Elem()).Interface().(runtimeclient.ObjectList)
 			tempList.GetObjectKind().SetGroupVersionKind(list.GetObjectKind().GroupVersionKind())
 			if err := c.List(ctx, tempList, append(tempOpts, runtimeclient.InNamespace(proj.Name))...); err != nil {
-				c.writer.Warningf("error when searching in project %s: %s", proj.Name, err)
-				return
+				return fmt.Errorf("error when searching in project %s: %w", proj.Name, err)
 			}
+
 			tempListItems := reflect.ValueOf(tempList).Elem().FieldByName("Items")
 			ch <- ProjectItems{projectName: proj.Name, items: tempListItems}
-		}()
+
+			return nil
+		})
 	}
 
-	wg.Wait()
+	if err := wg.Wait(); err != nil {
+		return err
+	}
 	close(ch)
 
 	// Collect and sort by project name
@@ -166,8 +166,8 @@ func (c *Client) ListObjects(ctx context.Context, list runtimeclient.ObjectList,
 		collected = append(collected, pi)
 	}
 
-	sort.Slice(collected, func(i, j int) bool {
-		return collected[i].projectName < collected[j].projectName
+	slices.SortFunc(collected, func(i, j ProjectItems) int {
+		return cmp.Compare(i.projectName, j.projectName)
 	})
 
 	for _, pi := range collected {
@@ -176,9 +176,8 @@ func (c *Client) ListObjects(ctx context.Context, list runtimeclient.ObjectList,
 		}
 	}
 
-	// if the user did not search for a specific named resource we can already
-	// quit as this case should not throw an error if no item could be
-	// found
+	// If the user did not search for a specific named resource we can already
+	// quit as this case should not throw an error if no item could be found.
 	if opts.searchForName == "" {
 		return nil
 	}

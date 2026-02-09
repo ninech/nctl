@@ -127,7 +127,6 @@ func main() {
 			nctl.APICluster,
 			nctl.Project,
 			api.LogClient(ctx, nctl.LogAPIAddress, nctl.LogAPIInsecure),
-			api.OutputWriter(writer),
 		)
 		if err != nil {
 			fmt.Fprintln(writer, err)
