@@ -1,7 +1,8 @@
 package update
 
 import (
-	"context"
+	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -11,13 +12,14 @@ import (
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/create"
+	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestServiceConnection(t *testing.T) {
-	ctx := context.Background()
+	t.Parallel()
+
 	tests := []struct {
 		name    string
 		update  serviceConnectionCmd
@@ -128,29 +130,44 @@ func TestServiceConnection(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			out := &bytes.Buffer{}
+			tt.update.Writer = format.NewWriter(out)
 			tt.update.Name = "test-" + t.Name()
 
 			apiClient, err := test.SetupClient()
-			require.NoError(t, err)
+			if err != nil {
+				t.Fatalf("setup client error, got: %s", err)
+			}
 
 			created := test.ServiceConnection(tt.update.Name, apiClient.Project)
-			if err := apiClient.Create(ctx, created); err != nil {
+			if err := apiClient.Create(t.Context(), created); err != nil {
 				t.Fatalf("serviceconnection create error, got: %s", err)
 			}
-			if err := apiClient.Get(ctx, api.ObjectName(created), created); err != nil {
+			if err := apiClient.Get(t.Context(), api.ObjectName(created), created); err != nil {
 				t.Fatalf("expected serviceconnection to exist, got: %s", err)
 			}
 
 			updated := &networking.ServiceConnection{}
-			if err := tt.update.Run(ctx, apiClient); (err != nil) != tt.wantErr {
+			if err := tt.update.Run(t.Context(), apiClient); (err != nil) != tt.wantErr {
 				t.Errorf("serviceConnectionCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if err := apiClient.Get(ctx, api.ObjectName(created), updated); err != nil {
+			if err := apiClient.Get(t.Context(), api.ObjectName(created), updated); err != nil {
 				t.Fatalf("expected serviceconnection to exist, got: %s", err)
 			}
 
 			if !cmp.Equal(updated.Spec.ForProvider, tt.want) {
 				t.Fatalf("expected serviceConnection.Spec.ForProvider = %v, got: %v", updated.Spec.ForProvider, tt.want)
+			}
+
+			if !tt.wantErr {
+				if !strings.Contains(out.String(), "updated") {
+					t.Fatalf("expected output to contain 'updated', got: %s", out.String())
+				}
+				if !strings.Contains(out.String(), tt.update.Name) {
+					t.Fatalf("expected output to contain service connection name, got: %s", out.String())
+				}
 			}
 		})
 	}

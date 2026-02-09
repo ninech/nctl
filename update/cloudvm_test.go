@@ -1,20 +1,22 @@
 package update
 
 import (
-	"context"
+	"bytes"
 	"reflect"
+	"strings"
 	"testing"
 
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
 
 func TestCloudVM(t *testing.T) {
-	ctx := context.Background()
+	t.Parallel()
+
 	tests := []struct {
 		name    string
 		create  infrastructure.CloudVirtualMachineParameters
@@ -53,30 +55,43 @@ func TestCloudVM(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			out := &bytes.Buffer{}
+			tt.update.Writer = format.NewWriter(out)
 			tt.update.Name = "test-" + t.Name()
 
 			apiClient, err := test.SetupClient()
-			require.NoError(t, err)
+			if err != nil {
+				t.Fatalf("setup client error, got: %s", err)
+			}
 
 			created := test.CloudVirtualMachine(tt.update.Name, apiClient.Project, "nine-es34", tt.create.PowerState)
 			created.Spec.ForProvider = tt.create
-			if err := apiClient.Create(ctx, created); err != nil {
+			if err := apiClient.Create(t.Context(), created); err != nil {
 				t.Fatalf("cloudvm create error, got: %s", err)
 			}
-			if err := apiClient.Get(ctx, api.ObjectName(created), created); err != nil {
+			if err := apiClient.Get(t.Context(), api.ObjectName(created), created); err != nil {
 				t.Fatalf("expected cloudvm to exist, got: %s", err)
 			}
 
 			updated := &infrastructure.CloudVirtualMachine{ObjectMeta: metav1.ObjectMeta{Name: created.Name, Namespace: created.Namespace}}
-			if err := tt.update.Run(ctx, apiClient); (err != nil) != tt.wantErr {
+			if err := tt.update.Run(t.Context(), apiClient); (err != nil) != tt.wantErr {
 				t.Errorf("cloudVMCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if err := apiClient.Get(ctx, api.ObjectName(updated), updated); err != nil {
+			if err := apiClient.Get(t.Context(), api.ObjectName(updated), updated); err != nil {
 				t.Fatalf("expected cloudvm to exist, got: %s", err)
 			}
 
 			if !reflect.DeepEqual(updated.Spec.ForProvider, tt.want) {
 				t.Fatalf("expected CloudVirtualMachine.Spec.ForProvider = %v, got: %v", updated.Spec.ForProvider, tt.want)
+			}
+
+			if !tt.wantErr {
+				if !strings.Contains(out.String(), "updated") {
+					t.Errorf("expected output to contain 'updated', got: %s", out.String())
+				}
+				if !strings.Contains(out.String(), tt.update.Name) {
+					t.Errorf("expected output to contain %q, got: %s", tt.update.Name, out.String())
+				}
 			}
 		})
 	}
