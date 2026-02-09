@@ -3,14 +3,16 @@ package delete
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"time"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
-	"k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 type Cmd struct {
@@ -35,10 +37,20 @@ type Cmd struct {
 
 type resourceCmd struct {
 	format.Writer `kong:"-"`
+	format.Reader `kong:"-"`
 	Name          string        `arg:"" completion-predictor:"resource_name" help:"Name of the resource to delete."`
 	Force         bool          `default:"false" help:"Do not ask for confirmation of deletion."`
 	Wait          bool          `default:"true" help:"Wait until resource is fully deleted."`
 	WaitTimeout   time.Duration `default:"5m" help:"Duration to wait for the deletion. Only relevant if wait is set."`
+}
+
+// BeforeApply initializes Writer and Reader from Kong's bound io.Writer and io.Reader.
+// Because Kong wont apply hooks on embedded structs.
+func (cmd *resourceCmd) BeforeApply(writer io.Writer, reader io.Reader) error {
+	return errors.Join(
+		cmd.Writer.BeforeApply(writer),
+		cmd.Reader.BeforeApply(reader),
+	)
 }
 
 // cleanupFunc is called after the resource has been deleted in order to do
@@ -49,11 +61,12 @@ type cleanupFunc func(client *api.Client) error
 type promptFunc func(kind, name string) string
 
 type deleter struct {
-	format.Writer `kong:"-"`
-	kind          string
-	mg            resource.Managed
-	cleanup       cleanupFunc
-	prompt        promptFunc
+	format.Writer
+	format.Reader
+	kind    string
+	mg      resource.Managed
+	cleanup cleanupFunc
+	prompt  promptFunc
 }
 
 // deleterOption allows to set options for the deletion
@@ -66,6 +79,7 @@ func (cmd *resourceCmd) newDeleter(
 ) *deleter {
 	d := &deleter{
 		Writer:  cmd.Writer,
+		Reader:  cmd.Reader,
 		kind:    kind,
 		mg:      mg,
 		cleanup: noCleanup,
@@ -115,7 +129,7 @@ func (d *deleter) deleteResource(
 	}
 
 	if !force {
-		ok, err := d.Confirm(d.prompt(d.kind, d.mg.GetName()))
+		ok, err := d.Confirm(d.Reader, d.prompt(d.kind, d.mg.GetName()))
 		if err != nil {
 			return err
 		}
@@ -158,7 +172,7 @@ func (d *deleter) waitForDeletion(ctx context.Context, client *api.Client) error
 		select {
 		case <-ticker.C:
 			if err := client.Get(ctx, client.Name(d.mg.GetName()), d.mg); err != nil {
-				if errors.IsNotFound(err) {
+				if kerrors.IsNotFound(err) {
 					_ = spinner.Stop()
 					return nil
 				}

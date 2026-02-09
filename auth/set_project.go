@@ -16,7 +16,7 @@ import (
 )
 
 type SetProjectCmd struct {
-	format.Writer `kong:"-"`
+	format.Writer `hidden:""`
 	Name          string `arg:"" help:"Name of the default project to be used." completion-predictor:"project_name"`
 }
 

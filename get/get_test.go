@@ -3,16 +3,34 @@ package get
 import (
 	"bytes"
 	"context"
+	"io"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
+	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// NewTestCmd creates a Cmd for testing with the given writer and output format.
+// This is a convenience helper that properly initializes the output writer.
+func NewTestCmd(w io.Writer, outFormat outputFormat, opts ...func(*Cmd)) *Cmd {
+	cmd := &Cmd{
+		output: output{
+			Writer: format.NewWriter(w),
+			Format: outFormat,
+		},
+	}
+	_ = cmd.BeforeApply(w)
+	for _, opt := range opts {
+		opt(cmd)
+	}
+	return cmd
+}
 
 func TestListPrint(t *testing.T) {
 	tests := map[string]struct {
