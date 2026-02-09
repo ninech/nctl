@@ -49,8 +49,7 @@ func (cmd *postgresDatabaseCmd) Run(ctx context.Context, client *api.Client) err
 		return err
 	}
 
-	cmd.Printf(
-		"\n Your PostgresDatabase %s is now available. You can retrieve the database, username and password with:\n\n nctl get postgresdatabase %s --print-connection-string\n\n",
+	cmd.Successf("🚀", "Your PostgresDatabase %s is now available. You can retrieve the database, username and password with:\n\n nctl get postgresdatabase %s --print-connection-string",
 		postgresDatabase.Name,
 		postgresDatabase.Name,
 	)

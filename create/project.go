@@ -21,7 +21,6 @@ func (cmd *projectCmd) Run(ctx context.Context, client *api.Client) error {
 	}
 
 	p := newProject(cmd.Name, org, cmd.DisplayName)
-	cmd.Printf("Creating new project %s for organization %s\n", p.Name, org)
 	c := cmd.newCreator(client, p, strings.ToLower(management.ProjectKind))
 	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
 	defer cancel()
