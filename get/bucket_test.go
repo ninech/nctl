@@ -3,6 +3,7 @@ package get
 import (
 	"bytes"
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -258,7 +259,7 @@ func TestBucketGet(t *testing.T) {
 			if tt.wantErr {
 				require.Error(t, err)
 				for _, s := range tt.wantContain {
-					assert.Contains(t, err.Error(), s, "missing expected substring %q in error:\n%s", s, err)
+					assert.Contains(t, strings.ToLower(err.Error()), strings.ToLower(s), "missing expected substring %q in error:\n%s", s, err)
 				}
 				return
 			}

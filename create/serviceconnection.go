@@ -12,10 +12,21 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/alecthomas/kong"
+	apps "github.com/ninech/apis/apps/v1alpha1"
+	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	networking "github.com/ninech/apis/networking/v1alpha1"
+	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/cli"
+)
+
+// These might be replaced to fetch compatible resources from the schema.
+var (
+	// allowedSources are the allowed source kinds for a service connection.
+	allowedSources = []string{infrastructure.KubernetesClusterKind, apps.ApplicationKind}
+	// allowedDestinations are the allowed destination kinds for a service connection.
+	allowedDestinations = []string{storage.KeyValueStoreKind, storage.MySQLKind, storage.PostgresKind, storage.MySQLDatabaseKind}
 )
 
 type serviceConnectionCmd struct {
@@ -200,23 +211,17 @@ func groupVersionKindFromKind(kind string) (schema.GroupVersionKind, error) {
 		return schema.GroupVersionKind{}, fmt.Errorf("error creating scheme: %w", err)
 	}
 
-	var availableKinds []string
 	for gvk := range scheme.AllKnownTypes() {
 		if strings.EqualFold(kind, gvk.Kind) {
 			return gvk, nil
-		}
-		// Collect non-list kinds for error message
-		if !strings.HasSuffix(gvk.Kind, "List") && gvk.Kind != "" {
-			availableKinds = append(availableKinds, strings.ToLower(gvk.Kind))
 		}
 	}
 
 	return schema.GroupVersionKind{}, cli.ErrorWithContext(fmt.Errorf("kind %q is invalid", kind)).
 		WithExitCode(cli.ExitUsageError).
-		WithAvailable(availableKinds...).
 		WithSuggestions(
-			"Valid source kinds: kubernetescluster, application",
-			"Valid destination kinds: keyvaluestore, mysql, postgres, mysqldatabase, postgresdatabase",
+			"Valid source kinds: "+strings.Join(allowedSources, ", "),
+			"Valid destination kinds: "+strings.Join(allowedDestinations, ", "),
 		)
 }
 
@@ -224,8 +229,8 @@ func groupVersionKindFromKind(kind string) (schema.GroupVersionKind, error) {
 // create command
 func ServiceConnectionKongVars() kong.Vars {
 	result := make(kong.Vars)
-	result["allowed_sources"] = "kubernetescluster, application"
-	result["allowed_destinations"] = "keyvaluestore, mysql, postgres, mysqldatabase, postgresdatabase"
+	result["allowed_sources"] = strings.Join(allowedSources, ", ")
+	result["allowed_destinations"] = strings.Join(allowedDestinations, ", ")
 	result["label_selector_placeholder"] = "'key1=value1,key2=value2,key3 in (value3)'"
 	result["label_selector_usage"] = "Selector (label query) to filter on, supports '=', '==', '!=', 'in', 'notin'. Matching objects must satisfy all of the specified label constraints."
 	result["label_selector_requirements"] = "Can only be set when the source is a KubernetesCluster."

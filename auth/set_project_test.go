@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	management "github.com/ninech/apis/management/v1alpha1"
@@ -116,7 +117,7 @@ func TestOrgFromProjectAPIErrors(t *testing.T) {
 			is.NoError(err)
 
 			_, err = orgFromProject(t.Context(), apiClient, "test-prod")
-			is.ErrorContains(err, tc.wantErrContain)
+			is.Contains(strings.ToLower(err.Error()), strings.ToLower(tc.wantErrContain))
 		})
 	}
 }

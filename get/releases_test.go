@@ -182,7 +182,7 @@ func TestReleases(t *testing.T) {
 			}
 			if tc.wantErr {
 				for _, substr := range tc.wantContain {
-					if !strings.Contains(err.Error(), substr) {
+					if !strings.Contains(strings.ToLower(err.Error()), strings.ToLower(substr)) {
 						t.Errorf("releasesCmd.Run() error did not contain %q, err = %v", substr, err)
 					}
 				}

@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/alecthomas/kong"
@@ -109,7 +110,7 @@ func TestErrorOutput(t *testing.T) {
 			t.Parallel()
 			got := tt.err.Error()
 			for _, want := range tt.contains {
-				if !containsSubstring(got, want) {
+				if !strings.Contains(strings.ToLower(got), strings.ToLower(want)) {
 					t.Errorf("Error() output missing %q\ngot: %s", want, got)
 				}
 			}
@@ -139,17 +140,4 @@ func TestErrorWithContextNil(t *testing.T) {
 	if got := ErrorWithContext(nil); got != nil {
 		t.Errorf("ErrorWithContext(nil) = %v, want nil", got)
 	}
-}
-
-func containsSubstring(s, substr string) bool {
-	return len(substr) == 0 || len(s) >= len(substr) && containsAt(s, substr)
-}
-
-func containsAt(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
 }

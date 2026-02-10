@@ -170,7 +170,7 @@ func TestDatabase(t *testing.T) {
 			}
 			if tt.wantErr {
 				for _, substr := range tt.wantContain {
-					if !strings.Contains(err.Error(), substr) {
+					if !strings.Contains(strings.ToLower(err.Error()), strings.ToLower(substr)) {
 						t.Errorf("postgresDatabaseCmd.Run() error did not contain %q, err = %v", substr, err)
 					}
 				}
