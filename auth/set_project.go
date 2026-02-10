@@ -42,7 +42,7 @@ func (s *SetProjectCmd) Run(ctx context.Context, client *api.Client) error {
 			org,
 		)
 		if err := trySwitchOrg(ctx, client, s.Name); err != nil {
-			return fmt.Errorf("failed to switch organization: %w", err)
+			return err
 		}
 
 		org, err = client.Organization()

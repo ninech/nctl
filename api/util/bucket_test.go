@@ -1,6 +1,7 @@
 package util
 
 import (
+	"strings"
 	"testing"
 
 	storage "github.com/ninech/apis/storage/v1alpha1"
@@ -298,7 +299,7 @@ func TestParseCORSLooseWithMask(t *testing.T) {
 
 			if tt.wantErr != "" {
 				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.wantErr)
+				assert.Contains(t, strings.ToLower(err.Error()), strings.ToLower(tt.wantErr))
 				return
 			}
 			assert.NoError(t, err)

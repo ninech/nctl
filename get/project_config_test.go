@@ -2,6 +2,7 @@ package get
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 	"time"
 
@@ -139,7 +140,7 @@ func TestProjectConfigs(t *testing.T) {
 			if len(tc.errorContains) > 0 {
 				require.Error(t, err)
 				for _, s := range tc.errorContains {
-					assert.Contains(t, err.Error(), s)
+					assert.Contains(t, strings.ToLower(err.Error()), strings.ToLower(s))
 				}
 				return
 			}

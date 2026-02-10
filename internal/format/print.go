@@ -65,8 +65,8 @@ func success(icon, message string) string {
 	return fmt.Sprintf(" %s %s %s", SuccessChar, message, icon)
 }
 
-// failuref is a formatted message for indicating a failed step.
-func failuref(icon, format string, a ...any) string {
+// Failuref is a formatted message for indicating a failed step.
+func Failuref(icon, format string, a ...any) string {
 	return fmt.Sprintf(" %s %s %s", FailureChar, fmt.Sprintf(format, a...), icon)
 }
 

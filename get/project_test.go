@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"os"
+	"strings"
 	"testing"
 
 	management "github.com/ninech/apis/management/v1alpha1"
@@ -20,10 +21,10 @@ func TestProject(t *testing.T) {
 	organization := "evilcorp"
 
 	for name, testCase := range map[string]struct {
-		projects     []client.Object
-		displayNames []string
-		name         string
-		outputFormat outputFormat
+		projects      []client.Object
+		displayNames  []string
+		name          string
+		outputFormat  outputFormat
 		allProjects   bool
 		output        string
 		errorContains []string
@@ -168,7 +169,7 @@ dev      <none>
 			if len(testCase.errorContains) > 0 {
 				require.Error(t, err)
 				for _, s := range testCase.errorContains {
-					assert.Contains(t, err.Error(), s)
+					assert.Contains(t, strings.ToLower(err.Error()), strings.ToLower(s))
 				}
 				return
 			}

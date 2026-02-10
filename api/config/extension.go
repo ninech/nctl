@@ -9,6 +9,7 @@ import (
 
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/internal/cli"
+	"github.com/ninech/nctl/internal/format"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/clientcmd"
@@ -21,10 +22,8 @@ const (
 	NctlExtensionContext = "nctl"
 )
 
-var (
-	// ErrExtensionNotFound describes a missing extension in the kubeconfig
-	ErrExtensionNotFound extensionError = "nctl config not found"
-)
+// ErrExtensionNotFound describes a missing extension in the kubeconfig
+var ErrExtensionNotFound extensionError = "nctl config not found"
 
 type extensionError string
 
@@ -208,10 +207,7 @@ func contextNotFoundError[T any](contextName string, contexts map[string]T) erro
 	return cli.ErrorWithContext(fmt.Errorf("could not find context %q in kubeconfig", contextName)).
 		WithExitCode(cli.ExitUsageError).
 		WithAvailable(available...).
-		WithSuggestions(
-			"List available contexts: kubectl config get-contexts",
-			"Login to the API: nctl auth login",
-		)
+		WithSuggestions("Login to the API: " + format.Command().Login())
 }
 
 // clusterNotFoundError returns an error with available clusters listed.

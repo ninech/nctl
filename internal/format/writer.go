@@ -59,7 +59,7 @@ func (w *Writer) Warningf(format string, a ...any) {
 
 // Failuref is a formatted message for indicating a failure.
 func (w *Writer) Failuref(icon string, format string, a ...any) {
-	fmt.Fprint(w.writer(), failuref(icon, format, a...)+"\n")
+	fmt.Fprint(w.writer(), Failuref(icon, format, a...)+"\n")
 }
 
 // Infof is a formatted message for providing information.

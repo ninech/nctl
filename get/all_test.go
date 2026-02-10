@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"os"
+	"strings"
 	"testing"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
@@ -322,7 +323,7 @@ dev      pear    Release      apps.nine.ch
 			if testCase.errorExpected {
 				require.Error(t, err)
 				for _, s := range testCase.errorContains {
-					assert.Contains(t, err.Error(), s)
+					assert.Contains(t, strings.ToLower(err.Error()), strings.ToLower(s))
 				}
 				return
 			}

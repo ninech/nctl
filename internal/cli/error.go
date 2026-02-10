@@ -3,6 +3,8 @@ package cli
 import (
 	"fmt"
 	"strings"
+
+	"github.com/ninech/nctl/internal/format"
 )
 
 // Exit codes following the square/exit convention.
@@ -36,7 +38,8 @@ type Error struct {
 func (e *Error) Error() string {
 	sb := strings.Builder{}
 	if e.Err != nil {
-		sb.WriteString(e.Err.Error())
+		s := e.Err.Error()
+		sb.WriteString(format.Failuref("💥", "%s", strings.ToUpper(s[:1])+s[1:]))
 	}
 
 	if len(e.Context) > 0 {
