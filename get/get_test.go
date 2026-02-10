@@ -16,8 +16,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// NewTestCmd creates a Cmd for testing with the given writer and output format.
-// This is a convenience helper that properly initializes the output writer.
+// NewTestCmd creates a [Cmd] for testing with the given writer and output format.
+// It initializes the format.Writer and calls BeforeApply to ensure the output
+// is properly configured.
 func NewTestCmd(w io.Writer, outFormat outputFormat, opts ...func(*Cmd)) *Cmd {
 	cmd := &Cmd{
 		output: output{
