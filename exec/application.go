@@ -53,7 +53,7 @@ type applicationCmd struct {
 }
 
 // Help displays examples for the application exec command
-func (ac applicationCmd) Help() string {
+func (cmd applicationCmd) Help() string {
 	return `Examples:
   # Open a shell in a buildpack/dockerfile built application. The dockerfile
   # built application needs a valid "/bin/sh" shell to be installed.
