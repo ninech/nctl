@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"context"
 	"io"
 	"log"
 	"os"
@@ -31,6 +30,8 @@ contexts:
 `
 
 func TestClusterCmd(t *testing.T) {
+	t.Parallel()
+
 	// write our "existing" kubeconfig to a temp kubeconfig
 	kubeconfig, err := os.CreateTemp("", "*-kubeconfig.yaml")
 	if err != nil {
@@ -43,15 +44,16 @@ func TestClusterCmd(t *testing.T) {
 	}
 
 	cluster := newCluster()
+	is := require.New(t)
 	apiClient, err := test.SetupClient(
 		test.WithObjects(cluster),
 	)
-	require.NoError(t, err)
+	is.NoError(err)
 	apiClient.KubeconfigPath = kubeconfig.Name()
 
 	// we run without the execPlugin, that would be something for an e2e test
 	cmd := &ClusterCmd{Name: config.ContextName(cluster), ExecPlugin: false}
-	if err := cmd.Run(context.TODO(), apiClient); err != nil {
+	if err := cmd.Run(t.Context(), apiClient); err != nil {
 		t.Fatal(err)
 	}
 

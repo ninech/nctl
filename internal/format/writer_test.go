@@ -6,13 +6,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewWriter(t *testing.T) {
 	t.Parallel()
-	is := assert.New(t)
+	is := require.New(t)
 
 	buf := &bytes.Buffer{}
 	writer := NewWriter(buf)
@@ -53,10 +52,10 @@ func TestWriter_BeforeApply(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			is := assert.New(t)
+			is := require.New(t)
 
 			err := tt.writer.BeforeApply(tt.input)
-			require.NoError(t, err)
+			is.NoError(err)
 
 			if tt.writer != nil {
 				is.Equal(tt.expectWriter, tt.writer.Writer)
@@ -88,7 +87,7 @@ func TestWriter_writer(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			is := assert.New(t)
+			is := require.New(t)
 
 			w := tt.writer.writer()
 			is.Equal(tt.expect, w)
@@ -119,7 +118,7 @@ func TestWriter_Print(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			is := assert.New(t)
+			is := require.New(t)
 
 			buf := &bytes.Buffer{}
 			writer := NewWriter(buf)
@@ -163,7 +162,7 @@ func TestWriter_FormattedOutput(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			is := assert.New(t)
+			is := require.New(t)
 
 			buf := &bytes.Buffer{}
 			writer := NewWriter(buf)
@@ -209,7 +208,7 @@ func TestConfirm(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			is := assert.New(t)
+			is := require.New(t)
 
 			output := &bytes.Buffer{}
 			writer := NewWriter(output)
@@ -222,7 +221,7 @@ func TestConfirm(t *testing.T) {
 				return
 			}
 
-			require.NoError(t, err)
+			is.NoError(err)
 			is.Equal(tt.expected, result)
 			is.Contains(output.String(), "Continue? [y|n]:")
 		})

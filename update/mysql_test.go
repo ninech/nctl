@@ -1,7 +1,6 @@
 package update
 
 import (
-	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -15,7 +14,8 @@ import (
 )
 
 func TestMySQL(t *testing.T) {
-	ctx := context.Background()
+	t.Parallel()
+
 	tests := []struct {
 		name    string
 		create  storage.MySQLParameters
@@ -98,25 +98,29 @@ func TestMySQL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			is := require.New(t)
+
 			tt.update.Name = "test-" + t.Name()
 
 			apiClient, err := test.SetupClient()
-			require.NoError(t, err)
+			is.NoError(err)
 
 			created := test.MySQL(tt.update.Name, apiClient.Project, "nine-es34")
 			created.Spec.ForProvider = tt.create
-			if err := apiClient.Create(ctx, created); err != nil {
+			if err := apiClient.Create(t.Context(), created); err != nil {
 				t.Fatalf("mysql create error, got: %s", err)
 			}
-			if err := apiClient.Get(ctx, api.ObjectName(created), created); err != nil {
+			if err := apiClient.Get(t.Context(), api.ObjectName(created), created); err != nil {
 				t.Fatalf("expected mysql to exist, got: %s", err)
 			}
 
 			updated := &storage.MySQL{}
-			if err := tt.update.Run(ctx, apiClient); (err != nil) != tt.wantErr {
+			if err := tt.update.Run(t.Context(), apiClient); (err != nil) != tt.wantErr {
 				t.Errorf("mySQLCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if err := apiClient.Get(ctx, api.ObjectName(created), updated); err != nil {
+			if err := apiClient.Get(t.Context(), api.ObjectName(created), updated); err != nil {
 				t.Fatalf("expected mysql to exist, got: %s", err)
 			}
 

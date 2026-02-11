@@ -1,7 +1,6 @@
 package create
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -11,7 +10,8 @@ import (
 )
 
 func TestVCluster(t *testing.T) {
-	ctx := context.Background()
+	t.Parallel()
+
 	cmd := vclusterCmd{
 		resourceCmd: resourceCmd{
 			Name:        "falcon",
@@ -20,15 +20,17 @@ func TestVCluster(t *testing.T) {
 		},
 	}
 
+	is := require.New(t)
+
 	cluster := cmd.newCluster(test.DefaultProject)
 	apiClient, err := test.SetupClient()
-	require.NoError(t, err)
+	is.NoError(err)
 
-	if err := cmd.Run(ctx, apiClient); err != nil {
+	if err := cmd.Run(t.Context(), apiClient); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := apiClient.Get(ctx, api.ObjectName(cluster), cluster); err != nil {
+	if err := apiClient.Get(t.Context(), api.ObjectName(cluster), cluster); err != nil {
 		t.Fatalf("expected vcluster to exist, got: %s", err)
 	}
 }

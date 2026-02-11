@@ -1,7 +1,6 @@
 package create
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -17,7 +16,8 @@ import (
 )
 
 func TestKeyValueStore(t *testing.T) {
-	ctx := context.Background()
+	t.Parallel()
+
 	tests := []struct {
 		name    string
 		create  keyValueStoreCmd
@@ -103,26 +103,29 @@ func TestKeyValueStore(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			is := require.New(t)
+
 			tt.create.Name = "test-" + t.Name()
 			tt.create.Wait = false
 			tt.create.WaitTimeout = time.Second
 
 			apiClient, err := test.SetupClient()
-			require.NoError(t, err)
+			is.NoError(err)
 
-			if err := tt.create.Run(ctx, apiClient); (err != nil) != tt.wantErr {
+			if err := tt.create.Run(t.Context(), apiClient); (err != nil) != tt.wantErr {
 				t.Errorf("keyValueStoreCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			created := &storage.KeyValueStore{ObjectMeta: metav1.ObjectMeta{Name: tt.create.Name, Namespace: apiClient.Project}}
-			if err := apiClient.Get(ctx, api.ObjectName(created), created); (err != nil) != tt.wantErr {
+			if err := apiClient.Get(t.Context(), api.ObjectName(created), created); (err != nil) != tt.wantErr {
 				t.Fatalf("expected keyvaluestore to exist, got: %s", err)
 			}
 			if tt.wantErr {
 				return
 			}
 
-			require.True(t, cmp.Equal(tt.want, created.Spec.ForProvider))
+			is.True(cmp.Equal(tt.want, created.Spec.ForProvider))
 		})
 	}
 }

@@ -35,7 +35,6 @@ require (
 	golang.org/x/exp v0.0.0-20260209203927-2842357ff358
 	golang.org/x/oauth2 v0.35.0
 	golang.org/x/sync v0.19.0
-	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.35.0
 	k8s.io/apimachinery v0.35.0
 	k8s.io/client-go v0.35.0

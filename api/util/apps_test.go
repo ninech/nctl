@@ -5,10 +5,13 @@ import (
 	"testing"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestEnvUpdate(t *testing.T) {
+	t.Parallel()
+
+	is := require.New(t)
 	old := apps.EnvVars{
 		{
 			Name:  "old3",
@@ -37,5 +40,5 @@ func TestEnvUpdate(t *testing.T) {
 		},
 	}
 
-	assert.True(t, reflect.DeepEqual(new, expected), "env vars should be updated: %+v \n %+v", new, expected)
+	is.True(reflect.DeepEqual(new, expected), "env vars should be updated: %+v \n %+v", new, expected)
 }

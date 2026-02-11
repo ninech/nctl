@@ -15,6 +15,8 @@ import (
 )
 
 func TestCreate(t *testing.T) {
+	t.Parallel()
+
 	asa := &iam.APIServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
@@ -30,12 +32,14 @@ func TestCreate(t *testing.T) {
 		},
 	}
 
+	is := require.New(t)
+
 	apiClient, err := test.SetupClient()
-	require.NoError(t, err)
+	is.NoError(err)
 	cmd := &apiServiceAccountCmd{}
 	c := cmd.newCreator(apiClient, asa, "apiserviceaccount")
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(t.Context(), time.Second*5)
 	defer cancel()
 
 	if err := c.createResource(ctx); err != nil {

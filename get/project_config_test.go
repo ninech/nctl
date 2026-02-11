@@ -9,7 +9,6 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -123,6 +122,8 @@ func TestProjectConfigs(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
+			is := require.New(t)
+
 			apiClient, err := test.SetupClient(
 				test.WithProjectsFromResources(tc.createdConfigs...),
 				test.WithObjects(tc.createdConfigs...),
@@ -130,7 +131,7 @@ func TestProjectConfigs(t *testing.T) {
 				test.WithDefaultProject(tc.project),
 				test.WithNameIndexFor(&apps.ProjectConfig{}),
 			)
-			require.NoError(t, err)
+			is.NoError(err)
 
 			buf := &bytes.Buffer{}
 			tc.get.BeforeApply(buf)
@@ -138,21 +139,21 @@ func TestProjectConfigs(t *testing.T) {
 
 			err = cmd.Run(t.Context(), apiClient, tc.get)
 			if len(tc.errorContains) > 0 {
-				require.Error(t, err)
+				is.Error(err)
 				for _, s := range tc.errorContains {
-					assert.Contains(t, strings.ToLower(err.Error()), strings.ToLower(s))
+					is.Contains(strings.ToLower(err.Error()), strings.ToLower(s))
 				}
 				return
 			}
-			require.NoError(t, err)
+			is.NoError(err)
 			if tc.expectedLineAmountInOutput != nil {
-				assert.Equal(t, *tc.expectedLineAmountInOutput, test.CountLines(buf.String()), buf.String())
+				is.Equal(*tc.expectedLineAmountInOutput, test.CountLines(buf.String()), buf.String())
 			}
 
 			if tc.expectExactMessage == nil {
 				return
 			}
-			assert.Equal(t, buf.String(), *tc.expectExactMessage, buf.String())
+			is.Equal(*tc.expectExactMessage, buf.String(), buf.String())
 		})
 	}
 }

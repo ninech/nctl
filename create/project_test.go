@@ -1,7 +1,6 @@
 package create
 
 import (
-	"context"
 	"os"
 	"testing"
 	"time"
@@ -14,8 +13,9 @@ import (
 )
 
 func TestProjects(t *testing.T) {
+	t.Parallel()
+
 	const existsAlready = "exists-already"
-	ctx := context.Background()
 	projectName, organization := "testproject", "evilcorp"
 	apiClient, err := test.SetupClient(
 		test.WithOrganization("evilcorp"),
@@ -35,12 +35,12 @@ func TestProjects(t *testing.T) {
 		DisplayName: "Some Display Name",
 	}
 
-	if err := cmd.Run(ctx, apiClient); err != nil {
+	if err := cmd.Run(t.Context(), apiClient); err != nil {
 		t.Fatal(err)
 	}
 
 	if err := apiClient.Get(
-		ctx,
+		t.Context(),
 		api.NamespacedName(projectName, organization),
 		&management.Project{},
 	); err != nil {
@@ -49,13 +49,15 @@ func TestProjects(t *testing.T) {
 
 	// test if the command errors out if the project already exists
 	cmd.Name = existsAlready
-	if err := cmd.Run(ctx, apiClient); err == nil {
+	if err := cmd.Run(t.Context(), apiClient); err == nil {
 		t.Fatal("expected an error as project already exists, but got none")
 	}
 }
 
 func TestProjectsConfigErrors(t *testing.T) {
-	ctx := context.Background()
+	t.Parallel()
+
+	is := require.New(t)
 	apiClient, err := test.SetupClient()
 	if err != nil {
 		t.Fatal(err)
@@ -68,12 +70,12 @@ func TestProjectsConfigErrors(t *testing.T) {
 		},
 	}
 	// there is no kubeconfig so we expect to fail
-	require.Error(t, cmd.Run(ctx, apiClient))
+	is.Error(cmd.Run(t.Context(), apiClient))
 
 	// we create a kubeconfig which does not contain a nctl config
 	// extension
 	kubeconfig, err := test.CreateTestKubeconfig(apiClient, "")
-	require.NoError(t, err)
+	is.NoError(err)
 	defer os.Remove(kubeconfig)
-	require.ErrorIs(t, cmd.Run(ctx, apiClient), config.ErrExtensionNotFound)
+	is.ErrorIs(cmd.Run(t.Context(), apiClient), config.ErrExtensionNotFound)
 }

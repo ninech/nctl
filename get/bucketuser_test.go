@@ -2,7 +2,6 @@ package get
 
 import (
 	"bytes"
-	"context"
 	"strings"
 	"testing"
 
@@ -15,12 +14,13 @@ import (
 )
 
 func TestBucketUser(t *testing.T) {
+	t.Parallel()
+
 	type buInstance struct {
 		name     string
 		project  string
 		location meta.LocationName
 	}
-	ctx := context.Background()
 	tests := []struct {
 		name          string
 		instances     []buInstance
@@ -113,6 +113,8 @@ func TestBucketUser(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			objects := []client.Object{}
 			for _, bu := range tt.instances {
 				created := bucketUser(bu.name, bu.project, bu.location)
@@ -124,12 +126,13 @@ func TestBucketUser(t *testing.T) {
 				test.WithNameIndexFor(&storage.BucketUser{}),
 				test.WithKubeconfig(t),
 			)
-			require.NoError(t, err)
+			is := require.New(t)
+			is.NoError(err)
 
 			buf := &bytes.Buffer{}
 			cmd := NewTestCmd(buf, tt.out)
 			cmd.AllProjects = tt.inAllProjects
-			err = tt.get.Run(ctx, apiClient, cmd)
+			err = tt.get.Run(t.Context(), apiClient, cmd)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("bucketUserCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 				t.Log(buf.String())

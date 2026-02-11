@@ -2,7 +2,6 @@ package get
 
 import (
 	"bytes"
-	"context"
 	"strings"
 	"testing"
 	"time"
@@ -10,13 +9,14 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestBucketGet(t *testing.T) {
+	t.Parallel()
+
 	type bucketInstance struct {
 		name     string
 		project  string
@@ -24,8 +24,6 @@ func TestBucketGet(t *testing.T) {
 		spec     func(*storage.BucketSpec)
 		status   func(*storage.BucketStatus)
 	}
-
-	ctx := context.Background()
 
 	tests := []struct {
 		name          string
@@ -230,6 +228,9 @@ func TestBucketGet(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			is := require.New(t)
+
 			var objs []client.Object
 			for _, bi := range tt.instances {
 				b := bucket(bi.name, bi.project, bi.location)
@@ -248,29 +249,29 @@ func TestBucketGet(t *testing.T) {
 				test.WithNameIndexFor(&storage.Bucket{}),
 				test.WithKubeconfig(t),
 			)
-			require.NoError(t, err)
+			is.NoError(err)
 
 			buf := &bytes.Buffer{}
 			cmd := tt.getCmd
 			get := NewTestCmd(buf, tt.out)
 			get.AllProjects = tt.inAllProjects
-			err = cmd.Run(ctx, apiClient, get)
+			err = cmd.Run(t.Context(), apiClient, get)
 
 			if tt.wantErr {
-				require.Error(t, err)
+				is.Error(err)
 				for _, s := range tt.wantContain {
-					assert.Contains(t, strings.ToLower(err.Error()), strings.ToLower(s), "missing expected substring %q in error:\n%s", s, err)
+					is.Contains(strings.ToLower(err.Error()), strings.ToLower(s), "missing expected substring %q in error:\n%s", s, err)
 				}
 				return
 			}
-			require.NoError(t, err, buf.String())
+			is.NoError(err, buf.String())
 
 			outStr := buf.String()
 			for _, s := range tt.wantContain {
-				assert.Contains(t, outStr, s, "missing expected substring %q in output:\n%s", s, outStr)
+				is.Contains(outStr, s, "missing expected substring %q in output:\n%s", s, outStr)
 			}
 			if tt.wantLines > 0 {
-				assert.Equal(t, tt.wantLines, test.CountLines(outStr), "unexpected number of lines:\n%s", outStr)
+				is.Equal(tt.wantLines, test.CountLines(outStr), "unexpected number of lines:\n%s", outStr)
 			}
 		})
 	}

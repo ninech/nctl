@@ -10,10 +10,13 @@ import (
 )
 
 func TestConfigParsing(t *testing.T) {
+	t.Parallel()
+
+	is := require.New(t)
 	contextName := "test"
 	cfg := NewExtension("evilcorp")
 	objectCfg, err := cfg.ToObject()
-	require.NoError(t, err)
+	is.NoError(err)
 	for name, testCase := range map[string]struct {
 		kubeconfig    clientcmdapi.Config
 		errorExpected bool
@@ -44,17 +47,19 @@ func TestConfigParsing(t *testing.T) {
 	} {
 
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			is := require.New(t)
+
 			content, err := clientcmd.Write(testCase.kubeconfig)
-			require.NoError(t, err)
+			is.NoError(err)
 
 			parsedCfg, err := readExtension(content, contextName)
 			if testCase.errorExpected {
-				require.Error(t, err)
+				is.Error(err)
 				return
-			} else {
-				require.NoError(t, err)
 			}
-			require.Equal(t, parsedCfg.Organization, cfg.Organization)
+			is.NoError(err)
+			is.Equal(parsedCfg.Organization, cfg.Organization)
 		})
 	}
 }

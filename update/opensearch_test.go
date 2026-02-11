@@ -1,7 +1,6 @@
 package update
 
 import (
-	"context"
 	"testing"
 
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
@@ -15,7 +14,8 @@ import (
 )
 
 func TestOpenSearch(t *testing.T) {
-	ctx := context.Background()
+	t.Parallel()
+
 	tests := []struct {
 		name    string
 		create  storage.OpenSearchParameters
@@ -98,6 +98,8 @@ func TestOpenSearch(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			is := require.New(t)
 
 			tt.update.Name = "test-" + t.Name()
@@ -107,18 +109,18 @@ func TestOpenSearch(t *testing.T) {
 
 			created := test.OpenSearch(tt.update.Name, apiClient.Project, meta.LocationNineES34)
 			created.Spec.ForProvider = tt.create
-			if err := apiClient.Create(ctx, created); err != nil {
+			if err := apiClient.Create(t.Context(), created); err != nil {
 				t.Fatalf("opensearch create error, got: %s", err)
 			}
-			if err := apiClient.Get(ctx, api.ObjectName(created), created); err != nil {
+			if err := apiClient.Get(t.Context(), api.ObjectName(created), created); err != nil {
 				t.Fatalf("expected opensearch to exist, got: %s", err)
 			}
 
 			updated := &storage.OpenSearch{}
-			if err := tt.update.Run(ctx, apiClient); (err != nil) != tt.wantErr {
+			if err := tt.update.Run(t.Context(), apiClient); (err != nil) != tt.wantErr {
 				t.Errorf("openSearchCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if err := apiClient.Get(ctx, api.ObjectName(created), updated); err != nil {
+			if err := apiClient.Get(t.Context(), api.ObjectName(created), updated); err != nil {
 				t.Fatalf("expected openSearch to exist, got: %s", err)
 			}
 

@@ -2,7 +2,6 @@ package get
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -23,8 +22,8 @@ import (
 var defaultCreationTime = metav1.NewTime(test.MustParseTime(time.RFC3339, "2023-03-13T14:00:00Z"))
 
 func TestReleases(t *testing.T) {
+	t.Parallel()
 	const project = test.DefaultProject
-	ctx := context.Background()
 
 	cases := map[string]struct {
 		cmd           releasesCmd
@@ -154,6 +153,8 @@ func TestReleases(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
 			// we initialize the client with objects in different
 			// order than CreationTimestampNano - we sort them by
 			// CreationTimestamp which is quite "random" here.
@@ -167,7 +168,8 @@ func TestReleases(t *testing.T) {
 				test.WithNameIndexFor(&apps.Release{}),
 				test.WithKubeconfig(t),
 			)
-			require.NoError(t, err)
+			is := require.New(t)
+			is.NoError(err)
 
 			if tc.output == "" {
 				tc.output = full
@@ -176,7 +178,7 @@ func TestReleases(t *testing.T) {
 			get := NewTestCmd(buf, tc.output)
 			get.AllProjects = tc.inAllProjects
 
-			err = tc.cmd.Run(ctx, apiClient, get)
+			err = tc.cmd.Run(t.Context(), apiClient, get)
 			if (err != nil) != tc.wantErr {
 				t.Errorf("releasesCmd.Run() error = %v, wantErr %v", err, tc.wantErr)
 			}

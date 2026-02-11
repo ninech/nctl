@@ -2,7 +2,6 @@ package get
 
 import (
 	"bytes"
-	"context"
 	"os"
 	"strings"
 	"testing"
@@ -10,14 +9,12 @@ import (
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api/config"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestProject(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
 	organization := "evilcorp"
 
 	for name, testCase := range map[string]struct {
@@ -138,7 +135,9 @@ dev      <none>
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			testCase := testCase
+			t.Parallel()
+
+			is := require.New(t)
 
 			buf := &bytes.Buffer{}
 			get := NewTestCmd(buf, testCase.outputFormat)
@@ -157,7 +156,7 @@ dev      <none>
 				test.WithNameIndexFor(&management.Project{}),
 				test.WithOrganization(organization),
 			)
-			require.NoError(t, err)
+			is.NoError(err)
 
 			cmd := projectCmd{
 				resourceCmd: resourceCmd{
@@ -165,23 +164,25 @@ dev      <none>
 				},
 			}
 
-			err = cmd.Run(ctx, apiClient, get)
+			err = cmd.Run(t.Context(), apiClient, get)
 			if len(testCase.errorContains) > 0 {
-				require.Error(t, err)
+				is.Error(err)
 				for _, s := range testCase.errorContains {
-					assert.Contains(t, strings.ToLower(err.Error()), strings.ToLower(s))
+					is.Contains(strings.ToLower(err.Error()), strings.ToLower(s))
 				}
 				return
 			}
-			require.NoError(t, err)
+			is.NoError(err)
 
-			assert.Equal(t, testCase.output, buf.String())
+			is.Equal(testCase.output, buf.String())
 		})
 	}
 }
 
 func TestProjectsConfigErrors(t *testing.T) {
-	ctx := context.Background()
+	t.Parallel()
+
+	is := require.New(t)
 	apiClient, err := test.SetupClient()
 	if err != nil {
 		t.Fatal(err)
@@ -195,12 +196,12 @@ func TestProjectsConfigErrors(t *testing.T) {
 		output: output{Format: full},
 	}
 	// there is no kubeconfig so we expect to fail
-	require.Error(t, cmd.Run(ctx, apiClient, get))
+	is.Error(cmd.Run(t.Context(), apiClient, get))
 
 	// we create a kubeconfig which does not contain a nctl config
 	// extension
 	kubeconfig, err := test.CreateTestKubeconfig(apiClient, "")
-	require.NoError(t, err)
+	is.NoError(err)
 	defer os.Remove(kubeconfig)
-	require.ErrorIs(t, cmd.Run(ctx, apiClient, get), config.ErrExtensionNotFound)
+	is.ErrorIs(cmd.Run(t.Context(), apiClient, get), config.ErrExtensionNotFound)
 }

@@ -11,12 +11,13 @@ import (
 
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestBucket(t *testing.T) {
+	t.Parallel()
+
 	baseBucketParameters := storage.BucketParameters{}
 	for name, tc := range map[string]struct {
 		flags           []string
@@ -693,6 +694,8 @@ func TestBucket(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
+			is := require.New(t)
+
 			project := "proj-" + t.Name()
 			name := "bucket-" + t.Name()
 
@@ -714,21 +717,21 @@ func TestBucket(t *testing.T) {
 				test.WithObjects(orig),
 			)
 			if tc.wantErr {
-				require.Error(t, err)
+				is.Error(err)
 				return
 			}
-			require.NoError(t, err)
-			require.Equal(t, name, resolvedName)
+			is.NoError(err)
+			is.Equal(name, resolvedName)
 
 			updated := &storage.Bucket{}
-			require.NoError(t, apiClient.Get(
+			is.NoError(apiClient.Get(
 				t.Context(),
 				api.NamespacedName(resolvedName, apiClient.Project),
 				updated,
 			))
 
 			if tc.wantForProvider != nil {
-				assert.Equal(t, *tc.wantForProvider, updated.Spec.ForProvider)
+				is.Equal(*tc.wantForProvider, updated.Spec.ForProvider)
 			}
 
 			if tc.afterAssert != nil {

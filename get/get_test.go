@@ -34,6 +34,8 @@ func NewTestCmd(w io.Writer, outFormat outputFormat, opts ...func(*Cmd)) *Cmd {
 }
 
 func TestListPrint(t *testing.T) {
+	t.Parallel()
+
 	tests := map[string]struct {
 		out               outputFormat
 		inAllProjects     bool
@@ -87,13 +89,16 @@ func TestListPrint(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			is := require.New(t)
+
 			apiClient, err := test.SetupClient(
 				test.WithDefaultProject(test.DefaultProject),
 				test.WithProjectsFromResources(append(tc.existingResources, tc.toCreate...)...),
 				test.WithObjects(tc.existingResources...),
 				test.WithKubeconfig(t),
 			)
-			require.NoError(t, err)
+			is.NoError(err)
 
 			buf := &bytes.Buffer{}
 			cmd := NewTestCmd(buf, tc.out)
@@ -112,7 +117,7 @@ func TestListPrint(t *testing.T) {
 			// delay the creation so watch is running
 			time.Sleep(time.Millisecond * 10)
 			for _, res := range tc.toCreate {
-				require.NoError(t, apiClient.Create(ctx, res))
+				is.NoError(apiClient.Create(ctx, res))
 			}
 			wg.Wait()
 			if tc.wantErr {

@@ -2,14 +2,12 @@ package get
 
 import (
 	"bytes"
-	"context"
 	"testing"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,6 +15,9 @@ import (
 )
 
 func TestApplication(t *testing.T) {
+	t.Parallel()
+	is := require.New(t)
+
 	const otherProject = "my-pretty-other-project"
 	app := apps.Application{
 		ObjectMeta: metav1.ObjectMeta{
@@ -41,49 +42,47 @@ func TestApplication(t *testing.T) {
 		test.WithObjects(&app, &app2, &app3),
 		test.WithKubeconfig(t),
 	)
-	require.NoError(t, err)
+	is.NoError(err)
 
-	ctx := context.Background()
 	cmd := applicationsCmd{
 		BasicAuthCredentials: false,
 	}
 
-	if err := cmd.Run(ctx, apiClient, get); err != nil {
+	if err := cmd.Run(t.Context(), apiClient, get); err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, 3, test.CountLines(buf.String()), buf.String())
+	is.Equal(3, test.CountLines(buf.String()), buf.String())
 	buf.Reset()
 
 	cmd.Name = app.Name
-	if err := cmd.Run(ctx, apiClient, get); err != nil {
+	if err := cmd.Run(t.Context(), apiClient, get); err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, 2, test.CountLines(buf.String()))
+	is.Equal(2, test.CountLines(buf.String()))
 	buf.Reset()
 
 	get.Format = noHeader
-	if err := cmd.Run(ctx, apiClient, get); err != nil {
+	if err := cmd.Run(t.Context(), apiClient, get); err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, 1, test.CountLines(buf.String()))
+	is.Equal(1, test.CountLines(buf.String()))
 
 	// app3 is in a different project and we want to check if a hint gets
 	// displayed along the error that it was not found
 	cmd.Name = app3.Name
 	buf.Reset()
-	err = cmd.Run(ctx, apiClient, get)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), otherProject, err.Error())
+	err = cmd.Run(t.Context(), apiClient, get)
+	is.Error(err)
+	is.Contains(err.Error(), otherProject, err.Error())
 }
 
 func TestApplicationCredentials(t *testing.T) {
 	t.Parallel()
 
 	const basicAuthNotFound = "no application with basic auth enabled found\n"
-	ctx := context.Background()
 
 	for name, testCase := range map[string]struct {
 		resources     []client.Object
@@ -291,6 +290,8 @@ dev      dev-second  dev-second  sample-second
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			is := require.New(t)
 			testCase := testCase
 			buf := &bytes.Buffer{}
 			get := NewTestCmd(buf, testCase.outputFormat)
@@ -303,7 +304,7 @@ dev      dev-second  dev-second  sample-second
 				test.WithDefaultProject(testCase.project),
 				test.WithNameIndexFor(&apps.Application{}),
 			)
-			require.NoError(t, err)
+			is.NoError(err)
 
 			cmd := applicationsCmd{
 				resourceCmd: resourceCmd{
@@ -312,21 +313,19 @@ dev      dev-second  dev-second  sample-second
 				BasicAuthCredentials: true,
 			}
 
-			err = cmd.Run(ctx, apiClient, get)
+			err = cmd.Run(t.Context(), apiClient, get)
 			if testCase.errorExpected {
-				require.Error(t, err)
+				is.Error(err)
 				return
 			}
-			require.NoError(t, err)
-			assert.Equal(t, testCase.output, buf.String())
+			is.NoError(err)
+			is.Equal(testCase.output, buf.String())
 		})
 	}
 }
 
 func TestApplicationDNS(t *testing.T) {
 	t.Parallel()
-
-	ctx := context.Background()
 
 	for name, testCase := range map[string]struct {
 		apps          []client.Object
@@ -463,6 +462,8 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			is := require.New(t)
 			testCase := testCase
 			buf := &bytes.Buffer{}
 			get := NewTestCmd(buf, testCase.outputFormat)
@@ -473,7 +474,7 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 				test.WithKubeconfig(t),
 				test.WithDefaultProject(testCase.project),
 			)
-			require.NoError(t, err)
+			is.NoError(err)
 
 			cmd := applicationsCmd{
 				resourceCmd: resourceCmd{
@@ -483,13 +484,13 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 				DNS:                  true,
 			}
 
-			err = cmd.Run(ctx, apiClient, get)
+			err = cmd.Run(t.Context(), apiClient, get)
 			if testCase.errorExpected {
-				require.Error(t, err)
+				is.Error(err)
 				return
 			}
-			require.NoError(t, err)
-			assert.Equal(t, testCase.output, buf.String())
+			is.NoError(err)
+			is.Equal(testCase.output, buf.String())
 		})
 	}
 }

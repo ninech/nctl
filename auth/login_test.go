@@ -15,7 +15,6 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
 	"k8s.io/client-go/tools/clientcmd"
@@ -61,7 +60,7 @@ func TestLoginCmd(t *testing.T) {
 		ForceInteractiveEnvOverride: true,
 		tk:                          &fakeTokenGetter{},
 	}
-	if err := cmd.Run(context.Background()); err != nil {
+	if err := cmd.Run(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -139,7 +138,7 @@ func TestLoginClientCredentials(t *testing.T) {
 			defer os.Remove(kubeconfig.Name())
 			os.Setenv(clientcmd.RecommendedConfigPathEnvVar, kubeconfig.Name())
 
-			err = tt.cmd.Run(context.Background())
+			err = tt.cmd.Run(t.Context())
 			checkErrorRequire(t, err, tt.wantErr, tt.wantErrMessage)
 			if tt.wantErr {
 				return
@@ -157,11 +156,12 @@ func TestLoginClientCredentials(t *testing.T) {
 			if kc.AuthInfos[apiHost].Exec == nil {
 				t.Fatalf("expected kubeconfig to have execConfig")
 			}
+			is := require.New(t)
 			ext, err := config.ReadExtension(kubeconfig.Name(), apiHost)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.expectedOrganization, ext.Organization)
-			assert.Equal(t, tt.expectedProject, kc.Contexts[apiHost].Namespace)
-			assert.Equal(t, kc.AuthInfos[apiHost].Exec.Args, []string{
+			is.NoError(err)
+			is.Equal(tt.expectedOrganization, ext.Organization)
+			is.Equal(tt.expectedProject, kc.Contexts[apiHost].Namespace)
+			is.Equal(kc.AuthInfos[apiHost].Exec.Args, []string{
 				CmdName,
 				ClientCredentialsCmdName,
 				api.ClientIDArg + tt.cmd.API.ClientID,
@@ -222,7 +222,6 @@ func TestLoginStaticToken(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 			kubeconfig, err := os.CreateTemp("", "*-kubeconfig.yaml")
 			if err != nil {
 				log.Fatal(err)
@@ -230,7 +229,7 @@ func TestLoginStaticToken(t *testing.T) {
 			defer os.Remove(kubeconfig.Name())
 			os.Setenv(clientcmd.RecommendedConfigPathEnvVar, kubeconfig.Name())
 
-			err = tt.cmd.Run(context.Background())
+			err = tt.cmd.Run(t.Context())
 			checkErrorRequire(t, err, tt.wantErr, tt.wantErrMessage)
 
 			if tt.wantErr {
@@ -280,7 +279,7 @@ func TestLoginCmdWithoutExistingKubeconfig(t *testing.T) {
 		ForceInteractiveEnvOverride: true,
 		tk:                          &fakeTokenGetter{},
 	}
-	if err := cmd.Run(context.Background()); err != nil {
+	if err := cmd.Run(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 

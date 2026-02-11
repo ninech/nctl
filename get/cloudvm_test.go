@@ -2,7 +2,6 @@ package get
 
 import (
 	"bytes"
-	"context"
 	"strings"
 	"testing"
 
@@ -13,12 +12,13 @@ import (
 )
 
 func TestCloudVM(t *testing.T) {
+	t.Parallel()
+
 	type cvmInstance struct {
 		name       string
 		project    string
 		powerState infrastructure.VirtualMachinePowerState
 	}
-	ctx := context.Background()
 	tests := []struct {
 		name          string
 		instances     []cvmInstance
@@ -111,6 +111,8 @@ func TestCloudVM(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			objects := []client.Object{}
 			for _, cvm := range tt.instances {
 				created := test.CloudVirtualMachine(cvm.name, cvm.project, "nine-es34", cvm.powerState)
@@ -123,12 +125,13 @@ func TestCloudVM(t *testing.T) {
 				test.WithNameIndexFor(&infrastructure.CloudVirtualMachine{}),
 				test.WithKubeconfig(t),
 			)
-			require.NoError(t, err)
+			is := require.New(t)
+			is.NoError(err)
 
 			buf := &bytes.Buffer{}
 			cmd := NewTestCmd(buf, tt.out)
 			cmd.AllProjects = tt.inAllProjects
-			err = tt.get.Run(ctx, apiClient, cmd)
+			err = tt.get.Run(t.Context(), apiClient, cmd)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("cloudVMCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 				t.Log(buf.String())

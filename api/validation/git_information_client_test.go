@@ -1,7 +1,6 @@
 package validation_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -10,20 +9,21 @@ import (
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/api/validation"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/ptr"
 )
 
 func TestRepositoryInformation(t *testing.T) {
-	ctx := context.Background()
+	t.Parallel()
+
 	gitInfo := test.NewGitInformationService()
 	gitInfo.Start()
 	defer gitInfo.Close()
 
+	is := require.New(t)
 	dummyPrivateKey, err := test.GenerateRSAPrivateKey()
-	require.NoError(t, err)
+	is.NoError(err)
 
 	for name, testCase := range map[string]struct {
 		git              apps.GitTarget
@@ -74,7 +74,7 @@ func TestRepositoryInformation(t *testing.T) {
 			},
 			verifyRequest: func(t *testing.T) func(p test.GitInfoServiceParsed, err error) {
 				return func(p test.GitInfoServiceParsed, err error) {
-					is := assert.New(t)
+					is := require.New(t)
 					is.NoError(err)
 					is.Equal("https://github.com/ninech/deploio-examples", p.Request.Repository)
 					is.Equal("fake", p.Token)
@@ -106,12 +106,14 @@ func TestRepositoryInformation(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
+			is := require.New(t)
+
 			if testCase.setResponse != nil {
 				gitInfo.SetResponse(*testCase.setResponse)
 			}
 
 			c, err := validation.NewGitInformationClient(gitInfo.URL(), testCase.token)
-			require.NoError(t, err)
+			is.NoError(err)
 
 			// we count the retries of the request
 			retries := 0
@@ -122,16 +124,16 @@ func TestRepositoryInformation(t *testing.T) {
 				c.SetRetryBackoffs(*testCase.backoff)
 			}
 
-			response, err := c.RepositoryInformation(ctx, testCase.git, testCase.auth)
+			response, err := c.RepositoryInformation(t.Context(), testCase.git, testCase.auth)
 			if testCase.errorExpected {
-				require.Error(t, err)
+				is.Error(err)
 			} else {
-				require.NoError(t, err)
+				is.NoError(err)
 			}
 
-			require.Equal(t, testCase.expectedRetries, retries)
+			is.Equal(testCase.expectedRetries, retries)
 			if testCase.expectedResponse != nil {
-				require.Equal(t, *testCase.expectedResponse, *response)
+				is.Equal(*testCase.expectedResponse, *response)
 			}
 			if testCase.verifyRequest != nil {
 				data, err := gitInfo.Request()

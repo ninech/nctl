@@ -8,11 +8,12 @@ import (
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestBucket(t *testing.T) {
+	t.Parallel()
+
 	for name, tc := range map[string]struct {
 		flags           []string
 		wantForProvider *storage.BucketParameters
@@ -247,22 +248,25 @@ func TestBucket(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			is := require.New(t)
+
 			apiClient, resolvedName, err := runBucketCreateNamedWithFlags(t, "test-"+t.Name(), tc.flags)
 			if tc.wantErr {
-				require.Error(t, err)
+				is.Error(err)
 				return
 			}
-			require.NoError(t, err)
+			is.NoError(err)
 
 			created := &storage.Bucket{}
-			require.NoError(t, apiClient.Get(
+			is.NoError(apiClient.Get(
 				t.Context(),
 				api.NamespacedName(resolvedName, apiClient.Project),
 				created,
 			))
 
 			if tc.wantForProvider != nil {
-				assert.Equal(t, *tc.wantForProvider, created.Spec.ForProvider)
+				is.Equal(*tc.wantForProvider, created.Spec.ForProvider)
 			}
 		})
 	}

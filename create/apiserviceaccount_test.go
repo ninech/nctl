@@ -6,13 +6,16 @@ import (
 	iam "github.com/ninech/apis/iam/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAPIServiceAccount(t *testing.T) {
+	t.Parallel()
+
+	is := require.New(t)
+
 	apiClient, err := test.SetupClient()
-	require.NoError(t, err)
+	is.NoError(err)
 
 	for name, tc := range map[string]struct {
 		cmd                    apiServiceAccountCmd
@@ -23,7 +26,8 @@ func TestAPIServiceAccount(t *testing.T) {
 				resourceCmd: resourceCmd{Name: "no-org-access"},
 			},
 			checkAPIServiceAccount: func(t *testing.T, cmd apiServiceAccountCmd, asa *iam.APIServiceAccount) {
-				assert.Equal(t, false, asa.Spec.ForProvider.OrganizationAccess)
+				is := require.New(t)
+				is.Equal(false, asa.Spec.ForProvider.OrganizationAccess)
 			},
 		},
 		"org access": {
@@ -32,7 +36,8 @@ func TestAPIServiceAccount(t *testing.T) {
 				OrganizationAccess: true,
 			},
 			checkAPIServiceAccount: func(t *testing.T, cmd apiServiceAccountCmd, asa *iam.APIServiceAccount) {
-				assert.Equal(t, true, asa.Spec.ForProvider.OrganizationAccess)
+				is := require.New(t)
+				is.Equal(true, asa.Spec.ForProvider.OrganizationAccess)
 			},
 		},
 	} {

@@ -1,7 +1,6 @@
 package create
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -12,14 +11,14 @@ import (
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 func TestServiceConnection(t *testing.T) {
-	ctx := context.Background()
+	t.Parallel()
+
 	tests := []struct {
 		name             string
 		create           serviceConnectionCmd
@@ -220,6 +219,7 @@ func TestServiceConnection(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			is := require.New(t)
 
 			tt.create.Name = "test-" + t.Name()
@@ -247,12 +247,12 @@ func TestServiceConnection(t *testing.T) {
 				t.Errorf("destination.UnmarshalText() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if err := tt.create.Run(ctx, apiClient); (err != nil) != tt.wantErr {
+			if err := tt.create.Run(t.Context(), apiClient); (err != nil) != tt.wantErr {
 				t.Errorf("serviceConnectionCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			created := &networking.ServiceConnection{ObjectMeta: metav1.ObjectMeta{Name: tt.create.Name, Namespace: apiClient.Project}}
-			if err := apiClient.Get(ctx, api.ObjectName(created), created); (err != nil) != tt.wantErr {
+			if err := apiClient.Get(t.Context(), api.ObjectName(created), created); (err != nil) != tt.wantErr {
 				t.Fatalf("expected serviceconnection to exist, got: %s", err)
 			}
 			if tt.wantErr {
@@ -265,7 +265,7 @@ func TestServiceConnection(t *testing.T) {
 }
 
 func TestLabelSelector_UnmarshalText(t *testing.T) {
-	is := assert.New(t)
+	t.Parallel()
 
 	tests := []struct {
 		name    string
@@ -279,6 +279,8 @@ func TestLabelSelector_UnmarshalText(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+			is := require.New(t)
+
 			ls := &LabelSelector{}
 			err := ls.UnmarshalText([]byte(tt.arg))
 			if err == nil && !tt.wantErr {
@@ -292,7 +294,7 @@ func TestLabelSelector_UnmarshalText(t *testing.T) {
 }
 
 func TestTypedReference_UnmarshalText(t *testing.T) {
-	is := assert.New(t)
+	t.Parallel()
 
 	tests := []struct {
 		name    string
@@ -306,6 +308,8 @@ func TestTypedReference_UnmarshalText(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+			is := require.New(t)
+
 			r := &TypedReference{}
 			err := r.UnmarshalText([]byte(tt.arg))
 			if err == nil && !tt.wantErr {

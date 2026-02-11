@@ -9,7 +9,7 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
@@ -40,7 +40,8 @@ func TestAPIServiceAccount(t *testing.T) {
 				OrganizationAccess: ptr.To(true),
 			},
 			checkAPIServiceAccount: func(t *testing.T, cmd apiServiceAccountCmd, orig, updated *iam.APIServiceAccount) {
-				assert.Equal(t, *cmd.OrganizationAccess, updated.Spec.ForProvider.OrganizationAccess)
+				is := require.New(t)
+				is.Equal(*cmd.OrganizationAccess, updated.Spec.ForProvider.OrganizationAccess)
 			},
 		},
 	} {

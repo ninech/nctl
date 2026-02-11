@@ -2,7 +2,6 @@ package get
 
 import (
 	"bytes"
-	"context"
 	"strings"
 	"testing"
 
@@ -16,7 +15,7 @@ import (
 )
 
 func TestMySQL(t *testing.T) {
-	ctx := context.Background()
+	t.Parallel()
 
 	type mysqlInstance struct {
 		name        string
@@ -137,6 +136,8 @@ func TestMySQL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			objects := []client.Object{}
 			for _, instance := range tt.instances {
 				created := test.MySQL(instance.name, instance.project, "nine-es34")
@@ -156,7 +157,8 @@ func TestMySQL(t *testing.T) {
 				test.WithNameIndexFor(&storage.MySQL{}),
 				test.WithKubeconfig(t),
 			)
-			require.NoError(t, err)
+			is := require.New(t)
+			is.NoError(err)
 
 			if tt.out == "" {
 				tt.out = full
@@ -164,7 +166,7 @@ func TestMySQL(t *testing.T) {
 			buf := &bytes.Buffer{}
 			cmd := NewTestCmd(buf, tt.out)
 			cmd.AllProjects = tt.inAllProjects
-			err = tt.get.Run(ctx, apiClient, cmd)
+			err = tt.get.Run(t.Context(), apiClient, cmd)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("mySQLCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}

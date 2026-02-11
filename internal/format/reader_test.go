@@ -5,13 +5,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewReader(t *testing.T) {
 	t.Parallel()
-	is := assert.New(t)
+	is := require.New(t)
 
 	input := strings.NewReader("test input")
 	reader := NewReader(input)
@@ -52,10 +51,10 @@ func TestReader_BeforeApply(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			is := assert.New(t)
+			is := require.New(t)
 
 			err := tt.reader.BeforeApply(tt.input)
-			require.NoError(t, err)
+			is.NoError(err)
 
 			if tt.reader != nil {
 				is.Equal(tt.expectReader, tt.reader.Reader)
@@ -66,7 +65,7 @@ func TestReader_BeforeApply(t *testing.T) {
 
 func TestReader_Read(t *testing.T) {
 	t.Parallel()
-	is := assert.New(t)
+	is := require.New(t)
 
 	input := strings.NewReader("hello")
 	reader := NewReader(input)
@@ -74,7 +73,7 @@ func TestReader_Read(t *testing.T) {
 	buf := make([]byte, 5)
 	n, err := reader.Read(buf)
 
-	require.NoError(t, err)
+	is.NoError(err)
 	is.Equal(5, n)
 	is.Equal("hello", string(buf))
 }

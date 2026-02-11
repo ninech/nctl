@@ -1,7 +1,6 @@
 package copy
 
 import (
-	"context"
 	"testing"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
@@ -9,7 +8,6 @@ import (
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,7 +16,7 @@ import (
 )
 
 func TestApplication(t *testing.T) {
-	ctx := context.Background()
+	t.Parallel()
 
 	tests := map[string]struct {
 		source              *apps.Application
@@ -162,6 +160,9 @@ func TestApplication(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			is := require.New(t)
+
 			objs := []client.Object{tc.source}
 			if tc.sourceGitAuthSecret != nil {
 				objs = append(objs, tc.sourceGitAuthSecret)
@@ -170,38 +171,38 @@ func TestApplication(t *testing.T) {
 				objs = append(objs, tc.staticEgress)
 			}
 			apiClient, err := test.SetupClient(test.WithObjects(objs...))
-			require.NoError(t, err)
+			is.NoError(err)
 
-			err = tc.cmd.Run(ctx, apiClient)
+			err = tc.cmd.Run(t.Context(), apiClient)
 			if tc.expectedErr != "" {
-				assert.ErrorContains(t, err, tc.expectedErr)
+				is.ErrorContains(err, tc.expectedErr)
 				return
 			}
-			require.NoError(t, err)
+			is.NoError(err)
 
 			copiedApp := &apps.Application{}
 			newName := types.NamespacedName{Name: tc.cmd.TargetName, Namespace: tc.cmd.targetNamespace(apiClient)}
-			assert.NoError(t, apiClient.Get(ctx, newName, copiedApp))
+			is.NoError(apiClient.Get(t.Context(), newName, copiedApp))
 			// expect copied app to be paused and hosts to be empty
 			tc.source.Spec.ForProvider.Paused = !tc.cmd.Start
 			if !tc.cmd.CopyHosts {
 				tc.source.Spec.ForProvider.Hosts = nil
 			}
-			assert.Equal(t, tc.source.Spec, copiedApp.Spec)
+			is.Equal(tc.source.Spec, copiedApp.Spec)
 
 			// check if git auth has been copied if there's a source
 			if tc.sourceGitAuthSecret != nil {
 				copiedSecret := &corev1.Secret{}
 				newSecretName := types.NamespacedName{Name: util.GitAuthSecretName(copiedApp), Namespace: tc.cmd.targetNamespace(apiClient)}
-				assert.NoError(t, apiClient.Get(ctx, newSecretName, copiedSecret))
-				assert.Equal(t, tc.sourceGitAuthSecret.Data, copiedSecret.Data)
+				is.NoError(apiClient.Get(t.Context(), newSecretName, copiedSecret))
+				is.Equal(tc.sourceGitAuthSecret.Data, copiedSecret.Data)
 			}
 			// check if static egress has been copied if there's a source
 			if tc.staticEgress != nil {
 				copiedEgress := &networking.StaticEgress{}
 				newEgressName := types.NamespacedName{Name: copiedApp.Name, Namespace: tc.cmd.targetNamespace(apiClient)}
-				assert.NoError(t, apiClient.Get(ctx, newEgressName, copiedEgress))
-				assert.Equal(t, tc.cmd.TargetName, copiedEgress.Spec.ForProvider.Target.Name)
+				is.NoError(apiClient.Get(t.Context(), newEgressName, copiedEgress))
+				is.Equal(tc.cmd.TargetName, copiedEgress.Spec.ForProvider.Target.Name)
 			}
 		})
 	}

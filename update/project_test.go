@@ -9,7 +9,7 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
@@ -41,15 +41,14 @@ func TestProject(t *testing.T) {
 				DisplayName: ptr.To("some display name"),
 			},
 			checkProject: func(t *testing.T, cmd projectCmd, orig, updated *management.Project) {
-				assert.Equal(t, *cmd.DisplayName, updated.Spec.DisplayName)
+				is := require.New(t)
+				is.Equal(*cmd.DisplayName, updated.Spec.DisplayName)
 			},
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-
 			out := &bytes.Buffer{}
 			tc.cmd.Writer = format.NewWriter(out)
 

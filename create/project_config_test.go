@@ -1,7 +1,6 @@
 package create
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -9,17 +8,17 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/utils/ptr"
 )
 
 func TestProjectConfig(t *testing.T) {
+	t.Parallel()
+
 	apiClient, err := test.SetupClient()
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	ctx := context.Background()
 
 	cases := map[string]struct {
 		cmd         configCmd
@@ -40,16 +39,17 @@ func TestProjectConfig(t *testing.T) {
 			},
 			project: "namespace-1",
 			checkConfig: func(t *testing.T, cmd configCmd, cfg *apps.ProjectConfig) {
-				assert.Equal(t, apiClient.Project, cfg.Name)
-				assert.Equal(t, apps.ApplicationSize(cmd.Size), cfg.Spec.ForProvider.Config.Size)
-				assert.Equal(t, *cmd.Port, *cfg.Spec.ForProvider.Config.Port)
-				assert.Equal(t, *cmd.Replicas, *cfg.Spec.ForProvider.Config.Replicas)
-				assert.Equal(t, *cmd.BasicAuth, *cfg.Spec.ForProvider.Config.EnableBasicAuth)
-				assert.Equal(t, util.EnvVarsFromMap(*cmd.Env), cfg.Spec.ForProvider.Config.Env)
-				assert.Equal(t, cmd.DeployJob.Command, cfg.Spec.ForProvider.Config.DeployJob.Command)
-				assert.Equal(t, cmd.DeployJob.Name, cfg.Spec.ForProvider.Config.DeployJob.Name)
-				assert.Equal(t, cmd.DeployJob.Timeout, cfg.Spec.ForProvider.Config.DeployJob.Timeout.Duration)
-				assert.Equal(t, cmd.DeployJob.Retries, *cfg.Spec.ForProvider.Config.DeployJob.Retries)
+				is := require.New(t)
+				is.Equal(apiClient.Project, cfg.Name)
+				is.Equal(apps.ApplicationSize(cmd.Size), cfg.Spec.ForProvider.Config.Size)
+				is.Equal(*cmd.Port, *cfg.Spec.ForProvider.Config.Port)
+				is.Equal(*cmd.Replicas, *cfg.Spec.ForProvider.Config.Replicas)
+				is.Equal(*cmd.BasicAuth, *cfg.Spec.ForProvider.Config.EnableBasicAuth)
+				is.Equal(util.EnvVarsFromMap(*cmd.Env), cfg.Spec.ForProvider.Config.Env)
+				is.Equal(cmd.DeployJob.Command, cfg.Spec.ForProvider.Config.DeployJob.Command)
+				is.Equal(cmd.DeployJob.Name, cfg.Spec.ForProvider.Config.DeployJob.Name)
+				is.Equal(cmd.DeployJob.Timeout, cfg.Spec.ForProvider.Config.DeployJob.Timeout.Duration)
+				is.Equal(cmd.DeployJob.Retries, *cfg.Spec.ForProvider.Config.DeployJob.Retries)
 			},
 		},
 		"some fields not set": {
@@ -59,26 +59,28 @@ func TestProjectConfig(t *testing.T) {
 			},
 			project: "namespace-2",
 			checkConfig: func(t *testing.T, cmd configCmd, cfg *apps.ProjectConfig) {
-				assert.Equal(t, apiClient.Project, cfg.Name)
-				assert.Equal(t, apps.ApplicationSize(cmd.Size), cfg.Spec.ForProvider.Config.Size)
-				assert.Nil(t, cfg.Spec.ForProvider.Config.Port)
-				assert.Nil(t, cfg.Spec.ForProvider.Config.EnableBasicAuth)
-				assert.Equal(t, *cmd.Replicas, *cfg.Spec.ForProvider.Config.Replicas)
-				assert.Empty(t, cfg.Spec.ForProvider.Config.Env)
-				assert.Nil(t, cfg.Spec.ForProvider.Config.DeployJob)
+				is := require.New(t)
+				is.Equal(apiClient.Project, cfg.Name)
+				is.Equal(apps.ApplicationSize(cmd.Size), cfg.Spec.ForProvider.Config.Size)
+				is.Nil(cfg.Spec.ForProvider.Config.Port)
+				is.Nil(cfg.Spec.ForProvider.Config.EnableBasicAuth)
+				is.Equal(*cmd.Replicas, *cfg.Spec.ForProvider.Config.Replicas)
+				is.Empty(cfg.Spec.ForProvider.Config.Env)
+				is.Nil(cfg.Spec.ForProvider.Config.DeployJob)
 			},
 		},
 		"all fields not set": {
 			cmd:     configCmd{},
 			project: "namespace-3",
 			checkConfig: func(t *testing.T, cmd configCmd, cfg *apps.ProjectConfig) {
-				assert.Equal(t, apiClient.Project, cfg.Name)
-				assert.Equal(t, test.AppSizeNotSet, cfg.Spec.ForProvider.Config.Size)
-				assert.Nil(t, cfg.Spec.ForProvider.Config.Port)
-				assert.Nil(t, cfg.Spec.ForProvider.Config.Replicas)
-				assert.Empty(t, cfg.Spec.ForProvider.Config.Env)
-				assert.Nil(t, cfg.Spec.ForProvider.Config.EnableBasicAuth)
-				assert.Nil(t, cfg.Spec.ForProvider.Config.DeployJob)
+				is := require.New(t)
+				is.Equal(apiClient.Project, cfg.Name)
+				is.Equal(test.AppSizeNotSet, cfg.Spec.ForProvider.Config.Size)
+				is.Nil(cfg.Spec.ForProvider.Config.Port)
+				is.Nil(cfg.Spec.ForProvider.Config.Replicas)
+				is.Empty(cfg.Spec.ForProvider.Config.Env)
+				is.Nil(cfg.Spec.ForProvider.Config.EnableBasicAuth)
+				is.Nil(cfg.Spec.ForProvider.Config.DeployJob)
 			},
 		},
 	}
@@ -88,11 +90,11 @@ func TestProjectConfig(t *testing.T) {
 			apiClient.Project = tc.project
 			cfg := tc.cmd.newProjectConfig(tc.project)
 
-			if err := tc.cmd.Run(ctx, apiClient); err != nil {
+			if err := tc.cmd.Run(t.Context(), apiClient); err != nil {
 				t.Fatal(err)
 			}
 
-			if err := apiClient.Get(ctx, api.ObjectName(cfg), cfg); err != nil {
+			if err := apiClient.Get(t.Context(), api.ObjectName(cfg), cfg); err != nil {
 				t.Fatal(err)
 			}
 
