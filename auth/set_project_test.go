@@ -59,10 +59,9 @@ func TestOrgFromProject(t *testing.T) {
 			t.Parallel()
 			is := require.New(t)
 
-			apiClient, err := test.SetupClient(
+			apiClient := test.SetupClient(t,
 				test.WithObjects(tc.objects...),
 			)
-			is.NoError(err)
 
 			org, err := orgFromProject(t.Context(), apiClient, tc.project)
 			if tc.wantErr {
@@ -111,12 +110,11 @@ func TestOrgFromProjectAPIErrors(t *testing.T) {
 			t.Parallel()
 			is := require.New(t)
 
-			apiClient, err := test.SetupClient(
+			apiClient := test.SetupClient(t,
 				test.WithInterceptorFuncs(tc.interceptor),
 			)
-			is.NoError(err)
 
-			_, err = orgFromProject(t.Context(), apiClient, "test-prod")
+			_, err := orgFromProject(t.Context(), apiClient, "test-prod")
 			is.Contains(strings.ToLower(err.Error()), strings.ToLower(tc.wantErrContain))
 		})
 	}
@@ -168,14 +166,13 @@ func TestTrySwitchOrg(t *testing.T) {
 			t.Parallel()
 			is := require.New(t)
 
-			apiClient, err := test.SetupClient(
+			apiClient := test.SetupClient(t,
 				test.WithOrganization(tc.currentOrg),
-				test.WithKubeconfig(t),
+				test.WithKubeconfig(),
 				test.WithObjects(tc.objects...),
 			)
-			is.NoError(err)
 
-			err = trySwitchOrg(t.Context(), apiClient, tc.project)
+			err := trySwitchOrg(t.Context(), apiClient, tc.project)
 			if tc.wantErr {
 				is.Error(err)
 				return
@@ -215,15 +212,14 @@ func TestSetProjectCmd(t *testing.T) {
 			t.Parallel()
 			is := require.New(t)
 
-			apiClient, err := test.SetupClient(
+			apiClient := test.SetupClient(t,
 				test.WithOrganization(tc.currentOrg),
-				test.WithKubeconfig(t),
+				test.WithKubeconfig(),
 				test.WithObjects(tc.objects...),
 			)
-			is.NoError(err)
 
 			cmd := SetProjectCmd{Name: tc.project}
-			err = cmd.Run(t.Context(), apiClient)
+			err := cmd.Run(t.Context(), apiClient)
 			if tc.wantErr {
 				is.Error(err)
 				return

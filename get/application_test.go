@@ -36,13 +36,12 @@ func TestApplication(t *testing.T) {
 	buf := &bytes.Buffer{}
 	get := NewTestCmd(buf, full)
 
-	apiClient, err := test.SetupClient(
+	apiClient := test.SetupClient(t,
 		test.WithNameIndexFor(&apps.Application{}),
 		test.WithProjectsFromResources(&app, &app2, &app3),
 		test.WithObjects(&app, &app2, &app3),
-		test.WithKubeconfig(t),
+		test.WithKubeconfig(),
 	)
-	is.NoError(err)
 
 	cmd := applicationsCmd{
 		BasicAuthCredentials: false,
@@ -74,7 +73,7 @@ func TestApplication(t *testing.T) {
 	// displayed along the error that it was not found
 	cmd.Name = app3.Name
 	buf.Reset()
-	err = cmd.Run(t.Context(), apiClient, get)
+	err := cmd.Run(t.Context(), apiClient, get)
 	is.Error(err)
 	is.Contains(err.Error(), otherProject, err.Error())
 }
@@ -297,14 +296,13 @@ dev      dev-second  dev-second  sample-second
 			get := NewTestCmd(buf, testCase.outputFormat)
 			get.AllProjects = testCase.project == ""
 
-			apiClient, err := test.SetupClient(
+			apiClient := test.SetupClient(t,
 				test.WithProjectsFromResources(testCase.resources...),
 				test.WithObjects(testCase.resources...),
-				test.WithKubeconfig(t),
+				test.WithKubeconfig(),
 				test.WithDefaultProject(testCase.project),
 				test.WithNameIndexFor(&apps.Application{}),
 			)
-			is.NoError(err)
 
 			cmd := applicationsCmd{
 				resourceCmd: resourceCmd{
@@ -313,7 +311,7 @@ dev      dev-second  dev-second  sample-second
 				BasicAuthCredentials: true,
 			}
 
-			err = cmd.Run(t.Context(), apiClient, get)
+			err := cmd.Run(t.Context(), apiClient, get)
 			if testCase.errorExpected {
 				is.Error(err)
 				return
@@ -468,13 +466,12 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 			buf := &bytes.Buffer{}
 			get := NewTestCmd(buf, testCase.outputFormat)
 			get.AllProjects = testCase.project == ""
-			apiClient, err := test.SetupClient(
+			apiClient := test.SetupClient(t,
 				test.WithProjectsFromResources(testCase.apps...),
 				test.WithObjects(testCase.apps...),
-				test.WithKubeconfig(t),
+				test.WithKubeconfig(),
 				test.WithDefaultProject(testCase.project),
 			)
-			is.NoError(err)
 
 			cmd := applicationsCmd{
 				resourceCmd: resourceCmd{
@@ -484,7 +481,7 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 				DNS:                  true,
 			}
 
-			err = cmd.Run(t.Context(), apiClient, get)
+			err := cmd.Run(t.Context(), apiClient, get)
 			if testCase.errorExpected {
 				is.Error(err)
 				return

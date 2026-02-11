@@ -28,10 +28,7 @@ func TestCloudVM(t *testing.T) {
 
 	cloudvm := test.CloudVirtualMachine("test", test.DefaultProject, "nine-es34", v1alpha1.VirtualMachinePowerState("on"))
 
-	apiClient, err := test.SetupClient()
-	if err != nil {
-		t.Fatalf("failed to setup api client: %v", err)
-	}
+	apiClient := test.SetupClient(t)
 
 	ctx := t.Context()
 	if err := apiClient.Create(ctx, cloudvm); err != nil {
@@ -43,7 +40,7 @@ func TestCloudVM(t *testing.T) {
 	if err := cmd.Run(ctx, apiClient); err != nil {
 		t.Fatalf("failed to run cloudvm delete command: %v", err)
 	}
-	err = apiClient.Get(ctx, api.ObjectName(cloudvm), cloudvm)
+	err := apiClient.Get(ctx, api.ObjectName(cloudvm), cloudvm)
 	if err == nil {
 		t.Fatal("expected cloudvm to be deleted, but it still exists")
 	}

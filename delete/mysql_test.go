@@ -26,10 +26,7 @@ func TestMySQL(t *testing.T) {
 	}
 
 	mysql := test.MySQL("test", test.DefaultProject, "nine-es34")
-	apiClient, err := test.SetupClient()
-	if err != nil {
-		t.Fatalf("failed to setup api client: %v", err)
-	}
+	apiClient := test.SetupClient(t)
 
 	ctx := t.Context()
 	if err := apiClient.Create(ctx, mysql); err != nil {
@@ -41,7 +38,7 @@ func TestMySQL(t *testing.T) {
 	if err := cmd.Run(ctx, apiClient); err != nil {
 		t.Fatalf("failed to run mysql delete command: %v", err)
 	}
-	err = apiClient.Get(ctx, api.ObjectName(mysql), mysql)
+	err := apiClient.Get(ctx, api.ObjectName(mysql), mysql)
 	if err == nil {
 		t.Fatal("expected mysql to be deleted, but it still exists")
 	}

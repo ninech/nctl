@@ -27,10 +27,7 @@ func TestServiceConnection(t *testing.T) {
 
 	sc := test.ServiceConnection("test", test.DefaultProject)
 
-	apiClient, err := test.SetupClient()
-	if err != nil {
-		t.Fatalf("failed to setup api client: %v", err)
-	}
+	apiClient := test.SetupClient(t)
 
 	ctx := t.Context()
 	if err := apiClient.Create(ctx, sc); err != nil {
@@ -42,7 +39,7 @@ func TestServiceConnection(t *testing.T) {
 	if err := cmd.Run(ctx, apiClient); err != nil {
 		t.Fatalf("failed to run serviceconnection delete command: %v", err)
 	}
-	err = apiClient.Get(ctx, api.ObjectName(sc), sc)
+	err := apiClient.Get(ctx, api.ObjectName(sc), sc)
 	if err == nil {
 		t.Fatal("expected serviceconnection to be deleted, but it still exists")
 	}

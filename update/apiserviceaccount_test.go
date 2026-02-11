@@ -51,15 +51,12 @@ func TestAPIServiceAccount(t *testing.T) {
 			out := &bytes.Buffer{}
 			tc.cmd.Writer = format.NewWriter(out)
 
-			apiClient, err := test.SetupClient(
+			apiClient := test.SetupClient(t,
 				test.WithObjects(tc.orig),
 				test.WithOrganization(organization),
 				test.WithDefaultProject(organization),
-				test.WithKubeconfig(t),
+				test.WithKubeconfig(),
 			)
-			if err != nil {
-				t.Fatal(err)
-			}
 
 			if err := tc.cmd.Run(t.Context(), apiClient); err != nil {
 				t.Fatal(err)

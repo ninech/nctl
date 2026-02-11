@@ -6,7 +6,6 @@ import (
 
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/require"
 )
 
 func TestVCluster(t *testing.T) {
@@ -20,11 +19,8 @@ func TestVCluster(t *testing.T) {
 		},
 	}
 
-	is := require.New(t)
-
 	cluster := cmd.newCluster(test.DefaultProject)
-	apiClient, err := test.SetupClient()
-	is.NoError(err)
+	apiClient := test.SetupClient(t)
 
 	if err := cmd.Run(t.Context(), apiClient); err != nil {
 		t.Fatal(err)

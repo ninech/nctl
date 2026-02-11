@@ -40,10 +40,7 @@ func RunNamedWithFlags(
 	args := append(append([]string{}, cmdPath...), name)
 	args = append(args, flags...)
 
-	apiClient, err := SetupClient(clientOpts...)
-	if err != nil {
-		return nil, name, err
-	}
+	apiClient := SetupClient(t, clientOpts...)
 
 	parser := kong.Must(
 		cli,

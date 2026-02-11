@@ -9,7 +9,6 @@ import (
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/require"
 	"k8s.io/utils/ptr"
 )
 
@@ -80,12 +79,9 @@ func TestPostgres(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			is := require.New(t)
-
 			tt.update.Name = "test-" + t.Name()
 
-			apiClient, err := test.SetupClient()
-			is.NoError(err)
+			apiClient := test.SetupClient(t)
 
 			created := test.Postgres(tt.update.Name, apiClient.Project, "nine-es34")
 			created.Spec.ForProvider = tt.create

@@ -27,10 +27,7 @@ func TestPostgresDatabase(t *testing.T) {
 
 	postgresDatabase := test.PostgresDatabase("test", test.DefaultProject, "nine-es34")
 
-	apiClient, err := test.SetupClient()
-	if err != nil {
-		t.Fatalf("failed to setup api client: %v", err)
-	}
+	apiClient := test.SetupClient(t)
 
 	ctx := t.Context()
 	if err := apiClient.Create(ctx, postgresDatabase); err != nil {
@@ -42,7 +39,7 @@ func TestPostgresDatabase(t *testing.T) {
 	if err := cmd.Run(ctx, apiClient); err != nil {
 		t.Fatalf("failed to run postgresdatabase delete command: %v", err)
 	}
-	err = apiClient.Get(ctx, api.ObjectName(postgresDatabase), postgresDatabase)
+	err := apiClient.Get(ctx, api.ObjectName(postgresDatabase), postgresDatabase)
 	if err == nil {
 		t.Fatal("expected postgresdatabase to be deleted, but it still exists")
 	}

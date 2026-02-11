@@ -619,10 +619,9 @@ func TestApplication(t *testing.T) {
 			if tc.gitAuth != nil {
 				objects = append(objects, tc.gitAuth.Secret(tc.orig))
 			}
-			apiClient, err := test.SetupClient(
+			apiClient := test.SetupClient(t,
 				test.WithObjects(objects...),
 			)
-			is.NoError(err)
 
 			if err := tc.cmd.Run(t.Context(), apiClient); err != nil {
 				if tc.errorExpected {

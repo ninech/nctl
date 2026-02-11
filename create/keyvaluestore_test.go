@@ -110,8 +110,7 @@ func TestKeyValueStore(t *testing.T) {
 			tt.create.Wait = false
 			tt.create.WaitTimeout = time.Second
 
-			apiClient, err := test.SetupClient()
-			is.NoError(err)
+			apiClient := test.SetupClient(t)
 
 			if err := tt.create.Run(t.Context(), apiClient); (err != nil) != tt.wantErr {
 				t.Errorf("keyValueStoreCmd.Run() error = %v, wantErr %v", err, tt.wantErr)

@@ -39,10 +39,7 @@ func TestPostgresDatabase(t *testing.T) {
 			tt.update.Writer = format.NewWriter(out)
 			tt.update.Name = "test-" + t.Name()
 
-			apiClient, err := test.SetupClient()
-			if err != nil {
-				t.Fatalf("setup client error, got: %s", err)
-			}
+			apiClient := test.SetupClient(t)
 
 			created := test.PostgresDatabase(tt.update.Name, apiClient.Project, "nine-es34")
 			created.Spec.ForProvider = tt.create

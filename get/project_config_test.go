@@ -124,20 +124,19 @@ func TestProjectConfigs(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			is := require.New(t)
 
-			apiClient, err := test.SetupClient(
+			apiClient := test.SetupClient(t,
 				test.WithProjectsFromResources(tc.createdConfigs...),
 				test.WithObjects(tc.createdConfigs...),
-				test.WithKubeconfig(t),
+				test.WithKubeconfig(),
 				test.WithDefaultProject(tc.project),
 				test.WithNameIndexFor(&apps.ProjectConfig{}),
 			)
-			is.NoError(err)
 
 			buf := &bytes.Buffer{}
 			tc.get.BeforeApply(buf)
 			cmd := configsCmd{}
 
-			err = cmd.Run(t.Context(), apiClient, tc.get)
+			err := cmd.Run(t.Context(), apiClient, tc.get)
 			if len(tc.errorContains) > 0 {
 				is.Error(err)
 				for _, s := range tc.errorContains {

@@ -18,10 +18,7 @@ import (
 func TestBucketUser(t *testing.T) {
 	t.Parallel()
 
-	apiClient, err := test.SetupClient()
-	if err != nil {
-		t.Fatalf("setup client error, got: %s", err)
-	}
+	apiClient := test.SetupClient(t)
 
 	created := bucketUser("user", apiClient.Project, "nine-es34")
 	if err := apiClient.Create(t.Context(), created); err != nil {

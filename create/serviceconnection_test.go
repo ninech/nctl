@@ -230,8 +230,7 @@ func TestServiceConnection(t *testing.T) {
 			if tt.interceptorFuncs != nil {
 				opts = append(opts, test.WithInterceptorFuncs(*tt.interceptorFuncs))
 			}
-			apiClient, err := test.SetupClient(opts...)
-			is.NoError(err)
+			apiClient := test.SetupClient(t, opts...)
 
 			if err := tt.create.Source.UnmarshalText([]byte(tt.source)); err != nil {
 				if tt.wantErr {

@@ -9,7 +9,6 @@ import (
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api/config"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -44,11 +43,9 @@ func TestClusterCmd(t *testing.T) {
 	}
 
 	cluster := newCluster()
-	is := require.New(t)
-	apiClient, err := test.SetupClient(
+	apiClient := test.SetupClient(t,
 		test.WithObjects(cluster),
 	)
-	is.NoError(err)
 	apiClient.KubeconfigPath = kubeconfig.Name()
 
 	// we run without the execPlugin, that would be something for an e2e test

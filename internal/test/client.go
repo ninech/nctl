@@ -2,7 +2,6 @@
 package test
 
 import (
-	"fmt"
 	"os"
 	"testing"
 
@@ -31,13 +30,9 @@ type clientSetup struct {
 	defaultProject   string
 	projects         []string
 	objects          []client.Object
-	kubeconfig       *kubeconfigSetup
+	kubeconfig       bool
 	nameIndexesOn    []runtime.Object
 	interceptorFuncs *interceptor.Funcs
-}
-
-type kubeconfigSetup struct {
-	t *testing.T
 }
 
 type ClientSetupOption func(*clientSetup)
@@ -106,9 +101,9 @@ func WithObjects(objects ...client.Object) ClientSetupOption {
 
 // WithKubeconfig creates a fake kubeconfig which gets removed once the passed
 // test finished
-func WithKubeconfig(t *testing.T) ClientSetupOption {
+func WithKubeconfig() ClientSetupOption {
 	return func(cs *clientSetup) {
-		cs.kubeconfig = &kubeconfigSetup{t: t}
+		cs.kubeconfig = true
 	}
 }
 
@@ -125,7 +120,9 @@ func WithInterceptorFuncs(f interceptor.Funcs) ClientSetupOption {
 	}
 }
 
-func SetupClient(opts ...ClientSetupOption) (*api.Client, error) {
+func SetupClient(t *testing.T, opts ...ClientSetupOption) *api.Client {
+	t.Helper()
+
 	setup := defaultClientSetup()
 	for _, opt := range opts {
 		opt(setup)
@@ -133,7 +130,8 @@ func SetupClient(opts ...ClientSetupOption) (*api.Client, error) {
 
 	scheme, err := api.NewScheme()
 	if err != nil {
-		return nil, err
+		t.Errorf("error on scheme creation: %s", err)
+		return nil
 	}
 	resources := []client.Object{namespace(setup.organization)}
 	resources = append(resources, Projects(setup.organization, setup.projects...)...)
@@ -163,23 +161,23 @@ func SetupClient(opts ...ClientSetupOption) (*api.Client, error) {
 		WithWatch: client, Project: setup.defaultProject,
 	}
 
-	if setup.kubeconfig == nil {
-		return c, nil
+	if !setup.kubeconfig {
+		return c
 	}
+
 	fName, err := CreateTestKubeconfig(c, setup.organization)
 	if err != nil {
-		return nil, fmt.Errorf("error on kubeconfig creation: %w", err)
+		t.Errorf("error on kubeconfig creation: %s", err)
+		return nil
 	}
-	if setup.kubeconfig.t == nil {
-		return c, nil
-	}
-	t := setup.kubeconfig.t
+
 	t.Cleanup(func() {
 		if err := os.Remove(fName); err != nil {
 			t.Errorf("can not remove kubeconfig file: %v", err)
 		}
 	})
-	return c, nil
+
+	return c
 }
 
 func namespace(name string) *corev1.Namespace {

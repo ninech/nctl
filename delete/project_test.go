@@ -50,17 +50,14 @@ func TestProject(t *testing.T) {
 				},
 			}
 
-			apiClient, err := test.SetupClient(
+			apiClient := test.SetupClient(t,
 				test.WithOrganization(organization),
 				test.WithProjects(testCase.projects...),
-				test.WithKubeconfig(t),
+				test.WithKubeconfig(),
 			)
-			if err != nil {
-				t.Fatalf("failed to setup api client: %v", err)
-			}
 
 			ctx := t.Context()
-			err = cmd.Run(ctx, apiClient)
+			err := cmd.Run(ctx, apiClient)
 			if testCase.errorExpected {
 				if err == nil {
 					t.Fatal("expected error but got none")
@@ -97,10 +94,7 @@ func TestProject(t *testing.T) {
 func TestProjectsConfigErrors(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
-	apiClient, err := test.SetupClient()
-	if err != nil {
-		t.Fatalf("failed to setup api client: %v", err)
-	}
+	apiClient := test.SetupClient(t)
 	cmd := projectCmd{
 		resourceCmd: resourceCmd{
 			Force: true,

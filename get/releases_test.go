@@ -13,7 +13,6 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -162,14 +161,12 @@ func TestReleases(t *testing.T) {
 			// allows to test the prepare Releases output logic.
 			releasesByCreationTime := copyAndSortReleasesByCreationTime(tc.releases)
 
-			apiClient, err := test.SetupClient(
+			apiClient := test.SetupClient(t,
 				test.WithProjectsFromResources(releasesByCreationTime...),
 				test.WithObjects(releasesByCreationTime...),
 				test.WithNameIndexFor(&apps.Release{}),
-				test.WithKubeconfig(t),
+				test.WithKubeconfig(),
 			)
-			is := require.New(t)
-			is.NoError(err)
 
 			if tc.output == "" {
 				tc.output = full
@@ -178,7 +175,7 @@ func TestReleases(t *testing.T) {
 			get := NewTestCmd(buf, tc.output)
 			get.AllProjects = tc.inAllProjects
 
-			err = tc.cmd.Run(t.Context(), apiClient, get)
+			err := tc.cmd.Run(t.Context(), apiClient, get)
 			if (err != nil) != tc.wantErr {
 				t.Errorf("releasesCmd.Run() error = %v, wantErr %v", err, tc.wantErr)
 			}

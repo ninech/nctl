@@ -170,10 +170,9 @@ func TestApplication(t *testing.T) {
 			if tc.staticEgress != nil {
 				objs = append(objs, tc.staticEgress)
 			}
-			apiClient, err := test.SetupClient(test.WithObjects(objs...))
-			is.NoError(err)
+			apiClient := test.SetupClient(t, test.WithObjects(objs...))
 
-			err = tc.cmd.Run(t.Context(), apiClient)
+			err := tc.cmd.Run(t.Context(), apiClient)
 			if tc.expectedErr != "" {
 				is.ErrorContains(err, tc.expectedErr)
 				return

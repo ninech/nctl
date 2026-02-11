@@ -22,12 +22,9 @@ func TestDeleter(t *testing.T) {
 		},
 		Spec: iam.APIServiceAccountSpec{},
 	}
-	apiClient, err := test.SetupClient(
+	apiClient := test.SetupClient(t,
 		test.WithObjects(asa),
 	)
-	if err != nil {
-		t.Fatalf("failed to setup api client: %v", err)
-	}
 	out := &bytes.Buffer{}
 	cmd := &apiServiceAccountCmd{resourceCmd{Writer: format.NewWriter(out)}}
 
