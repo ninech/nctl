@@ -7,7 +7,6 @@ import (
 
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -113,22 +112,19 @@ func TestServiceConnection(t *testing.T) {
 				objects = append(objects, created)
 			}
 
-			apiClient, err := test.SetupClient(
+			apiClient := test.SetupClient(t,
 				test.WithProjectsFromResources(objects...),
 				test.WithObjects(objects...),
 				test.WithNameIndexFor(&networking.ServiceConnection{}),
-				test.WithKubeconfig(t),
+				test.WithKubeconfig(),
 			)
-			is := require.New(t)
-			is.NoError(err)
-
 			if tt.out == "" {
 				tt.out = full
 			}
 			buf := &bytes.Buffer{}
 			cmd := NewTestCmd(buf, tt.out)
 			cmd.AllProjects = tt.inAllProjects
-			err = tt.get.Run(t.Context(), apiClient, cmd)
+			err := tt.get.Run(t.Context(), apiClient, cmd)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("serviceConnectionCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}

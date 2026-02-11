@@ -17,14 +17,11 @@ func TestProjects(t *testing.T) {
 
 	const existsAlready = "exists-already"
 	projectName, organization := "testproject", "evilcorp"
-	apiClient, err := test.SetupClient(
+	apiClient := test.SetupClient(t,
 		test.WithOrganization("evilcorp"),
-		test.WithKubeconfig(t),
+		test.WithKubeconfig(),
 		test.WithProjects(existsAlready),
 	)
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	cmd := projectCmd{
 		resourceCmd: resourceCmd{
@@ -58,10 +55,7 @@ func TestProjectsConfigErrors(t *testing.T) {
 	t.Parallel()
 
 	is := require.New(t)
-	apiClient, err := test.SetupClient()
-	if err != nil {
-		t.Fatal(err)
-	}
+	apiClient := test.SetupClient(t)
 	cmd := projectCmd{
 		resourceCmd: resourceCmd{
 			Name:        "testproject",

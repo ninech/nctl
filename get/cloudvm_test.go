@@ -7,7 +7,6 @@ import (
 
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -119,19 +118,16 @@ func TestCloudVM(t *testing.T) {
 				created.Status.AtProvider.PowerState = cvm.powerState
 				objects = append(objects, created)
 			}
-			apiClient, err := test.SetupClient(
+			apiClient := test.SetupClient(t,
 				test.WithProjectsFromResources(objects...),
 				test.WithObjects(objects...),
 				test.WithNameIndexFor(&infrastructure.CloudVirtualMachine{}),
-				test.WithKubeconfig(t),
+				test.WithKubeconfig(),
 			)
-			is := require.New(t)
-			is.NoError(err)
-
 			buf := &bytes.Buffer{}
 			cmd := NewTestCmd(buf, tt.out)
 			cmd.AllProjects = tt.inAllProjects
-			err = tt.get.Run(t.Context(), apiClient, cmd)
+			err := tt.get.Run(t.Context(), apiClient, cmd)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("cloudVMCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 				t.Log(buf.String())

@@ -8,7 +8,6 @@ import (
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -58,14 +57,11 @@ func TestCloudVM(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			is := require.New(t)
-
 			tt.create.Name = "test-" + t.Name()
 			tt.create.Wait = false
 			tt.create.WaitTimeout = time.Second
 
-			apiClient, err := test.SetupClient()
-			is.NoError(err)
+			apiClient := test.SetupClient(t)
 
 			if err := tt.create.Run(t.Context(), apiClient); (err != nil) != tt.wantErr {
 				t.Errorf("cloudVMCmd.Run() error = %v, wantErr %v", err, tt.wantErr)

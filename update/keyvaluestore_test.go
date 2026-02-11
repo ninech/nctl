@@ -128,8 +128,7 @@ func TestKeyValueStore(t *testing.T) {
 
 			tt.update.Name = "test-" + t.Name()
 
-			apiClient, err := test.SetupClient()
-			is.NoError(err)
+			apiClient := test.SetupClient(t)
 
 			created := test.KeyValueStore(tt.update.Name, apiClient.Project, meta.LocationNineES34)
 			created.Spec.ForProvider = tt.create

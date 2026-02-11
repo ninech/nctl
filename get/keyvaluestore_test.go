@@ -7,7 +7,6 @@ import (
 
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -159,19 +158,16 @@ func TestKeyValueStore(t *testing.T) {
 					Data: map[string][]byte{"default": []byte(created.GetWriteConnectionSecretToReference().Name + "-topsecret")},
 				})
 			}
-			apiClient, err := test.SetupClient(
+			apiClient := test.SetupClient(t,
 				test.WithProjectsFromResources(objects...),
 				test.WithObjects(objects...),
 				test.WithNameIndexFor(&storage.KeyValueStore{}),
-				test.WithKubeconfig(t),
+				test.WithKubeconfig(),
 			)
-			is := require.New(t)
-			is.NoError(err)
-
 			buf := &bytes.Buffer{}
 			cmd := NewTestCmd(buf, tt.out)
 			cmd.AllProjects = tt.inAllProjects
-			err = tt.get.Run(t.Context(), apiClient, cmd)
+			err := tt.get.Run(t.Context(), apiClient, cmd)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("keyValueStoreCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}

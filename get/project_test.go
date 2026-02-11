@@ -150,13 +150,12 @@ dev      <none>
 				}
 				proj.(*management.Project).Spec.DisplayName = testCase.displayNames[i]
 			}
-			apiClient, err := test.SetupClient(
+			apiClient := test.SetupClient(t,
 				test.WithObjects(projects...),
-				test.WithKubeconfig(t),
+				test.WithKubeconfig(),
 				test.WithNameIndexFor(&management.Project{}),
 				test.WithOrganization(organization),
 			)
-			is.NoError(err)
 
 			cmd := projectCmd{
 				resourceCmd: resourceCmd{
@@ -164,7 +163,7 @@ dev      <none>
 				},
 			}
 
-			err = cmd.Run(t.Context(), apiClient, get)
+			err := cmd.Run(t.Context(), apiClient, get)
 			if len(testCase.errorContains) > 0 {
 				is.Error(err)
 				for _, s := range testCase.errorContains {
@@ -183,10 +182,7 @@ func TestProjectsConfigErrors(t *testing.T) {
 	t.Parallel()
 
 	is := require.New(t)
-	apiClient, err := test.SetupClient()
-	if err != nil {
-		t.Fatal(err)
-	}
+	apiClient := test.SetupClient(t)
 	cmd := projectCmd{
 		resourceCmd: resourceCmd{
 			Name: "testproject",

@@ -8,7 +8,6 @@ import (
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	iam "github.com/ninech/apis/iam/v1alpha1"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
@@ -32,10 +31,7 @@ func TestCreate(t *testing.T) {
 		},
 	}
 
-	is := require.New(t)
-
-	apiClient, err := test.SetupClient()
-	is.NoError(err)
+	apiClient := test.SetupClient(t)
 	cmd := &apiServiceAccountCmd{}
 	c := cmd.newCreator(apiClient, asa, "apiserviceaccount")
 

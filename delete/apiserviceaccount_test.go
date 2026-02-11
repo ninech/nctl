@@ -31,10 +31,7 @@ func TestAPIServiceAccount(t *testing.T) {
 			Namespace: test.DefaultProject,
 		},
 	}
-	apiClient, err := test.SetupClient(test.WithObjects(asa))
-	if err != nil {
-		t.Fatalf("failed to setup api client: %v", err)
-	}
+	apiClient := test.SetupClient(t, test.WithObjects(asa))
 
 	ctx := t.Context()
 	if err := cmd.Run(ctx, apiClient); err != nil {

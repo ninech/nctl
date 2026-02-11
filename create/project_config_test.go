@@ -15,10 +15,7 @@ import (
 func TestProjectConfig(t *testing.T) {
 	t.Parallel()
 
-	apiClient, err := test.SetupClient()
-	if err != nil {
-		t.Fatal(err)
-	}
+	apiClient := test.SetupClient(t)
 
 	cases := map[string]struct {
 		cmd         configCmd

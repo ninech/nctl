@@ -29,10 +29,7 @@ func TestBucket(t *testing.T) {
 	}
 
 	bu := bucket("test", test.DefaultProject, string(meta.LocationNineES34))
-	apiClient, err := test.SetupClient(test.WithObjects(bu))
-	if err != nil {
-		t.Fatalf("failed to setup api client: %v", err)
-	}
+	apiClient := test.SetupClient(t, test.WithObjects(bu))
 
 	ctx := t.Context()
 	if err := apiClient.Get(ctx, api.ObjectName(bu), bu); err != nil {
@@ -41,7 +38,7 @@ func TestBucket(t *testing.T) {
 	if err := cmd.Run(ctx, apiClient); err != nil {
 		t.Fatalf("failed to run bucket delete command: %v", err)
 	}
-	err = apiClient.Get(ctx, api.ObjectName(bu), bu)
+	err := apiClient.Get(ctx, api.ObjectName(bu), bu)
 	if err == nil {
 		t.Fatal("expected bucket to be deleted, but it still exists")
 	}

@@ -92,13 +92,12 @@ func TestListPrint(t *testing.T) {
 			t.Parallel()
 			is := require.New(t)
 
-			apiClient, err := test.SetupClient(
+			apiClient := test.SetupClient(t,
 				test.WithDefaultProject(test.DefaultProject),
 				test.WithProjectsFromResources(append(tc.existingResources, tc.toCreate...)...),
 				test.WithObjects(tc.existingResources...),
-				test.WithKubeconfig(t),
+				test.WithKubeconfig(),
 			)
-			is.NoError(err)
 
 			buf := &bytes.Buffer{}
 			cmd := NewTestCmd(buf, tc.out)

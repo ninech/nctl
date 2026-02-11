@@ -243,19 +243,18 @@ func TestBucketGet(t *testing.T) {
 				objs = append(objs, &b)
 			}
 
-			apiClient, err := test.SetupClient(
+			apiClient := test.SetupClient(t,
 				test.WithProjectsFromResources(objs...),
 				test.WithObjects(objs...),
 				test.WithNameIndexFor(&storage.Bucket{}),
-				test.WithKubeconfig(t),
+				test.WithKubeconfig(),
 			)
-			is.NoError(err)
 
 			buf := &bytes.Buffer{}
 			cmd := tt.getCmd
 			get := NewTestCmd(buf, tt.out)
 			get.AllProjects = tt.inAllProjects
-			err = cmd.Run(t.Context(), apiClient, get)
+			err := cmd.Run(t.Context(), apiClient, get)
 
 			if tt.wantErr {
 				is.Error(err)

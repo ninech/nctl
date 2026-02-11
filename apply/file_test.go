@@ -58,9 +58,7 @@ spec: {}
 func TestFile(t *testing.T) {
 	t.Parallel()
 
-	is := require.New(t)
-	apiClient, err := test.SetupClient()
-	is.NoError(err)
+	apiClient := test.SetupClient(t)
 	w := format.NewWriter(t.Output())
 
 	tests := map[string]struct {

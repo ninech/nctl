@@ -31,11 +31,10 @@ func TestBuild(t *testing.T) {
 	buf := &bytes.Buffer{}
 	get := NewTestCmd(buf, full)
 
-	apiClient, err := test.SetupClient(
+	apiClient := test.SetupClient(t,
 		test.WithNameIndexFor(&apps.Build{}),
 		test.WithObjects(&build, &build2),
 	)
-	is.NoError(err)
 
 	cmd := buildCmd{}
 	if err := cmd.Run(t.Context(), apiClient, get); err != nil {

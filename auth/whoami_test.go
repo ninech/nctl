@@ -14,10 +14,9 @@ func TestWhoAmICmd_Run(t *testing.T) {
 	t.Parallel()
 
 	is := require.New(t)
-	apiClient, err := test.SetupClient(
-		test.WithKubeconfig(t),
+	apiClient := test.SetupClient(t,
+		test.WithKubeconfig(),
 	)
-	is.NoError(err)
 
 	s := &auth.WhoAmICmd{
 		IssuerURL: "https://auth.nine.ch/auth/realms/pub",

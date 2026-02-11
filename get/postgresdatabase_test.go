@@ -8,7 +8,6 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -77,14 +76,12 @@ func TestPostgresDatabase(t *testing.T) {
 					Data: map[string][]byte{"foo_bar": []byte("topsecret")},
 				})
 			}
-			apiClient, err := test.SetupClient(
+			apiClient := test.SetupClient(t,
 				test.WithProjectsFromResources(objects...),
 				test.WithObjects(objects...),
 				test.WithNameIndexFor(&storage.PostgresDatabase{}),
-				test.WithKubeconfig(t),
+				test.WithKubeconfig(),
 			)
-			is := require.New(t)
-			is.NoError(err)
 
 			if tt.out == "" {
 				tt.out = full

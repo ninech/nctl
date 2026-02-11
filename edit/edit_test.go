@@ -59,11 +59,10 @@ func TestEdit(t *testing.T) {
 			is := require.New(t)
 
 			objs := []client.Object{tc.resource}
-			apiClient, err := test.SetupClient(test.WithObjects(objs...))
-			is.NoError(err)
+			apiClient := test.SetupClient(t, test.WithObjects(objs...))
 			r, w, _ := os.Pipe()
 			os.Stdout = w
-			err = tc.cmd.Run(&kong.Context{
+			err := tc.cmd.Run(&kong.Context{
 				Path: []*kong.Path{
 					{
 						Command: &kong.Command{

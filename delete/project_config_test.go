@@ -32,14 +32,11 @@ func TestProjectConfig(t *testing.T) {
 		Wait:   false,
 	}
 
-	apiClient, err := test.SetupClient(
+	apiClient := test.SetupClient(t,
 		test.WithProjects(project),
 		test.WithDefaultProject(project),
 		test.WithObjects(cfg),
 	)
-	if err != nil {
-		t.Fatalf("failed to setup api client: %v", err)
-	}
 	ctx := t.Context()
 
 	if err := cmd.Run(ctx, apiClient); err != nil {

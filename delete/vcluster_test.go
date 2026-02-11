@@ -38,10 +38,7 @@ func TestVCluster(t *testing.T) {
 		},
 	}
 
-	apiClient, err := test.SetupClient(test.WithObjects(cluster))
-	if err != nil {
-		t.Fatalf("failed to setup api client: %v", err)
-	}
+	apiClient := test.SetupClient(t, test.WithObjects(cluster))
 
 	kubeconfig, err := test.CreateTestKubeconfig(apiClient, "")
 	if err != nil {

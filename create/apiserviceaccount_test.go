@@ -12,10 +12,7 @@ import (
 func TestAPIServiceAccount(t *testing.T) {
 	t.Parallel()
 
-	is := require.New(t)
-
-	apiClient, err := test.SetupClient()
-	is.NoError(err)
+	apiClient := test.SetupClient(t)
 
 	for name, tc := range map[string]struct {
 		cmd                    apiServiceAccountCmd
@@ -42,9 +39,6 @@ func TestAPIServiceAccount(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if err != nil {
-				t.Fatal(err)
-			}
 			if err := tc.cmd.Run(t.Context(), apiClient); err != nil {
 				t.Fatal(err)
 			}

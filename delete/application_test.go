@@ -154,17 +154,14 @@ func TestApplication(t *testing.T) {
 				},
 			}
 
-			apiClient, err := test.SetupClient(
+			apiClient := test.SetupClient(t,
 				test.WithDefaultProject(project),
 				test.WithProjectsFromResources(testCase.testObjects.clientObjects()...),
 				test.WithObjects(testCase.testObjects.clientObjects()...),
 			)
-			if err != nil {
-				t.Fatalf("failed to setup api client: %v", err)
-			}
 
 			ctx := t.Context()
-			err = cmd.Run(ctx, apiClient)
+			err := cmd.Run(ctx, apiClient)
 			if testCase.errorExpected {
 				if err == nil {
 					t.Fatal("expected error but got none")

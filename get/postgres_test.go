@@ -8,7 +8,6 @@ import (
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -150,14 +149,12 @@ func TestPostgres(t *testing.T) {
 					Data: map[string][]byte{storage.PostgresUser: []byte(created.GetWriteConnectionSecretToReference().Name + "-topsecret")},
 				})
 			}
-			apiClient, err := test.SetupClient(
+			apiClient := test.SetupClient(t,
 				test.WithProjectsFromResources(objects...),
 				test.WithObjects(objects...),
 				test.WithNameIndexFor(&storage.Postgres{}),
-				test.WithKubeconfig(t),
+				test.WithKubeconfig(),
 			)
-			is := require.New(t)
-			is.NoError(err)
 
 			if tt.out == "" {
 				tt.out = full
@@ -165,7 +162,7 @@ func TestPostgres(t *testing.T) {
 			buf := &bytes.Buffer{}
 			cmd := NewTestCmd(buf, tt.out)
 			cmd.AllProjects = tt.inAllProjects
-			err = tt.get.Run(t.Context(), apiClient, cmd)
+			err := tt.get.Run(t.Context(), apiClient, cmd)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("postgresCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}

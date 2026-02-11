@@ -104,12 +104,9 @@ func TestConfig(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			apiClient, err := test.SetupClient(
+			apiClient := test.SetupClient(t,
 				test.WithObjects(tc.orig),
 			)
-			if err != nil {
-				t.Fatal(err)
-			}
 
 			if err := tc.cmd.Run(t.Context(), apiClient); err != nil {
 				t.Fatal(err)

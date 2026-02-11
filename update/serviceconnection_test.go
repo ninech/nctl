@@ -136,10 +136,7 @@ func TestServiceConnection(t *testing.T) {
 			tt.update.Writer = format.NewWriter(out)
 			tt.update.Name = "test-" + t.Name()
 
-			apiClient, err := test.SetupClient()
-			if err != nil {
-				t.Fatalf("setup client error, got: %s", err)
-			}
+			apiClient := test.SetupClient(t)
 
 			created := test.ServiceConnection(tt.update.Name, apiClient.Project)
 			if err := apiClient.Create(t.Context(), created); err != nil {

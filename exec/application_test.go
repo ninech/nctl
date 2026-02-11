@@ -278,13 +278,12 @@ func TestApplicationReplicaSelection(t *testing.T) {
 			t.Parallel()
 			is := require.New(t)
 
-			apiClient, err := test.SetupClient(
-				test.WithKubeconfig(t),
+			apiClient := test.SetupClient(t,
+				test.WithKubeconfig(),
 				test.WithNameIndexFor(&apps.Release{}),
 				test.WithObjects(addCreationTimestamp(testCase.releases)...),
 				test.WithDefaultProject(project),
 			)
-			is.NoError(err)
 
 			cmd := applicationCmd{resourceCmd: resourceCmd{Name: testCase.application}}
 			replica, buildType, err := cmd.getReplica(t.Context(), apiClient)

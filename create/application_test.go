@@ -40,10 +40,7 @@ func createTempKeyFile(content string) (string, error) {
 func TestApplication(t *testing.T) {
 	t.Parallel()
 
-	apiClient, err := test.SetupClient()
-	if err != nil {
-		t.Fatal(err)
-	}
+	apiClient := test.SetupClient(t)
 
 	dummyRSAKey, err := test.GenerateRSAPrivateKey()
 	if err != nil {
@@ -573,10 +570,7 @@ func TestApplicationWait(t *testing.T) {
 	release2 := *release
 	release2.Name = release2.Name + "-1"
 
-	apiClient, err := test.SetupClient(test.WithObjects(build, &build2, release, &release2, basicAuth))
-	if err != nil {
-		t.Fatal(err)
-	}
+	apiClient := test.SetupClient(t, test.WithObjects(build, &build2, release, &release2, basicAuth))
 
 	out, err := log.StdOut("default")
 	if err != nil {
@@ -687,10 +681,7 @@ func TestApplicationBuildFail(t *testing.T) {
 		},
 	}
 
-	client, err := test.SetupClient(test.WithObjects(build))
-	if err != nil {
-		t.Fatal(err)
-	}
+	client := test.SetupClient(t, test.WithObjects(build))
 
 	var buf bytes.Buffer
 	out, err := output.NewLogOutput(&buf, log.Mode("default"), &output.LogOutputOptions{
