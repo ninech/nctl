@@ -4,11 +4,13 @@ import (
 	"testing"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/utils/ptr"
 )
 
 func TestApplyProbePatch(t *testing.T) {
+	t.Parallel()
+
 	setPath := func(s string) OptString {
 		return OptString{State: Set, Val: s}
 	}
@@ -39,7 +41,8 @@ func TestApplyProbePatch(t *testing.T) {
 			cfg:  apps.Config{},
 			pp:   ProbePatch{Path: unsetPath(), PeriodSeconds: unsetPer()},
 			want: func(t *testing.T, got *apps.Config) {
-				assert.Nil(t, got.HealthProbe)
+				is := require.New(t)
+				is.Nil(got.HealthProbe)
 			},
 		},
 		{
@@ -47,10 +50,11 @@ func TestApplyProbePatch(t *testing.T) {
 			cfg:  apps.Config{},
 			pp:   ProbePatch{Path: setPath("/healthz"), PeriodSeconds: unsetPer()},
 			want: func(t *testing.T, got *apps.Config) {
-				if assert.NotNil(t, got.HealthProbe) && assert.NotNil(t, got.HealthProbe.HTTPGet) {
-					assert.Equal(t, "/healthz", got.HealthProbe.HTTPGet.Path)
-				}
-				assert.Nil(t, got.HealthProbe.PeriodSeconds)
+				is := require.New(t)
+				is.NotNil(got.HealthProbe)
+				is.NotNil(got.HealthProbe.HTTPGet)
+				is.Equal("/healthz", got.HealthProbe.HTTPGet.Path)
+				is.Nil(got.HealthProbe.PeriodSeconds)
 			},
 		},
 		{
@@ -58,12 +62,11 @@ func TestApplyProbePatch(t *testing.T) {
 			cfg:  apps.Config{},
 			pp:   ProbePatch{Path: unsetPath(), PeriodSeconds: setPer(7)},
 			want: func(t *testing.T, got *apps.Config) {
-				if assert.NotNil(t, got.HealthProbe) {
-					if assert.NotNil(t, got.HealthProbe.PeriodSeconds) {
-						assert.Equal(t, int32(7), *got.HealthProbe.PeriodSeconds)
-					}
-					assert.Nil(t, got.HealthProbe.HTTPGet)
-				}
+				is := require.New(t)
+				is.NotNil(got.HealthProbe)
+				is.NotNil(got.HealthProbe.PeriodSeconds)
+				is.Equal(int32(7), *got.HealthProbe.PeriodSeconds)
+				is.Nil(got.HealthProbe.HTTPGet)
 			},
 		},
 		{
@@ -78,12 +81,12 @@ func TestApplyProbePatch(t *testing.T) {
 			},
 			pp: ProbePatch{Path: setPath("/new"), PeriodSeconds: setPer(9)},
 			want: func(t *testing.T, got *apps.Config) {
-				if assert.NotNil(t, got.HealthProbe) && assert.NotNil(t, got.HealthProbe.HTTPGet) {
-					assert.Equal(t, "/new", got.HealthProbe.HTTPGet.Path)
-				}
-				if assert.NotNil(t, got.HealthProbe.PeriodSeconds) {
-					assert.Equal(t, int32(9), *got.HealthProbe.PeriodSeconds)
-				}
+				is := require.New(t)
+				is.NotNil(got.HealthProbe)
+				is.NotNil(got.HealthProbe.HTTPGet)
+				is.Equal("/new", got.HealthProbe.HTTPGet.Path)
+				is.NotNil(got.HealthProbe.PeriodSeconds)
+				is.Equal(int32(9), *got.HealthProbe.PeriodSeconds)
 			},
 		},
 		{
@@ -98,12 +101,11 @@ func TestApplyProbePatch(t *testing.T) {
 			},
 			pp: ProbePatch{Path: clearPath(), PeriodSeconds: unsetPer()},
 			want: func(t *testing.T, got *apps.Config) {
-				if assert.NotNil(t, got.HealthProbe) {
-					assert.Nil(t, got.HealthProbe.HTTPGet)
-					if assert.NotNil(t, got.HealthProbe.PeriodSeconds) {
-						assert.Equal(t, int32(5), *got.HealthProbe.PeriodSeconds)
-					}
-				}
+				is := require.New(t)
+				is.NotNil(got.HealthProbe)
+				is.Nil(got.HealthProbe.HTTPGet)
+				is.NotNil(got.HealthProbe.PeriodSeconds)
+				is.Equal(int32(5), *got.HealthProbe.PeriodSeconds)
 			},
 		},
 		{
@@ -118,11 +120,11 @@ func TestApplyProbePatch(t *testing.T) {
 			},
 			pp: ProbePatch{Path: unsetPath(), PeriodSeconds: clearPer()},
 			want: func(t *testing.T, got *apps.Config) {
-				if assert.NotNil(t, got.HealthProbe) {
-					assert.NotNil(t, got.HealthProbe.HTTPGet)
-					assert.Equal(t, "/ok", got.HealthProbe.HTTPGet.Path)
-					assert.Nil(t, got.HealthProbe.PeriodSeconds)
-				}
+				is := require.New(t)
+				is.NotNil(got.HealthProbe)
+				is.NotNil(got.HealthProbe.HTTPGet)
+				is.Equal("/ok", got.HealthProbe.HTTPGet.Path)
+				is.Nil(got.HealthProbe.PeriodSeconds)
 			},
 		},
 		{
@@ -135,7 +137,8 @@ func TestApplyProbePatch(t *testing.T) {
 			},
 			pp: ProbePatch{Path: clearPath(), PeriodSeconds: unsetPer()},
 			want: func(t *testing.T, got *apps.Config) {
-				assert.Nil(t, got.HealthProbe)
+				is := require.New(t)
+				is.Nil(got.HealthProbe)
 			},
 		},
 		{
@@ -145,13 +148,16 @@ func TestApplyProbePatch(t *testing.T) {
 			},
 			pp: ProbePatch{Path: unsetPath(), PeriodSeconds: unsetPer()},
 			want: func(t *testing.T, got *apps.Config) {
-				assert.Nil(t, got.HealthProbe)
+				is := require.New(t)
+				is.Nil(got.HealthProbe)
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			cfg := tt.cfg
 			ApplyProbePatch(&cfg, tt.pp)
 			tt.want(t, &cfg)

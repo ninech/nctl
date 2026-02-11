@@ -2,7 +2,6 @@ package logs
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -12,10 +11,12 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/log"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRun(t *testing.T) {
+	t.Parallel()
+
 	expectedTime := time.Now()
 	lines := []string{}
 
@@ -27,7 +28,6 @@ func TestRun(t *testing.T) {
 		Project: "default",
 		Log:     &log.Client{Client: log.NewFake(t, expectedTime, lines...)},
 	}
-	ctx := context.Background()
 
 	cases := map[string]struct {
 		cmd                 logsCmd
@@ -95,24 +95,25 @@ func TestRun(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			is := require.New(t)
+
 			var buf bytes.Buffer
 			out, err := log.NewOutput(&buf, log.Mode(tc.cmd.Output), true)
-			if err != nil {
-				t.Fatal(err)
-			}
+			is.NoError(err)
 
 			tc.cmd.out = out
 
-			if err := tc.cmd.Run(ctx, apiClient, ApplicationQuery("app-name", "app-ns")); err != nil {
+			if err := tc.cmd.Run(t.Context(), apiClient, ApplicationQuery("app-name", "app-ns")); err != nil {
 				if tc.expectedErrContains != "" {
-					assert.ErrorContains(t, err, tc.expectedErrContains)
+					is.ErrorContains(err, tc.expectedErrContains)
 				} else {
-					assert.NoError(t, err)
+					is.NoError(err)
 				}
 			}
 
 			if tc.expectedLines != 0 {
-				assert.Equal(t, out.LineCount(), tc.expectedLines)
+				is.Equal(out.LineCount(), tc.expectedLines)
 			}
 
 			if tc.cmd.Output == "json" {
@@ -123,9 +124,9 @@ func TestRun(t *testing.T) {
 				// iterate lines, unmarshal each and compare them against the input
 				outLines := strings.Split(strings.TrimSuffix(buf.String(), "\n"), "\n")
 				for i, line := range outLines {
-					assert.NoError(t, json.Unmarshal([]byte(line), &logLine))
-					assert.Equal(t, expectedTime.Local(), logLine.Timestamp.Local())
-					assert.Equal(t, lines[i], logLine.Line)
+					is.NoError(json.Unmarshal([]byte(line), &logLine))
+					is.Equal(expectedTime.Local(), logLine.Timestamp.Local())
+					is.Equal(lines[i], logLine.Line)
 				}
 			}
 			buf.Reset()
@@ -134,7 +135,10 @@ func TestRun(t *testing.T) {
 }
 
 func TestMatchLabels(t *testing.T) {
-	assert.Equal(t,
+	t.Parallel()
+	is := require.New(t)
+
+	is.Equal(
 		buildQuery(queryExpr(opEquals, apps.LogLabelApplication, "some-app"), inProject("default")),
 		`{app="some-app",namespace="default"}`,
 	)

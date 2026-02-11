@@ -2,7 +2,6 @@ package get
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -18,7 +17,7 @@ import (
 )
 
 func TestOpenSearch(t *testing.T) {
-	ctx := context.Background()
+	t.Parallel()
 
 	type openSearchInstance struct {
 		name           string
@@ -186,6 +185,8 @@ func TestOpenSearch(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			buf := &bytes.Buffer{}
 
 			objects := []client.Object{}
@@ -236,14 +237,15 @@ func TestOpenSearch(t *testing.T) {
 				test.WithNameIndexFor(&storage.OpenSearch{}),
 				test.WithKubeconfig(t),
 			)
-			require.NoError(t, err)
+			is := require.New(t)
+			is.NoError(err)
 
 			if tt.out == "" {
 				tt.out = full
 			}
 			cmd := NewTestCmd(buf, tt.out)
 			cmd.AllProjects = tt.inAllProjects
-			err = tt.get.Run(ctx, apiClient, cmd)
+			err = tt.get.Run(t.Context(), apiClient, cmd)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("openSearchCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -270,6 +272,8 @@ func TestOpenSearch(t *testing.T) {
 }
 
 func TestGetClusterHealth(t *testing.T) {
+	t.Parallel()
+
 	cmd := &openSearchCmd{}
 
 	tests := []struct {
@@ -366,6 +370,8 @@ func TestGetClusterHealth(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			got := string(cmd.getClusterHealth(tt.clusterHealth))
 			if got != tt.want {
 				t.Errorf("getClusterHealth() = %v, want %v", got, tt.want)

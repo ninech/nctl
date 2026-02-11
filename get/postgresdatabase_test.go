@@ -2,7 +2,6 @@ package get
 
 import (
 	"bytes"
-	"context"
 	"strings"
 	"testing"
 
@@ -16,7 +15,7 @@ import (
 )
 
 func TestPostgresDatabase(t *testing.T) {
-	ctx := context.Background()
+	t.Parallel()
 
 	type postgresDatabase struct {
 		name     string
@@ -64,6 +63,8 @@ func TestPostgresDatabase(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			objects := []client.Object{}
 			for _, database := range tt.databases {
 				created := test.PostgresDatabase(database.name, database.project, "nine-es34")
@@ -82,7 +83,8 @@ func TestPostgresDatabase(t *testing.T) {
 				test.WithNameIndexFor(&storage.PostgresDatabase{}),
 				test.WithKubeconfig(t),
 			)
-			require.NoError(t, err)
+			is := require.New(t)
+			is.NoError(err)
 
 			if tt.out == "" {
 				tt.out = full
@@ -90,7 +92,7 @@ func TestPostgresDatabase(t *testing.T) {
 			buf := &bytes.Buffer{}
 			cmd := NewTestCmd(buf, tt.out)
 			cmd.AllProjects = tt.inAllProjects
-			if err := tt.get.Run(ctx, apiClient, cmd); (err != nil) != tt.wantErr {
+			if err := tt.get.Run(t.Context(), apiClient, cmd); (err != nil) != tt.wantErr {
 				t.Errorf("postgresDatabaseCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if tt.wantErr {

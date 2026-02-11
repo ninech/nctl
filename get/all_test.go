@@ -2,7 +2,6 @@ package get
 
 import (
 	"bytes"
-	"context"
 	"os"
 	"strings"
 	"testing"
@@ -13,7 +12,6 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -22,7 +20,6 @@ import (
 
 func TestAllContent(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
 	organization := "evilcorp"
 
 	for name, testCase := range map[string]struct {
@@ -291,6 +288,8 @@ dev      pear    Release      apps.nine.ch
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			is := require.New(t)
 			testCase := testCase
 
 			outputBuffer := &bytes.Buffer{}
@@ -311,7 +310,7 @@ dev      pear    Release      apps.nine.ch
 
 			apiClient := &api.Client{WithWatch: client, Project: testCase.projectName}
 			kubeconfig, err := test.CreateTestKubeconfig(apiClient, organization)
-			require.NoError(t, err)
+			is.NoError(err)
 			defer os.Remove(kubeconfig)
 
 			cmd := allCmd{
@@ -319,16 +318,16 @@ dev      pear    Release      apps.nine.ch
 				Kinds:                testCase.kinds,
 			}
 
-			err = cmd.Run(ctx, apiClient, get)
+			err = cmd.Run(t.Context(), apiClient, get)
 			if testCase.errorExpected {
-				require.Error(t, err)
+				is.Error(err)
 				for _, s := range testCase.errorContains {
-					assert.Contains(t, strings.ToLower(err.Error()), strings.ToLower(s))
+					is.Contains(strings.ToLower(err.Error()), strings.ToLower(s))
 				}
 				return
 			}
-			require.NoError(t, err)
-			assert.Equal(t, testCase.output, outputBuffer.String())
+			is.NoError(err)
+			is.Equal(testCase.output, outputBuffer.String())
 		})
 	}
 }

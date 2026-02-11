@@ -8,11 +8,14 @@ import (
 	"time"
 
 	"github.com/grafana/loki/v3/pkg/logcli/output"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestClient(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	t.Parallel()
+
+	is := require.New(t)
+	ctx, cancel := context.WithTimeout(t.Context(), time.Second)
 	defer cancel()
 
 	expectedTime := time.Now()
@@ -24,19 +27,13 @@ func TestClient(t *testing.T) {
 	out, err := output.NewLogOutput(&buf, "default", &output.LogOutputOptions{
 		NoLabels: true, ColoredOutput: false, Timezone: time.Local,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	is.NoError(err)
 
-	if err := c.QueryRange(ctx, out, Query{Limit: 10}); err != nil {
-		t.Fatal(err)
-	}
+	is.NoError(c.QueryRange(ctx, out, Query{Limit: 10}))
 
-	assert.Equal(t, fmt.Sprintf("%s %s\n", expectedTime.Local().Format(time.RFC3339), expectedLine), buf.String())
+	is.Equal(fmt.Sprintf("%s %s\n", expectedTime.Local().Format(time.RFC3339), expectedLine), buf.String())
 	buf.Reset()
 
-	if err := c.TailQuery(ctx, 0, out, Query{QueryString: "{app=\"test\"}", Limit: 10}); err != nil {
-		t.Fatal(err)
-	}
-	assert.Equal(t, fmt.Sprintf("%s %s\n", expectedTime.Local().Format(time.RFC3339), expectedLine), buf.String())
+	is.NoError(c.TailQuery(ctx, 0, out, Query{QueryString: "{app=\"test\"}", Limit: 10}))
+	is.Equal(fmt.Sprintf("%s %s\n", expectedTime.Local().Format(time.RFC3339), expectedLine), buf.String())
 }

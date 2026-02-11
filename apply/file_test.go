@@ -1,7 +1,6 @@
 package apply
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"testing"
@@ -57,9 +56,11 @@ spec: {}
 )
 
 func TestFile(t *testing.T) {
-	ctx := context.Background()
+	t.Parallel()
+
+	is := require.New(t)
 	apiClient, err := test.SetupClient()
-	require.NoError(t, err)
+	is.NoError(err)
 	w := format.NewWriter(t.Output())
 
 	tests := map[string]struct {
@@ -111,27 +112,26 @@ func TestFile(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			is := require.New(t)
+
 			f, err := os.CreateTemp("", "nctl-filetest*")
-			if err != nil {
-				t.Fatal(err)
-			}
+			is.NoError(err)
 			defer os.Remove(f.Name())
 
-			if _, err := fmt.Fprintf(f, tc.file, name, "value", runtimev1.DeletionOrphan); err != nil {
-				t.Fatal(err)
-			}
+			_, err = fmt.Fprintf(f, tc.file, name, "value", runtimev1.DeletionOrphan)
+			is.NoError(err)
 			// The file is written, but the pointer is at the end.
 			// Close it to flush content.
-			require.NoError(t, f.Close())
+			is.NoError(f.Close())
 
 			opts := []Option{}
 
 			// For delete and update tests, we first create the resource.
 			if tc.delete || tc.update {
 				fileToCreate, err := os.Open(f.Name())
-				require.NoError(t, err)
-				err = File(ctx, w, apiClient, fileToCreate) // This will close fileToCreate
-				require.NoError(t, err)
+				is.NoError(err)
+				err = File(t.Context(), w, apiClient, fileToCreate) // This will close fileToCreate
+				is.NoError(err)
 			}
 
 			if tc.delete {
@@ -141,18 +141,18 @@ func TestFile(t *testing.T) {
 			if tc.update {
 				// Re-create the file to truncate it and write the updated content.
 				updatedFile, err := os.Create(f.Name())
-				require.NoError(t, err)
+				is.NoError(err)
 				_, err = fmt.Fprintf(updatedFile, tc.file, name, tc.updatedAnnotation, tc.updatedSpecValue)
-				require.NoError(t, err)
-				require.NoError(t, updatedFile.Close())
+				is.NoError(err)
+				is.NoError(updatedFile.Close())
 
 				opts = append(opts, UpdateOnExists())
 			}
 
 			fileToApply, err := os.Open(f.Name())
-			require.NoError(t, err)
+			is.NoError(err)
 
-			if err := File(ctx, w, apiClient, fileToApply, opts...); err != nil {
+			if err := File(t.Context(), w, apiClient, fileToApply, opts...); err != nil {
 				if tc.expectedErr {
 					return
 				}
@@ -162,7 +162,7 @@ func TestFile(t *testing.T) {
 			}
 
 			asa := &iam.APIServiceAccount{}
-			if err := apiClient.Get(ctx, types.NamespacedName{Name: name, Namespace: "default"}, asa); err != nil {
+			if err := apiClient.Get(t.Context(), types.NamespacedName{Name: name, Namespace: "default"}, asa); err != nil {
 				if tc.delete {
 					if !errors.IsNotFound(err) {
 						t.Fatalf("expected resource to not exist after delete, got %s", err)

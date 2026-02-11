@@ -5,10 +5,11 @@ import (
 
 	"github.com/alecthomas/kong"
 	"github.com/stretchr/testify/require"
-	"gotest.tools/assert"
 )
 
 func TestPlaceholderInterpolation(t *testing.T) {
+	t.Parallel()
+
 	var cli struct {
 		FlagPointer *string `placeholder:"${flag_default}"`
 		Flag        string  `default:"${flag_default}"`
@@ -27,22 +28,25 @@ func TestPlaceholderInterpolation(t *testing.T) {
 		vars,
 		kong.PostBuild(InterpolateFlagPlaceholders(vars)),
 	)
-	require.NoError(t, err)
+	is := require.New(t)
+	is.NoError(err)
 	// we expect 3 flags because the first one is always the "-h" help flag
-	require.Len(t, p.Model.Flags, 3)
+	is.Len(p.Model.Flags, 3)
 	flagPointer := p.Model.Flags[1]
-	assert.Equal(t, "chicken", flagPointer.PlaceHolder)
+	is.Equal("chicken", flagPointer.PlaceHolder)
 	// we expect one sub command
-	require.Len(t, p.Model.Children, 1)
+	is.Len(p.Model.Children, 1)
 	// no help flag this time...
-	require.Len(t, p.Model.Children[0].Flags, 2)
+	is.Len(p.Model.Children[0].Flags, 2)
 	subFlagPointer := p.Model.Children[0].Flags[1]
-	require.Equal(t, "coleslaw!", subFlagPointer.PlaceHolder)
+	is.Equal("coleslaw!", subFlagPointer.PlaceHolder)
 }
 
 // TestPlaceholderInterpolationError makes sure that an error gets thrown if a
 // variable in a placeholder was not defined
 func TestPlaceholderInterpolationError(t *testing.T) {
+	t.Parallel()
+
 	var cli struct {
 		FlagPointer *string `placeholder:"${flag_default}"`
 	}
@@ -50,5 +54,6 @@ func TestPlaceholderInterpolationError(t *testing.T) {
 		&cli,
 		kong.PostBuild(InterpolateFlagPlaceholders(kong.Vars{"unused": "garbage"})),
 	)
-	require.Error(t, err)
+	is := require.New(t)
+	is.Error(err)
 }

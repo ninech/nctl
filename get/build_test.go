@@ -2,18 +2,18 @@ package get
 
 import (
 	"bytes"
-	"context"
 	"testing"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestBuild(t *testing.T) {
-	ctx := context.Background()
+	t.Parallel()
+	is := require.New(t)
+
 	build := apps.Build{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       apps.BuildKind,
@@ -35,28 +35,28 @@ func TestBuild(t *testing.T) {
 		test.WithNameIndexFor(&apps.Build{}),
 		test.WithObjects(&build, &build2),
 	)
-	require.NoError(t, err)
+	is.NoError(err)
 
 	cmd := buildCmd{}
-	if err := cmd.Run(ctx, apiClient, get); err != nil {
+	if err := cmd.Run(t.Context(), apiClient, get); err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, 3, test.CountLines(buf.String()))
+	is.Equal(3, test.CountLines(buf.String()))
 	buf.Reset()
 
 	cmd.Name = build.Name
-	if err := cmd.Run(ctx, apiClient, get); err != nil {
+	if err := cmd.Run(t.Context(), apiClient, get); err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, 2, test.CountLines(buf.String()))
+	is.Equal(2, test.CountLines(buf.String()))
 	buf.Reset()
 
 	get.Format = noHeader
-	if err := cmd.Run(ctx, apiClient, get); err != nil {
+	if err := cmd.Run(t.Context(), apiClient, get); err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, 1, test.CountLines(buf.String()))
+	is.Equal(1, test.CountLines(buf.String()))
 }

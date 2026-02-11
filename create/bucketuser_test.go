@@ -6,13 +6,16 @@ import (
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestBucketUser(t *testing.T) {
+	t.Parallel()
+
+	is := require.New(t)
+
 	apiClient, err := test.SetupClient()
-	require.NoError(t, err)
+	is.NoError(err)
 
 	for name, tc := range map[string]struct {
 		cmd             bucketUserCmd
@@ -24,7 +27,8 @@ func TestBucketUser(t *testing.T) {
 				Location:    "nine-es34",
 			},
 			checkBucketUser: func(t *testing.T, cmd bucketUserCmd, bu *storage.BucketUser) {
-				assert.Equal(t, "nine-es34", string(bu.Spec.ForProvider.Location))
+				is := require.New(t)
+				is.Equal("nine-es34", string(bu.Spec.ForProvider.Location))
 			},
 		},
 	} {

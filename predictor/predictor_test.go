@@ -153,6 +153,8 @@ func (c *capturePredictor) Predict(args complete.Args) []string {
 }
 
 func TestFindProjectInSlice(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
 		args []string
@@ -207,6 +209,8 @@ func TestFindProjectInSlice(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			if got := findProjectInSlice(tt.args); got != tt.want {
 				t.Errorf("findProjectInSlice() = %q, want %q", got, tt.want)
 			}

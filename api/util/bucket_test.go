@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	storage "github.com/ninech/apis/storage/v1alpha1"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -63,14 +62,17 @@ func TestParseSegments(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			is := require.New(t)
+
 			got, err := parseSegmentsStrict(tt.chunks)
 			if tt.wantErr != "" {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.wantErr)
+				is.Error(err)
+				is.Contains(err.Error(), tt.wantErr)
 				return
 			}
-			assert.NoError(t, err)
-			assert.Equal(t, tt.wantPairs, got)
+			is.NoError(err)
+			is.Equal(tt.wantPairs, got)
 		})
 	}
 }
@@ -157,14 +159,17 @@ func TestParsePermissions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			is := require.New(t)
+
 			got, err := parsePermissions(tt.chunks, tt.allowEmptyUsers)
 			if tt.wantErr != "" {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.wantErr)
+				is.Error(err)
+				is.Contains(err.Error(), tt.wantErr)
 				return
 			}
-			assert.NoError(t, err)
-			assert.Equal(t, tt.want, got)
+			is.NoError(err)
+			is.Equal(tt.want, got)
 		})
 	}
 }
@@ -295,57 +300,74 @@ func TestParseCORSLooseWithMask(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			is := require.New(t)
+
 			got, gotMask, err := parseCORSLooseWithMask(tt.chunks)
 
 			if tt.wantErr != "" {
-				assert.Error(t, err)
-				assert.Contains(t, strings.ToLower(err.Error()), strings.ToLower(tt.wantErr))
+				is.Error(err)
+				is.Contains(strings.ToLower(err.Error()), strings.ToLower(tt.wantErr))
 				return
 			}
-			assert.NoError(t, err)
-			assert.Equal(t, tt.wantMask, gotMask)
+			is.NoError(err)
+			is.Equal(tt.wantMask, gotMask)
 
 			if tt.nilFields.origins {
-				assert.Nil(t, got.Origins, "Origins should be nil")
+				is.Nil(got.Origins, "Origins should be nil")
 			} else {
-				assert.Equal(t, tt.want.Origins, got.Origins)
+				is.Equal(tt.want.Origins, got.Origins)
 			}
 			if tt.nilFields.responseHeaders {
-				assert.Nil(t, got.ResponseHeaders, "ResponseHeaders should be nil")
+				is.Nil(got.ResponseHeaders, "ResponseHeaders should be nil")
 			} else {
-				assert.Equal(t, tt.want.ResponseHeaders, got.ResponseHeaders)
+				is.Equal(tt.want.ResponseHeaders, got.ResponseHeaders)
 			}
 
-			assert.Equal(t, tt.want.MaxAge, got.MaxAge)
+			is.Equal(tt.want.MaxAge, got.MaxAge)
 		})
 	}
 }
 
 func TestParseKVPairsStrict(t *testing.T) {
+	t.Parallel()
+
 	t.Run("ok", func(t *testing.T) {
+		t.Parallel()
+		is := require.New(t)
+
 		kv, err := parseSegmentsStrict([]string{"a=1", " b = 2 ", "  "})
-		require.NoError(t, err)
-		require.Equal(t, []kvPair{
+		is.NoError(err)
+		is.Equal([]kvPair{
 			{key: "a", val: "1", segmentIndex: 1, raw: "a=1"},
 			{key: "b", val: "2", segmentIndex: 2, raw: " b = 2 "},
 		}, kv)
 	})
 	t.Run("error on missing equals", func(t *testing.T) {
+		t.Parallel()
+		is := require.New(t)
+
 		_, err := parseSegmentsStrict([]string{"a"})
-		require.Error(t, err)
-		require.Contains(t, err.Error(), `must be key=value`)
+		is.Error(err)
+		is.Contains(err.Error(), `must be key=value`)
 	})
 	t.Run("error on empty key", func(t *testing.T) {
+		t.Parallel()
+		is := require.New(t)
+
 		_, err := parseSegmentsStrict([]string{"=1"})
-		require.Error(t, err)
-		require.Contains(t, err.Error(), `empty key`)
+		is.Error(err)
+		is.Contains(err.Error(), `empty key`)
 	})
 }
 
 func TestParseKVPairsLoose(t *testing.T) {
+	t.Parallel()
+	is := require.New(t)
+
 	kv, err := parseSegmentsLoose([]string{"a", "b=", "c=3", "  "})
-	require.NoError(t, err)
-	require.Equal(t, []kvPair{
+	is.NoError(err)
+	is.Equal([]kvPair{
 		{key: "a", val: "", segmentIndex: 1, raw: "a"},
 		{key: "b", val: "", segmentIndex: 2, raw: "b="},
 		{key: "c", val: "3", segmentIndex: 3, raw: "c=3"},
@@ -353,8 +375,11 @@ func TestParseKVPairsLoose(t *testing.T) {
 }
 
 func TestParseKVMapLoose(t *testing.T) {
+	t.Parallel()
+	is := require.New(t)
+
 	m := parseKVMapLoose("prefix=logs/;is-live=true;note")
-	require.Equal(t, "logs/", m["prefix"])
-	require.Equal(t, "true", m["is-live"])
-	require.Equal(t, "", m["note"])
+	is.Equal("logs/", m["prefix"])
+	is.Equal("true", m["is-live"])
+	is.Equal("", m["note"])
 }

@@ -3,7 +3,6 @@
 package auth_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/ninech/nctl/auth"
@@ -12,20 +11,18 @@ import (
 )
 
 func TestWhoAmICmd_Run(t *testing.T) {
+	t.Parallel()
+
+	is := require.New(t)
 	apiClient, err := test.SetupClient(
 		test.WithKubeconfig(t),
 	)
-	require.NoError(t, err)
+	is.NoError(err)
 
 	s := &auth.WhoAmICmd{
 		IssuerURL: "https://auth.nine.ch/auth/realms/pub",
 		ClientID:  "nineapis.ch-f178254",
 	}
 
-	err = s.Run(context.Background(), apiClient)
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-
-	require.NoError(t, err)
+	is.NoError(s.Run(t.Context(), apiClient))
 }

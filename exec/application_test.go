@@ -1,7 +1,6 @@
 package exec
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -21,10 +20,11 @@ const (
 )
 
 func TestApplicationReplicaSelection(t *testing.T) {
+	t.Parallel()
+
 	const (
 		firstApp, secondApp = "first-app", "second-app"
 	)
-	ctx := context.Background()
 
 	for name, testCase := range map[string]struct {
 		application string
@@ -275,24 +275,26 @@ func TestApplicationReplicaSelection(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			is := require.New(t)
+
 			apiClient, err := test.SetupClient(
 				test.WithKubeconfig(t),
 				test.WithNameIndexFor(&apps.Release{}),
 				test.WithObjects(addCreationTimestamp(testCase.releases)...),
 				test.WithDefaultProject(project),
 			)
-			require.NoError(t, err)
+			is.NoError(err)
 
 			cmd := applicationCmd{resourceCmd: resourceCmd{Name: testCase.application}}
-			replica, buildType, err := cmd.getReplica(ctx, apiClient)
+			replica, buildType, err := cmd.getReplica(t.Context(), apiClient)
 			if testCase.expectError {
-				require.Error(t, err)
+				is.Error(err)
 				return
-			} else {
-				require.NoError(t, err)
 			}
-			require.Equal(t, testCase.expectedReplica, replica)
-			require.Equal(t, testCase.expectedBuildType, buildType)
+			is.NoError(err)
+			is.Equal(testCase.expectedReplica, replica)
+			is.Equal(testCase.expectedBuildType, buildType)
 		})
 	}
 }

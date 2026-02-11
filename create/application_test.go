@@ -17,7 +17,6 @@ import (
 	"github.com/ninech/nctl/api/log"
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/internal/test"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	corev1 "k8s.io/api/core/v1"
@@ -39,12 +38,12 @@ func createTempKeyFile(content string) (string, error) {
 }
 
 func TestApplication(t *testing.T) {
+	t.Parallel()
+
 	apiClient, err := test.SetupClient()
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	ctx := context.Background()
 
 	dummyRSAKey, err := test.GenerateRSAPrivateKey()
 	if err != nil {
@@ -99,24 +98,25 @@ func TestApplication(t *testing.T) {
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
-				assert.Equal(t, cmd.Name, app.Name)
-				assert.Equal(t, cmd.Git.URL, app.Spec.ForProvider.Git.URL)
-				assert.Equal(t, cmd.Git.SubPath, app.Spec.ForProvider.Git.SubPath)
-				assert.Equal(t, cmd.Git.Revision, app.Spec.ForProvider.Git.Revision)
-				assert.Equal(t, cmd.Hosts, app.Spec.ForProvider.Hosts)
-				assert.Equal(t, apps.ApplicationSize(*cmd.Size), app.Spec.ForProvider.Config.Size)
-				assert.Equal(t, *cmd.Port, *app.Spec.ForProvider.Config.Port)
-				assert.Equal(t, cmd.HealthProbe.PeriodSeconds, *app.Spec.ForProvider.Config.HealthProbe.PeriodSeconds)
-				assert.Equal(t, cmd.HealthProbe.Path, app.Spec.ForProvider.Config.HealthProbe.HTTPGet.Path)
-				assert.Equal(t, *cmd.Replicas, *app.Spec.ForProvider.Config.Replicas)
-				assert.Equal(t, *cmd.BasicAuth, *app.Spec.ForProvider.Config.EnableBasicAuth)
-				assert.Equal(t, util.EnvVarsFromMap(cmd.Env), app.Spec.ForProvider.Config.Env)
-				assert.Equal(t, util.EnvVarsFromMap(cmd.BuildEnv), app.Spec.ForProvider.BuildEnv)
-				assert.Equal(t, cmd.DeployJob.Command, app.Spec.ForProvider.Config.DeployJob.Command)
-				assert.Equal(t, cmd.DeployJob.Name, app.Spec.ForProvider.Config.DeployJob.Name)
-				assert.Equal(t, cmd.DeployJob.Timeout, app.Spec.ForProvider.Config.DeployJob.Timeout.Duration)
-				assert.Equal(t, cmd.DeployJob.Retries, *app.Spec.ForProvider.Config.DeployJob.Retries)
-				assert.Nil(t, app.Spec.ForProvider.Git.Auth)
+				is := require.New(t)
+				is.Equal(cmd.Name, app.Name)
+				is.Equal(cmd.Git.URL, app.Spec.ForProvider.Git.URL)
+				is.Equal(cmd.Git.SubPath, app.Spec.ForProvider.Git.SubPath)
+				is.Equal(cmd.Git.Revision, app.Spec.ForProvider.Git.Revision)
+				is.Equal(cmd.Hosts, app.Spec.ForProvider.Hosts)
+				is.Equal(apps.ApplicationSize(*cmd.Size), app.Spec.ForProvider.Config.Size)
+				is.Equal(*cmd.Port, *app.Spec.ForProvider.Config.Port)
+				is.Equal(cmd.HealthProbe.PeriodSeconds, *app.Spec.ForProvider.Config.HealthProbe.PeriodSeconds)
+				is.Equal(cmd.HealthProbe.Path, app.Spec.ForProvider.Config.HealthProbe.HTTPGet.Path)
+				is.Equal(*cmd.Replicas, *app.Spec.ForProvider.Config.Replicas)
+				is.Equal(*cmd.BasicAuth, *app.Spec.ForProvider.Config.EnableBasicAuth)
+				is.Equal(util.EnvVarsFromMap(cmd.Env), app.Spec.ForProvider.Config.Env)
+				is.Equal(util.EnvVarsFromMap(cmd.BuildEnv), app.Spec.ForProvider.BuildEnv)
+				is.Equal(cmd.DeployJob.Command, app.Spec.ForProvider.Config.DeployJob.Command)
+				is.Equal(cmd.DeployJob.Name, app.Spec.ForProvider.Config.DeployJob.Name)
+				is.Equal(cmd.DeployJob.Timeout, app.Spec.ForProvider.Config.DeployJob.Timeout.Duration)
+				is.Equal(cmd.DeployJob.Retries, *app.Spec.ForProvider.Config.DeployJob.Retries)
+				is.Nil(app.Spec.ForProvider.Git.Auth)
 			},
 		},
 		"with basic auth": {
@@ -130,9 +130,10 @@ func TestApplication(t *testing.T) {
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
-				assert.Equal(t, cmd.Name, app.Name)
-				assert.Equal(t, apps.ApplicationSize(*cmd.Size), app.Spec.ForProvider.Config.Size)
-				assert.Equal(t, *cmd.BasicAuth, *app.Spec.ForProvider.Config.EnableBasicAuth)
+				is := require.New(t)
+				is.Equal(cmd.Name, app.Name)
+				is.Equal(apps.ApplicationSize(*cmd.Size), app.Spec.ForProvider.Config.Size)
+				is.Equal(*cmd.BasicAuth, *app.Spec.ForProvider.Config.EnableBasicAuth)
 			},
 		},
 		"with user/pass git auth": {
@@ -149,15 +150,16 @@ func TestApplication(t *testing.T) {
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				is := require.New(t)
 				auth := util.GitAuth{Username: cmd.Git.Username, Password: cmd.Git.Password}
 				authSecret := auth.Secret(app)
-				if err := apiClient.Get(ctx, api.ObjectName(authSecret), authSecret); err != nil {
+				if err := apiClient.Get(t.Context(), api.ObjectName(authSecret), authSecret); err != nil {
 					t.Fatal(err)
 				}
 
-				assert.Equal(t, *cmd.Git.Username, string(authSecret.Data[util.UsernameSecretKey]))
-				assert.Equal(t, *cmd.Git.Password, string(authSecret.Data[util.PasswordSecretKey]))
-				assert.Equal(t, authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
+				is.Equal(*cmd.Git.Username, string(authSecret.Data[util.UsernameSecretKey]))
+				is.Equal(*cmd.Git.Password, string(authSecret.Data[util.PasswordSecretKey]))
+				is.Equal(authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
 			},
 		},
 		"with ssh key git auth": {
@@ -174,14 +176,15 @@ func TestApplication(t *testing.T) {
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				is := require.New(t)
 				auth := util.GitAuth{SSHPrivateKey: cmd.Git.SSHPrivateKey}
 				authSecret := auth.Secret(app)
-				if err := apiClient.Get(ctx, api.ObjectName(authSecret), authSecret); err != nil {
+				if err := apiClient.Get(t.Context(), api.ObjectName(authSecret), authSecret); err != nil {
 					t.Fatal(err)
 				}
 
-				assert.Equal(t, strings.TrimSpace(*cmd.Git.SSHPrivateKey), string(authSecret.Data[util.PrivateKeySecretKey]))
-				assert.Equal(t, authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
+				is.Equal(strings.TrimSpace(*cmd.Git.SSHPrivateKey), string(authSecret.Data[util.PrivateKeySecretKey]))
+				is.Equal(authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
 			},
 		},
 		"with ssh ed25519 key git auth": {
@@ -198,14 +201,15 @@ func TestApplication(t *testing.T) {
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				is := require.New(t)
 				auth := util.GitAuth{SSHPrivateKey: cmd.Git.SSHPrivateKey}
 				authSecret := auth.Secret(app)
-				if err := apiClient.Get(ctx, api.ObjectName(authSecret), authSecret); err != nil {
+				if err := apiClient.Get(t.Context(), api.ObjectName(authSecret), authSecret); err != nil {
 					t.Fatal(err)
 				}
 
-				assert.Equal(t, strings.TrimSpace(*cmd.Git.SSHPrivateKey), string(authSecret.Data[util.PrivateKeySecretKey]))
-				assert.Equal(t, authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
+				is.Equal(strings.TrimSpace(*cmd.Git.SSHPrivateKey), string(authSecret.Data[util.PrivateKeySecretKey]))
+				is.Equal(authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
 			},
 		},
 		"with ssh key git auth from file": {
@@ -222,14 +226,15 @@ func TestApplication(t *testing.T) {
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				is := require.New(t)
 				auth := util.GitAuth{SSHPrivateKey: ptr.To("notused")}
 				authSecret := auth.Secret(app)
-				if err := apiClient.Get(ctx, api.ObjectName(authSecret), authSecret); err != nil {
+				if err := apiClient.Get(t.Context(), api.ObjectName(authSecret), authSecret); err != nil {
 					t.Fatal(err)
 				}
 
-				assert.Equal(t, dummyRSAKey, string(authSecret.Data[util.PrivateKeySecretKey]))
-				assert.Equal(t, authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
+				is.Equal(dummyRSAKey, string(authSecret.Data[util.PrivateKeySecretKey]))
+				is.Equal(authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
 			},
 		},
 		"with ed25519 ssh key git auth from file": {
@@ -246,14 +251,15 @@ func TestApplication(t *testing.T) {
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				is := require.New(t)
 				auth := util.GitAuth{SSHPrivateKey: ptr.To("notused")}
 				authSecret := auth.Secret(app)
-				if err := apiClient.Get(ctx, api.ObjectName(authSecret), authSecret); err != nil {
+				if err := apiClient.Get(t.Context(), api.ObjectName(authSecret), authSecret); err != nil {
 					t.Fatal(err)
 				}
 
-				assert.Equal(t, strings.TrimSpace(dummyED25519Key), string(authSecret.Data[util.PrivateKeySecretKey]))
-				assert.Equal(t, authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
+				is.Equal(strings.TrimSpace(dummyED25519Key), string(authSecret.Data[util.PrivateKeySecretKey]))
+				is.Equal(authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
 			},
 		},
 		"with non valid ssh key": {
@@ -285,7 +291,8 @@ func TestApplication(t *testing.T) {
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
-				assert.Nil(t, app.Spec.ForProvider.Config.DeployJob)
+				is := require.New(t)
+				is.Nil(app.Spec.ForProvider.Config.DeployJob)
 			},
 		},
 		"deploy job empty name": {
@@ -302,7 +309,8 @@ func TestApplication(t *testing.T) {
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
-				assert.Nil(t, app.Spec.ForProvider.Config.DeployJob)
+				is := require.New(t)
+				is.Nil(app.Spec.ForProvider.Config.DeployJob)
 			},
 		},
 		"git-information-service happy path": {
@@ -333,12 +341,13 @@ func TestApplication(t *testing.T) {
 				},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
-				assert.Equal(t, cmd.Name, app.Name)
-				assert.Equal(t, cmd.Git.URL, app.Spec.ForProvider.Git.URL)
-				assert.Equal(t, cmd.Git.SubPath, app.Spec.ForProvider.Git.SubPath)
-				assert.Equal(t, cmd.Git.Revision, app.Spec.ForProvider.Git.Revision)
-				assert.Equal(t, apps.ApplicationSize(*cmd.Size), app.Spec.ForProvider.Config.Size)
-				assert.Nil(t, app.Spec.ForProvider.Git.Auth)
+				is := require.New(t)
+				is.Equal(cmd.Name, app.Name)
+				is.Equal(cmd.Git.URL, app.Spec.ForProvider.Git.URL)
+				is.Equal(cmd.Git.SubPath, app.Spec.ForProvider.Git.SubPath)
+				is.Equal(cmd.Git.Revision, app.Spec.ForProvider.Git.Revision)
+				is.Equal(apps.ApplicationSize(*cmd.Size), app.Spec.ForProvider.Config.Size)
+				is.Nil(app.Spec.ForProvider.Git.Auth)
 			},
 		},
 		"git-information-service received errors": {
@@ -437,12 +446,13 @@ func TestApplication(t *testing.T) {
 				},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
-				assert.Equal(t, cmd.Name, app.Name)
-				assert.Equal(t, "https://github.com/ninech/doesnotexist.git", app.Spec.ForProvider.Git.URL)
-				assert.Equal(t, cmd.Git.SubPath, app.Spec.ForProvider.Git.SubPath)
-				assert.Equal(t, cmd.Git.Revision, app.Spec.ForProvider.Git.Revision)
-				assert.Equal(t, apps.ApplicationSize(*cmd.Size), app.Spec.ForProvider.Config.Size)
-				assert.Nil(t, app.Spec.ForProvider.Git.Auth)
+				is := require.New(t)
+				is.Equal(cmd.Name, app.Name)
+				is.Equal("https://github.com/ninech/doesnotexist.git", app.Spec.ForProvider.Git.URL)
+				is.Equal(cmd.Git.SubPath, app.Spec.ForProvider.Git.SubPath)
+				is.Equal(cmd.Git.Revision, app.Spec.ForProvider.Git.Revision)
+				is.Equal(apps.ApplicationSize(*cmd.Size), app.Spec.ForProvider.Config.Size)
+				is.Nil(app.Spec.ForProvider.Git.Auth)
 			},
 		},
 		"with sensitive env": {
@@ -460,38 +470,41 @@ func TestApplication(t *testing.T) {
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				is := require.New(t)
 				env := util.EnvVarByName(app.Spec.ForProvider.Config.Env, "secret")
-				require.NotNil(t, env)
-				require.NotNil(t, env.Sensitive)
-				assert.True(t, *env.Sensitive)
-				assert.Equal(t, "orange", env.Value)
+				is.NotNil(env)
+				is.NotNil(env.Sensitive)
+				is.True(*env.Sensitive)
+				is.Equal("orange", env.Value)
 
 				buildEnv := util.EnvVarByName(app.Spec.ForProvider.BuildEnv, "build_secret")
-				require.NotNil(t, buildEnv)
-				require.NotNil(t, buildEnv.Sensitive)
-				assert.True(t, *buildEnv.Sensitive)
-				assert.Equal(t, "banana", buildEnv.Value)
+				is.NotNil(buildEnv)
+				is.NotNil(buildEnv.Sensitive)
+				is.True(*buildEnv.Sensitive)
+				is.Equal("banana", buildEnv.Value)
 			},
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
+			is := require.New(t)
+
 			if tc.cmd.GitInformationServiceURL == "" {
 				tc.cmd.GitInformationServiceURL = gitInfoService.URL()
 			}
 			gitInfoService.SetResponse(tc.gitInformationServiceResponse)
 			app := tc.cmd.newApplication("default")
 
-			err := tc.cmd.Run(ctx, apiClient)
+			err := tc.cmd.Run(t.Context(), apiClient)
 			if tc.errorExpected {
-				require.Error(t, err)
+				is.Error(err)
 				return
 			} else {
-				require.NoError(t, err)
+				is.NoError(err)
 			}
 
-			require.NoError(t, apiClient.Get(ctx, api.ObjectName(app), app))
+			is.NoError(apiClient.Get(t.Context(), api.ObjectName(app), app))
 
 			tc.checkApp(t, tc.cmd, app)
 		})
@@ -499,6 +512,8 @@ func TestApplication(t *testing.T) {
 }
 
 func TestApplicationWait(t *testing.T) {
+	t.Parallel()
+
 	cmd := applicationCmd{
 		resourceCmd: resourceCmd{
 			Wait:        true,
@@ -570,7 +585,7 @@ func TestApplicationWait(t *testing.T) {
 
 	apiClient.Log = &log.Client{Client: log.NewFake(t, time.Now(), "one", "two"), StdOut: out}
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// to test the wait we create a ticker that continuously updates our
 	// resources in a goroutine to simulate a controller doing the same
@@ -649,6 +664,9 @@ func TestApplicationWait(t *testing.T) {
 }
 
 func TestApplicationBuildFail(t *testing.T) {
+	t.Parallel()
+
+	is := require.New(t)
 	cmd := applicationCmd{
 		resourceCmd: resourceCmd{
 			Wait:        true,
@@ -690,7 +708,7 @@ func TestApplicationBuildFail(t *testing.T) {
 	}
 	client.Log = &log.Client{Client: log.NewFake(t, time.Now(), buildLog...), StdOut: out}
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// to test the wait we create a ticker that continuously updates our
 	// resources in a goroutine to simulate a controller doing the same
@@ -733,8 +751,8 @@ func TestApplicationBuildFail(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Contains(t, buf.String(), logString)
-	assert.Equal(t, test.CountLines(buf.String()), errorLogLines)
+	is.Contains(buf.String(), logString)
+	is.Equal(test.CountLines(buf.String()), errorLogLines)
 }
 
 func setResourceCondition(ctx context.Context, apiClient *api.Client, mg resource.Managed, condition runtimev1.Condition) error {

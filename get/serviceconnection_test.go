@@ -2,7 +2,6 @@ package get
 
 import (
 	"bytes"
-	"context"
 	"strings"
 	"testing"
 
@@ -13,7 +12,7 @@ import (
 )
 
 func TestServiceConnection(t *testing.T) {
-	ctx := context.Background()
+	t.Parallel()
 
 	type serviceConnectionInstance struct {
 		name        string
@@ -104,6 +103,8 @@ func TestServiceConnection(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			objects := []client.Object{}
 			for _, instance := range tt.instances {
 				created := test.ServiceConnection(instance.name, instance.project)
@@ -118,7 +119,8 @@ func TestServiceConnection(t *testing.T) {
 				test.WithNameIndexFor(&networking.ServiceConnection{}),
 				test.WithKubeconfig(t),
 			)
-			require.NoError(t, err)
+			is := require.New(t)
+			is.NoError(err)
 
 			if tt.out == "" {
 				tt.out = full
@@ -126,7 +128,7 @@ func TestServiceConnection(t *testing.T) {
 			buf := &bytes.Buffer{}
 			cmd := NewTestCmd(buf, tt.out)
 			cmd.AllProjects = tt.inAllProjects
-			err = tt.get.Run(ctx, apiClient, cmd)
+			err = tt.get.Run(t.Context(), apiClient, cmd)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("serviceConnectionCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
