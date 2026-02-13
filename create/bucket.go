@@ -9,7 +9,7 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/bucket"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 )
@@ -81,11 +81,11 @@ func (cmd *bucketCmd) newBucket(project string) (*storage.Bucket, error) {
 	}
 
 	var err error
-	if b.Spec.ForProvider.Permissions, err = util.PatchPermissions(b.Spec.ForProvider.Permissions, cmd.Permissions, nil); err != nil {
+	if b.Spec.ForProvider.Permissions, err = bucket.PatchPermissions(b.Spec.ForProvider.Permissions, cmd.Permissions, nil); err != nil {
 		return nil, fmt.Errorf("patching permissions error: %w", err)
 	}
 
-	if b.Spec.ForProvider.LifecyclePolicies, err = util.PatchLifecyclePolicies(
+	if b.Spec.ForProvider.LifecyclePolicies, err = bucket.PatchLifecyclePolicies(
 		b.Spec.ForProvider.LifecyclePolicies,
 		false,
 		cmd.LifecyclePolicy,
@@ -94,11 +94,11 @@ func (cmd *bucketCmd) newBucket(project string) (*storage.Bucket, error) {
 		return nil, fmt.Errorf("patching lifecycle policies error: %w", err)
 	}
 
-	if b.Spec.ForProvider.CORS, err = util.PatchCORS(b.Spec.ForProvider.CORS, cmd.CORS, nil); err != nil {
+	if b.Spec.ForProvider.CORS, err = bucket.PatchCORS(b.Spec.ForProvider.CORS, cmd.CORS, nil); err != nil {
 		return nil, fmt.Errorf("patching cors error: %w", err)
 	}
 
-	if b.Spec.ForProvider.CustomHostnames, err = util.PatchCustomHostnames(
+	if b.Spec.ForProvider.CustomHostnames, err = bucket.PatchCustomHostnames(
 		b.Spec.ForProvider.CustomHostnames,
 		false,
 		cmd.CustomHostnames,

@@ -8,7 +8,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/bucket"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -61,14 +61,14 @@ func (cmd *bucketCmd) applyUpdates(b *storage.Bucket) error {
 	}
 
 	var err error
-	if b.Spec.ForProvider.Permissions, err = util.PatchPermissions(
+	if b.Spec.ForProvider.Permissions, err = bucket.PatchPermissions(
 		b.Spec.ForProvider.Permissions,
 		cmd.Permissions,
 		cmd.DeletePermissions,
 	); err != nil {
 		return fmt.Errorf("patching permissions error: %w", err)
 	}
-	if b.Spec.ForProvider.LifecyclePolicies, err = util.PatchLifecyclePolicies(
+	if b.Spec.ForProvider.LifecyclePolicies, err = bucket.PatchLifecyclePolicies(
 		b.Spec.ForProvider.LifecyclePolicies,
 		cmd.ClearLifecyclePolicies,
 		cmd.LifecyclePolicy,
@@ -77,11 +77,11 @@ func (cmd *bucketCmd) applyUpdates(b *storage.Bucket) error {
 		return fmt.Errorf("patching lifecycle policies error: %w", err)
 	}
 
-	if b.Spec.ForProvider.CORS, err = util.PatchCORS(b.Spec.ForProvider.CORS, cmd.CORS, cmd.DeleteCORS); err != nil {
+	if b.Spec.ForProvider.CORS, err = bucket.PatchCORS(b.Spec.ForProvider.CORS, cmd.CORS, cmd.DeleteCORS); err != nil {
 		return fmt.Errorf("patching cors configuration error: %w", err)
 	}
 
-	if b.Spec.ForProvider.CustomHostnames, err = util.PatchCustomHostnames(
+	if b.Spec.ForProvider.CustomHostnames, err = bucket.PatchCustomHostnames(
 		b.Spec.ForProvider.CustomHostnames,
 		cmd.ClearCustomHostnames,
 		cmd.CustomHostnames,
