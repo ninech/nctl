@@ -10,8 +10,8 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api/gitinfo"
 	"github.com/ninech/nctl/api/nctl"
-	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/create"
+	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -53,7 +53,7 @@ func TestApplication(t *testing.T) {
 					Size:            initialSize,
 					Replicas:        ptr.To(int32(1)),
 					Port:            ptr.To(int32(1337)),
-					Env:             util.EnvVarsFromMap(map[string]string{"foo": "bar", "poo": "blue"}),
+					Env:             application.EnvVarsFromMap(map[string]string{"foo": "bar", "poo": "blue"}),
 					EnableBasicAuth: ptr.To(false),
 					DeployJob: &apps.DeployJob{
 						Job: apps.Job{
@@ -66,7 +66,7 @@ func TestApplication(t *testing.T) {
 						},
 					},
 				},
-				BuildEnv: util.EnvVarsFromMap(map[string]string{"BP_ENVIRONMENT_VARIABLE": "some-value"}),
+				BuildEnv: application.EnvVarsFromMap(map[string]string{"BP_ENVIRONMENT_VARIABLE": "some-value"}),
 			},
 		},
 	}
@@ -145,10 +145,10 @@ func TestApplication(t *testing.T) {
 				is.Equal(*cmd.Replicas, *updated.Spec.ForProvider.Config.Replicas)
 				is.Equal(*cmd.BasicAuth, *updated.Spec.ForProvider.Config.EnableBasicAuth)
 				is.Equal(*cmd.Hosts, updated.Spec.ForProvider.Hosts)
-				is.Equal(util.UpdateEnvVars(existingApp.Spec.ForProvider.Config.Env, cmd.Env, cmd.SensitiveEnv, nil), updated.Spec.ForProvider.Config.Env)
-				is.Equal(util.UpdateEnvVars(existingApp.Spec.ForProvider.BuildEnv, cmd.BuildEnv, cmd.SensitiveBuildEnv, nil), updated.Spec.ForProvider.BuildEnv)
+				is.Equal(application.UpdateEnvVars(existingApp.Spec.ForProvider.Config.Env, cmd.Env, cmd.SensitiveEnv, nil), updated.Spec.ForProvider.Config.Env)
+				is.Equal(application.UpdateEnvVars(existingApp.Spec.ForProvider.BuildEnv, cmd.BuildEnv, cmd.SensitiveBuildEnv, nil), updated.Spec.ForProvider.BuildEnv)
 
-				secretKeyEnv := util.EnvVarByName(updated.Spec.ForProvider.Config.Env, "secret")
+				secretKeyEnv := application.EnvVarByName(updated.Spec.ForProvider.Config.Env, "secret")
 				is.NotNil(secretKeyEnv, "secret environment variable should exist")
 				is.NotNil(secretKeyEnv.Sensitive)
 				is.Equal("orange", secretKeyEnv.Value)
@@ -159,8 +159,8 @@ func TestApplication(t *testing.T) {
 				is.Equal(*cmd.DeployJob.Timeout, updated.Spec.ForProvider.Config.DeployJob.Timeout.Duration)
 				is.Equal(*cmd.DeployJob.Retries, *updated.Spec.ForProvider.Config.DeployJob.Retries)
 				// Retry Release/Build should be not set by default:
-				is.Nil(util.EnvVarByName(updated.Spec.ForProvider.Config.Env, ReleaseTrigger))
-				is.Nil(util.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
+				is.Nil(application.EnvVarByName(updated.Spec.ForProvider.Config.Env, ReleaseTrigger))
+				is.Nil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
 			},
 		},
 		"reset custom health probe": {
@@ -271,7 +271,7 @@ func TestApplication(t *testing.T) {
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				is := require.New(t)
-				sensitivePoo := util.EnvVarByName(updated.Spec.ForProvider.Config.Env, "poo")
+				sensitivePoo := application.EnvVarByName(updated.Spec.ForProvider.Config.Env, "poo")
 				is.NotNil(sensitivePoo)
 				is.NotNil(sensitivePoo.Sensitive)
 				is.True(*sensitivePoo.Sensitive)
@@ -321,8 +321,8 @@ func TestApplication(t *testing.T) {
 			},
 			checkSecret: func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret) {
 				is := require.New(t)
-				is.Equal(*cmd.Git.Username, string(authSecret.Data[util.UsernameSecretKey]))
-				is.Equal(*cmd.Git.Password, string(authSecret.Data[util.PasswordSecretKey]))
+				is.Equal(*cmd.Git.Username, string(authSecret.Data[application.UsernameSecretKey]))
+				is.Equal(*cmd.Git.Password, string(authSecret.Data[application.PasswordSecretKey]))
 				is.Equal(authSecret.Annotations[nctl.ManagedByAnnotation], nctl.Name)
 			},
 		},
@@ -354,7 +354,7 @@ func TestApplication(t *testing.T) {
 			},
 			checkSecret: func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret) {
 				is := require.New(t)
-				is.Equal(strings.TrimSpace(*cmd.Git.SSHPrivateKey), string(authSecret.Data[util.PrivateKeySecretKey]))
+				is.Equal(strings.TrimSpace(*cmd.Git.SSHPrivateKey), string(authSecret.Data[application.PrivateKeySecretKey]))
 				is.Equal(authSecret.Annotations[nctl.ManagedByAnnotation], nctl.Name)
 			},
 		},
@@ -385,8 +385,8 @@ func TestApplication(t *testing.T) {
 			},
 			checkSecret: func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret) {
 				is := require.New(t)
-				is.Equal(*cmd.Git.Username, string(authSecret.Data[util.UsernameSecretKey]))
-				is.Equal(*cmd.Git.Password, string(authSecret.Data[util.PasswordSecretKey]))
+				is.Equal(*cmd.Git.Username, string(authSecret.Data[application.UsernameSecretKey]))
+				is.Equal(*cmd.Git.Password, string(authSecret.Data[application.PasswordSecretKey]))
 				is.Equal(authSecret.Annotations[nctl.ManagedByAnnotation], nctl.Name)
 			},
 		},
@@ -422,7 +422,7 @@ func TestApplication(t *testing.T) {
 			},
 			checkSecret: func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret) {
 				is := require.New(t)
-				is.Equal("fakekey", string(authSecret.Data[util.PrivateKeySecretKey]))
+				is.Equal("fakekey", string(authSecret.Data[application.PrivateKeySecretKey]))
 				is.Equal(authSecret.Annotations[nctl.ManagedByAnnotation], nctl.Name)
 			},
 		},
@@ -468,7 +468,7 @@ func TestApplication(t *testing.T) {
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				is := require.New(t)
-				is.NotNil(util.EnvVarByName(updated.Spec.ForProvider.Config.Env, ReleaseTrigger))
+				is.NotNil(application.EnvVarByName(updated.Spec.ForProvider.Config.Env, ReleaseTrigger))
 			},
 		},
 		"do not retry release": {
@@ -481,7 +481,7 @@ func TestApplication(t *testing.T) {
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				is := require.New(t)
-				is.Nil(util.EnvVarByName(updated.Spec.ForProvider.Config.Env, ReleaseTrigger))
+				is.Nil(application.EnvVarByName(updated.Spec.ForProvider.Config.Env, ReleaseTrigger))
 			},
 		},
 		"retry build": {
@@ -494,7 +494,7 @@ func TestApplication(t *testing.T) {
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				is := require.New(t)
-				is.NotNil(util.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
+				is.NotNil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
 			},
 		},
 		"do not retry build": {
@@ -507,7 +507,7 @@ func TestApplication(t *testing.T) {
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				is := require.New(t)
-				is.Nil(util.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
+				is.Nil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
 			},
 		},
 		"disabling the git repo check works": {

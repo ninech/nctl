@@ -6,7 +6,7 @@ import (
 
 	"github.com/alecthomas/kong"
 	apps "github.com/ninech/apis/apps/v1alpha1"
-	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,7 +31,7 @@ func TestConfig(t *testing.T) {
 					Size:            initialSize,
 					Replicas:        ptr.To(int32(1)),
 					Port:            ptr.To(int32(1337)),
-					Env:             util.EnvVarsFromMap(map[string]string{"foo": "bar"}),
+					Env:             application.EnvVarsFromMap(map[string]string{"foo": "bar"}),
 					EnableBasicAuth: ptr.To(false),
 				},
 			},
@@ -93,7 +93,7 @@ func TestConfig(t *testing.T) {
 				is.Equal(*cmd.Port, *updated.Spec.ForProvider.Config.Port)
 				is.Equal(*cmd.Replicas, *updated.Spec.ForProvider.Config.Replicas)
 				is.Equal(*cmd.BasicAuth, *updated.Spec.ForProvider.Config.EnableBasicAuth)
-				is.Equal(util.EnvVarsFromMap(cmd.Env), updated.Spec.ForProvider.Config.Env)
+				is.Equal(application.EnvVarsFromMap(cmd.Env), updated.Spec.ForProvider.Config.Env)
 				is.Equal(*cmd.DeployJob.Command, updated.Spec.ForProvider.Config.DeployJob.Command)
 				is.Equal(*cmd.DeployJob.Name, updated.Spec.ForProvider.Config.DeployJob.Name)
 				is.Equal(*cmd.DeployJob.Timeout, updated.Spec.ForProvider.Config.DeployJob.Timeout.Duration)

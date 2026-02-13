@@ -11,7 +11,7 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/gitinfo"
-	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/format"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -76,7 +76,7 @@ type gitConfig struct {
 
 func (g gitConfig) sshPrivateKey() (*string, error) {
 	if g.SSHPrivateKey != nil {
-		return util.ValidatePEM(*g.SSHPrivateKey)
+		return application.ValidatePEM(*g.SSHPrivateKey)
 	}
 	if g.SSHPrivateKeyFromFile == nil {
 		return nil, nil
@@ -85,7 +85,7 @@ func (g gitConfig) sshPrivateKey() (*string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return util.ValidatePEM(string(content))
+	return application.ValidatePEM(string(content))
 }
 
 func (g gitConfig) empty() bool {
@@ -171,7 +171,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 			if err != nil {
 				return err
 			}
-			validator := &util.RepositoryValidator{
+			validator := &application.RepositoryValidator{
 				Auth:   auth,
 				Client: gitClient,
 				Debug:  cmd.Debug,
@@ -216,7 +216,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		}
 
 		if app.Spec.ForProvider.Config.DeployJob != nil {
-			if err := util.ValidateConfig(app.Spec.ForProvider.Config); err != nil {
+			if err := application.ValidateConfig(app.Spec.ForProvider.Config); err != nil {
 				return fmt.Errorf("error when validating application config: %w", err)
 			}
 		}
@@ -302,7 +302,7 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 		delEnv = *cmd.DeleteEnv
 	}
 
-	app.Spec.ForProvider.Config.Env = util.UpdateEnvVars(app.Spec.ForProvider.Config.Env, runtimeEnv, sensitiveRuntimeEnv, delEnv)
+	app.Spec.ForProvider.Config.Env = application.UpdateEnvVars(app.Spec.ForProvider.Config.Env, runtimeEnv, sensitiveRuntimeEnv, delEnv)
 
 	// build env vars
 	buildEnv := cmd.BuildEnv
@@ -324,7 +324,7 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 		delBuildEnv = *cmd.DeleteBuildEnv
 	}
 
-	app.Spec.ForProvider.BuildEnv = util.UpdateEnvVars(
+	app.Spec.ForProvider.BuildEnv = application.UpdateEnvVars(
 		app.Spec.ForProvider.BuildEnv,
 		buildEnv,
 		sensitiveBuildEnv,
@@ -349,28 +349,28 @@ func triggerTimestamp() string {
 	return time.Now().UTC().Format(time.RFC3339)
 }
 
-func (h healthProbe) ToProbePatch() util.ProbePatch {
-	var pp util.ProbePatch
+func (h healthProbe) ToProbePatch() application.ProbePatch {
+	var pp application.ProbePatch
 
 	if h.Path != nil {
 		if p := strings.TrimSpace(*h.Path); p == "" {
-			pp.Path = util.OptString{State: util.Clear}
+			pp.Path = application.OptString{State: application.Clear}
 		} else {
-			pp.Path = util.OptString{State: util.Set, Val: p}
+			pp.Path = application.OptString{State: application.Set, Val: p}
 		}
 	}
 	if h.PeriodSeconds != nil {
 		if ps := *h.PeriodSeconds; ps <= 0 {
-			pp.PeriodSeconds = util.OptInt32{State: util.Clear}
+			pp.PeriodSeconds = application.OptInt32{State: application.Clear}
 		} else {
-			pp.PeriodSeconds = util.OptInt32{State: util.Set, Val: ps}
+			pp.PeriodSeconds = application.OptInt32{State: application.Set, Val: ps}
 		}
 	}
 	return pp
 }
 
 func (h healthProbe) applyUpdates(cfg *apps.Config) {
-	util.ApplyProbePatch(cfg, h.ToProbePatch())
+	application.ApplyProbePatch(cfg, h.ToProbePatch())
 }
 
 func (job deployJob) applyUpdates(cfg *apps.Config) {

@@ -1,4 +1,4 @@
-package util
+package application
 
 import (
 	"errors"

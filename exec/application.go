@@ -8,7 +8,7 @@ import (
 	dockerterm "github.com/moby/term"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/format"
 	corev1 "k8s.io/api/core/v1"
@@ -242,12 +242,12 @@ func replicaCommand(buildType appBuildType, command []string) []string {
 
 // latestAvailableReleaseForApplication returns the latest available release for a given application.
 func latestAvailableReleaseForApplication(ctx context.Context, client *api.Client, app types.NamespacedName) (*apps.Release, error) {
-	releases, err := util.Releases(ctx, client, app)
+	releases, err := application.Releases(ctx, client, app)
 	if err != nil {
 		return nil, err
 	}
 
-	release := util.LatestAvailableRelease(releases)
+	release := application.LatestAvailableRelease(releases)
 	if release == nil {
 		return nil, fmt.Errorf("no ready release found for application %s", app.Name)
 	}

@@ -17,7 +17,7 @@ import (
 	"github.com/ninech/nctl/api/gitinfo"
 	"github.com/ninech/nctl/api/log"
 	"github.com/ninech/nctl/api/nctl"
-	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 
@@ -109,8 +109,8 @@ func TestApplication(t *testing.T) {
 				is.Equal(cmd.HealthProbe.Path, app.Spec.ForProvider.Config.HealthProbe.HTTPGet.Path)
 				is.Equal(*cmd.Replicas, *app.Spec.ForProvider.Config.Replicas)
 				is.Equal(*cmd.BasicAuth, *app.Spec.ForProvider.Config.EnableBasicAuth)
-				is.Equal(util.EnvVarsFromMap(cmd.Env), app.Spec.ForProvider.Config.Env)
-				is.Equal(util.EnvVarsFromMap(cmd.BuildEnv), app.Spec.ForProvider.BuildEnv)
+				is.Equal(application.EnvVarsFromMap(cmd.Env), app.Spec.ForProvider.Config.Env)
+				is.Equal(application.EnvVarsFromMap(cmd.BuildEnv), app.Spec.ForProvider.BuildEnv)
 				is.Equal(cmd.DeployJob.Command, app.Spec.ForProvider.Config.DeployJob.Command)
 				is.Equal(cmd.DeployJob.Name, app.Spec.ForProvider.Config.DeployJob.Name)
 				is.Equal(cmd.DeployJob.Timeout, app.Spec.ForProvider.Config.DeployJob.Timeout.Duration)
@@ -156,8 +156,8 @@ func TestApplication(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				is.Equal(*cmd.Git.Username, string(authSecret.Data[util.UsernameSecretKey]))
-				is.Equal(*cmd.Git.Password, string(authSecret.Data[util.PasswordSecretKey]))
+				is.Equal(*cmd.Git.Username, string(authSecret.Data[application.UsernameSecretKey]))
+				is.Equal(*cmd.Git.Password, string(authSecret.Data[application.PasswordSecretKey]))
 				is.Equal(authSecret.Annotations[nctl.ManagedByAnnotation], nctl.Name)
 			},
 		},
@@ -182,7 +182,7 @@ func TestApplication(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				is.Equal(strings.TrimSpace(*cmd.Git.SSHPrivateKey), string(authSecret.Data[util.PrivateKeySecretKey]))
+				is.Equal(strings.TrimSpace(*cmd.Git.SSHPrivateKey), string(authSecret.Data[application.PrivateKeySecretKey]))
 				is.Equal(authSecret.Annotations[nctl.ManagedByAnnotation], nctl.Name)
 			},
 		},
@@ -207,7 +207,7 @@ func TestApplication(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				is.Equal(strings.TrimSpace(*cmd.Git.SSHPrivateKey), string(authSecret.Data[util.PrivateKeySecretKey]))
+				is.Equal(strings.TrimSpace(*cmd.Git.SSHPrivateKey), string(authSecret.Data[application.PrivateKeySecretKey]))
 				is.Equal(authSecret.Annotations[nctl.ManagedByAnnotation], nctl.Name)
 			},
 		},
@@ -232,7 +232,7 @@ func TestApplication(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				is.Equal(dummyRSAKey, string(authSecret.Data[util.PrivateKeySecretKey]))
+				is.Equal(dummyRSAKey, string(authSecret.Data[application.PrivateKeySecretKey]))
 				is.Equal(authSecret.Annotations[nctl.ManagedByAnnotation], nctl.Name)
 			},
 		},
@@ -257,7 +257,7 @@ func TestApplication(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				is.Equal(strings.TrimSpace(dummyED25519Key), string(authSecret.Data[util.PrivateKeySecretKey]))
+				is.Equal(strings.TrimSpace(dummyED25519Key), string(authSecret.Data[application.PrivateKeySecretKey]))
 				is.Equal(authSecret.Annotations[nctl.ManagedByAnnotation], nctl.Name)
 			},
 		},
@@ -470,13 +470,13 @@ func TestApplication(t *testing.T) {
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				is := require.New(t)
-				env := util.EnvVarByName(app.Spec.ForProvider.Config.Env, "secret")
+				env := application.EnvVarByName(app.Spec.ForProvider.Config.Env, "secret")
 				is.NotNil(env)
 				is.NotNil(env.Sensitive)
 				is.True(*env.Sensitive)
 				is.Equal("orange", env.Value)
 
-				buildEnv := util.EnvVarByName(app.Spec.ForProvider.BuildEnv, "build_secret")
+				buildEnv := application.EnvVarByName(app.Spec.ForProvider.BuildEnv, "build_secret")
 				is.NotNil(buildEnv)
 				is.NotNil(buildEnv.Sensitive)
 				is.True(*buildEnv.Sensitive)
@@ -529,7 +529,7 @@ func TestApplicationWait(t *testing.T) {
 			Name:      "any-name",
 			Namespace: project,
 			Labels: map[string]string{
-				util.ApplicationNameLabel: cmd.Name,
+				application.ApplicationNameLabel: cmd.Name,
 			},
 		},
 	}
@@ -539,7 +539,7 @@ func TestApplicationWait(t *testing.T) {
 			Name:      "another-name",
 			Namespace: project,
 			Labels: map[string]string{
-				util.ApplicationNameLabel: cmd.Name,
+				application.ApplicationNameLabel: cmd.Name,
 			},
 		},
 		Spec: apps.ReleaseSpec{
@@ -557,12 +557,12 @@ func TestApplicationWait(t *testing.T) {
 			Name:      "some-name-basic-auth",
 			Namespace: project,
 			Labels: map[string]string{
-				util.ApplicationNameLabel: cmd.Name,
+				application.ApplicationNameLabel: cmd.Name,
 			},
 		},
 		Data: map[string][]byte{
-			util.BasicAuthUsernameKey: []byte("some-name"),
-			util.BasicAuthPasswordKey: []byte("some-password"),
+			application.BasicAuthUsernameKey: []byte("some-name"),
+			application.BasicAuthPasswordKey: []byte("some-password"),
 		},
 	}
 
@@ -678,7 +678,7 @@ func TestApplicationBuildFail(t *testing.T) {
 			Name:      "any-name",
 			Namespace: project,
 			Labels: map[string]string{
-				util.ApplicationNameLabel: cmd.Name,
+				application.ApplicationNameLabel: cmd.Name,
 			},
 		},
 	}
