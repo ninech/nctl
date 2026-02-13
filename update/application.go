@@ -10,6 +10,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/gitinfo"
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/api/validation"
 	"github.com/ninech/nctl/internal/format"
@@ -161,7 +162,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		if err != nil {
 			return fmt.Errorf("error when reading SSH private key: %w", err)
 		}
-		auth := util.GitAuth{
+		auth := gitinfo.Auth{
 			Username:      cmd.Git.Username,
 			Password:      cmd.Git.Password,
 			SSHPrivateKey: sshPrivateKey,
@@ -177,7 +178,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 				// if the auth was not changed but e.g. the branch changes and
 				// auth is pre-configured, we need to fetch the existing git
 				// auth from the app.
-				a, err := util.GitAuthFromApp(ctx, client, app)
+				a, err := gitAuthFromApp(ctx, client, app)
 				if err != nil {
 					return fmt.Errorf("error reading preconfigured auth secret")
 				}
@@ -496,4 +497,15 @@ func warnIfDockerfileNotEnabled(w format.Writer, app *apps.Application, flag str
 	if !app.Spec.ForProvider.DockerfileBuild.Enabled {
 		w.Warningf("updating %s has no effect as dockerfile builds are not enabled on this app", flag)
 	}
+}
+
+func gitAuthFromApp(ctx context.Context, client *api.Client, app *apps.Application) (gitinfo.Auth, error) {
+	auth := &gitinfo.Auth{}
+	secret := auth.Secret(app)
+	if err := client.Get(ctx, client.Name(secret.Name), secret); err != nil {
+		return gitinfo.Auth{}, err
+	}
+	auth.UpdateFromSecret(secret)
+
+	return *auth, nil
 }

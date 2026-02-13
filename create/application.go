@@ -15,7 +15,9 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/gitinfo"
 	"github.com/ninech/nctl/api/log"
+	"github.com/ninech/nctl/api/nctl"
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/api/validation"
 	"github.com/ninech/nctl/internal/format"
@@ -132,7 +134,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	if err != nil {
 		return fmt.Errorf("error when reading SSH private key: %w", err)
 	}
-	auth := util.GitAuth{
+	auth := gitinfo.Auth{
 		Username:      cmd.Git.Username,
 		Password:      cmd.Git.Password,
 		SSHPrivateKey: sshPrivateKey,
@@ -163,8 +165,8 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		if err := client.Create(ctx, secret); err != nil {
 			if kerrors.IsAlreadyExists(err) {
 				// only update the secret if it is managed by nctl in the first place
-				if v, exists := newApp.Annotations[util.ManagedByAnnotation]; exists &&
-					v == util.NctlName {
+				if v, exists := newApp.Annotations[nctl.ManagedByAnnotation]; exists &&
+					v == nctl.Name {
 					cmd.Successf("🔐", "updating git auth credentials")
 					if err := client.Get(ctx, client.Name(secret.Name), secret); err != nil {
 						return err

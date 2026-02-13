@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
-	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/api/gitinfo"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/theckman/yacspin"
 )
@@ -25,8 +25,8 @@ type RepositoryValidator struct {
 }
 
 // Validate validates the repository access and shows a visual spinner while doing so
-func (v *RepositoryValidator) Validate(ctx context.Context, git *apps.GitTarget, auth util.GitAuth) error {
-	gitInfoClient, err := NewGitInformationClient(v.GitInformationServiceURL, v.Token)
+func (v *RepositoryValidator) Validate(ctx context.Context, git *apps.GitTarget, auth gitinfo.Auth) error {
+	gitInfoClient, err := gitinfo.New(v.GitInformationServiceURL, v.Token)
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func (v *RepositoryValidator) Validate(ctx context.Context, git *apps.GitTarget,
 }
 
 // testRepositoryAccess tests if the given git repository can be accessed.
-func testRepositoryAccess(ctx context.Context, client *GitInformationClient, git *apps.GitTarget, auth util.GitAuth) error {
+func testRepositoryAccess(ctx context.Context, client *gitinfo.Client, git *apps.GitTarget, auth gitinfo.Auth) error {
 	if git == nil {
 		return errors.New("git target must be given")
 	}

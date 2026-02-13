@@ -9,6 +9,8 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/gitinfo"
+	"github.com/ninech/nctl/api/nctl"
 	"github.com/ninech/nctl/api/util"
 
 	corev1 "k8s.io/api/core/v1"
@@ -111,10 +113,10 @@ func (cmd *applicationCmd) copyGitAuth(
 	}
 	newSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      util.GitAuthSecretName(newApp),
+			Name:      gitinfo.AuthSecretName(newApp),
 			Namespace: newApp.Namespace,
 			Annotations: map[string]string{
-				util.ManagedByAnnotation: util.NctlName,
+				nctl.ManagedByAnnotation: nctl.Name,
 			},
 		},
 		Data: secret.Data,
