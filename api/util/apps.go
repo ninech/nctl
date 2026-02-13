@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
-	meta "github.com/ninech/apis/meta/v1alpha1"
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/api"
 	corev1 "k8s.io/api/core/v1"
@@ -58,20 +57,6 @@ func uniqueStrings(source []string) []string {
 	}
 
 	return us
-
-}
-
-func VerifiedAppHosts(app *apps.Application) []string {
-	verifiedHosts := []string{}
-	for _, host := range app.Status.AtProvider.Hosts {
-		if host.CheckType == meta.DNSCheckType("CAA") {
-			continue
-		}
-		if host.LatestSuccess != nil && host.Error == nil {
-			verifiedHosts = append(verifiedHosts, host.Name)
-		}
-	}
-	return verifiedHosts
 }
 
 type EnvVarModifier func(envVar *apps.EnvVar)
@@ -127,27 +112,6 @@ func UpdateEnvVars(oldEnvs []apps.EnvVar, newEnvs, sensitiveEnvs map[string]stri
 	})
 
 	return envs
-}
-
-func EnvVarToString(envs apps.EnvVars) string {
-	if envs == nil {
-		return NoneText
-	}
-
-	if len(envs) == 0 {
-		return NoneText
-	}
-
-	var keyValuePairs []string
-	for _, env := range envs {
-		if env.Sensitive != nil && *env.Sensitive {
-			keyValuePairs = append(keyValuePairs, fmt.Sprintf("%v=*****", env.Name))
-		} else {
-			keyValuePairs = append(keyValuePairs, fmt.Sprintf("%v=%v", env.Name, env.Value))
-		}
-	}
-
-	return strings.Join(keyValuePairs, ";")
 }
 
 func EnvVarByName(envVars apps.EnvVars, name string) *apps.EnvVar {
@@ -317,42 +281,9 @@ func ValidatePEM(content string) (*string, error) {
 	return &content, nil
 }
 
-func ApplicationLatestAvailableRelease(ctx context.Context, client *api.Client, app types.NamespacedName) (*apps.Release, error) {
-	releases, err := appReleases(ctx, client, app)
-	if err != nil {
-		return nil, err
-	}
-
-	release := latestAvailableRelease(releases)
-	if release == nil {
-		return nil, fmt.Errorf("no ready release found for application %s", app.Name)
-	}
-
-	return release, nil
-}
-
-// ApplicationLatestRelease returns the latest release of an app, prioritizing
-// available releases and if no available release is found just the latest
-// progressing or failed release.
-func ApplicationLatestRelease(ctx context.Context, client *api.Client, app types.NamespacedName) (*apps.Release, error) {
-	releases, err := appReleases(ctx, client, app)
-	if err != nil {
-		return nil, err
-	}
-
-	release := latestAvailableRelease(releases)
-	if release == nil {
-		// in case no release is available, we just return the latest release in
-		// the list.
-		return &releases.Items[0], nil
-	}
-
-	return release, nil
-}
-
-// appReleases returns a release list of an app. If the returned error is nil,
+// Releases returns a release list of an app. If the returned error is nil,
 // the release list is guaranteed to have at least one item.
-func appReleases(ctx context.Context, client *api.Client, app types.NamespacedName) (*apps.ReleaseList, error) {
+func Releases(ctx context.Context, client *api.Client, app types.NamespacedName) (*apps.ReleaseList, error) {
 	releases := &apps.ReleaseList{}
 	if err := client.List(
 		ctx,
@@ -369,7 +300,7 @@ func appReleases(ctx context.Context, client *api.Client, app types.NamespacedNa
 	return releases, nil
 }
 
-func latestAvailableRelease(releases *apps.ReleaseList) *apps.Release {
+func LatestAvailableRelease(releases *apps.ReleaseList) *apps.Release {
 	OrderReleaseList(releases, false)
 	for _, release := range releases.Items {
 		if release.Status.AtProvider.ReleaseStatus == apps.ReleaseProcessStatusAvailable {

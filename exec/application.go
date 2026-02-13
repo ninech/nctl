@@ -12,6 +12,7 @@ import (
 	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/format"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
@@ -99,7 +100,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client, exec *Cm
 
 // getReplica finds a replica of the latest available release
 func (cmd *applicationCmd) getReplica(ctx context.Context, client *api.Client) (string, appBuildType, error) {
-	release, err := util.ApplicationLatestAvailableRelease(ctx, client, client.Name(cmd.Name))
+	release, err := latestAvailableReleaseForApplication(ctx, client, client.Name(cmd.Name))
 	if err != nil {
 		return "", "", err
 	}
@@ -237,6 +238,21 @@ func replicaCommand(buildType appBuildType, command []string) []string {
 	default:
 		return command
 	}
+}
+
+// latestAvailableReleaseForApplication returns the latest available release for a given application.
+func latestAvailableReleaseForApplication(ctx context.Context, client *api.Client, app types.NamespacedName) (*apps.Release, error) {
+	releases, err := util.Releases(ctx, client, app)
+	if err != nil {
+		return nil, err
+	}
+
+	release := util.LatestAvailableRelease(releases)
+	if release == nil {
+		return nil, fmt.Errorf("no ready release found for application %s", app.Name)
+	}
+
+	return release, nil
 }
 
 // terminalSizeQueueWrapper implements the [remotecommand.TerminalSizeQueue] interface.
