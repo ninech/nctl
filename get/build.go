@@ -15,7 +15,7 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/format"
 	"k8s.io/apimachinery/pkg/util/duration"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,7 +34,7 @@ type buildCmd struct {
 func (cmd *buildCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
 	opts := []api.ListOpt{api.MatchName(cmd.Name)}
 	if len(cmd.ApplicationName) != 0 {
-		opts = append(opts, api.MatchLabel(util.ApplicationNameLabel, cmd.ApplicationName))
+		opts = append(opts, api.MatchLabel(application.ApplicationNameLabel, cmd.ApplicationName))
 	}
 
 	return get.listPrint(ctx, client, cmd, opts...)
@@ -87,7 +87,7 @@ func printBuild(builds []apps.Build, out *output, header bool) error {
 
 	for _, build := range builds {
 		out.writeTabRow(build.Namespace, build.Name,
-			build.Labels[util.ApplicationNameLabel],
+			build.Labels[application.ApplicationNameLabel],
 			string(build.Status.AtProvider.BuildStatus),
 			duration.HumanDuration(time.Since(build.CreationTimestamp.Time)))
 	}

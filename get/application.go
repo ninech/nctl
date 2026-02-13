@@ -10,7 +10,7 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/format"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -54,7 +54,7 @@ func (cmd *applicationsCmd) print(ctx context.Context, client *api.Client, list 
 	}
 
 	if cmd.DNS {
-		return printDNSDetails(util.GatherDNSDetails(appList.Items), out)
+		return printDNSDetails(application.GatherDNSDetails(appList.Items), out)
 	}
 
 	switch out.Format {
@@ -101,7 +101,7 @@ func printApplication(apps []apps.Application, out *output, header bool) error {
 
 	for _, app := range apps {
 		verifiedHosts := append(verifiedAppHosts(&app), app.Status.AtProvider.CNAMETarget)
-		unverifiedHosts := util.UnverifiedAppHosts(&app)
+		unverifiedHosts := application.UnverifiedHosts(&app)
 		replicas := 0
 		if app.Status.AtProvider.Replicas != nil {
 			replicas = int(*app.Status.AtProvider.Replicas)
@@ -141,9 +141,9 @@ func printCredentialsTabRow(creds []appCredentials, out *output) error {
 }
 
 type appCredentials struct {
-	Application    string `json:"application"`
-	Project        string `json:"project"`
-	util.BasicAuth `json:"basicauth"`
+	Application           string `json:"application"`
+	Project               string `json:"project"`
+	application.BasicAuth `json:"basicauth"`
 }
 
 func gatherCredentials(ctx context.Context, items []apps.Application, c *api.Client) ([]appCredentials, error) {
@@ -155,7 +155,7 @@ func gatherCredentials(ctx context.Context, items []apps.Application, c *api.Cli
 			// in the output
 			continue
 		}
-		basicAuth, err := util.NewBasicAuthFromSecret(
+		basicAuth, err := application.NewBasicAuthFromSecret(
 			ctx,
 			app.Status.AtProvider.BasicAuthSecret.InNamespace(&app),
 			c,
@@ -179,7 +179,7 @@ func join(list []string) string {
 	return strings.Join(list, ",")
 }
 
-func printDNSDetails(items []util.DNSDetail, out *output) error {
+func printDNSDetails(items []application.DNSDetail, out *output) error {
 	if out.Format == yamlOut {
 		return format.PrettyPrintObjects(items, format.PrintOpts{Out: &out.Writer})
 	}
@@ -189,7 +189,7 @@ func printDNSDetails(items []util.DNSDetail, out *output) error {
 	return printDNSDetailsTabRow(items, out)
 }
 
-func printDNSDetailsTabRow(items []util.DNSDetail, out *output) error {
+func printDNSDetailsTabRow(items []application.DNSDetail, out *output) error {
 	if out.Format == full {
 		out.writeHeader("APP NAME", "TXT RECORD", "DNS TARGET")
 	}
@@ -201,7 +201,7 @@ func printDNSDetailsTabRow(items []util.DNSDetail, out *output) error {
 		return err
 	}
 
-	out.Printf("\nVisit %s to see instructions on how to setup custom hosts\n", util.DNSSetupURL)
+	out.Printf("\nVisit %s to see instructions on how to setup custom hosts\n", application.DNSSetupURL)
 	return nil
 }
 
@@ -390,12 +390,12 @@ func verifiedAppHosts(app *apps.Application) []string {
 // available releases and if no available release is found just the latest
 // progressing or failed release.
 func latestReleaseForApplication(ctx context.Context, client *api.Client, app types.NamespacedName) (*apps.Release, error) {
-	releases, err := util.Releases(ctx, client, app)
+	releases, err := application.Releases(ctx, client, app)
 	if err != nil {
 		return nil, err
 	}
 
-	release := util.LatestAvailableRelease(releases)
+	release := application.LatestAvailableRelease(releases)
 	if release == nil {
 		// in case no release is available, we just return the latest release in
 		// the list.

@@ -11,7 +11,7 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/gitinfo"
 	"github.com/ninech/nctl/api/nctl"
-	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/application"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -135,7 +135,7 @@ func (cmd *applicationCmd) copyStaticEgress(
 	client *api.Client,
 	oldApp, newApp *apps.Application,
 ) error {
-	egresses, err := util.ApplicationStaticEgresses(ctx, client, api.ObjectName(oldApp))
+	egresses, err := application.StaticEgresses(ctx, client, api.ObjectName(oldApp))
 	if err != nil {
 		return err
 	}

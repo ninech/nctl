@@ -7,7 +7,7 @@ import (
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/format"
 	"k8s.io/apimachinery/pkg/util/duration"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -21,7 +21,7 @@ type releasesCmd struct {
 func (cmd *releasesCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
 	opts := []api.ListOpt{api.MatchName(cmd.Name)}
 	if len(cmd.ApplicationName) != 0 {
-		opts = append(opts, api.MatchLabel(util.ApplicationNameLabel, cmd.ApplicationName))
+		opts = append(opts, api.MatchLabel(application.ApplicationNameLabel, cmd.ApplicationName))
 	}
 
 	return get.listPrint(ctx, client, cmd, opts...)
@@ -37,7 +37,7 @@ func (cmd *releasesCmd) print(ctx context.Context, client *api.Client, list clie
 		return out.notFound(apps.ReleaseKind, client.Project)
 	}
 
-	util.OrderReleaseList(releaseList, true)
+	application.OrderReleaseList(releaseList, true)
 
 	switch out.Format {
 	case full:
@@ -92,7 +92,7 @@ func (cmd *releasesCmd) printReleases(releases []apps.Release, out *output, head
 			r.Namespace,
 			r.Name,
 			r.Spec.ForProvider.Build.Name,
-			r.Labels[util.ApplicationNameLabel],
+			r.Labels[application.ApplicationNameLabel],
 			string(cfg.Size),
 			replicas,
 			workerJobs,

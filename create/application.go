@@ -18,7 +18,7 @@ import (
 	"github.com/ninech/nctl/api/gitinfo"
 	"github.com/ninech/nctl/api/log"
 	"github.com/ninech/nctl/api/nctl"
-	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/logbox"
 	"github.com/ninech/nctl/logs"
@@ -103,7 +103,7 @@ type dockerfileBuild struct {
 
 func (g gitConfig) sshPrivateKey() (*string, error) {
 	if g.SSHPrivateKey != nil {
-		return util.ValidatePEM(*g.SSHPrivateKey)
+		return application.ValidatePEM(*g.SSHPrivateKey)
 	}
 	if g.SSHPrivateKeyFromFile == nil {
 		return nil, nil
@@ -112,7 +112,7 @@ func (g gitConfig) sshPrivateKey() (*string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return util.ValidatePEM(string(content))
+	return application.ValidatePEM(string(content))
 }
 
 const (
@@ -145,7 +145,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 			return err
 		}
 
-		validator := &util.RepositoryValidator{
+		validator := &application.RepositoryValidator{
 			Auth:   auth,
 			Client: client,
 			Debug:  cmd.Debug,
@@ -191,7 +191,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	}
 
 	if newApp.Spec.ForProvider.Config.DeployJob != nil {
-		if err := util.ValidateConfig(newApp.Spec.ForProvider.Config); err != nil {
+		if err := application.ValidateConfig(newApp.Spec.ForProvider.Config); err != nil {
 			return fmt.Errorf("error when validating application config: %w", err)
 		}
 	}
@@ -253,7 +253,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		return nil
 	}
 
-	basicAuth, err := util.NewBasicAuthFromSecret(
+	basicAuth, err := application.NewBasicAuthFromSecret(
 		ctx,
 		newApp.Status.AtProvider.BasicAuthSecret.InNamespace(newApp),
 		client,
@@ -286,8 +286,8 @@ func (cmd *applicationCmd) spinnerMessage(msg, icon string, sleepTime time.Durat
 
 func combineEnvVars(plain, sensitive map[string]string) apps.EnvVars {
 	return append(
-		util.EnvVarsFromMap(plain),
-		util.EnvVarsFromMap(sensitive, util.Sensitive())...,
+		application.EnvVarsFromMap(plain),
+		application.EnvVarsFromMap(sensitive, application.Sensitive())...,
 	)
 }
 
@@ -359,20 +359,20 @@ func (cmd *applicationCmd) config() apps.Config {
 	return config
 }
 
-func (h healthProbe) ToProbePatch() util.ProbePatch {
-	var pp util.ProbePatch
+func (h healthProbe) ToProbePatch() application.ProbePatch {
+	var pp application.ProbePatch
 
 	if p := strings.TrimSpace(h.Path); p != "" {
-		pp.Path = util.OptString{State: util.Set, Val: p}
+		pp.Path = application.OptString{State: application.Set, Val: p}
 	}
 	if h.PeriodSeconds > 0 {
-		pp.PeriodSeconds = util.OptInt32{State: util.Set, Val: h.PeriodSeconds}
+		pp.PeriodSeconds = application.OptInt32{State: application.Set, Val: h.PeriodSeconds}
 	}
 	return pp
 }
 
 func (h healthProbe) applyCreate(cfg *apps.Config) {
-	util.ApplyProbePatch(cfg, h.ToProbePatch())
+	application.ApplyProbePatch(cfg, h.ToProbePatch())
 }
 
 func (cmd *applicationCmd) newApplication(project string) *apps.Application {
@@ -423,7 +423,7 @@ func waitForBuildStart(app *apps.Application) waitStage {
 		objectList: &apps.BuildList{},
 		listOpts: []runtimeclient.ListOption{
 			runtimeclient.InNamespace(app.GetNamespace()),
-			runtimeclient.MatchingLabels{util.ApplicationNameLabel: app.GetName()},
+			runtimeclient.MatchingLabels{application.ApplicationNameLabel: app.GetName()},
 		},
 		waitMessage: &message{
 			text: "waiting for build to start",
@@ -470,7 +470,7 @@ func waitForBuildFinish(
 		objectList:     &apps.BuildList{},
 		listOpts: []runtimeclient.ListOption{
 			runtimeclient.InNamespace(app.GetNamespace()),
-			runtimeclient.MatchingLabels{util.ApplicationNameLabel: app.GetName()},
+			runtimeclient.MatchingLabels{application.ApplicationNameLabel: app.GetName()},
 		},
 		waitMessage: nil,
 		doneMessage: &message{
@@ -556,7 +556,7 @@ func waitForRelease(app *apps.Application) waitStage {
 		objectList: &apps.ReleaseList{},
 		listOpts: []runtimeclient.ListOption{
 			runtimeclient.InNamespace(app.GetNamespace()),
-			runtimeclient.MatchingLabels{util.ApplicationNameLabel: app.GetName()},
+			runtimeclient.MatchingLabels{application.ApplicationNameLabel: app.GetName()},
 		},
 		waitMessage: &message{
 			text: "releasing application",
@@ -608,10 +608,10 @@ func latestReleaseHasBasicAuthEnabled(
 }
 
 func (cmd *applicationCmd) printUnverifiedHostsMessage(app *apps.Application) {
-	unverifiedHosts := util.UnverifiedAppHosts(app)
+	unverifiedHosts := application.UnverifiedHosts(app)
 
 	if len(unverifiedHosts) != 0 {
-		dnsDetails := util.GatherDNSDetails([]apps.Application{*app})
+		dnsDetails := application.GatherDNSDetails([]apps.Application{*app})
 		cmd.Infof("🌐", "You configured the following hosts:")
 
 		for _, name := range unverifiedHosts {
@@ -622,7 +622,7 @@ func (cmd *applicationCmd) printUnverifiedHostsMessage(app *apps.Application) {
 		cmd.Printf("  TXT record:\t%s\n", dnsDetails[0].TXTRecord)
 		cmd.Printf("  DNS TARGET:\t%s\n", dnsDetails[0].CNAMETarget)
 
-		cmd.Infof("ℹ", "To make your app available on your custom hosts, please use \nthe DNS details and visit %s\nfor further instructions.", util.DNSSetupURL)
+		cmd.Infof("ℹ", "To make your app available on your custom hosts, please use \nthe DNS details and visit %s\nfor further instructions.", application.DNSSetupURL)
 	}
 }
 
@@ -643,12 +643,12 @@ func printReleaseLogs(ctx context.Context, client *api.Client, release *apps.Rel
 		0,
 		client.Log.StdOut,
 		errorLogQuery(
-			logs.ApplicationQuery(release.Labels[util.ApplicationNameLabel], release.Namespace),
+			logs.ApplicationQuery(release.Labels[application.ApplicationNameLabel], release.Namespace),
 		),
 	)
 }
 
-func (cmd *applicationCmd) printCredentials(basicAuth *util.BasicAuth) {
+func (cmd *applicationCmd) printCredentials(basicAuth *application.BasicAuth) {
 	cmd.Infof("🔐", "You can login with the following credentials:")
 	cmd.Printf("  username: %s\n  password: %s\n", basicAuth.Username, basicAuth.Password)
 }

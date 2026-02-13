@@ -6,7 +6,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/format"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,7 +42,7 @@ func (cmd *configCmd) Run(ctx context.Context, client *api.Client) error {
 func (cmd *configCmd) newProjectConfig(namespace string) *apps.ProjectConfig {
 	env := apps.EnvVars{}
 	if cmd.Env != nil {
-		env = util.EnvVarsFromMap(*cmd.Env)
+		env = application.EnvVarsFromMap(*cmd.Env)
 	}
 
 	var deployJob *apps.DeployJob

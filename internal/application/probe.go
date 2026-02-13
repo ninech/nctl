@@ -1,4 +1,4 @@
-package util
+package application
 
 import (
 	apps "github.com/ninech/apis/apps/v1alpha1"

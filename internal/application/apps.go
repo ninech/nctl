@@ -1,5 +1,5 @@
-// Package util provides utility functions for interacting with various Nine resources.
-package util
+// Package application provides utility functions for interacting with Deploio applications.
+package application
 
 import (
 	"context"
@@ -28,7 +28,7 @@ const (
 	NoneText    = "<none>"
 )
 
-func UnverifiedAppHosts(app *apps.Application) []string {
+func UnverifiedHosts(app *apps.Application) []string {
 	unverifiedHosts := []string{}
 	for _, host := range app.Status.AtProvider.Hosts {
 		if host.LatestSuccess == nil {
@@ -192,9 +192,9 @@ func LatestAvailableRelease(releases *apps.ReleaseList) *apps.Release {
 	return nil
 }
 
-// ApplicationStaticEgresses returns all static egress resources targeting the
+// StaticEgresses returns all static egress resources targeting the
 // specified app.
-func ApplicationStaticEgresses(ctx context.Context, client *api.Client, app types.NamespacedName) ([]networking.StaticEgress, error) {
+func StaticEgresses(ctx context.Context, client *api.Client, app types.NamespacedName) ([]networking.StaticEgress, error) {
 	egressList := &networking.StaticEgressList{}
 	if err := client.List(ctx, egressList, runtimeclient.InNamespace(app.Namespace)); err != nil {
 		return nil, err

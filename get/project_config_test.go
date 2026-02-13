@@ -7,7 +7,7 @@ import (
 	"time"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
-	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -82,7 +82,7 @@ func TestProjectConfigs(t *testing.T) {
 					Spec: apps.ProjectConfigSpec{
 						ForProvider: apps.ProjectConfigParameters{
 							Config: apps.Config{
-								Env: util.EnvVarsFromMap(map[string]string{"poo": "orange"}, util.Sensitive()),
+								Env: application.EnvVarsFromMap(map[string]string{"poo": "orange"}, application.Sensitive()),
 							},
 						},
 					},
@@ -108,7 +108,7 @@ func TestProjectConfigs(t *testing.T) {
 					Spec: apps.ProjectConfigSpec{
 						ForProvider: apps.ProjectConfigParameters{
 							Config: apps.Config{
-								Env: util.EnvVarsFromMap(map[string]string{"goo": "banana"}),
+								Env: application.EnvVarsFromMap(map[string]string{"goo": "banana"}),
 							},
 						},
 					},
@@ -173,7 +173,7 @@ func fakeProjectConfig(
 					Size:     test.AppMicro,
 					Replicas: ptr.To(int32(1)),
 					Port:     ptr.To(int32(9000)),
-					Env:      util.EnvVarsFromMap(map[string]string{"key1": "val1"}),
+					Env:      application.EnvVarsFromMap(map[string]string{"key1": "val1"}),
 				},
 			},
 		},
