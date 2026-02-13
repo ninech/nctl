@@ -6,7 +6,6 @@ import (
 
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/internal/format"
 )
 
@@ -71,7 +70,7 @@ func printProject(projects []management.Project, get Cmd, header bool) error {
 	for _, proj := range projects {
 		displayName := proj.Spec.DisplayName
 		if len(displayName) == 0 {
-			displayName = util.NoneText
+			displayName = noneText
 		}
 		get.writeTabRow(proj.Name, displayName)
 	}

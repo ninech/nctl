@@ -68,6 +68,7 @@ const (
 	yamlOut  outputFormat = "yaml"
 	stats    outputFormat = "stats"
 	jsonOut  outputFormat = "json"
+	noneText              = "<none>"
 )
 
 // BeforeApply is called by Kong before parsing to initialize the output.

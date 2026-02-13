@@ -8,12 +8,14 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	apps "github.com/ninech/apis/apps/v1alpha1"
+	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/format"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	metricsv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -52,7 +54,7 @@ func (cmd *applicationsCmd) print(ctx context.Context, client *api.Client, list 
 	}
 
 	if cmd.DNS {
-		return printDNSDetails(util.GatherDNSDetails(appList.Items), out)
+		return printDNSDetails(application.DNSDetails(appList.Items), out)
 	}
 
 	switch out.Format {
@@ -98,8 +100,8 @@ func printApplication(apps []apps.Application, out *output, header bool) error {
 	}
 
 	for _, app := range apps {
-		verifiedHosts := append(util.VerifiedAppHosts(&app), app.Status.AtProvider.CNAMETarget)
-		unverifiedHosts := util.UnverifiedAppHosts(&app)
+		verifiedHosts := append(verifiedAppHosts(&app), app.Status.AtProvider.CNAMETarget)
+		unverifiedHosts := application.UnverifiedHosts(&app)
 		replicas := 0
 		if app.Status.AtProvider.Replicas != nil {
 			replicas = int(*app.Status.AtProvider.Replicas)
@@ -139,9 +141,9 @@ func printCredentialsTabRow(creds []appCredentials, out *output) error {
 }
 
 type appCredentials struct {
-	Application    string `json:"application"`
-	Project        string `json:"project"`
-	util.BasicAuth `json:"basicauth"`
+	Application           string `json:"application"`
+	Project               string `json:"project"`
+	application.BasicAuth `json:"basicauth"`
 }
 
 func gatherCredentials(ctx context.Context, items []apps.Application, c *api.Client) ([]appCredentials, error) {
@@ -153,7 +155,7 @@ func gatherCredentials(ctx context.Context, items []apps.Application, c *api.Cli
 			// in the output
 			continue
 		}
-		basicAuth, err := util.NewBasicAuthFromSecret(
+		basicAuth, err := application.NewBasicAuthFromSecret(
 			ctx,
 			app.Status.AtProvider.BasicAuthSecret.InNamespace(&app),
 			c,
@@ -172,12 +174,12 @@ func gatherCredentials(ctx context.Context, items []apps.Application, c *api.Cli
 
 func join(list []string) string {
 	if len(list) == 0 {
-		return util.NoneText
+		return noneText
 	}
 	return strings.Join(list, ",")
 }
 
-func printDNSDetails(items []util.DNSDetail, out *output) error {
+func printDNSDetails(items []application.DNSDetail, out *output) error {
 	if out.Format == yamlOut {
 		return format.PrettyPrintObjects(items, format.PrintOpts{Out: &out.Writer})
 	}
@@ -187,7 +189,7 @@ func printDNSDetails(items []util.DNSDetail, out *output) error {
 	return printDNSDetailsTabRow(items, out)
 }
 
-func printDNSDetailsTabRow(items []util.DNSDetail, out *output) error {
+func printDNSDetailsTabRow(items []application.DNSDetail, out *output) error {
 	if out.Format == full {
 		out.writeHeader("APP NAME", "TXT RECORD", "DNS TARGET")
 	}
@@ -199,7 +201,7 @@ func printDNSDetailsTabRow(items []util.DNSDetail, out *output) error {
 		return err
 	}
 
-	out.Printf("\nVisit %s to see instructions on how to setup custom hosts\n", util.DNSSetupURL)
+	out.Printf("\nVisit %s to see instructions on how to setup custom hosts\n", application.DNSSetupURL)
 	return nil
 }
 
@@ -240,7 +242,7 @@ func (cmd *applicationsCmd) printStats(ctx context.Context, c *api.Client, appLi
 	}
 
 	for _, app := range appList {
-		rel, err := util.ApplicationLatestRelease(ctx, c, api.ObjectName(&app))
+		rel, err := latestReleaseForApplication(ctx, c, api.ObjectName(&app))
 		if err != nil {
 			out.Warningf("unable to get latest release for app %s", c.Name(app.Name))
 			continue
@@ -297,10 +299,10 @@ func (cmd *applicationsCmd) printStats(ctx context.Context, c *api.Client, appLi
 			}
 
 			maxResources := apps.AppResources[statsObservation.size]
-			// We expect exactly one container, fall back to [util.NoneText] if that's
+			// We expect exactly one container, fall back to [noneText] if that's
 			// not the case. The container might simply not have any metrics yet.
-			cpuUsage, cpuPercentage := util.NoneText, util.NoneText
-			memoryUsage, memoryPercentage := util.NoneText, util.NoneText
+			cpuUsage, cpuPercentage := noneText, noneText
+			memoryUsage, memoryPercentage := noneText, noneText
 			if len(podMetrics.Containers) == 1 {
 				cpu := podMetrics.Containers[0].Usage[corev1.ResourceCPU]
 				cpuUsage = formatQuantity(corev1.ResourceCPU, cpu)
@@ -341,7 +343,7 @@ func formatQuantity(resourceType corev1.ResourceName, quantity resource.Quantity
 
 func formatPercentage(val, total int64) string {
 	if total == 0 {
-		return util.NoneText
+		return noneText
 	}
 	return fmt.Sprintf("%.1f", float64(val)/float64(total)*100) + "%"
 }
@@ -351,7 +353,7 @@ func toMiB(val int64) int64 {
 }
 
 func formatExitCode(replica apps.ReplicaObservation) string {
-	lastExitCode := util.NoneText
+	lastExitCode := noneText
 
 	if replica.LastExitCode != nil {
 		lastExitCode = strconv.Itoa(int(*replica.LastExitCode))
@@ -364,9 +366,41 @@ func formatExitCode(replica apps.ReplicaObservation) string {
 }
 
 func formatRestartCount(replica apps.ReplicaObservation) string {
-	restartCount := util.NoneText
+	restartCount := noneText
 	if replica.RestartCount != nil {
 		restartCount = strconv.Itoa(int(*replica.RestartCount))
 	}
 	return restartCount
+}
+
+func verifiedAppHosts(app *apps.Application) []string {
+	verifiedHosts := []string{}
+	for _, host := range app.Status.AtProvider.Hosts {
+		if host.CheckType == meta.DNSCheckType("CAA") {
+			continue
+		}
+		if host.LatestSuccess != nil && host.Error == nil {
+			verifiedHosts = append(verifiedHosts, host.Name)
+		}
+	}
+	return verifiedHosts
+}
+
+// latestReleaseForApplication returns the latest release of an app, prioritizing
+// available releases and if no available release is found just the latest
+// progressing or failed release.
+func latestReleaseForApplication(ctx context.Context, client *api.Client, app types.NamespacedName) (*apps.Release, error) {
+	releases, err := application.Releases(ctx, client, app)
+	if err != nil {
+		return nil, err
+	}
+
+	release := application.LatestAvailableRelease(releases)
+	if release == nil {
+		// in case no release is available, we just return the latest release in
+		// the list.
+		return &releases.Items[0], nil
+	}
+
+	return release, nil
 }

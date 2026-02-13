@@ -10,8 +10,8 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/api/util"
-	"github.com/ninech/nctl/api/validation"
+	"github.com/ninech/nctl/api/gitinfo"
+	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/format"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -76,7 +76,7 @@ type gitConfig struct {
 
 func (g gitConfig) sshPrivateKey() (*string, error) {
 	if g.SSHPrivateKey != nil {
-		return util.ValidatePEM(*g.SSHPrivateKey)
+		return application.ValidatePEM(*g.SSHPrivateKey)
 	}
 	if g.SSHPrivateKeyFromFile == nil {
 		return nil, nil
@@ -85,7 +85,7 @@ func (g gitConfig) sshPrivateKey() (*string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return util.ValidatePEM(string(content))
+	return application.ValidatePEM(string(content))
 }
 
 func (g gitConfig) empty() bool {
@@ -161,30 +161,35 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		if err != nil {
 			return fmt.Errorf("error when reading SSH private key: %w", err)
 		}
-		auth := util.GitAuth{
+		auth := gitinfo.Auth{
 			Username:      cmd.Git.Username,
 			Password:      cmd.Git.Password,
 			SSHPrivateKey: sshPrivateKey,
 		}
 		if !cmd.SkipRepoAccessCheck {
-			validator := &validation.RepositoryValidator{
-				GitInformationServiceURL: cmd.GitInformationServiceURL,
-				Token:                    client.Token(ctx),
-				Debug:                    cmd.Debug,
+			gitClient, err := gitinfo.New(cmd.GitInformationServiceURL, client.Token(ctx))
+			if err != nil {
+				return err
+			}
+			validator := &application.RepositoryValidator{
+				Auth:   auth,
+				Client: gitClient,
+				Debug:  cmd.Debug,
 			}
 
 			if !auth.Enabled() {
 				// if the auth was not changed but e.g. the branch changes and
 				// auth is pre-configured, we need to fetch the existing git
 				// auth from the app.
-				a, err := util.GitAuthFromApp(ctx, client, app)
+				a, err := gitAuthFromApp(ctx, client, app)
 				if err != nil {
-					return fmt.Errorf("error reading preconfigured auth secret")
+					return fmt.Errorf("error reading preconfigured auth secret: %w", err)
 				}
 				auth = a
 			}
 
-			if err := validator.Validate(ctx, &app.Spec.ForProvider.Git.GitTarget, auth); err != nil {
+			app.Spec.ForProvider.Git.GitTarget, err = validator.Validate(ctx, app.Spec.ForProvider.Git.GitTarget)
+			if err != nil {
 				return err
 			}
 		}
@@ -211,10 +216,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		}
 
 		if app.Spec.ForProvider.Config.DeployJob != nil {
-			configValidator := &validation.ConfigValidator{
-				Config: app.Spec.ForProvider.Config,
-			}
-			if err := configValidator.Validate(); err != nil {
+			if err := application.ValidateConfig(app.Spec.ForProvider.Config); err != nil {
 				return fmt.Errorf("error when validating application config: %w", err)
 			}
 		}
@@ -300,7 +302,7 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 		delEnv = *cmd.DeleteEnv
 	}
 
-	app.Spec.ForProvider.Config.Env = util.UpdateEnvVars(app.Spec.ForProvider.Config.Env, runtimeEnv, sensitiveRuntimeEnv, delEnv)
+	app.Spec.ForProvider.Config.Env = application.UpdateEnvVars(app.Spec.ForProvider.Config.Env, runtimeEnv, sensitiveRuntimeEnv, delEnv)
 
 	// build env vars
 	buildEnv := cmd.BuildEnv
@@ -322,7 +324,7 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 		delBuildEnv = *cmd.DeleteBuildEnv
 	}
 
-	app.Spec.ForProvider.BuildEnv = util.UpdateEnvVars(
+	app.Spec.ForProvider.BuildEnv = application.UpdateEnvVars(
 		app.Spec.ForProvider.BuildEnv,
 		buildEnv,
 		sensitiveBuildEnv,
@@ -347,28 +349,28 @@ func triggerTimestamp() string {
 	return time.Now().UTC().Format(time.RFC3339)
 }
 
-func (h healthProbe) ToProbePatch() util.ProbePatch {
-	var pp util.ProbePatch
+func (h healthProbe) ToProbePatch() application.ProbePatch {
+	var pp application.ProbePatch
 
 	if h.Path != nil {
 		if p := strings.TrimSpace(*h.Path); p == "" {
-			pp.Path = util.OptString{State: util.Clear}
+			pp.Path = application.OptString{State: application.Clear}
 		} else {
-			pp.Path = util.OptString{State: util.Set, Val: p}
+			pp.Path = application.OptString{State: application.Set, Val: p}
 		}
 	}
 	if h.PeriodSeconds != nil {
 		if ps := *h.PeriodSeconds; ps <= 0 {
-			pp.PeriodSeconds = util.OptInt32{State: util.Clear}
+			pp.PeriodSeconds = application.OptInt32{State: application.Clear}
 		} else {
-			pp.PeriodSeconds = util.OptInt32{State: util.Set, Val: ps}
+			pp.PeriodSeconds = application.OptInt32{State: application.Set, Val: ps}
 		}
 	}
 	return pp
 }
 
 func (h healthProbe) applyUpdates(cfg *apps.Config) {
-	util.ApplyProbePatch(cfg, h.ToProbePatch())
+	application.ApplyProbePatch(cfg, h.ToProbePatch())
 }
 
 func (job deployJob) applyUpdates(cfg *apps.Config) {
@@ -496,4 +498,15 @@ func warnIfDockerfileNotEnabled(w format.Writer, app *apps.Application, flag str
 	if !app.Spec.ForProvider.DockerfileBuild.Enabled {
 		w.Warningf("updating %s has no effect as dockerfile builds are not enabled on this app", flag)
 	}
+}
+
+func gitAuthFromApp(ctx context.Context, client *api.Client, app *apps.Application) (gitinfo.Auth, error) {
+	auth := &gitinfo.Auth{}
+	secret := auth.Secret(app)
+	if err := client.Get(ctx, client.Name(secret.Name), secret); err != nil {
+		return gitinfo.Auth{}, err
+	}
+	auth.UpdateFromSecret(secret)
+
+	return *auth, nil
 }

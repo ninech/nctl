@@ -7,7 +7,9 @@ import (
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/api/gitinfo"
+	"github.com/ninech/nctl/api/nctl"
+	"github.com/ninech/nctl/internal/application"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +34,7 @@ func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	if err != nil {
 		return err
 	}
-	staticEgresses, err := util.ApplicationStaticEgresses(ctx, client, api.ObjectName(a))
+	staticEgresses, err := application.StaticEgresses(ctx, client, api.ObjectName(a))
 	if err != nil {
 		return fmt.Errorf("finding static egresses of app: %w", err)
 	}
@@ -72,7 +74,7 @@ func findGitAuthSecrets(ctx context.Context, client *api.Client, a *apps.Applica
 	// have been given
 	gitAuthSecrets := []corev1.Secret{{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      util.GitAuthSecretName(a),
+			Name:      gitinfo.AuthSecretName(a),
 			Namespace: a.Namespace,
 		},
 	}}
@@ -115,8 +117,8 @@ func (app *applicationCmd) deleteGitAuthSecret(
 			fmt.Errorf("error when checking git auth secret %q for application", secret.Name),
 		)
 	}
-	managedBy, exists := secret.Annotations[util.ManagedByAnnotation]
-	if !exists || managedBy != util.NctlName {
+	managedBy, exists := secret.Annotations[nctl.ManagedByAnnotation]
+	if !exists || managedBy != nctl.Name {
 		// the secret was not created by nctl, so we will not delete it
 		return nil
 	}

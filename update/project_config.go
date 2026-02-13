@@ -7,7 +7,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/format"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -67,7 +67,7 @@ func (cmd *configCmd) applyUpdates(cfg *apps.ProjectConfig) {
 		cfg.Spec.ForProvider.Config.Replicas = cmd.Replicas
 	}
 	if cmd.Env != nil {
-		cfg.Spec.ForProvider.Config.Env = util.EnvVarsFromMap(cmd.Env)
+		cfg.Spec.ForProvider.Config.Env = application.EnvVarsFromMap(cmd.Env)
 	}
 	if cmd.BasicAuth != nil {
 		cfg.Spec.ForProvider.Config.EnableBasicAuth = cmd.BasicAuth

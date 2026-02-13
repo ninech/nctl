@@ -6,7 +6,7 @@ import (
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
-	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -123,7 +123,7 @@ func TestApplicationCredentials(t *testing.T) {
 				newBasicAuthSecret(
 					"sample-basic-auth-secret",
 					"dev",
-					util.BasicAuth{
+					application.BasicAuth{
 						Username: "dev",
 						Password: "sample",
 					},
@@ -141,7 +141,7 @@ dev      dev   dev       sample
 				newBasicAuthSecret(
 					"sample-basic-auth-secret",
 					"dev",
-					util.BasicAuth{
+					application.BasicAuth{
 						Username: "dev",
 						Password: "sample",
 					},
@@ -157,7 +157,7 @@ dev      dev   dev       sample
 				newBasicAuthSecret(
 					"sample-basic-auth-secret",
 					"dev",
-					util.BasicAuth{
+					application.BasicAuth{
 						Username: "dev",
 						Password: "sample",
 					},
@@ -173,7 +173,7 @@ dev      dev   dev       sample
 				newBasicAuthSecret(
 					"sample-basic-auth-secret",
 					"dev",
-					util.BasicAuth{
+					application.BasicAuth{
 						Username: "dev",
 						Password: "sample",
 					},
@@ -200,7 +200,7 @@ dev      dev   dev       sample
 				newBasicAuthSecret(
 					"dev-basic-auth-secret",
 					"dev",
-					util.BasicAuth{
+					application.BasicAuth{
 						Username: "dev",
 						Password: "sample",
 					},
@@ -208,7 +208,7 @@ dev      dev   dev       sample
 				newBasicAuthSecret(
 					"dev-second-basic-auth-secret",
 					"dev",
-					util.BasicAuth{
+					application.BasicAuth{
 						Username: "dev-second",
 						Password: "sample-second",
 					},
@@ -228,7 +228,7 @@ dev      dev-second  dev-second  sample-second
 				newBasicAuthSecret(
 					"dev-basic-auth-secret",
 					"dev",
-					util.BasicAuth{
+					application.BasicAuth{
 						Username: "dev",
 						Password: "sample",
 					},
@@ -236,7 +236,7 @@ dev      dev-second  dev-second  sample-second
 				newBasicAuthSecret(
 					"prod-basic-auth-secret",
 					"prod",
-					util.BasicAuth{
+					application.BasicAuth{
 						Username: "prod",
 						Password: "secret",
 					},
@@ -252,7 +252,7 @@ dev      dev-second  dev-second  sample-second
 				newBasicAuthSecret(
 					"dev-basic-auth-secret",
 					"dev",
-					util.BasicAuth{
+					application.BasicAuth{
 						Username: "dev",
 						Password: "sample",
 					},
@@ -260,7 +260,7 @@ dev      dev-second  dev-second  sample-second
 				newBasicAuthSecret(
 					"prod-basic-auth-secret",
 					"prod",
-					util.BasicAuth{
+					application.BasicAuth{
 						Username: "prod",
 						Password: "secret",
 					},
@@ -537,7 +537,7 @@ func txtRecordContent(value string) string {
 	return "deploio-site-verification=" + value
 }
 
-func newBasicAuthSecret(name, project string, basicAuth util.BasicAuth) *corev1.Secret {
+func newBasicAuthSecret(name, project string, basicAuth application.BasicAuth) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -548,8 +548,8 @@ func newBasicAuthSecret(name, project string, basicAuth util.BasicAuth) *corev1.
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		Data: map[string][]byte{
-			util.BasicAuthUsernameKey: []byte(basicAuth.Username),
-			util.BasicAuthPasswordKey: []byte(basicAuth.Password),
+			application.BasicAuthUsernameKey: []byte(basicAuth.Username),
+			application.BasicAuthPasswordKey: []byte(basicAuth.Password),
 		},
 	}
 }

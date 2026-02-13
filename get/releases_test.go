@@ -11,7 +11,7 @@ import (
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
-	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/test"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -213,7 +213,7 @@ func newRelease(
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              name,
 			Namespace:         project,
-			Labels:            map[string]string{util.ApplicationNameLabel: appName},
+			Labels:            map[string]string{application.ApplicationNameLabel: appName},
 			CreationTimestamp: metav1.NewTime(defaultCreationTime.Add(creationTimeOffset)),
 		},
 		Spec: apps.ReleaseSpec{

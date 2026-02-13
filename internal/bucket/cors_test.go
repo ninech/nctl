@@ -1,4 +1,4 @@
-package util
+package bucket
 
 import (
 	"strings"
@@ -77,103 +77,6 @@ func TestParseSegments(t *testing.T) {
 	}
 }
 
-func TestParsePermissions(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name            string
-		chunks          []string
-		allowEmptyUsers bool
-		want            []PermissionSpec
-		wantErr         string
-	}{
-		{
-			name: "ok: single role with multiple users",
-			chunks: []string{
-				"reader=test-user-1,guest-user-2",
-			},
-			allowEmptyUsers: false,
-			want: []PermissionSpec{
-				{Role: "reader", Users: []string{"guest-user-2", "test-user-1"}},
-			},
-		},
-		{
-			name: "ok: multiple roles, merged & deduped users",
-			chunks: []string{
-				"reader=test-user-1,test-user-1",
-				"writer=super-user-1",
-				"reader=guest-user-2",
-			},
-			allowEmptyUsers: false,
-			want: []PermissionSpec{
-				{Role: "reader", Users: []string{"guest-user-2", "test-user-1"}},
-				{Role: "writer", Users: []string{"super-user-1"}},
-			},
-		},
-		{
-			name: "error: missing users when not allowed",
-			chunks: []string{
-				"reader=",
-			},
-			allowEmptyUsers: false,
-			wantErr:         "no users",
-		},
-		{
-			name: "ok: explicit role-only is allowed for deletes",
-			chunks: []string{
-				"writer=",
-			},
-			allowEmptyUsers: true,
-			// Users should be omitted (nil) to indicate role-only spec
-			want: []PermissionSpec{
-				{Role: "writer", Users: nil},
-			},
-		},
-		{
-			name: "error: malformed segment",
-			chunks: []string{
-				"reader test-user-1",
-			},
-			allowEmptyUsers: false,
-			wantErr:         "must be key=value",
-		},
-		{
-			name: "ok: trims empties in CSV; still errors if nothing left when not allowed",
-			chunks: []string{
-				"reader= ,  ,",
-			},
-			allowEmptyUsers: false,
-			wantErr:         "no users",
-		},
-		{
-			name: "ok: trims empties in CSV; allowed when allowEmptyUsers=true",
-			chunks: []string{
-				"reader= ,  ,",
-			},
-			allowEmptyUsers: true,
-			want: []PermissionSpec{
-				{Role: "reader", Users: nil},
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			is := require.New(t)
-
-			got, err := parsePermissions(tt.chunks, tt.allowEmptyUsers)
-			if tt.wantErr != "" {
-				is.Error(err)
-				is.Contains(err.Error(), tt.wantErr)
-				return
-			}
-			is.NoError(err)
-			is.Equal(tt.want, got)
-		})
-	}
-}
-
 func TestParseCORSLooseWithMask(t *testing.T) {
 	t.Parallel()
 
@@ -181,7 +84,7 @@ func TestParseCORSLooseWithMask(t *testing.T) {
 		name      string
 		chunks    []string
 		want      storage.CORSConfig
-		wantMask  CORSFieldMask
+		wantMask  corsFieldMask
 		wantErr   string
 		nilFields struct {
 			origins         bool
@@ -200,7 +103,7 @@ func TestParseCORSLooseWithMask(t *testing.T) {
 				ResponseHeaders: []string{"ETag", "X-My-Header"},
 				MaxAge:          3600,
 			},
-			wantMask: CORSFieldMask{Origins: true, ResponseHeaders: true, MaxAge: true},
+			wantMask: corsFieldMask{Origins: true, ResponseHeaders: true, MaxAge: true},
 		},
 		{
 			name: "ok: multiple flags merged & deduped; max-age not provided -> stays zero (unset here, CRD will default later)",
@@ -215,7 +118,7 @@ func TestParseCORSLooseWithMask(t *testing.T) {
 				ResponseHeaders: []string{"ETag", "X-My-Header"},
 				MaxAge:          0, // parser leaves unset
 			},
-			wantMask: CORSFieldMask{Origins: true, ResponseHeaders: true},
+			wantMask: corsFieldMask{Origins: true, ResponseHeaders: true},
 		},
 		{
 			name: "ok: empty response-headers allowed (treated as none), max-age not provided",
@@ -227,7 +130,7 @@ func TestParseCORSLooseWithMask(t *testing.T) {
 				Origins: []string{"https://example.com"},
 				MaxAge:  0,
 			},
-			wantMask: CORSFieldMask{Origins: true, ResponseHeaders: true},
+			wantMask: corsFieldMask{Origins: true, ResponseHeaders: true},
 			nilFields: struct {
 				origins, responseHeaders bool
 			}{responseHeaders: true},
@@ -242,7 +145,7 @@ func TestParseCORSLooseWithMask(t *testing.T) {
 				Origins: []string{"https://example.com"},
 				MaxAge:  0,
 			},
-			wantMask: CORSFieldMask{Origins: true, MaxAge: true},
+			wantMask: corsFieldMask{Origins: true, MaxAge: true},
 		},
 		{
 			name: "ok: only max-age provided",
@@ -250,7 +153,7 @@ func TestParseCORSLooseWithMask(t *testing.T) {
 				"max-age=1800",
 			},
 			want:     storage.CORSConfig{MaxAge: 1800},
-			wantMask: CORSFieldMask{MaxAge: true},
+			wantMask: corsFieldMask{MaxAge: true},
 			nilFields: struct {
 				origins, responseHeaders bool
 			}{origins: true, responseHeaders: true},
@@ -259,7 +162,7 @@ func TestParseCORSLooseWithMask(t *testing.T) {
 			name:     "ok: no chunks means zero values; CRD will inject defaults later",
 			chunks:   nil,
 			want:     storage.CORSConfig{MaxAge: 0},
-			wantMask: CORSFieldMask{},
+			wantMask: corsFieldMask{},
 			nilFields: struct {
 				origins, responseHeaders bool
 			}{origins: true, responseHeaders: true},

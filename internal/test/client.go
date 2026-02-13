@@ -7,7 +7,7 @@ import (
 
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
-	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/api/nctl"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -199,7 +199,7 @@ func CreateTestKubeconfig(client *api.Client, organization string) (string, erro
 			return "", err
 		}
 		extensions = map[string]runtime.Object{
-			util.NctlName: cfgObject,
+			nctl.Name: cfgObject,
 		}
 	}
 

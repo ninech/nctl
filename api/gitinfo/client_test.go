@@ -1,4 +1,4 @@
-package validation_test
+package gitinfo_test
 
 import (
 	"net/http"
@@ -6,8 +6,7 @@ import (
 	"time"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
-	"github.com/ninech/nctl/api/util"
-	"github.com/ninech/nctl/api/validation"
+	"github.com/ninech/nctl/api/gitinfo"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -28,7 +27,7 @@ func TestRepositoryInformation(t *testing.T) {
 	for name, testCase := range map[string]struct {
 		git              apps.GitTarget
 		token            string
-		auth             util.GitAuth
+		auth             gitinfo.Auth
 		verifyRequest    func(t *testing.T) func(p test.GitInfoServiceParsed, err error)
 		setResponse      *test.GitInformationServiceResponse
 		expectedResponse *apps.GitExploreResponse
@@ -42,7 +41,7 @@ func TestRepositoryInformation(t *testing.T) {
 				Revision: "main",
 			},
 			token: "fake",
-			auth: util.GitAuth{
+			auth: gitinfo.Auth{
 				Username:      ptr.To("fake"),
 				Password:      ptr.To("fakePass"),
 				SSHPrivateKey: &dummyPrivateKey,
@@ -112,7 +111,7 @@ func TestRepositoryInformation(t *testing.T) {
 				gitInfo.SetResponse(*testCase.setResponse)
 			}
 
-			c, err := validation.NewGitInformationClient(gitInfo.URL(), testCase.token)
+			c, err := gitinfo.New(gitInfo.URL(), testCase.token)
 			is.NoError(err)
 
 			// we count the retries of the request

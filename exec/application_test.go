@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
-	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -309,7 +309,7 @@ func newRelease(
 			Name:      fmt.Sprintf("test-%s", uuid.New().String()),
 			Namespace: project,
 			Labels: map[string]string{
-				util.ApplicationNameLabel: appName,
+				application.ApplicationNameLabel: appName,
 			},
 		},
 		Spec: apps.ReleaseSpec{

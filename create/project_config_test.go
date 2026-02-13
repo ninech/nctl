@@ -6,7 +6,7 @@ import (
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	"k8s.io/utils/ptr"
@@ -42,7 +42,7 @@ func TestProjectConfig(t *testing.T) {
 				is.Equal(*cmd.Port, *cfg.Spec.ForProvider.Config.Port)
 				is.Equal(*cmd.Replicas, *cfg.Spec.ForProvider.Config.Replicas)
 				is.Equal(*cmd.BasicAuth, *cfg.Spec.ForProvider.Config.EnableBasicAuth)
-				is.Equal(util.EnvVarsFromMap(*cmd.Env), cfg.Spec.ForProvider.Config.Env)
+				is.Equal(application.EnvVarsFromMap(*cmd.Env), cfg.Spec.ForProvider.Config.Env)
 				is.Equal(cmd.DeployJob.Command, cfg.Spec.ForProvider.Config.DeployJob.Command)
 				is.Equal(cmd.DeployJob.Name, cfg.Spec.ForProvider.Config.DeployJob.Name)
 				is.Equal(cmd.DeployJob.Timeout, cfg.Spec.ForProvider.Config.DeployJob.Timeout.Duration)
