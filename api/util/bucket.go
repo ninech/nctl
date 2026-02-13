@@ -53,15 +53,6 @@ func setFromSliceTrimmed(in []string) stringSet {
 	return s
 }
 
-func setToSortedSlice(s stringSet) []string {
-	out := make([]string, 0, len(s))
-	for v := range s {
-		out = append(out, v)
-	}
-	sort.Strings(out)
-	return out
-}
-
 // PermissionSpec represents a parsed permission entry.
 // Each spec binds a role to a (possibly empty) list of users.
 type PermissionSpec struct {
@@ -674,8 +665,7 @@ func PatchCustomHostnames(base []string, clear bool, add []string, remove []stri
 		}
 	}
 
-	out := setToSortedSlice(set)
-	return out, nil
+	return mapKeysSorted(set), nil
 }
 
 const kvPairSep = "="
