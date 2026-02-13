@@ -54,7 +54,7 @@ func (cmd *applicationsCmd) print(ctx context.Context, client *api.Client, list 
 	}
 
 	if cmd.DNS {
-		return printDNSDetails(application.GatherDNSDetails(appList.Items), out)
+		return printDNSDetails(application.DNSDetails(appList.Items), out)
 	}
 
 	switch out.Format {

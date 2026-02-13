@@ -611,7 +611,7 @@ func (cmd *applicationCmd) printUnverifiedHostsMessage(app *apps.Application) {
 	unverifiedHosts := application.UnverifiedHosts(app)
 
 	if len(unverifiedHosts) != 0 {
-		dnsDetails := application.GatherDNSDetails([]apps.Application{*app})
+		dnsDetails := application.DNSDetails([]apps.Application{*app})
 		cmd.Infof("🌐", "You configured the following hosts:")
 
 		for _, name := range unverifiedHosts {

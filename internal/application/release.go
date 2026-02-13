@@ -6,6 +6,10 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 )
 
+const (
+	ApplicationNameLabel = "application.apps.nine.ch/name"
+)
+
 // OrderReleaseList orders the given list of releases first by name and then by
 // creation timestamp latest to oldest. Reverse reverses the order by creation
 // timestamp to oldest to latest.

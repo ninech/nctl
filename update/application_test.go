@@ -321,8 +321,8 @@ func TestApplication(t *testing.T) {
 			},
 			checkSecret: func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret) {
 				is := require.New(t)
-				is.Equal(*cmd.Git.Username, string(authSecret.Data[application.UsernameSecretKey]))
-				is.Equal(*cmd.Git.Password, string(authSecret.Data[application.PasswordSecretKey]))
+				is.Equal(*cmd.Git.Username, string(authSecret.Data[gitinfo.UsernameSecretKey]))
+				is.Equal(*cmd.Git.Password, string(authSecret.Data[gitinfo.PasswordSecretKey]))
 				is.Equal(authSecret.Annotations[nctl.ManagedByAnnotation], nctl.Name)
 			},
 		},
@@ -354,7 +354,7 @@ func TestApplication(t *testing.T) {
 			},
 			checkSecret: func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret) {
 				is := require.New(t)
-				is.Equal(strings.TrimSpace(*cmd.Git.SSHPrivateKey), string(authSecret.Data[application.PrivateKeySecretKey]))
+				is.Equal(strings.TrimSpace(*cmd.Git.SSHPrivateKey), string(authSecret.Data[gitinfo.PrivateKeySecretKey]))
 				is.Equal(authSecret.Annotations[nctl.ManagedByAnnotation], nctl.Name)
 			},
 		},
@@ -385,8 +385,8 @@ func TestApplication(t *testing.T) {
 			},
 			checkSecret: func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret) {
 				is := require.New(t)
-				is.Equal(*cmd.Git.Username, string(authSecret.Data[application.UsernameSecretKey]))
-				is.Equal(*cmd.Git.Password, string(authSecret.Data[application.PasswordSecretKey]))
+				is.Equal(*cmd.Git.Username, string(authSecret.Data[gitinfo.UsernameSecretKey]))
+				is.Equal(*cmd.Git.Password, string(authSecret.Data[gitinfo.PasswordSecretKey]))
 				is.Equal(authSecret.Annotations[nctl.ManagedByAnnotation], nctl.Name)
 			},
 		},
@@ -422,7 +422,7 @@ func TestApplication(t *testing.T) {
 			},
 			checkSecret: func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret) {
 				is := require.New(t)
-				is.Equal("fakekey", string(authSecret.Data[application.PrivateKeySecretKey]))
+				is.Equal("fakekey", string(authSecret.Data[gitinfo.PrivateKeySecretKey]))
 				is.Equal(authSecret.Annotations[nctl.ManagedByAnnotation], nctl.Name)
 			},
 		},
