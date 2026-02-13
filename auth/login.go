@@ -12,7 +12,7 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
-	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/api/nctl"
 	"github.com/ninech/nctl/internal/format"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/clientcmd"
@@ -55,7 +55,7 @@ func (cmd *LoginCmd) Run(ctx context.Context) error {
 
 	command, err := os.Executable()
 	if err != nil {
-		return fmt.Errorf("can not identify executable path of %s: %v", util.NctlName, err)
+		return fmt.Errorf("can not identify executable path: %w", err)
 	}
 
 	if cmd.API.Token != "" {
@@ -219,7 +219,7 @@ func newAPIConfig(apiURL, issuerURL *url.URL, command, clientID string, opts ...
 				Cluster:  cfg.name,
 				AuthInfo: cfg.name,
 				Extensions: map[string]runtime.Object{
-					util.NctlName: extension,
+					nctl.Name: extension,
 				},
 			},
 		},

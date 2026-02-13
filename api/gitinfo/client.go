@@ -1,4 +1,6 @@
-package validation
+// Package gitinfo provides a client to interact with the git information service
+// to retrieve metadata about git repositories.
+package gitinfo
 
 import (
 	"bytes"
@@ -12,12 +14,12 @@ import (
 	"time"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
-	"github.com/ninech/nctl/api/util"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
 )
 
-type GitInformationClient struct {
+// Client is a client for the git information service.
+type Client struct {
 	token        string
 	url          *url.URL
 	client       *http.Client
@@ -25,9 +27,9 @@ type GitInformationClient struct {
 	retryBackoff wait.Backoff
 }
 
-// NewGitInformationClient returns a client which can be used to retrieve
+// New returns a client which can be used to retrieve
 // metadata information about a given git repository
-func NewGitInformationClient(address string, token string) (*GitInformationClient, error) {
+func New(address string, token string) (*Client, error) {
 	u, err := url.Parse(address)
 	if err != nil {
 		return nil, fmt.Errorf("can not parse git information service URL: %w", err)
@@ -44,8 +46,8 @@ func setURLDefaults(u *url.URL) *url.URL {
 	return newURL
 }
 
-func defaultGitInformationClient(url *url.URL, token string) *GitInformationClient {
-	g := &GitInformationClient{
+func defaultGitInformationClient(url *url.URL, token string) *Client {
+	g := &Client{
 		token:  token,
 		url:    url,
 		client: http.DefaultClient,
@@ -63,22 +65,22 @@ func defaultGitInformationClient(url *url.URL, token string) *GitInformationClie
 	return g
 }
 
-func (g *GitInformationClient) logError(format string, v ...any) {
+func (g *Client) logError(format string, v ...any) {
 	fmt.Fprintf(os.Stderr, format, v...)
 }
 
 // SetLogRetryFunc allows to set the function which logs retries when doing
 // requests to the git information service
-func (g *GitInformationClient) SetLogRetryFunc(f func(err error)) {
+func (g *Client) SetLogRetryFunc(f func(err error)) {
 	g.logRetryFunc = f
 }
 
 // SetRetryBackoffs sets the backoff properties for retries
-func (g *GitInformationClient) SetRetryBackoffs(backoff wait.Backoff) {
+func (g *Client) SetRetryBackoffs(backoff wait.Backoff) {
 	g.retryBackoff = backoff
 }
 
-func (g *GitInformationClient) repositoryInformation(ctx context.Context, git apps.GitTarget, auth util.GitAuth) (*apps.GitExploreResponse, error) {
+func (g *Client) repositoryInformation(ctx context.Context, git apps.GitTarget, auth Auth) (*apps.GitExploreResponse, error) {
 	req := apps.GitExploreRequest{
 		Repository: git.URL,
 		Revision:   git.Revision,
@@ -101,7 +103,7 @@ func (g *GitInformationClient) repositoryInformation(ctx context.Context, git ap
 // RepositoryInformation returns information about a given git repository and
 // optionally checks if a given revision can be found in the repo. It retries
 // on client connection issues.
-func (g *GitInformationClient) RepositoryInformation(ctx context.Context, git apps.GitTarget, auth util.GitAuth) (*apps.GitExploreResponse, error) {
+func (g *Client) RepositoryInformation(ctx context.Context, git apps.GitTarget, auth Auth) (*apps.GitExploreResponse, error) {
 	var repoInfo *apps.GitExploreResponse
 	err := retry.OnError(
 		g.retryBackoff,
@@ -120,7 +122,7 @@ func (g *GitInformationClient) RepositoryInformation(ctx context.Context, git ap
 	return repoInfo, err
 }
 
-func (g *GitInformationClient) sendRequest(ctx context.Context, req apps.GitExploreRequest) (*apps.GitExploreResponse, error) {
+func (g *Client) sendRequest(ctx context.Context, req apps.GitExploreRequest) (*apps.GitExploreResponse, error) {
 	data, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("can not JSON marshal request: %w", err)

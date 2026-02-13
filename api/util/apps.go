@@ -11,8 +11,6 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/api"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -20,8 +18,6 @@ import (
 
 const (
 	ApplicationNameLabel = "application.apps.nine.ch/name"
-	ManagedByAnnotation  = "app.kubernetes.io/managed-by"
-	NctlName             = "nctl"
 	PrivateKeySecretKey  = "privatekey"
 	UsernameSecretKey    = "username"
 	PasswordSecretKey    = "password"
@@ -122,120 +118,6 @@ func EnvVarByName(envVars apps.EnvVars, name string) *apps.EnvVar {
 	}
 
 	return nil
-}
-
-type GitAuth struct {
-	Username      *string
-	Password      *string
-	SSHPrivateKey *string
-}
-
-func GitAuthFromApp(ctx context.Context, client *api.Client, app *apps.Application) (GitAuth, error) {
-	auth := GitAuth{}
-	if app.Spec.ForProvider.Git.Auth == nil {
-		return auth, nil
-	}
-
-	if app.Spec.ForProvider.Git.Auth.FromSecret == nil {
-		return auth, nil
-	}
-
-	secret := auth.Secret(app)
-	if err := client.Get(ctx, client.Name(secret.Name), secret); err != nil {
-		return auth, err
-	}
-
-	if val, ok := secret.Data[PrivateKeySecretKey]; ok {
-		auth.SSHPrivateKey = ptr.To(string(val))
-	}
-
-	if val, ok := secret.Data[UsernameSecretKey]; ok {
-		auth.Username = ptr.To(string(val))
-	}
-
-	if val, ok := secret.Data[PasswordSecretKey]; ok {
-		auth.Password = ptr.To(string(val))
-	}
-
-	return auth, nil
-}
-
-func (git GitAuth) HasPrivateKey() bool {
-	return git.SSHPrivateKey != nil
-}
-
-func (git GitAuth) HasBasicAuth() bool {
-	return git.Username != nil && git.Password != nil
-}
-
-func (git GitAuth) Secret(app *apps.Application) *corev1.Secret {
-	data := map[string][]byte{}
-
-	if git.SSHPrivateKey != nil {
-		data[PrivateKeySecretKey] = []byte(*git.SSHPrivateKey)
-	} else if git.Username != nil && git.Password != nil {
-		data[UsernameSecretKey] = []byte(*git.Username)
-		data[PasswordSecretKey] = []byte(*git.Password)
-	}
-
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      GitAuthSecretName(app),
-			Namespace: app.Namespace,
-			Annotations: map[string]string{
-				ManagedByAnnotation: NctlName,
-			},
-		},
-		Data: data,
-	}
-}
-
-// UpdateSecret replaces the data of the secret with the data from GitAuth. Only
-// replaces fields which are non-nil.
-func (git GitAuth) UpdateSecret(secret *corev1.Secret) {
-	if git.SSHPrivateKey != nil {
-		secret.Data[PrivateKeySecretKey] = []byte(*git.SSHPrivateKey)
-	}
-
-	if git.Username != nil {
-		secret.Data[UsernameSecretKey] = []byte(*git.Username)
-	}
-
-	if git.Password != nil {
-		secret.Data[PasswordSecretKey] = []byte(*git.Password)
-	}
-	if secret.Annotations == nil {
-		secret.Annotations = make(map[string]string)
-	}
-	secret.Annotations[ManagedByAnnotation] = NctlName
-}
-
-// Enabled returns true if any kind of credentials are set in the GitAuth
-func (git GitAuth) Enabled() bool {
-	return git.HasBasicAuth() || git.HasPrivateKey()
-}
-
-// Valid validates the credentials in the GitAuth
-func (git GitAuth) Valid() error {
-	if git.SSHPrivateKey != nil {
-		if *git.SSHPrivateKey == "" {
-			return fmt.Errorf("the SSH private key cannot be empty")
-		}
-	}
-
-	if git.Username != nil && git.Password != nil {
-		if *git.Username == "" || *git.Password == "" {
-			return fmt.Errorf("the username/password cannot be empty")
-		}
-	}
-
-	return nil
-}
-
-// GitAuthSecretName returns the name of the secret which contains the git
-// credentials for the given applications git source
-func GitAuthSecretName(app *apps.Application) string {
-	return app.Name
 }
 
 type DNSDetail struct {

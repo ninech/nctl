@@ -6,7 +6,7 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	networking "github.com/ninech/apis/networking/v1alpha1"
-	"github.com/ninech/nctl/api/util"
+	"github.com/ninech/nctl/api/gitinfo"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -192,7 +192,7 @@ func TestApplication(t *testing.T) {
 			// check if git auth has been copied if there's a source
 			if tc.sourceGitAuthSecret != nil {
 				copiedSecret := &corev1.Secret{}
-				newSecretName := types.NamespacedName{Name: util.GitAuthSecretName(copiedApp), Namespace: tc.cmd.targetNamespace(apiClient)}
+				newSecretName := types.NamespacedName{Name: gitinfo.AuthSecretName(copiedApp), Namespace: tc.cmd.targetNamespace(apiClient)}
 				is.NoError(apiClient.Get(t.Context(), newSecretName, copiedSecret))
 				is.Equal(tc.sourceGitAuthSecret.Data, copiedSecret.Data)
 			}

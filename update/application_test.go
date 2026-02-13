@@ -8,6 +8,8 @@ import (
 
 	"github.com/alecthomas/kong"
 	apps "github.com/ninech/apis/apps/v1alpha1"
+	"github.com/ninech/nctl/api/gitinfo"
+	"github.com/ninech/nctl/api/nctl"
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/create"
 	"github.com/ninech/nctl/internal/test"
@@ -71,7 +73,7 @@ func TestApplication(t *testing.T) {
 
 	cases := map[string]struct {
 		orig                          *apps.Application
-		gitAuth                       *util.GitAuth
+		gitAuth                       *gitinfo.Auth
 		cmd                           applicationCmd
 		checkApp                      func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application)
 		checkSecret                   func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret)
@@ -291,7 +293,7 @@ func TestApplication(t *testing.T) {
 		},
 		"git auth update user/pass": {
 			orig: existingApp,
-			gitAuth: &util.GitAuth{
+			gitAuth: &gitinfo.Auth{
 				Username: ptr.To("some-user"),
 				Password: ptr.To("some-password"),
 			},
@@ -321,12 +323,12 @@ func TestApplication(t *testing.T) {
 				is := require.New(t)
 				is.Equal(*cmd.Git.Username, string(authSecret.Data[util.UsernameSecretKey]))
 				is.Equal(*cmd.Git.Password, string(authSecret.Data[util.PasswordSecretKey]))
-				is.Equal(authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
+				is.Equal(authSecret.Annotations[nctl.ManagedByAnnotation], nctl.Name)
 			},
 		},
 		"git auth update ssh key": {
 			orig: existingApp,
-			gitAuth: &util.GitAuth{
+			gitAuth: &gitinfo.Auth{
 				SSHPrivateKey: ptr.To("fakekey"),
 			},
 			cmd: applicationCmd{
@@ -353,7 +355,7 @@ func TestApplication(t *testing.T) {
 			checkSecret: func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret) {
 				is := require.New(t)
 				is.Equal(strings.TrimSpace(*cmd.Git.SSHPrivateKey), string(authSecret.Data[util.PrivateKeySecretKey]))
-				is.Equal(authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
+				is.Equal(authSecret.Annotations[nctl.ManagedByAnnotation], nctl.Name)
 			},
 		},
 		"git auth update creates a secret": {
@@ -385,12 +387,12 @@ func TestApplication(t *testing.T) {
 				is := require.New(t)
 				is.Equal(*cmd.Git.Username, string(authSecret.Data[util.UsernameSecretKey]))
 				is.Equal(*cmd.Git.Password, string(authSecret.Data[util.PasswordSecretKey]))
-				is.Equal(authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
+				is.Equal(authSecret.Annotations[nctl.ManagedByAnnotation], nctl.Name)
 			},
 		},
 		"git auth is unchanged on normal field update": {
 			orig: existingApp,
-			gitAuth: &util.GitAuth{
+			gitAuth: &gitinfo.Auth{
 				SSHPrivateKey: ptr.To("fakekey"),
 			},
 			cmd: applicationCmd{
@@ -421,12 +423,12 @@ func TestApplication(t *testing.T) {
 			checkSecret: func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret) {
 				is := require.New(t)
 				is.Equal("fakekey", string(authSecret.Data[util.PrivateKeySecretKey]))
-				is.Equal(authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
+				is.Equal(authSecret.Annotations[nctl.ManagedByAnnotation], nctl.Name)
 			},
 		},
 		"disable deploy job": {
 			orig: existingApp,
-			gitAuth: &util.GitAuth{
+			gitAuth: &gitinfo.Auth{
 				SSHPrivateKey: ptr.To("fakekey"),
 			},
 			cmd: applicationCmd{

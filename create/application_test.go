@@ -14,7 +14,9 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/gitinfo"
 	"github.com/ninech/nctl/api/log"
+	"github.com/ninech/nctl/api/nctl"
 	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
@@ -148,7 +150,7 @@ func TestApplication(t *testing.T) {
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				is := require.New(t)
-				auth := util.GitAuth{Username: cmd.Git.Username, Password: cmd.Git.Password}
+				auth := gitinfo.Auth{Username: cmd.Git.Username, Password: cmd.Git.Password}
 				authSecret := auth.Secret(app)
 				if err := apiClient.Get(t.Context(), api.ObjectName(authSecret), authSecret); err != nil {
 					t.Fatal(err)
@@ -156,7 +158,7 @@ func TestApplication(t *testing.T) {
 
 				is.Equal(*cmd.Git.Username, string(authSecret.Data[util.UsernameSecretKey]))
 				is.Equal(*cmd.Git.Password, string(authSecret.Data[util.PasswordSecretKey]))
-				is.Equal(authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
+				is.Equal(authSecret.Annotations[nctl.ManagedByAnnotation], nctl.Name)
 			},
 		},
 		"with ssh key git auth": {
@@ -174,14 +176,14 @@ func TestApplication(t *testing.T) {
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				is := require.New(t)
-				auth := util.GitAuth{SSHPrivateKey: cmd.Git.SSHPrivateKey}
+				auth := gitinfo.Auth{SSHPrivateKey: cmd.Git.SSHPrivateKey}
 				authSecret := auth.Secret(app)
 				if err := apiClient.Get(t.Context(), api.ObjectName(authSecret), authSecret); err != nil {
 					t.Fatal(err)
 				}
 
 				is.Equal(strings.TrimSpace(*cmd.Git.SSHPrivateKey), string(authSecret.Data[util.PrivateKeySecretKey]))
-				is.Equal(authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
+				is.Equal(authSecret.Annotations[nctl.ManagedByAnnotation], nctl.Name)
 			},
 		},
 		"with ssh ed25519 key git auth": {
@@ -199,14 +201,14 @@ func TestApplication(t *testing.T) {
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				is := require.New(t)
-				auth := util.GitAuth{SSHPrivateKey: cmd.Git.SSHPrivateKey}
+				auth := gitinfo.Auth{SSHPrivateKey: cmd.Git.SSHPrivateKey}
 				authSecret := auth.Secret(app)
 				if err := apiClient.Get(t.Context(), api.ObjectName(authSecret), authSecret); err != nil {
 					t.Fatal(err)
 				}
 
 				is.Equal(strings.TrimSpace(*cmd.Git.SSHPrivateKey), string(authSecret.Data[util.PrivateKeySecretKey]))
-				is.Equal(authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
+				is.Equal(authSecret.Annotations[nctl.ManagedByAnnotation], nctl.Name)
 			},
 		},
 		"with ssh key git auth from file": {
@@ -224,14 +226,14 @@ func TestApplication(t *testing.T) {
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				is := require.New(t)
-				auth := util.GitAuth{SSHPrivateKey: ptr.To("notused")}
+				auth := gitinfo.Auth{SSHPrivateKey: ptr.To("notused")}
 				authSecret := auth.Secret(app)
 				if err := apiClient.Get(t.Context(), api.ObjectName(authSecret), authSecret); err != nil {
 					t.Fatal(err)
 				}
 
 				is.Equal(dummyRSAKey, string(authSecret.Data[util.PrivateKeySecretKey]))
-				is.Equal(authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
+				is.Equal(authSecret.Annotations[nctl.ManagedByAnnotation], nctl.Name)
 			},
 		},
 		"with ed25519 ssh key git auth from file": {
@@ -249,14 +251,14 @@ func TestApplication(t *testing.T) {
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				is := require.New(t)
-				auth := util.GitAuth{SSHPrivateKey: ptr.To("notused")}
+				auth := gitinfo.Auth{SSHPrivateKey: ptr.To("notused")}
 				authSecret := auth.Secret(app)
 				if err := apiClient.Get(t.Context(), api.ObjectName(authSecret), authSecret); err != nil {
 					t.Fatal(err)
 				}
 
 				is.Equal(strings.TrimSpace(dummyED25519Key), string(authSecret.Data[util.PrivateKeySecretKey]))
-				is.Equal(authSecret.Annotations[util.ManagedByAnnotation], util.NctlName)
+				is.Equal(authSecret.Annotations[nctl.ManagedByAnnotation], nctl.Name)
 			},
 		},
 		"with non valid ssh key": {
