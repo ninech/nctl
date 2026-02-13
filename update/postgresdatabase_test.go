@@ -10,6 +10,7 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/test"
+	"k8s.io/utils/ptr"
 )
 
 func TestPostgresDatabase(t *testing.T) {
@@ -29,6 +30,12 @@ func TestPostgresDatabase(t *testing.T) {
 			name:    "empty-update",
 			update:  postgresDatabaseCmd{},
 			wantErr: false,
+		},
+		{
+			name:   "update-backup-schedule",
+			create: storage.PostgresDatabaseParameters{BackupSchedule: storage.DatabaseBackupScheduleCalendarDisabled},
+			update: postgresDatabaseCmd{BackupSchedule: ptr.To(storage.DatabaseBackupScheduleCalendarDaily)},
+			want:   storage.PostgresDatabaseParameters{BackupSchedule: storage.DatabaseBackupScheduleCalendarDaily},
 		},
 	}
 	for _, tt := range tests {

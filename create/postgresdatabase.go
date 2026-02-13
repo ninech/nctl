@@ -17,8 +17,9 @@ import (
 
 type postgresDatabaseCmd struct {
 	resourceCmd
-	Location                meta.LocationName       `placeholder:"${postgresdatabase_location_default}" help:"Where the PostgreSQL database is created. Available locations are: ${postgresdatabase_location_options}"`
-	PostgresDatabaseVersion storage.PostgresVersion `placeholder:"${postgresdatabase_version_default}" help:"Release version with which the PostgreSQL database is created. Available versions: ${postgresdatabase_versions}"`
+	Location                meta.LocationName                      `placeholder:"${postgresdatabase_location_default}" help:"Where the PostgreSQL database is created. Available locations are: ${postgresdatabase_location_options}"`
+	PostgresDatabaseVersion storage.PostgresVersion                `placeholder:"${postgresdatabase_version_default}" help:"Release version with which the PostgreSQL database is created. Available versions: ${postgresdatabase_versions}"`
+	BackupSchedule          storage.DatabaseBackupScheduleCalendar `placeholder:"${postgresdatabase_backupschedule_default}" help:"Backup schedule for the PostgreSQL database. Available schedules: ${postgresdatabase_backupschedule_options}"`
 }
 
 func (cmd *postgresDatabaseCmd) Run(ctx context.Context, client *api.Client) error {
@@ -73,8 +74,9 @@ func (cmd *postgresDatabaseCmd) newPostgresDatabase(namespace string) *storage.P
 				},
 			},
 			ForProvider: storage.PostgresDatabaseParameters{
-				Location: cmd.Location,
-				Version:  cmd.PostgresDatabaseVersion,
+				Location:       cmd.Location,
+				Version:        cmd.PostgresDatabaseVersion,
+				BackupSchedule: cmd.BackupSchedule,
 			},
 		},
 	}
@@ -90,6 +92,8 @@ func PostgresDatabaseKongVars() kong.Vars {
 	result["postgresdatabase_location_options"] = strings.Join(stringSlice(storage.PostgresDatabaseLocationOptions), ", ")
 	result["postgresdatabase_version_default"] = string(storage.PostgresDatabaseVersionDefault)
 	result["postgresdatabase_versions"] = strings.Join(stringSlice(storage.PostgresDatabaseVersions), ", ")
+	result["postgresdatabase_backupschedule_default"] = string(storage.DatabaseBackupScheduleCalendarDaily)
+	result["postgresdatabase_backupschedule_options"] = strings.Join(stringSlice(storage.DatabaseBackupScheduleCalendars), ", ")
 
 	return result
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/test"
+	"k8s.io/utils/ptr"
 )
 
 func TestMySQLDatabase(t *testing.T) {
@@ -29,6 +30,12 @@ func TestMySQLDatabase(t *testing.T) {
 			name:    "empty-update",
 			update:  mysqlDatabaseCmd{},
 			wantErr: false,
+		},
+		{
+			name:   "update-backup-schedule",
+			create: storage.MySQLDatabaseParameters{BackupSchedule: storage.DatabaseBackupScheduleCalendarDaily},
+			update: mysqlDatabaseCmd{BackupSchedule: ptr.To(storage.DatabaseBackupScheduleCalendarDisabled)},
+			want:   storage.MySQLDatabaseParameters{BackupSchedule: storage.DatabaseBackupScheduleCalendarDisabled},
 		},
 	}
 	for _, tt := range tests {
