@@ -678,14 +678,6 @@ func PatchCustomHostnames(base []string, clear bool, add []string, remove []stri
 	return out, nil
 }
 
-// PtrOrEmpty unwraps a *[]string flag value, returning nil if unset.
-func PtrOrEmpty(p *[]string) []string {
-	if p == nil {
-		return nil
-	}
-	return *p
-}
-
 const kvPairSep = "="
 
 type kvPair struct {

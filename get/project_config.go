@@ -2,12 +2,13 @@ package get
 
 import (
 	"context"
+	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/api/util"
 	"github.com/ninech/nctl/internal/format"
 	"k8s.io/apimachinery/pkg/util/duration"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -76,7 +77,7 @@ func printProjectConfigs(configs []apps.ProjectConfig, out *output, header bool)
 			basicAuth = *c.Spec.ForProvider.Config.EnableBasicAuth
 		}
 
-		deployJobName := util.NoneText
+		deployJobName := noneText
 		if c.Spec.ForProvider.Config.DeployJob != nil {
 			deployJobName = c.Spec.ForProvider.Config.DeployJob.Name
 		}
@@ -87,7 +88,7 @@ func printProjectConfigs(configs []apps.ProjectConfig, out *output, header bool)
 			string(c.Spec.ForProvider.Config.Size),
 			replicas,
 			port,
-			util.EnvVarToString(c.Spec.ForProvider.Config.Env),
+			envVarToString(c.Spec.ForProvider.Config.Env),
 			strconv.FormatBool(basicAuth),
 			deployJobName,
 			duration.HumanDuration(time.Since(c.CreationTimestamp.Time)),
@@ -95,4 +96,21 @@ func printProjectConfigs(configs []apps.ProjectConfig, out *output, header bool)
 	}
 
 	return out.tabWriter.Flush()
+}
+
+func envVarToString(envs apps.EnvVars) string {
+	if len(envs) == 0 {
+		return noneText
+	}
+
+	var keyValuePairs []string
+	for _, env := range envs {
+		if env.Sensitive != nil && *env.Sensitive {
+			keyValuePairs = append(keyValuePairs, fmt.Sprintf("%v=*****", env.Name))
+		} else {
+			keyValuePairs = append(keyValuePairs, fmt.Sprintf("%v=%v", env.Name, env.Value))
+		}
+	}
+
+	return strings.Join(keyValuePairs, ";")
 }
