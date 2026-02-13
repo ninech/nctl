@@ -1,6 +1,4 @@
-// Package validation provides functionality to validate git repositories
-// and their access configurations.
-package validation
+package util
 
 import (
 	"context"
@@ -19,46 +17,40 @@ import (
 type RepositoryValidator struct {
 	format.Writer
 
-	GitInformationServiceURL string
-	Token                    string
-	Debug                    bool
+	Auth   gitinfo.Auth
+	Client *gitinfo.Client
+	Debug  bool
 }
 
 // Validate validates the repository access and shows a visual spinner while doing so
-func (v *RepositoryValidator) Validate(ctx context.Context, git *apps.GitTarget, auth gitinfo.Auth) error {
-	gitInfoClient, err := gitinfo.New(v.GitInformationServiceURL, v.Token)
-	if err != nil {
-		return err
-	}
+func (v *RepositoryValidator) Validate(ctx context.Context, target apps.GitTarget) (apps.GitTarget, error) {
 	msg := " testing repository access 🔐"
 	spinner, err := v.Spinner(msg, msg)
 	if err != nil {
-		return err
+		return target, err
 	}
-	gitInfoClient.SetLogRetryFunc(retryRepoAccess(spinner, v.Debug))
+	v.Client.SetLogRetryFunc(retryRepoAccess(spinner, v.Debug))
 	if err := spinner.Start(); err != nil {
-		return err
+		return target, err
 	}
-	if err := testRepositoryAccess(ctx, gitInfoClient, git, auth); err != nil {
+	target, err = v.testRepositoryAccess(ctx, target)
+	if err != nil {
 		if err := spinner.StopFail(); err != nil {
-			return err
+			return target, err
 		}
-		return err
+		return target, err
 	}
-	return spinner.Stop()
+	return target, spinner.Stop()
 }
 
 // testRepositoryAccess tests if the given git repository can be accessed.
-func testRepositoryAccess(ctx context.Context, client *gitinfo.Client, git *apps.GitTarget, auth gitinfo.Auth) error {
-	if git == nil {
-		return errors.New("git target must be given")
-	}
-	repoInfo, err := client.RepositoryInformation(ctx, *git, auth)
+func (v *RepositoryValidator) testRepositoryAccess(ctx context.Context, target apps.GitTarget) (apps.GitTarget, error) {
+	repoInfo, err := v.Client.RepositoryInformation(ctx, target, v.Auth)
 	if err != nil {
 		// we are not returning a detailed error here as it might be
 		// too technical. The full error can still be seen by using
 		// a different RetryLog function in the client.
-		return errors.New(
+		return target, fmt.Errorf(
 			"communication issue with git information service " +
 				"(use --skip-repo-access-check to skip this check)",
 		)
@@ -67,21 +59,21 @@ func testRepositoryAccess(ctx context.Context, client *gitinfo.Client, git *apps
 		fmt.Fprintf(os.Stderr, "warning: %s\n", strings.Join(repoInfo.Warnings, "."))
 	}
 	if repoInfo.Error != "" {
-		return errors.New(repoInfo.Error)
+		return target, errors.New(repoInfo.Error)
 	}
 	if repoInfo.RepositoryInfo.RevisionResponse != nil &&
 		!repoInfo.RepositoryInfo.RevisionResponse.Found {
-		return fmt.Errorf(
+		return target, fmt.Errorf(
 			"can not find specified git revision (%q) in repository",
-			git.Revision,
+			target.Revision,
 		)
 	}
 	// it is possible to set a git URL without a proper scheme. In that
 	// case, HTTPS is used as a default. If the access check succeeds we
 	// need to overwrite the URL in the application as it will otherwise be
 	// denied by the webhook.
-	git.URL = repoInfo.RepositoryInfo.URL
-	return nil
+	target.URL = repoInfo.RepositoryInfo.URL
+	return target, nil
 }
 
 func retryRepoAccess(spinner *yacspin.Spinner, debug bool) func(err error) {

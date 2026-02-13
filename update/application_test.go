@@ -587,6 +587,7 @@ func TestApplication(t *testing.T) {
 					Revision: ptr.To("main"),
 				},
 			},
+			gitAuth: &gitinfo.Auth{},
 			gitInformationServiceResponse: test.GitInformationServiceResponse{
 				Code: 200,
 				Content: apps.GitExploreResponse{

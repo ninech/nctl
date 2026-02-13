@@ -19,7 +19,6 @@ import (
 	"github.com/ninech/nctl/api/log"
 	"github.com/ninech/nctl/api/nctl"
 	"github.com/ninech/nctl/api/util"
-	"github.com/ninech/nctl/api/validation"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/logbox"
 	"github.com/ninech/nctl/logs"
@@ -141,16 +140,18 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	}
 
 	if !cmd.SkipRepoAccessCheck {
-		validator := &validation.RepositoryValidator{
-			GitInformationServiceURL: cmd.GitInformationServiceURL,
-			Token:                    client.Token(ctx),
-			Debug:                    cmd.Debug,
+		client, err := gitinfo.New(cmd.GitInformationServiceURL, client.Token(ctx))
+		if err != nil {
+			return err
 		}
-		if err := validator.Validate(
-			ctx,
-			&newApp.Spec.ForProvider.Git.GitTarget,
-			auth,
-		); err != nil {
+
+		validator := &util.RepositoryValidator{
+			Auth:   auth,
+			Client: client,
+			Debug:  cmd.Debug,
+		}
+		newApp.Spec.ForProvider.Git.GitTarget, err = validator.Validate(ctx, newApp.Spec.ForProvider.Git.GitTarget)
+		if err != nil {
 			return err
 		}
 	}
@@ -190,10 +191,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	}
 
 	if newApp.Spec.ForProvider.Config.DeployJob != nil {
-		configValidator := &validation.ConfigValidator{
-			Config: newApp.Spec.ForProvider.Config,
-		}
-		if err := configValidator.Validate(); err != nil {
+		if err := util.ValidateConfig(newApp.Spec.ForProvider.Config); err != nil {
 			return fmt.Errorf("error when validating application config: %w", err)
 		}
 	}

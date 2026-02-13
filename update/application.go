@@ -12,7 +12,6 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/gitinfo"
 	"github.com/ninech/nctl/api/util"
-	"github.com/ninech/nctl/api/validation"
 	"github.com/ninech/nctl/internal/format"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -168,10 +167,14 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 			SSHPrivateKey: sshPrivateKey,
 		}
 		if !cmd.SkipRepoAccessCheck {
-			validator := &validation.RepositoryValidator{
-				GitInformationServiceURL: cmd.GitInformationServiceURL,
-				Token:                    client.Token(ctx),
-				Debug:                    cmd.Debug,
+			gitClient, err := gitinfo.New(cmd.GitInformationServiceURL, client.Token(ctx))
+			if err != nil {
+				return err
+			}
+			validator := &util.RepositoryValidator{
+				Auth:   auth,
+				Client: gitClient,
+				Debug:  cmd.Debug,
 			}
 
 			if !auth.Enabled() {
@@ -180,12 +183,13 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 				// auth from the app.
 				a, err := gitAuthFromApp(ctx, client, app)
 				if err != nil {
-					return fmt.Errorf("error reading preconfigured auth secret")
+					return fmt.Errorf("error reading preconfigured auth secret: %w", err)
 				}
 				auth = a
 			}
 
-			if err := validator.Validate(ctx, &app.Spec.ForProvider.Git.GitTarget, auth); err != nil {
+			app.Spec.ForProvider.Git.GitTarget, err = validator.Validate(ctx, app.Spec.ForProvider.Git.GitTarget)
+			if err != nil {
 				return err
 			}
 		}
@@ -212,10 +216,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		}
 
 		if app.Spec.ForProvider.Config.DeployJob != nil {
-			configValidator := &validation.ConfigValidator{
-				Config: app.Spec.ForProvider.Config,
-			}
-			if err := configValidator.Validate(); err != nil {
+			if err := util.ValidateConfig(app.Spec.ForProvider.Config); err != nil {
 				return fmt.Errorf("error when validating application config: %w", err)
 			}
 		}
