@@ -19,11 +19,11 @@ const (
 	permKeyUser  = "user"
 )
 
-type StringSet map[string]struct{}
+type stringSet map[string]struct{}
 
-func (s StringSet) Add(v string)      { s[v] = struct{}{} }
-func (s StringSet) Del(v string)      { delete(s, v) }
-func (s StringSet) Has(v string) bool { _, ok := s[v]; return ok }
+func (s stringSet) Add(v string)      { s[v] = struct{}{} }
+func (s stringSet) Del(v string)      { delete(s, v) }
+func (s stringSet) Has(v string) bool { _, ok := s[v]; return ok }
 
 // mapKeysSorted returns all keys of the given map in lexicographically sorted order.
 // It first collects the map keys into a slice and then sorts them deterministically.
@@ -34,17 +34,17 @@ func mapKeysSorted[M ~map[string]V, V any](m M) []string {
 	return keys
 }
 
-func getOrInitSet(m map[string]StringSet, key string) StringSet {
+func getOrInitSet(m map[string]stringSet, key string) stringSet {
 	if set, ok := m[key]; ok {
 		return set
 	}
-	set := make(StringSet)
+	set := make(stringSet)
 	m[key] = set
 	return set
 }
 
-func setFromSliceTrimmed(in []string) StringSet {
-	s := make(StringSet, len(in))
+func setFromSliceTrimmed(in []string) stringSet {
+	s := make(stringSet, len(in))
 	for _, v := range in {
 		if v = strings.TrimSpace(v); v != "" {
 			s.Add(v)
@@ -53,7 +53,7 @@ func setFromSliceTrimmed(in []string) StringSet {
 	return s
 }
 
-func setToSortedSlice(s StringSet) []string {
+func setToSortedSlice(s stringSet) []string {
 	out := make([]string, 0, len(s))
 	for v := range s {
 		out = append(out, v)
@@ -116,7 +116,7 @@ func PatchPermissions(base []*storage.BucketPermission, add, remove []string) ([
 		return base, nil
 	}
 
-	roleToUsers := map[string]StringSet{}
+	roleToUsers := map[string]stringSet{}
 	for _, p := range base {
 		if p == nil {
 			continue
@@ -199,7 +199,7 @@ func parsePermissions(chunks []string, allowEmptyUsers bool) ([]PermissionSpec, 
 		return nil, err
 	}
 
-	byRole := map[string]StringSet{}
+	byRole := map[string]stringSet{}
 
 	for _, p := range pairs {
 		role := strings.TrimSpace(p.key)
@@ -213,7 +213,7 @@ func parsePermissions(chunks []string, allowEmptyUsers bool) ([]PermissionSpec, 
 				return nil, fmt.Errorf("%s %q has no %s", PermKeyRole, role, PermKeyUsers)
 			}
 			if _, ok := byRole[role]; !ok {
-				byRole[role] = StringSet{}
+				byRole[role] = stringSet{}
 			}
 			continue
 		}
@@ -221,7 +221,7 @@ func parsePermissions(chunks []string, allowEmptyUsers bool) ([]PermissionSpec, 
 		users := splitCSV(csv)
 		set := byRole[role]
 		if set == nil {
-			set = StringSet{}
+			set = stringSet{}
 			byRole[role] = set
 		}
 
@@ -264,7 +264,7 @@ func parsePermissions(chunks []string, allowEmptyUsers bool) ([]PermissionSpec, 
 }
 
 // roleUsersToPermissions turns role->users set into a deterministically sorted slice.
-func roleUsersToPermissions(m map[string]StringSet) []*storage.BucketPermission {
+func roleUsersToPermissions(m map[string]stringSet) []*storage.BucketPermission {
 	roles := mapKeysSorted(m)
 	out := make([]*storage.BucketPermission, 0, len(roles))
 
@@ -305,11 +305,11 @@ type LifecycleSpec struct {
 //	"prefix=tmp/;is-live=true"    // allowed; we only care about prefix here
 //
 // Each delete chunk must include prefix=<...>. Other keys are ignored (but allowed).
-func parseDeleteLifecyclePrefixes(chunks []string) (StringSet, error) {
+func parseDeleteLifecyclePrefixes(chunks []string) (stringSet, error) {
 	if len(chunks) == 0 {
 		return nil, nil
 	}
-	out := make(StringSet, len(chunks))
+	out := make(stringSet, len(chunks))
 	for i, raw := range chunks {
 		m := parseKVMapLoose(raw)
 		prefix := strings.TrimSpace(m["prefix"])
@@ -656,9 +656,9 @@ func parseCORSLooseWithMask(chunks []string) (storage.CORSConfig, CORSFieldMask,
 //   - Entries in add are parsed and replace any existing ones with the same host.
 //   - Entries in remove identify hostnames to be removed.
 func PatchCustomHostnames(base []string, clear bool, add []string, remove []string) ([]string, error) {
-	var set StringSet
+	var set stringSet
 	if clear {
-		set = make(StringSet)
+		set = make(stringSet)
 	} else {
 		set = setFromSliceTrimmed(base)
 	}
