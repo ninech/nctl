@@ -17,8 +17,8 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/gitinfo"
 	"github.com/ninech/nctl/api/log"
-	"github.com/ninech/nctl/api/nctl"
 	"github.com/ninech/nctl/internal/application"
+	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/logbox"
 	"github.com/ninech/nctl/logs"
@@ -166,8 +166,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		if err := client.Create(ctx, secret); err != nil {
 			if kerrors.IsAlreadyExists(err) {
 				// only update the secret if it is managed by nctl in the first place
-				if v, exists := newApp.Annotations[nctl.ManagedByAnnotation]; exists &&
-					v == nctl.Name {
+				if cli.IsManagedBy(newApp.Annotations) {
 					cmd.Successf("🔐", "updating git auth credentials")
 					if err := client.Get(ctx, client.Name(secret.Name), secret); err != nil {
 						return err

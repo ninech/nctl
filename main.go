@@ -17,7 +17,6 @@ import (
 	completion "github.com/jotaen/kong-completion"
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/api/nctl"
 	"github.com/ninech/nctl/apply"
 	"github.com/ninech/nctl/auth"
 	"github.com/ninech/nctl/copy"
@@ -85,7 +84,7 @@ func main() {
 	cmd := &rootCommand{}
 	parser := kong.Must(
 		cmd,
-		kong.Name(nctl.Name),
+		kong.Name(cli.Name),
 		kong.Description(
 			"Interact with Nine API resources. See https://docs.nineapis.ch for the full API docs.",
 		),
@@ -134,6 +133,7 @@ func main() {
 			cmd.APICluster,
 			cmd.Project,
 			api.LogClient(ctx, cmd.LogAPIAddress, cmd.LogAPIInsecure),
+			api.DefaultAnnotations(cli.ManagedByAnnotation, cli.Name),
 		)
 		if err != nil {
 			fmt.Fprintln(writer, err)

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
-	"github.com/ninech/nctl/api/nctl"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -45,9 +44,6 @@ func (a Auth) Secret(app *apps.Application) *corev1.Secret {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      AuthSecretName(app),
 			Namespace: app.Namespace,
-			Annotations: map[string]string{
-				nctl.ManagedByAnnotation: nctl.Name,
-			},
 		},
 		Data: data,
 	}
@@ -70,7 +66,6 @@ func (a Auth) UpdateSecret(secret *corev1.Secret) {
 	if secret.Annotations == nil {
 		secret.Annotations = make(map[string]string)
 	}
-	secret.Annotations[nctl.ManagedByAnnotation] = nctl.Name
 }
 
 // Enabled returns true if any kind of credentials are set in the GitAuth
