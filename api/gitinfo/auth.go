@@ -30,28 +30,27 @@ func (a Auth) HasBasicAuth() bool {
 	return a.Username != nil && a.Password != nil
 }
 
-func (a Auth) Secret(app *apps.Application) *corev1.Secret {
-	data := map[string][]byte{}
-
-	if a.SSHPrivateKey != nil {
-		data[PrivateKeySecretKey] = []byte(*a.SSHPrivateKey)
-	} else if a.Username != nil && a.Password != nil {
-		data[UsernameSecretKey] = []byte(*a.Username)
-		data[PasswordSecretKey] = []byte(*a.Password)
-	}
-
+// NewAuthSecret returns a new secret for the given application. It can be used as
+// a key for Get/Delete operations or as a base for populating credentials.
+func NewAuthSecret(app *apps.Application) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      AuthSecretName(app),
 			Namespace: app.Namespace,
 		},
-		Data: data,
 	}
 }
 
-// UpdateSecret replaces the data of the secret with the data from GitAuth. Only
-// replaces fields which are non-nil.
-func (a Auth) UpdateSecret(secret *corev1.Secret) {
+// ApplyToSecret writes the Auth credentials into the given secret's Data field.
+// Only writes fields which are non-nil.
+func (a Auth) ApplyToSecret(secret *corev1.Secret) {
+	if secret.Data == nil {
+		secret.Data = make(map[string][]byte)
+	}
+	if secret.Annotations == nil {
+		secret.Annotations = make(map[string]string)
+	}
+
 	if a.SSHPrivateKey != nil {
 		secret.Data[PrivateKeySecretKey] = []byte(*a.SSHPrivateKey)
 	}
@@ -62,9 +61,6 @@ func (a Auth) UpdateSecret(secret *corev1.Secret) {
 
 	if a.Password != nil {
 		secret.Data[PasswordSecretKey] = []byte(*a.Password)
-	}
-	if secret.Annotations == nil {
-		secret.Annotations = make(map[string]string)
 	}
 }
 

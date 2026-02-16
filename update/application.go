@@ -195,10 +195,10 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		}
 
 		if auth.Enabled() {
-			secret := auth.Secret(app)
+			secret := gitinfo.NewAuthSecret(app)
 			if err := client.Get(ctx, client.Name(secret.Name), secret); err != nil {
 				if errors.IsNotFound(err) {
-					auth.UpdateSecret(secret)
+					auth.ApplyToSecret(secret)
 					if err := client.Create(ctx, secret); err != nil {
 						return err
 					}
@@ -209,7 +209,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 				return err
 			}
 
-			auth.UpdateSecret(secret)
+			auth.ApplyToSecret(secret)
 			if err := client.Update(ctx, secret); err != nil {
 				return err
 			}
@@ -501,12 +501,12 @@ func warnIfDockerfileNotEnabled(w format.Writer, app *apps.Application, flag str
 }
 
 func gitAuthFromApp(ctx context.Context, client *api.Client, app *apps.Application) (gitinfo.Auth, error) {
-	auth := &gitinfo.Auth{}
-	secret := auth.Secret(app)
+	secret := gitinfo.NewAuthSecret(app)
 	if err := client.Get(ctx, client.Name(secret.Name), secret); err != nil {
 		return gitinfo.Auth{}, err
 	}
+	var auth gitinfo.Auth
 	auth.UpdateFromSecret(secret)
 
-	return *auth, nil
+	return auth, nil
 }

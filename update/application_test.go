@@ -620,7 +620,9 @@ func TestApplication(t *testing.T) {
 
 			objects := []client.Object{tc.orig}
 			if tc.gitAuth != nil {
-				objects = append(objects, tc.gitAuth.Secret(tc.orig))
+				secret := gitinfo.NewAuthSecret(tc.orig)
+				tc.gitAuth.ApplyToSecret(secret)
+				objects = append(objects, secret)
 			}
 			apiClient := test.SetupClient(t,
 				test.WithObjects(objects...),

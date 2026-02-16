@@ -150,8 +150,7 @@ func TestCreateApplication(t *testing.T) {
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				is := require.New(t)
-				auth := gitinfo.Auth{Username: cmd.Git.Username, Password: cmd.Git.Password}
-				authSecret := auth.Secret(app)
+				authSecret := gitinfo.NewAuthSecret(app)
 				if err := apiClient.Get(t.Context(), api.ObjectName(authSecret), authSecret); err != nil {
 					t.Fatal(err)
 				}
@@ -176,8 +175,7 @@ func TestCreateApplication(t *testing.T) {
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				is := require.New(t)
-				auth := gitinfo.Auth{SSHPrivateKey: cmd.Git.SSHPrivateKey}
-				authSecret := auth.Secret(app)
+				authSecret := gitinfo.NewAuthSecret(app)
 				if err := apiClient.Get(t.Context(), api.ObjectName(authSecret), authSecret); err != nil {
 					t.Fatal(err)
 				}
@@ -201,8 +199,7 @@ func TestCreateApplication(t *testing.T) {
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				is := require.New(t)
-				auth := gitinfo.Auth{SSHPrivateKey: cmd.Git.SSHPrivateKey}
-				authSecret := auth.Secret(app)
+				authSecret := gitinfo.NewAuthSecret(app)
 				if err := apiClient.Get(t.Context(), api.ObjectName(authSecret), authSecret); err != nil {
 					t.Fatal(err)
 				}
@@ -226,8 +223,7 @@ func TestCreateApplication(t *testing.T) {
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				is := require.New(t)
-				auth := gitinfo.Auth{SSHPrivateKey: ptr.To("notused")}
-				authSecret := auth.Secret(app)
+				authSecret := gitinfo.NewAuthSecret(app)
 				if err := apiClient.Get(t.Context(), api.ObjectName(authSecret), authSecret); err != nil {
 					t.Fatal(err)
 				}
@@ -251,8 +247,7 @@ func TestCreateApplication(t *testing.T) {
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
 				is := require.New(t)
-				auth := gitinfo.Auth{SSHPrivateKey: ptr.To("notused")}
-				authSecret := auth.Secret(app)
+				authSecret := gitinfo.NewAuthSecret(app)
 				if err := apiClient.Get(t.Context(), api.ObjectName(authSecret), authSecret); err != nil {
 					t.Fatal(err)
 				}
