@@ -36,9 +36,7 @@ func PatchLifecyclePolicies(
 
 	byPrefix := map[string]*storage.BucketLifecyclePolicy{}
 
-	if clear {
-		// Clear means "start from empty", even if base had entries.
-	} else {
+	if !clear {
 		// Seed from base. We only index by trimmed, non-empty prefixes.
 		// Note: shallow copy is sufficient because we don't mutate the
 		// existing policy objects; we only replace map entries or drop them.
