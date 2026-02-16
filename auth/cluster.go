@@ -11,7 +11,6 @@ import (
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
-	"github.com/ninech/nctl/api/nctl"
 	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/format"
 
@@ -63,7 +62,7 @@ func (a *ClusterCmd) Run(ctx context.Context, client *api.Client) error {
 	// we try to find out where the nctl binary is located
 	command, err := os.Executable()
 	if err != nil {
-		return fmt.Errorf("can not identify executable path of %s: %w", nctl.Name, err)
+		return fmt.Errorf("can not identify executable path of %s: %w", cli.Name, err)
 	}
 
 	cfg, err := newAPIConfig(

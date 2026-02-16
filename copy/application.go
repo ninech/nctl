@@ -10,7 +10,6 @@ import (
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/gitinfo"
-	"github.com/ninech/nctl/api/nctl"
 	"github.com/ninech/nctl/internal/application"
 
 	corev1 "k8s.io/api/core/v1"
@@ -115,9 +114,6 @@ func (cmd *applicationCmd) copyGitAuth(
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gitinfo.AuthSecretName(newApp),
 			Namespace: newApp.Namespace,
-			Annotations: map[string]string{
-				nctl.ManagedByAnnotation: nctl.Name,
-			},
 		},
 		Data: secret.Data,
 	}

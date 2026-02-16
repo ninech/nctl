@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"maps"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -32,6 +33,9 @@ type Client struct {
 	Project           string
 	Log               *log.Client
 	KubeconfigContext string
+
+	// defaultAnnotations is a map of default annotations to be set on all resources created or updated.
+	defaultAnnotations map[string]string
 }
 
 type ClientOpt func(c *Client) error
@@ -42,8 +46,9 @@ type ClientOpt func(c *Client) error
 // * $HOME/.kube/config if exists
 func New(ctx context.Context, apiClusterContext, project string, opts ...ClientOpt) (*Client, error) {
 	client := &Client{
-		Project:           project,
-		KubeconfigContext: apiClusterContext,
+		Project:            project,
+		KubeconfigContext:  apiClusterContext,
+		defaultAnnotations: map[string]string{},
 	}
 	if err := client.loadConfig(apiClusterContext); err != nil {
 		return nil, err
@@ -97,6 +102,18 @@ func StaticToken(ctx context.Context) ClientOpt {
 		}
 		c.WithWatch = tokenClient
 
+		return nil
+	}
+}
+
+// DefaultAnnotations configures the client to set default annotations on all resources created or updated.
+func DefaultAnnotations(k, v string) ClientOpt {
+	return func(c *Client) error {
+		if c.defaultAnnotations == nil {
+			c.defaultAnnotations = map[string]string{}
+		}
+
+		c.defaultAnnotations[k] = v
 		return nil
 	}
 }
@@ -254,4 +271,18 @@ func ObjectName(obj runtimeclient.Object) types.NamespacedName {
 
 func NamespacedName(name, project string) types.NamespacedName {
 	return types.NamespacedName{Name: name, Namespace: project}
+}
+
+// annotations returns a copy of the object's annotations with default annotations merged in.
+func (c *Client) annotations(obj runtimeclient.Object) map[string]string {
+	annotations := obj.GetAnnotations()
+	if c.defaultAnnotations != nil {
+		if annotations == nil {
+			annotations = map[string]string{}
+		}
+
+		maps.Copy(annotations, c.defaultAnnotations)
+	}
+
+	return annotations
 }
