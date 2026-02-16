@@ -214,7 +214,7 @@ func dummyApp(name, namespace string) *apps.Application {
 }
 
 func gitSecretFor(app *apps.Application) *corev1.Secret {
-	s := gitinfo.Auth{}.Secret(app)
+	s := gitinfo.NewAuthSecret(app)
 	s.TypeMeta = metav1.TypeMeta{
 		APIVersion: corev1.SchemeGroupVersion.String(),
 		Kind:       "Secret",

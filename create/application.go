@@ -161,7 +161,8 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 			return fmt.Errorf("the credentials are given but they are empty: %w", err)
 		}
 
-		secret := auth.Secret(newApp)
+		secret := gitinfo.NewAuthSecret(newApp)
+		auth.ApplyToSecret(secret)
 		// for git auth we create a separate secret and then reference it in the app.
 		if err := client.Create(ctx, secret); err != nil {
 			if kerrors.IsAlreadyExists(err) {
@@ -172,7 +173,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 						return err
 					}
 
-					auth.UpdateSecret(secret)
+					auth.ApplyToSecret(secret)
 					if err := client.Update(ctx, secret); err != nil {
 						return err
 					}
@@ -201,7 +202,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 
 	if err := c.createResource(appWaitCtx); err != nil {
 		if auth.Enabled() {
-			secret := auth.Secret(newApp)
+			secret := gitinfo.NewAuthSecret(newApp)
 			if gitErr := client.Delete(ctx, secret); gitErr != nil {
 				return errors.Join(err, fmt.Errorf("unable to delete git auth secret: %w", gitErr))
 			}
