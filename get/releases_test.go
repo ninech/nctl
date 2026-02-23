@@ -14,7 +14,6 @@ import (
 	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/test"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -230,8 +229,8 @@ func newRelease(
 				},
 				Configuration: apps.Config{
 					Size:     test.AppMicro,
-					Replicas: ptr.To(int32(1)),
-					Port:     ptr.To(int32(8080)),
+					Replicas: new(int32(1)),
+					Port:     new(int32(8080)),
 				}.WithOrigin(apps.ConfigOriginApplication),
 
 				// we always have at least 2 hosts here

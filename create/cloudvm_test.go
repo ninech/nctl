@@ -10,7 +10,6 @@ import (
 	"github.com/ninech/nctl/internal/test"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 func TestCloudVM(t *testing.T) {
@@ -38,7 +37,7 @@ func TestCloudVM(t *testing.T) {
 		},
 		{
 			name:   "bootDisk",
-			create: cloudVMCmd{BootDiskSize: ptr.To(resource.MustParse("1Gi"))},
+			create: cloudVMCmd{BootDiskSize: new(resource.MustParse("1Gi"))},
 			want: infrastructure.CloudVirtualMachineParameters{
 				BootDisk: &infrastructure.Disk{
 					Name: "root", Size: resource.MustParse("1Gi"),

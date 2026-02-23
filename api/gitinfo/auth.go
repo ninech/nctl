@@ -6,7 +6,6 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -95,14 +94,14 @@ func AuthSecretName(app *apps.Application) string {
 // UpdateFromSecret updates the Auth object with the data from the given secret.
 func (a *Auth) UpdateFromSecret(secret *corev1.Secret) {
 	if val, ok := secret.Data[PrivateKeySecretKey]; ok {
-		a.SSHPrivateKey = ptr.To(string(val))
+		a.SSHPrivateKey = new(string(val))
 	}
 
 	if val, ok := secret.Data[UsernameSecretKey]; ok {
-		a.Username = ptr.To(string(val))
+		a.Username = new(string(val))
 	}
 
 	if val, ok := secret.Data[PasswordSecretKey]; ok {
-		a.Password = ptr.To(string(val))
+		a.Password = new(string(val))
 	}
 }

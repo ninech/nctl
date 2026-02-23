@@ -17,7 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	metricsv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -263,7 +262,7 @@ func (cmd *applicationsCmd) printStats(ctx context.Context, c *api.Client, appLi
 		for _, wjs := range rel.Status.AtProvider.WorkerJobStatus {
 			wjSize := sizeForWorkerJob(rel, wjs.Name)
 			if wjSize == nil {
-				wjSize = ptr.To(appSize)
+				wjSize = new(appSize)
 			}
 			for _, replicaObs := range wjs.ReplicaObservation {
 				observations = append(observations, statsObservation{
@@ -277,7 +276,7 @@ func (cmd *applicationsCmd) printStats(ctx context.Context, c *api.Client, appLi
 		for _, sjs := range rel.Status.AtProvider.ScheduledJobStatus {
 			sjSize := sizeForScheduledJob(rel, sjs.Name)
 			if sjSize == nil {
-				sjSize = ptr.To(appSize)
+				sjSize = new(appSize)
 			}
 			for _, replicaObs := range sjs.ReplicaObservation {
 				observations = append(observations, statsObservation{

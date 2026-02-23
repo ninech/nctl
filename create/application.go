@@ -27,7 +27,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/utils/ptr"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -301,7 +300,7 @@ func (cmd *applicationCmd) config() apps.Config {
 				Command: cmd.DeployJob.Command,
 			},
 			FiniteJob: apps.FiniteJob{
-				Retries: ptr.To(cmd.DeployJob.Retries),
+				Retries: new(cmd.DeployJob.Retries),
 				Timeout: &metav1.Duration{Duration: cmd.DeployJob.Timeout},
 			},
 		}
@@ -320,7 +319,7 @@ func (cmd *applicationCmd) config() apps.Config {
 			},
 		}
 		if cmd.WorkerJob.Size != nil {
-			workerJob.Size = ptr.To(apps.ApplicationSize(*cmd.WorkerJob.Size))
+			workerJob.Size = new(apps.ApplicationSize(*cmd.WorkerJob.Size))
 		}
 		config.WorkerJobs = append(config.WorkerJobs, workerJob)
 	}
@@ -339,7 +338,7 @@ func (cmd *applicationCmd) config() apps.Config {
 			Schedule: cmd.ScheduledJob.Schedule,
 		}
 		if cmd.ScheduledJob.Size != nil {
-			scheduledJob.Size = ptr.To(apps.ApplicationSize(*cmd.ScheduledJob.Size))
+			scheduledJob.Size = new(apps.ApplicationSize(*cmd.ScheduledJob.Size))
 		}
 		config.ScheduledJobs = append(config.ScheduledJobs, scheduledJob)
 	}

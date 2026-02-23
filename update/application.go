@@ -15,7 +15,6 @@ import (
 	"github.com/ninech/nctl/internal/format"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 // ReleaseTrigger is used to request a new release for the application.
@@ -262,7 +261,7 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 		app.Spec.ForProvider.Config.EnableBasicAuth = cmd.BasicAuth
 	}
 	if cmd.ChangeBasicAuthPassword != nil {
-		app.Spec.ForProvider.BasicAuthPasswordChange = ptr.To(metav1.Now())
+		app.Spec.ForProvider.BasicAuthPasswordChange = new(metav1.Now())
 	}
 	if cmd.DeployJob != nil {
 		cmd.DeployJob.applyUpdates(&app.Spec.ForProvider.Config)
@@ -413,7 +412,7 @@ func (job workerJob) applyUpdates(w format.Writer, cfg *apps.Config) {
 				cfg.WorkerJobs[i].Command = *job.Command
 			}
 			if job.Size != nil {
-				cfg.WorkerJobs[i].Size = ptr.To(apps.ApplicationSize(*job.Size))
+				cfg.WorkerJobs[i].Size = new(apps.ApplicationSize(*job.Size))
 			}
 			return
 		}
@@ -424,7 +423,7 @@ func (job workerJob) applyUpdates(w format.Writer, cfg *apps.Config) {
 		newJob.Command = *job.Command
 	}
 	if job.Size != nil {
-		newJob.Size = ptr.To(apps.ApplicationSize(*job.Size))
+		newJob.Size = new(apps.ApplicationSize(*job.Size))
 	}
 	cfg.WorkerJobs = append(cfg.WorkerJobs, newJob)
 }
@@ -455,7 +454,7 @@ func (job scheduledJob) applyUpdates(w format.Writer, cfg *apps.Config) {
 				cfg.ScheduledJobs[i].Command = *job.Command
 			}
 			if job.Size != nil {
-				cfg.ScheduledJobs[i].Size = ptr.To(apps.ApplicationSize(*job.Size))
+				cfg.ScheduledJobs[i].Size = new(apps.ApplicationSize(*job.Size))
 			}
 			if job.Schedule != nil {
 				cfg.ScheduledJobs[i].Schedule = *job.Schedule
@@ -475,7 +474,7 @@ func (job scheduledJob) applyUpdates(w format.Writer, cfg *apps.Config) {
 		newJob.Command = *job.Command
 	}
 	if job.Size != nil {
-		newJob.Size = ptr.To(apps.ApplicationSize(*job.Size))
+		newJob.Size = new(apps.ApplicationSize(*job.Size))
 	}
 	cfg.ScheduledJobs = append(cfg.ScheduledJobs, newJob)
 }

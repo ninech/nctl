@@ -13,7 +13,6 @@ import (
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -75,8 +74,8 @@ func TestMySQL(t *testing.T) {
 		},
 		{
 			name:   "minWordLength",
-			create: mySQLCmd{MinWordLength: ptr.To(5)},
-			want:   storage.MySQLParameters{MinWordLength: ptr.To(5)},
+			create: mySQLCmd{MinWordLength: new(5)},
+			want:   storage.MySQLParameters{MinWordLength: new(5)},
 		},
 		{
 			name:   "transactionIsolation",
@@ -85,8 +84,8 @@ func TestMySQL(t *testing.T) {
 		},
 		{
 			name:   "keepDailyBackups",
-			create: mySQLCmd{KeepDailyBackups: ptr.To(5)},
-			want:   storage.MySQLParameters{KeepDailyBackups: ptr.To(5)},
+			create: mySQLCmd{KeepDailyBackups: new(5)},
+			want:   storage.MySQLParameters{KeepDailyBackups: new(5)},
 		},
 	}
 	for _, tt := range tests {

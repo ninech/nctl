@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 func TestKeyValueStore(t *testing.T) {
@@ -29,7 +28,7 @@ func TestKeyValueStore(t *testing.T) {
 		},
 		{
 			name:   "memorySize",
-			create: keyValueStoreCmd{MemorySize: ptr.To(storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("1G")})},
+			create: keyValueStoreCmd{MemorySize: new(storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("1G")})},
 			want: storage.KeyValueStoreParameters{
 				MemorySize: &storage.KeyValueStoreMemorySize{
 					Quantity: resource.MustParse("1G"),
@@ -57,47 +56,47 @@ func TestKeyValueStore(t *testing.T) {
 		{
 			name: "publicNetworking-deprecated",
 			create: keyValueStoreCmd{
-				PublicNetworkingEnabled: ptr.To(true),
+				PublicNetworkingEnabled: new(true),
 			},
 			want: storage.KeyValueStoreParameters{
-				PublicNetworkingEnabled: ptr.To(true),
+				PublicNetworkingEnabled: new(true),
 			},
 		},
 		{
 			name: "publicNetworking",
 			create: keyValueStoreCmd{
-				PublicNetworking: ptr.To(true),
+				PublicNetworking: new(true),
 			},
 			want: storage.KeyValueStoreParameters{
-				PublicNetworkingEnabled: ptr.To(true),
+				PublicNetworkingEnabled: new(true),
 			},
 		},
 		{
 			name: "publicNetworking-disabled-deprecated",
 			create: keyValueStoreCmd{
-				PublicNetworkingEnabled: ptr.To(false),
+				PublicNetworkingEnabled: new(false),
 			},
 			want: storage.KeyValueStoreParameters{
-				PublicNetworkingEnabled: ptr.To(false),
+				PublicNetworkingEnabled: new(false),
 			},
 		},
 		{
 			name: "publicNetworking-disabled",
 			create: keyValueStoreCmd{
-				PublicNetworking: ptr.To(false),
+				PublicNetworking: new(false),
 			},
 			want: storage.KeyValueStoreParameters{
-				PublicNetworkingEnabled: ptr.To(false),
+				PublicNetworkingEnabled: new(false),
 			},
 		},
 		{
 			name: "publicNetworking-disabled-both",
 			create: keyValueStoreCmd{
-				PublicNetworking:        ptr.To(false),
-				PublicNetworkingEnabled: ptr.To(true),
+				PublicNetworking:        new(false),
+				PublicNetworkingEnabled: new(true),
 			},
 			want: storage.KeyValueStoreParameters{
-				PublicNetworkingEnabled: ptr.To(false),
+				PublicNetworkingEnabled: new(false),
 			},
 		},
 	}

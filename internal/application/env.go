@@ -12,7 +12,6 @@ import (
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -32,7 +31,7 @@ func EnvVarsFromMap(env map[string]string, options ...EnvVarModifier) apps.EnvVa
 
 func Sensitive() EnvVarModifier {
 	return func(envVar *apps.EnvVar) {
-		envVar.Sensitive = ptr.To(true)
+		envVar.Sensitive = new(true)
 	}
 }
 

@@ -27,13 +27,13 @@ func TestKeyValueStore(t *testing.T) {
 		},
 		{
 			name:   "memorySize upgrade",
-			update: keyValueStoreCmd{MemorySize: ptr.To(storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("1G")})},
+			update: keyValueStoreCmd{MemorySize: new(storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("1G")})},
 			want:   storage.KeyValueStoreParameters{MemorySize: memorySize("1G")},
 		},
 		{
 			name:   "memorySize downgrade",
 			create: storage.KeyValueStoreParameters{MemorySize: memorySize("2G")},
-			update: keyValueStoreCmd{MemorySize: ptr.To(storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("1G")})},
+			update: keyValueStoreCmd{MemorySize: new(storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("1G")})},
 			want:   storage.KeyValueStoreParameters{MemorySize: memorySize("1G")},
 		},
 		{
@@ -83,7 +83,7 @@ func TestKeyValueStore(t *testing.T) {
 			create: storage.KeyValueStoreParameters{
 				AllowedCIDRs: []meta.IPv4CIDR{"0.0.0.0/0"},
 			},
-			update: keyValueStoreCmd{MemorySize: ptr.To(storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("1G")})},
+			update: keyValueStoreCmd{MemorySize: new(storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("1G")})},
 			want: storage.KeyValueStoreParameters{
 				MemorySize:   memorySize("1G"),
 				AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")},
@@ -92,31 +92,31 @@ func TestKeyValueStore(t *testing.T) {
 		{
 			name: "disable-public-networking-deprecated",
 			create: storage.KeyValueStoreParameters{
-				PublicNetworkingEnabled: ptr.To(true),
+				PublicNetworkingEnabled: new(true),
 			},
-			update: keyValueStoreCmd{PublicNetworkingEnabled: ptr.To(false)},
+			update: keyValueStoreCmd{PublicNetworkingEnabled: new(false)},
 			want: storage.KeyValueStoreParameters{
-				PublicNetworkingEnabled: ptr.To(false),
+				PublicNetworkingEnabled: new(false),
 			},
 		},
 		{
 			name: "disable-public-networking",
 			create: storage.KeyValueStoreParameters{
-				PublicNetworkingEnabled: ptr.To(true),
+				PublicNetworkingEnabled: new(true),
 			},
-			update: keyValueStoreCmd{PublicNetworking: ptr.To(false)},
+			update: keyValueStoreCmd{PublicNetworking: new(false)},
 			want: storage.KeyValueStoreParameters{
-				PublicNetworkingEnabled: ptr.To(false),
+				PublicNetworkingEnabled: new(false),
 			},
 		},
 		{
 			name: "disable-public-networking-both",
 			create: storage.KeyValueStoreParameters{
-				PublicNetworkingEnabled: ptr.To(true),
+				PublicNetworkingEnabled: new(true),
 			},
-			update: keyValueStoreCmd{PublicNetworking: ptr.To(false), PublicNetworkingEnabled: ptr.To(true)},
+			update: keyValueStoreCmd{PublicNetworking: new(false), PublicNetworkingEnabled: new(true)},
 			want: storage.KeyValueStoreParameters{
-				PublicNetworkingEnabled: ptr.To(false),
+				PublicNetworkingEnabled: new(false),
 			},
 		},
 	}

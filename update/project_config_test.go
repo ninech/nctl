@@ -29,10 +29,10 @@ func TestConfig(t *testing.T) {
 			ForProvider: apps.ProjectConfigParameters{
 				Config: apps.Config{
 					Size:            initialSize,
-					Replicas:        ptr.To(int32(1)),
-					Port:            ptr.To(int32(1337)),
+					Replicas:        new(int32(1)),
+					Port:            new(int32(1337)),
 					Env:             application.EnvVarsFromMap(map[string]string{"foo": "bar"}),
-					EnableBasicAuth: ptr.To(false),
+					EnableBasicAuth: new(false),
 				},
 			},
 		},
@@ -46,7 +46,7 @@ func TestConfig(t *testing.T) {
 		"change port": {
 			orig: existingConfig,
 			cmd: configCmd{
-				Port: ptr.To(int32(1234)),
+				Port: new(int32(1234)),
 			},
 			checkConfig: func(t *testing.T, cmd configCmd, orig, updated *apps.ProjectConfig) {
 				is := require.New(t)
@@ -56,7 +56,7 @@ func TestConfig(t *testing.T) {
 		"port is unchanged when updating unrelated field": {
 			orig: existingConfig,
 			cmd: configCmd{
-				Size: ptr.To("newsize"),
+				Size: new("newsize"),
 			},
 			checkConfig: func(t *testing.T, cmd configCmd, orig, updated *apps.ProjectConfig) {
 				is := require.New(t)
@@ -67,7 +67,7 @@ func TestConfig(t *testing.T) {
 		"update basic auth": {
 			orig: existingConfig,
 			cmd: configCmd{
-				BasicAuth: ptr.To(true),
+				BasicAuth: new(true),
 			},
 			checkConfig: func(t *testing.T, cmd configCmd, orig, updated *apps.ProjectConfig) {
 				is := require.New(t)
@@ -77,14 +77,14 @@ func TestConfig(t *testing.T) {
 		"all fields update": {
 			orig: existingConfig,
 			cmd: configCmd{
-				Size:      ptr.To("newsize"),
-				Port:      ptr.To(int32(1000)),
-				Replicas:  ptr.To(int32(2)),
+				Size:      new("newsize"),
+				Port:      new(int32(1000)),
+				Replicas:  new(int32(2)),
 				Env:       map[string]string{"zoo": "bar"},
-				BasicAuth: ptr.To(true),
+				BasicAuth: new(true),
 				DeployJob: &deployJob{
-					Command: ptr.To("exit 0"), Name: ptr.To("exit"),
-					Retries: ptr.To(int32(1)), Timeout: ptr.To(time.Minute * 5),
+					Command: new("exit 0"), Name: new("exit"),
+					Retries: new(int32(1)), Timeout: ptr.To(time.Minute * 5),
 				},
 			},
 			checkConfig: func(t *testing.T, cmd configCmd, orig, updated *apps.ProjectConfig) {

@@ -12,7 +12,6 @@ import (
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/test"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 func TestBucketUser(t *testing.T) {
@@ -29,7 +28,7 @@ func TestBucketUser(t *testing.T) {
 	}
 
 	out := &bytes.Buffer{}
-	cmd := bucketUserCmd{resourceCmd{Writer: format.NewWriter(out), Name: created.Name}, ptr.To(true)}
+	cmd := bucketUserCmd{resourceCmd{Writer: format.NewWriter(out), Name: created.Name}, new(true)}
 	updated := &storage.BucketUser{}
 	if err := cmd.Run(t.Context(), apiClient); err != nil {
 		t.Errorf("did not expect err got : %v", err)

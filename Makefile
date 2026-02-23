@@ -19,7 +19,7 @@ lint: mod-tidy vet staticcheck golangci-lint modernize govulncheck
 lint-fix:
 	go mod tidy
 	golangci-lint run --fix
-	go run golang.org/x/tools/go/analysis/passes/modernize/cmd/modernize@latest -test -fix ./...
+	go fix ./...
 	$(MAKE) lint
 
 mod-tidy:
@@ -35,7 +35,7 @@ staticcheck:
 	go run honnef.co/go/tools/cmd/staticcheck@latest ./...
 
 modernize:
-	go run golang.org/x/tools/go/analysis/passes/modernize/cmd/modernize@latest -test ./...
+	go fix -diff ./... | awk '{print} /\S/ {found=1} END {if (found) exit 1}'
 
 govulncheck:
 	go run golang.org/x/vuln/cmd/govulncheck@latest ./...

@@ -10,7 +10,6 @@ import (
 	"github.com/ninech/nctl/create"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
-	"k8s.io/utils/ptr"
 )
 
 func TestOpenSearch(t *testing.T) {
@@ -26,13 +25,13 @@ func TestOpenSearch(t *testing.T) {
 		{
 			name:   "increase-machineType",
 			create: storage.OpenSearchParameters{MachineType: infra.MachineTypeNineSearchS},
-			update: openSearchCmd{MachineType: ptr.To(infra.MachineTypeNineSearchL.String())},
+			update: openSearchCmd{MachineType: new(infra.MachineTypeNineSearchL.String())},
 			want:   storage.OpenSearchParameters{MachineType: infra.MachineTypeNineSearchL},
 		},
 		{
 			name:   "decrease-machineType",
 			create: storage.OpenSearchParameters{MachineType: infra.MachineTypeNineSearchL},
-			update: openSearchCmd{MachineType: ptr.To(infra.MachineTypeNineSearchM.String())},
+			update: openSearchCmd{MachineType: new(infra.MachineTypeNineSearchM.String())},
 			want:   storage.OpenSearchParameters{MachineType: infra.MachineTypeNineSearchM},
 		},
 		{
@@ -49,7 +48,7 @@ func TestOpenSearch(t *testing.T) {
 		{
 			name:   "multi-update",
 			create: storage.OpenSearchParameters{AllowedCIDRs: []meta.IPv4CIDR{"0.0.0.0/0"}},
-			update: openSearchCmd{MachineType: ptr.To(infra.MachineTypeNineSearchM.String())},
+			update: openSearchCmd{MachineType: new(infra.MachineTypeNineSearchM.String())},
 			want: storage.OpenSearchParameters{
 				MachineType:  infra.MachineTypeNineSearchM,
 				AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")},
@@ -68,31 +67,31 @@ func TestOpenSearch(t *testing.T) {
 		{
 			name: "disable-public-networking-deprecated",
 			create: storage.OpenSearchParameters{
-				PublicNetworkingEnabled: ptr.To(true),
+				PublicNetworkingEnabled: new(true),
 			},
-			update: openSearchCmd{PublicNetworkingEnabled: ptr.To(false)},
+			update: openSearchCmd{PublicNetworkingEnabled: new(false)},
 			want: storage.OpenSearchParameters{
-				PublicNetworkingEnabled: ptr.To(false),
+				PublicNetworkingEnabled: new(false),
 			},
 		},
 		{
 			name: "disable-public-networking",
 			create: storage.OpenSearchParameters{
-				PublicNetworkingEnabled: ptr.To(true),
+				PublicNetworkingEnabled: new(true),
 			},
-			update: openSearchCmd{PublicNetworking: ptr.To(false)},
+			update: openSearchCmd{PublicNetworking: new(false)},
 			want: storage.OpenSearchParameters{
-				PublicNetworkingEnabled: ptr.To(false),
+				PublicNetworkingEnabled: new(false),
 			},
 		},
 		{
 			name: "disable-public-networking-both",
 			create: storage.OpenSearchParameters{
-				PublicNetworkingEnabled: ptr.To(true),
+				PublicNetworkingEnabled: new(true),
 			},
-			update: openSearchCmd{PublicNetworking: ptr.To(false), PublicNetworkingEnabled: ptr.To(true)},
+			update: openSearchCmd{PublicNetworking: new(false), PublicNetworkingEnabled: new(true)},
 			want: storage.OpenSearchParameters{
-				PublicNetworkingEnabled: ptr.To(false),
+				PublicNetworkingEnabled: new(false),
 			},
 		},
 	}

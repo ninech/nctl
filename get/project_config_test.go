@@ -11,7 +11,6 @@ import (
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -38,7 +37,7 @@ func TestProjectConfigs(t *testing.T) {
 				fakeProjectConfig(time.Second*13, "ns-3", "ns-3"),
 			},
 			// we expect the header line and 3 project configs
-			expectedLineAmountInOutput: ptr.To(4),
+			expectedLineAmountInOutput: new(4),
 		},
 		"get config for current project": {
 			get: &Cmd{
@@ -55,7 +54,7 @@ func TestProjectConfigs(t *testing.T) {
 				fakeProjectConfig(time.Second*10, "ns-3", "ns-3"),
 			},
 			// header line + 1 project config
-			expectedLineAmountInOutput: ptr.To(2),
+			expectedLineAmountInOutput: new(2),
 		},
 		"no configs existing": {
 			get: &Cmd{
@@ -88,7 +87,7 @@ func TestProjectConfigs(t *testing.T) {
 					},
 				},
 			},
-			expectExactMessage: ptr.To(
+			expectExactMessage: new(
 				"PROJECT  NAME  SIZE  REPLICAS  PORT  ENVIRONMENT_VARIABLES  BASIC_AUTH  DEPLOY_JOB  AGE\nns-4     ns-4                        poo=*****              false       <none>      292y\n",
 			),
 		},
@@ -114,7 +113,7 @@ func TestProjectConfigs(t *testing.T) {
 					},
 				},
 			},
-			expectExactMessage: ptr.To(
+			expectExactMessage: new(
 				"PROJECT  NAME  SIZE  REPLICAS  PORT  ENVIRONMENT_VARIABLES  BASIC_AUTH  DEPLOY_JOB  AGE\nns-5     ns-5                        goo=banana             false       <none>      292y\n",
 			),
 		},
@@ -171,8 +170,8 @@ func fakeProjectConfig(
 			ForProvider: apps.ProjectConfigParameters{
 				Config: apps.Config{
 					Size:     test.AppMicro,
-					Replicas: ptr.To(int32(1)),
-					Port:     ptr.To(int32(9000)),
+					Replicas: new(int32(1)),
+					Port:     new(int32(9000)),
 					Env:      application.EnvVarsFromMap(map[string]string{"key1": "val1"}),
 				},
 			},
