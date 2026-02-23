@@ -14,20 +14,18 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-go@v6
         with:
-          go-version-file: go.mod
+          go-version: stable
       - run: git config --global url.https://$GH_ACCESS_TOKEN@github.com/.insteadOf https://github.com/
       - run: go mod tidy -diff
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v9
+      - run: go vet ./...
+      - uses: golangci/golangci-lint-action@v9
         with:
           version: latest
           args: --timeout=10m
       - uses: dominikh/staticcheck-action@v1
         with:
-          version: latest
           install-go: false
-      - run: |
-          go run golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest -fix -diff -test ./... && go run golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest -test ./...
+      - run: go fix -diff ./... | awk '{print} /\S/ {found=1} END {if (found) exit 1}'
   spell-check:
     name: spell-check
     runs-on: ubuntu-latest
