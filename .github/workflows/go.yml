@@ -2,10 +2,6 @@ name: go
 
 on: [pull_request]
 
-env:
-  GOPRIVATE: github.com/ninech/apis
-  GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
-
 jobs:
   lint:
     name: lint
@@ -15,7 +11,6 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: stable
-      - run: git config --global url.https://$GH_ACCESS_TOKEN@github.com/.insteadOf https://github.com/
       - run: go mod tidy -diff
       - run: go vet ./...
       - uses: golangci/golangci-lint-action@v9
@@ -26,6 +21,10 @@ jobs:
         with:
           install-go: false
       - run: go fix -diff ./... | awk '{print} /\S/ {found=1} END {if (found) exit 1}'
+      - uses: golang/govulncheck-action@v1
+        with:
+          repo-checkout: false
+          cache: false
   spell-check:
     name: spell-check
     runs-on: ubuntu-latest
@@ -34,12 +33,10 @@ jobs:
       - uses: crate-ci/typos@v1.43.5
   test:
     name: test
-    container: ninech/controller-test-image:latest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-go@v6
         with:
           go-version: stable
-      - run: git config --global url.https://$GH_ACCESS_TOKEN@github.com/.insteadOf https://github.com/
       - run: make test
