@@ -11,7 +11,6 @@ import (
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/test"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 func TestCloudVM(t *testing.T) {
@@ -37,7 +36,7 @@ func TestCloudVM(t *testing.T) {
 			create: infrastructure.CloudVirtualMachineParameters{
 				PowerState: infrastructure.VirtualMachinePowerState("off"),
 			},
-			update: cloudVMCmd{On: ptr.To(bool(true))},
+			update: cloudVMCmd{On: new(bool(true))},
 			want: infrastructure.CloudVirtualMachineParameters{
 				PowerState: infrastructure.VirtualMachinePowerState("on"),
 			},

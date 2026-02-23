@@ -11,7 +11,6 @@ import (
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 func TestProject(t *testing.T) {
@@ -38,7 +37,7 @@ func TestProject(t *testing.T) {
 			orig: existingProject,
 			cmd: projectCmd{
 				resourceCmd: resourceCmd{Name: projectName},
-				DisplayName: ptr.To("some display name"),
+				DisplayName: new("some display name"),
 			},
 			checkProject: func(t *testing.T, cmd projectCmd, orig, updated *management.Project) {
 				is := require.New(t)

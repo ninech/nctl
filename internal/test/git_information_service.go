@@ -12,7 +12,6 @@ import (
 	"sync"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
-	"k8s.io/utils/ptr"
 )
 
 // GitInformationServiceResponse describes a response of the git information service
@@ -52,7 +51,7 @@ type gitInformationService struct {
 func defaultResponse() GitInformationServiceResponse {
 	return GitInformationServiceResponse{
 		Code: 404,
-		Raw:  ptr.To("no response set"),
+		Raw:  new("no response set"),
 	}
 }
 

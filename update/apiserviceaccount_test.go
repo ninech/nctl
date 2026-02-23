@@ -11,7 +11,6 @@ import (
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 func TestAPIServiceAccount(t *testing.T) {
@@ -37,7 +36,7 @@ func TestAPIServiceAccount(t *testing.T) {
 			},
 			cmd: apiServiceAccountCmd{
 				resourceCmd:        resourceCmd{Name: asaName},
-				OrganizationAccess: ptr.To(true),
+				OrganizationAccess: new(true),
 			},
 			checkAPIServiceAccount: func(t *testing.T, cmd apiServiceAccountCmd, orig, updated *iam.APIServiceAccount) {
 				is := require.New(t)

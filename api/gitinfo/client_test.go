@@ -10,7 +10,6 @@ import (
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/utils/ptr"
 )
 
 func TestRepositoryInformation(t *testing.T) {
@@ -42,8 +41,8 @@ func TestRepositoryInformation(t *testing.T) {
 			},
 			token: "fake",
 			auth: gitinfo.Auth{
-				Username:      ptr.To("fake"),
-				Password:      ptr.To("fakePass"),
+				Username:      new("fake"),
+				Password:      new("fakePass"),
 				SSHPrivateKey: &dummyPrivateKey,
 			},
 			setResponse: &test.GitInformationServiceResponse{
@@ -99,7 +98,7 @@ func TestRepositoryInformation(t *testing.T) {
 			},
 			setResponse: &test.GitInformationServiceResponse{
 				Code: http.StatusBadGateway,
-				Raw:  ptr.To("currently unavailable"),
+				Raw:  new("currently unavailable"),
 			},
 			errorExpected: true,
 		},

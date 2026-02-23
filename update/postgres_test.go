@@ -9,7 +9,6 @@ import (
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
-	"k8s.io/utils/ptr"
 )
 
 func TestPostgres(t *testing.T) {
@@ -27,13 +26,13 @@ func TestPostgres(t *testing.T) {
 		},
 		{
 			name:   "increase-machineType",
-			update: postgresCmd{MachineType: ptr.To(infra.MachineTypeNineDBS.String())},
+			update: postgresCmd{MachineType: new(infra.MachineTypeNineDBS.String())},
 			want:   storage.PostgresParameters{MachineType: infra.MachineTypeNineDBS},
 		},
 		{
 			name:   "decrease-machineType",
 			create: storage.PostgresParameters{MachineType: infra.MachineTypeNineDBM},
-			update: postgresCmd{MachineType: ptr.To(infra.MachineTypeNineDBS.String())},
+			update: postgresCmd{MachineType: new(infra.MachineTypeNineDBS.String())},
 			want:   storage.PostgresParameters{MachineType: infra.MachineTypeNineDBS},
 		},
 		{
@@ -51,8 +50,8 @@ func TestPostgres(t *testing.T) {
 		},
 		{
 			name:   "keepDailyBackups",
-			update: postgresCmd{KeepDailyBackups: ptr.To(5)},
-			want:   storage.PostgresParameters{KeepDailyBackups: ptr.To(5)},
+			update: postgresCmd{KeepDailyBackups: new(5)},
+			want:   storage.PostgresParameters{KeepDailyBackups: new(5)},
 		},
 		{
 			name:   "allowedCIDRs-nothing-set-initially",
@@ -68,7 +67,7 @@ func TestPostgres(t *testing.T) {
 		{
 			name:   "multi-update",
 			create: storage.PostgresParameters{AllowedCIDRs: []meta.IPv4CIDR{"0.0.0.0/0"}},
-			update: postgresCmd{MachineType: ptr.To(infra.MachineTypeNineDBS.String())},
+			update: postgresCmd{MachineType: new(infra.MachineTypeNineDBS.String())},
 			want: storage.PostgresParameters{
 				MachineType:  infra.MachineTypeNineDBS,
 				AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")},

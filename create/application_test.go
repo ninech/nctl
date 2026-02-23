@@ -24,7 +24,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 )
 
 func createTempKeyFile(content string) (string, error) {
@@ -85,12 +84,12 @@ func TestCreateApplication(t *testing.T) {
 					SubPath:  "/my/app",
 					Revision: "superbug",
 				},
-				Size:                ptr.To("mini"),
+				Size:                new("mini"),
 				Hosts:               []string{"custom.example.org", "custom2.example.org"},
-				Port:                ptr.To(int32(1337)),
+				Port:                new(int32(1337)),
 				HealthProbe:         healthProbe{PeriodSeconds: int32(7), Path: "/he"},
-				Replicas:            ptr.To(int32(42)),
-				BasicAuth:           ptr.To(false),
+				Replicas:            new(int32(42)),
+				BasicAuth:           new(false),
 				Env:                 map[string]string{"hello": "world"},
 				BuildEnv:            map[string]string{"BP_GO_TARGETS": "./cmd/web-server"},
 				DeployJob:           deployJob{Command: "date", Name: "print-date", Retries: 2, Timeout: time.Minute},
@@ -124,8 +123,8 @@ func TestCreateApplication(t *testing.T) {
 					Wait: false,
 					Name: "basic-auth",
 				},
-				Size:                ptr.To("mini"),
-				BasicAuth:           ptr.To(true),
+				Size:                new("mini"),
+				BasicAuth:           new(true),
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
@@ -139,8 +138,8 @@ func TestCreateApplication(t *testing.T) {
 			cmd: applicationCmd{
 				Git: gitConfig{
 					URL:      "https://github.com/ninech/doesnotexist.git",
-					Username: ptr.To("deploy"),
-					Password: ptr.To("hunter2"),
+					Username: new("deploy"),
+					Password: new("hunter2"),
 				},
 				resourceCmd: resourceCmd{
 					Wait: false,
@@ -170,7 +169,7 @@ func TestCreateApplication(t *testing.T) {
 					Wait: false,
 					Name: "ssh-key-auth",
 				},
-				Size:                ptr.To("mini"),
+				Size:                new("mini"),
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
@@ -194,7 +193,7 @@ func TestCreateApplication(t *testing.T) {
 					Wait: false,
 					Name: "ssh-key-auth-ed25519",
 				},
-				Size:                ptr.To("mini"),
+				Size:                new("mini"),
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
@@ -212,13 +211,13 @@ func TestCreateApplication(t *testing.T) {
 			cmd: applicationCmd{
 				Git: gitConfig{
 					URL:                   "https://github.com/ninech/doesnotexist.git",
-					SSHPrivateKeyFromFile: ptr.To(filenameRSAKey),
+					SSHPrivateKeyFromFile: new(filenameRSAKey),
 				},
 				resourceCmd: resourceCmd{
 					Wait: false,
 					Name: "ssh-key-auth-from-file",
 				},
-				Size:                ptr.To("mini"),
+				Size:                new("mini"),
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
@@ -236,13 +235,13 @@ func TestCreateApplication(t *testing.T) {
 			cmd: applicationCmd{
 				Git: gitConfig{
 					URL:                   "https://github.com/ninech/doesnotexist.git",
-					SSHPrivateKeyFromFile: ptr.To(filenameED25519Key),
+					SSHPrivateKeyFromFile: new(filenameED25519Key),
 				},
 				resourceCmd: resourceCmd{
 					Wait: false,
 					Name: "ssh-key-auth-from-file-ed25519",
 				},
-				Size:                ptr.To("mini"),
+				Size:                new("mini"),
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
@@ -260,13 +259,13 @@ func TestCreateApplication(t *testing.T) {
 			cmd: applicationCmd{
 				Git: gitConfig{
 					URL:           "https://github.com/ninech/doesnotexist.git",
-					SSHPrivateKey: ptr.To("not valid"),
+					SSHPrivateKey: new("not valid"),
 				},
 				resourceCmd: resourceCmd{
 					Wait: false,
 					Name: "ssh-key-auth-non-valid",
 				},
-				Size:                ptr.To("mini"),
+				Size:                new("mini"),
 				SkipRepoAccessCheck: true,
 			},
 			errorExpected: true,
@@ -280,7 +279,7 @@ func TestCreateApplication(t *testing.T) {
 					Wait: false,
 					Name: "deploy-job-empty-command",
 				},
-				Size:                ptr.To("mini"),
+				Size:                new("mini"),
 				DeployJob:           deployJob{Command: "", Name: "print-date", Retries: 2, Timeout: time.Minute},
 				SkipRepoAccessCheck: true,
 			},
@@ -298,7 +297,7 @@ func TestCreateApplication(t *testing.T) {
 					Wait: false,
 					Name: "deploy-job-empty-name",
 				},
-				Size:                ptr.To("mini"),
+				Size:                new("mini"),
 				DeployJob:           deployJob{Command: "date", Name: "", Retries: 2, Timeout: time.Minute},
 				SkipRepoAccessCheck: true,
 			},
@@ -318,7 +317,7 @@ func TestCreateApplication(t *testing.T) {
 					Wait: false,
 					Name: "git-information-happy-path",
 				},
-				Size: ptr.To("mini"),
+				Size: new("mini"),
 			},
 			gitInformationServiceResponse: test.GitInformationServiceResponse{
 				Code: 200,
@@ -355,7 +354,7 @@ func TestCreateApplication(t *testing.T) {
 					Wait: false,
 					Name: "git-information-errors",
 				},
-				Size: ptr.To("mini"),
+				Size: new("mini"),
 			},
 			gitInformationServiceResponse: test.GitInformationServiceResponse{
 				Code: 200,
@@ -376,7 +375,7 @@ func TestCreateApplication(t *testing.T) {
 					Wait: false,
 					Name: "git-information-unknown-revision",
 				},
-				Size: ptr.To("mini"),
+				Size: new("mini"),
 			},
 			gitInformationServiceResponse: test.GitInformationServiceResponse{
 				Code: 200,
@@ -405,11 +404,11 @@ func TestCreateApplication(t *testing.T) {
 					Wait: false,
 					Name: "git-information-unknown-revision",
 				},
-				Size: ptr.To("mini"),
+				Size: new("mini"),
 			},
 			gitInformationServiceResponse: test.GitInformationServiceResponse{
 				Code: 501,
-				Raw:  ptr.To("maintenance mode - we will be back soon"),
+				Raw:  new("maintenance mode - we will be back soon"),
 			},
 			errorExpected: true,
 		},
@@ -424,7 +423,7 @@ func TestCreateApplication(t *testing.T) {
 					Wait: false,
 					Name: "git-information-update-url-to-https",
 				},
-				Size: ptr.To("mini"),
+				Size: new("mini"),
 			},
 			gitInformationServiceResponse: test.GitInformationServiceResponse{
 				Code: 200,
@@ -514,7 +513,7 @@ func TestApplicationWait(t *testing.T) {
 			WaitTimeout: time.Second * 5,
 			Name:        "some-name",
 		},
-		BasicAuth:           ptr.To(true),
+		BasicAuth:           new(true),
 		SkipRepoAccessCheck: true,
 	}
 	project := test.DefaultProject
@@ -540,7 +539,7 @@ func TestApplicationWait(t *testing.T) {
 		Spec: apps.ReleaseSpec{
 			ForProvider: apps.ReleaseParameters{
 				Configuration: apps.Config{
-					EnableBasicAuth: ptr.To(true),
+					EnableBasicAuth: new(true),
 				}.WithOrigin(apps.ConfigOriginApplication),
 			},
 		},

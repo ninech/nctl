@@ -13,7 +13,6 @@ import (
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -65,8 +64,8 @@ func TestPostgres(t *testing.T) {
 		},
 		{
 			name:   "keepDailyBackups",
-			create: postgresCmd{KeepDailyBackups: ptr.To(5)},
-			want:   storage.PostgresParameters{KeepDailyBackups: ptr.To(5)},
+			create: postgresCmd{KeepDailyBackups: new(5)},
+			want:   storage.PostgresParameters{KeepDailyBackups: new(5)},
 		},
 	}
 	for _, tt := range tests {

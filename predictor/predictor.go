@@ -14,7 +14,6 @@ import (
 	"github.com/posener/complete"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -45,7 +44,7 @@ func NewResourceName(client *api.Client) complete.Predictor {
 func NewResourceNameWithKind(client *api.Client, gvk schema.GroupVersionKind) complete.Predictor {
 	return &Resource{
 		client:   client,
-		knownGVK: ptr.To(gvk),
+		knownGVK: new(gvk),
 	}
 }
 

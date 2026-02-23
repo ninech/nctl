@@ -12,7 +12,6 @@ import (
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 func TestOpenSearch(t *testing.T) {
@@ -68,47 +67,47 @@ func TestOpenSearch(t *testing.T) {
 		{
 			name: "publicNetworking-deprecated",
 			create: openSearchCmd{
-				PublicNetworkingEnabled: ptr.To(true),
+				PublicNetworkingEnabled: new(true),
 			},
 			want: storage.OpenSearchParameters{
-				PublicNetworkingEnabled: ptr.To(true),
+				PublicNetworkingEnabled: new(true),
 			},
 		},
 		{
 			name: "publicNetworking",
 			create: openSearchCmd{
-				PublicNetworking: ptr.To(true),
+				PublicNetworking: new(true),
 			},
 			want: storage.OpenSearchParameters{
-				PublicNetworkingEnabled: ptr.To(true),
+				PublicNetworkingEnabled: new(true),
 			},
 		},
 		{
 			name: "publicNetworking-disabled-deprecated",
 			create: openSearchCmd{
-				PublicNetworkingEnabled: ptr.To(false),
+				PublicNetworkingEnabled: new(false),
 			},
 			want: storage.OpenSearchParameters{
-				PublicNetworkingEnabled: ptr.To(false),
+				PublicNetworkingEnabled: new(false),
 			},
 		},
 		{
 			name: "publicNetworking-disabled",
 			create: openSearchCmd{
-				PublicNetworking: ptr.To(false),
+				PublicNetworking: new(false),
 			},
 			want: storage.OpenSearchParameters{
-				PublicNetworkingEnabled: ptr.To(false),
+				PublicNetworkingEnabled: new(false),
 			},
 		},
 		{
 			name: "publicNetworking-disabled-both",
 			create: openSearchCmd{
-				PublicNetworking:        ptr.To(false),
-				PublicNetworkingEnabled: ptr.To(true),
+				PublicNetworking:        new(false),
+				PublicNetworkingEnabled: new(true),
 			},
 			want: storage.OpenSearchParameters{
-				PublicNetworkingEnabled: ptr.To(false),
+				PublicNetworkingEnabled: new(false),
 			},
 		},
 	}

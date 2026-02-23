@@ -51,17 +51,17 @@ func TestApplication(t *testing.T) {
 				Hosts: []string{"one.example.org"},
 				Config: apps.Config{
 					Size:            initialSize,
-					Replicas:        ptr.To(int32(1)),
-					Port:            ptr.To(int32(1337)),
+					Replicas:        new(int32(1)),
+					Port:            new(int32(1337)),
 					Env:             application.EnvVarsFromMap(map[string]string{"foo": "bar", "poo": "blue"}),
-					EnableBasicAuth: ptr.To(false),
+					EnableBasicAuth: new(false),
 					DeployJob: &apps.DeployJob{
 						Job: apps.Job{
 							Command: "date",
 							Name:    "print-date",
 						},
 						FiniteJob: apps.FiniteJob{
-							Retries: ptr.To(int32(2)),
+							Retries: new(int32(2)),
 							Timeout: &metav1.Duration{Duration: time.Minute},
 						},
 					},
@@ -86,7 +86,7 @@ func TestApplication(t *testing.T) {
 				resourceCmd: resourceCmd{
 					Name: existingApp.Name,
 				},
-				Port: ptr.To(int32(1234)),
+				Port: new(int32(1234)),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				is := require.New(t)
@@ -99,7 +99,7 @@ func TestApplication(t *testing.T) {
 				resourceCmd: resourceCmd{
 					Name: existingApp.Name,
 				},
-				Size: ptr.To("newsize"),
+				Size: new("newsize"),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				is := require.New(t)
@@ -114,22 +114,22 @@ func TestApplication(t *testing.T) {
 					Name: existingApp.Name,
 				},
 				Git: &gitConfig{
-					URL:      ptr.To("https://newgit.example.org"),
-					SubPath:  ptr.To("new/path"),
-					Revision: ptr.To("some-change"),
+					URL:      new("https://newgit.example.org"),
+					SubPath:  new("new/path"),
+					Revision: new("some-change"),
 				},
-				Size:         ptr.To("newsize"),
-				Port:         ptr.To(int32(1234)),
-				HealthProbe:  &healthProbe{PeriodSeconds: ptr.To(int32(7)), Path: ptr.To("/he")},
-				Replicas:     ptr.To(int32(999)),
+				Size:         new("newsize"),
+				Port:         new(int32(1234)),
+				HealthProbe:  &healthProbe{PeriodSeconds: new(int32(7)), Path: new("/he")},
+				Replicas:     new(int32(999)),
 				Hosts:        &[]string{"one.example.org", "two.example.org"},
 				Env:          map[string]string{"bar": "zoo"},
 				SensitiveEnv: map[string]string{"secret": "orange"},
 				BuildEnv:     map[string]string{"BP_GO_TARGETS": "./cmd/web-server"},
-				BasicAuth:    ptr.To(true),
+				BasicAuth:    new(true),
 				DeployJob: &deployJob{
-					Command: ptr.To("exit 0"), Name: ptr.To("exit"),
-					Retries: ptr.To(int32(1)), Timeout: ptr.To(time.Minute * 5),
+					Command: new("exit 0"), Name: new("exit"),
+					Retries: new(int32(1)), Timeout: ptr.To(time.Minute * 5),
 				},
 				SkipRepoAccessCheck: true,
 			},
@@ -172,7 +172,7 @@ func TestApplication(t *testing.T) {
 							Path: "/healthz",
 						},
 					},
-					PeriodSeconds: ptr.To(int32(9)),
+					PeriodSeconds: new(int32(9)),
 				}
 				return a
 			}(),
@@ -180,7 +180,7 @@ func TestApplication(t *testing.T) {
 				resourceCmd: resourceCmd{
 					Name: existingApp.Name,
 				},
-				DeleteHealthProbe: ptr.To(true),
+				DeleteHealthProbe: new(true),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				is := require.New(t)
@@ -196,7 +196,7 @@ func TestApplication(t *testing.T) {
 							Path: "/healthz",
 						},
 					},
-					PeriodSeconds: ptr.To(int32(9)),
+					PeriodSeconds: new(int32(9)),
 				}
 				return a
 			}(),
@@ -204,7 +204,7 @@ func TestApplication(t *testing.T) {
 				resourceCmd: resourceCmd{
 					Name: existingApp.Name,
 				},
-				DeleteHealthProbe: ptr.To(false),
+				DeleteHealthProbe: new(false),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				is := require.New(t)
@@ -284,7 +284,7 @@ func TestApplication(t *testing.T) {
 				resourceCmd: resourceCmd{
 					Name: existingApp.Name,
 				},
-				ChangeBasicAuthPassword: ptr.To(true),
+				ChangeBasicAuthPassword: new(true),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				is := require.New(t)
@@ -294,16 +294,16 @@ func TestApplication(t *testing.T) {
 		"git auth update user/pass": {
 			orig: existingApp,
 			gitAuth: &gitinfo.Auth{
-				Username: ptr.To("some-user"),
-				Password: ptr.To("some-password"),
+				Username: new("some-user"),
+				Password: new("some-password"),
 			},
 			cmd: applicationCmd{
 				resourceCmd: resourceCmd{
 					Name: existingApp.Name,
 				},
 				Git: &gitConfig{
-					Username: ptr.To("new-user"),
-					Password: ptr.To("new-pass"),
+					Username: new("new-user"),
+					Password: new("new-pass"),
 				},
 			},
 			gitInformationServiceResponse: test.GitInformationServiceResponse{
@@ -329,7 +329,7 @@ func TestApplication(t *testing.T) {
 		"git auth update ssh key": {
 			orig: existingApp,
 			gitAuth: &gitinfo.Auth{
-				SSHPrivateKey: ptr.To("fakekey"),
+				SSHPrivateKey: new("fakekey"),
 			},
 			cmd: applicationCmd{
 				resourceCmd: resourceCmd{
@@ -366,8 +366,8 @@ func TestApplication(t *testing.T) {
 					Name: existingApp.Name,
 				},
 				Git: &gitConfig{
-					Username: ptr.To("new-user"),
-					Password: ptr.To("new-pass"),
+					Username: new("new-user"),
+					Password: new("new-pass"),
 				},
 			},
 			gitInformationServiceResponse: test.GitInformationServiceResponse{
@@ -393,14 +393,14 @@ func TestApplication(t *testing.T) {
 		"git auth is unchanged on normal field update": {
 			orig: existingApp,
 			gitAuth: &gitinfo.Auth{
-				SSHPrivateKey: ptr.To("fakekey"),
+				SSHPrivateKey: new("fakekey"),
 			},
 			cmd: applicationCmd{
 				resourceCmd: resourceCmd{
 					Name: existingApp.Name,
 				},
 				Git: &gitConfig{
-					URL: ptr.To("https://newgit.example.org"),
+					URL: new("https://newgit.example.org"),
 				},
 			},
 			gitInformationServiceResponse: test.GitInformationServiceResponse{
@@ -429,16 +429,16 @@ func TestApplication(t *testing.T) {
 		"disable deploy job": {
 			orig: existingApp,
 			gitAuth: &gitinfo.Auth{
-				SSHPrivateKey: ptr.To("fakekey"),
+				SSHPrivateKey: new("fakekey"),
 			},
 			cmd: applicationCmd{
 				resourceCmd: resourceCmd{
 					Name: existingApp.Name,
 				},
 				Git: &gitConfig{
-					URL: ptr.To("https://newgit.example.org"),
+					URL: new("https://newgit.example.org"),
 				},
-				DeployJob: &deployJob{Enabled: ptr.To(false)},
+				DeployJob: &deployJob{Enabled: new(false)},
 			},
 			gitInformationServiceResponse: test.GitInformationServiceResponse{
 				Code: 200,
@@ -464,7 +464,7 @@ func TestApplication(t *testing.T) {
 				resourceCmd: resourceCmd{
 					Name: existingApp.Name,
 				},
-				RetryRelease: ptr.To(true),
+				RetryRelease: new(true),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				is := require.New(t)
@@ -477,7 +477,7 @@ func TestApplication(t *testing.T) {
 				resourceCmd: resourceCmd{
 					Name: existingApp.Name,
 				},
-				RetryRelease: ptr.To(false),
+				RetryRelease: new(false),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				is := require.New(t)
@@ -490,7 +490,7 @@ func TestApplication(t *testing.T) {
 				resourceCmd: resourceCmd{
 					Name: existingApp.Name,
 				},
-				RetryBuild: ptr.To(true),
+				RetryBuild: new(true),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				is := require.New(t)
@@ -503,7 +503,7 @@ func TestApplication(t *testing.T) {
 				resourceCmd: resourceCmd{
 					Name: existingApp.Name,
 				},
-				RetryBuild: ptr.To(false),
+				RetryBuild: new(false),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				is := require.New(t)
@@ -517,7 +517,7 @@ func TestApplication(t *testing.T) {
 					Name: existingApp.Name,
 				},
 				Git: &gitConfig{
-					URL: ptr.To("https://newgit.example.org"),
+					URL: new("https://newgit.example.org"),
 				},
 				SkipRepoAccessCheck: true,
 			},
@@ -539,7 +539,7 @@ func TestApplication(t *testing.T) {
 					Name: existingApp.Name,
 				},
 				Git: &gitConfig{
-					URL: ptr.To("https://newgit.example.org"),
+					URL: new("https://newgit.example.org"),
 				},
 			},
 			gitInformationServiceResponse: test.GitInformationServiceResponse{
@@ -557,8 +557,8 @@ func TestApplication(t *testing.T) {
 					Name: existingApp.Name,
 				},
 				Git: &gitConfig{
-					URL:      ptr.To("https://newgit.example.org"),
-					Revision: ptr.To("not-existent"),
+					URL:      new("https://newgit.example.org"),
+					Revision: new("not-existent"),
 				},
 			},
 			gitInformationServiceResponse: test.GitInformationServiceResponse{
@@ -583,8 +583,8 @@ func TestApplication(t *testing.T) {
 					Name: existingApp.Name,
 				},
 				Git: &gitConfig{
-					URL:      ptr.To("github.com/ninech/new-repo"),
-					Revision: ptr.To("main"),
+					URL:      new("github.com/ninech/new-repo"),
+					Revision: new("main"),
 				},
 			},
 			gitAuth: &gitinfo.Auth{},

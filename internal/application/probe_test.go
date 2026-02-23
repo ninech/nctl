@@ -5,7 +5,6 @@ import (
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/stretchr/testify/require"
-	"k8s.io/utils/ptr"
 )
 
 func TestApplyProbePatch(t *testing.T) {
@@ -76,7 +75,7 @@ func TestApplyProbePatch(t *testing.T) {
 					ProbeHandler: apps.ProbeHandler{
 						HTTPGet: &apps.HTTPGetAction{Path: "/old"},
 					},
-					PeriodSeconds: ptr.To(int32(3)),
+					PeriodSeconds: new(int32(3)),
 				},
 			},
 			pp: ProbePatch{Path: setPath("/new"), PeriodSeconds: setPer(9)},
@@ -96,7 +95,7 @@ func TestApplyProbePatch(t *testing.T) {
 					ProbeHandler: apps.ProbeHandler{
 						HTTPGet: &apps.HTTPGetAction{Path: "/keep-me?no"},
 					},
-					PeriodSeconds: ptr.To(int32(5)),
+					PeriodSeconds: new(int32(5)),
 				},
 			},
 			pp: ProbePatch{Path: clearPath(), PeriodSeconds: unsetPer()},
@@ -115,7 +114,7 @@ func TestApplyProbePatch(t *testing.T) {
 					ProbeHandler: apps.ProbeHandler{
 						HTTPGet: &apps.HTTPGetAction{Path: "/ok"},
 					},
-					PeriodSeconds: ptr.To(int32(11)),
+					PeriodSeconds: new(int32(11)),
 				},
 			},
 			pp: ProbePatch{Path: unsetPath(), PeriodSeconds: clearPer()},

@@ -11,7 +11,6 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientauthenticationv1 "k8s.io/client-go/pkg/apis/clientauthentication/v1"
-	"k8s.io/utils/ptr"
 
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
@@ -42,7 +41,7 @@ func (c *ClientCredentialsCmd) Run(ctx context.Context) error {
 		},
 		Status: &clientauthenticationv1.ExecCredentialStatus{
 			Token:               token.AccessToken,
-			ExpirationTimestamp: ptr.To(metav1.NewTime(token.Expiry)),
+			ExpirationTimestamp: new(metav1.NewTime(token.Expiry)),
 		},
 	}
 	return json.NewEncoder(os.Stdout).Encode(execCredential)

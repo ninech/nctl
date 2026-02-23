@@ -27,24 +27,24 @@ func TestMySQL(t *testing.T) {
 		},
 		{
 			name:   "increase-machineType",
-			update: mySQLCmd{MachineType: ptr.To(infra.MachineTypeNineDBM.String())},
+			update: mySQLCmd{MachineType: new(infra.MachineTypeNineDBM.String())},
 			want:   storage.MySQLParameters{MachineType: infra.MachineTypeNineDBM},
 		},
 		{
 			name:   "decrease-machineType",
 			create: storage.MySQLParameters{MachineType: infra.MachineTypeNineDBM},
-			update: mySQLCmd{MachineType: ptr.To(infra.MachineTypeNineDBS.String())},
+			update: mySQLCmd{MachineType: new(infra.MachineTypeNineDBS.String())},
 			want:   storage.MySQLParameters{MachineType: infra.MachineTypeNineDBS},
 		},
 		{
 			name:   "sqlMode-no-mode-set-initially",
-			update: mySQLCmd{SQLMode: ptr.To([]storage.MySQLMode{"ERROR_FOR_DIVISION_BY_ZERO"})},
+			update: mySQLCmd{SQLMode: new([]storage.MySQLMode{"ERROR_FOR_DIVISION_BY_ZERO"})},
 			want:   storage.MySQLParameters{SQLMode: &[]storage.MySQLMode{"ERROR_FOR_DIVISION_BY_ZERO"}},
 		},
 		{
 			name:   "sqlMode-initially-set",
 			create: storage.MySQLParameters{SQLMode: &[]storage.MySQLMode{"ERROR_FOR_DIVISION_BY_ZERO"}},
-			update: mySQLCmd{SQLMode: ptr.To([]storage.MySQLMode{"ALLOW_INVALID_DATES", "STRICT_TRANS_TABLES"})},
+			update: mySQLCmd{SQLMode: new([]storage.MySQLMode{"ALLOW_INVALID_DATES", "STRICT_TRANS_TABLES"})},
 			want:   storage.MySQLParameters{SQLMode: &[]storage.MySQLMode{"ALLOW_INVALID_DATES", "STRICT_TRANS_TABLES"}},
 		},
 		{
@@ -54,7 +54,7 @@ func TestMySQL(t *testing.T) {
 		},
 		{
 			name:   "characterSet",
-			update: mySQLCmd{CharacterSetName: ptr.To("latin1"), CharacterSetCollation: ptr.To("latin1-general-ci")},
+			update: mySQLCmd{CharacterSetName: new("latin1"), CharacterSetCollation: new("latin1-general-ci")},
 			want:   storage.MySQLParameters{CharacterSet: storage.MySQLCharacterSet{Name: "latin1", Collation: "latin1-general-ci"}},
 		},
 		{
@@ -64,8 +64,8 @@ func TestMySQL(t *testing.T) {
 		},
 		{
 			name:   "minWordLength",
-			update: mySQLCmd{MinWordLength: ptr.To(5)},
-			want:   storage.MySQLParameters{MinWordLength: ptr.To(5)},
+			update: mySQLCmd{MinWordLength: new(5)},
+			want:   storage.MySQLParameters{MinWordLength: new(5)},
 		},
 		{
 			name:   "transactionIsolation",
@@ -74,8 +74,8 @@ func TestMySQL(t *testing.T) {
 		},
 		{
 			name:   "keepDailyBackups",
-			update: mySQLCmd{KeepDailyBackups: ptr.To(5)},
-			want:   storage.MySQLParameters{KeepDailyBackups: ptr.To(5)},
+			update: mySQLCmd{KeepDailyBackups: new(5)},
+			want:   storage.MySQLParameters{KeepDailyBackups: new(5)},
 		},
 		{
 			name:   "allowedCIDRs-nothing-set-initially",
@@ -91,7 +91,7 @@ func TestMySQL(t *testing.T) {
 		{
 			name:   "multi-update",
 			create: storage.MySQLParameters{AllowedCIDRs: []meta.IPv4CIDR{"0.0.0.0/0"}},
-			update: mySQLCmd{MachineType: ptr.To(infra.MachineTypeNineDBS.String())},
+			update: mySQLCmd{MachineType: new(infra.MachineTypeNineDBS.String())},
 			want:   storage.MySQLParameters{MachineType: infra.MachineTypeNineDBS, AllowedCIDRs: []meta.IPv4CIDR{meta.IPv4CIDR("0.0.0.0/0")}},
 		},
 	}
