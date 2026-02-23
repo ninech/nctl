@@ -172,9 +172,7 @@ func writeError(fileName string, editError error, obj client.Object) error {
 	scanner := bufio.NewScanner(f)
 	var newFileContents bytes.Buffer
 	writeHeader(&newFileContents, obj)
-	if _, err := newFileContents.WriteString(
-		fmt.Sprintf("# %s\n", printStatusErrorDetails(editError)),
-	); err != nil {
+	if _, err := fmt.Fprintf(&newFileContents, "# %s\n", printStatusErrorDetails(editError)); err != nil {
 		return err
 	}
 
