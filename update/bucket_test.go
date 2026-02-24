@@ -608,6 +608,26 @@ func TestBucket(t *testing.T) {
 				return &p
 			}(),
 		},
+		"cors-update-preserves-public-read": {
+			flags: []string{
+				"--cors=origins=https://example.com",
+			},
+			origForProvider: func() *storage.BucketParameters {
+				p := baseBucketParameters
+				p.PublicRead = true
+				p.PublicList = true
+				return &p
+			}(),
+			wantForProvider: func() *storage.BucketParameters {
+				p := baseBucketParameters
+				p.PublicRead = true
+				p.PublicList = true
+				p.CORS = &storage.CORSConfig{
+					Origins: []string{"https://example.com"},
+				}
+				return &p
+			}(),
+		},
 		"update-all": {
 			flags: []string{
 				"--public-read=false",

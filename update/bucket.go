@@ -14,9 +14,9 @@ import (
 
 type bucketCmd struct {
 	resourceCmd
-	PublicRead             *bool    `help:"Publicly readable objects." default:"false"`
-	PublicList             *bool    `help:"Publicly listable objects." default:"false"`
-	Versioning             *bool    `help:"Enable object versioning." default:"false"`
+	PublicRead             *bool    `help:"Publicly readable objects."`
+	PublicList             *bool    `help:"Publicly listable objects."`
+	Versioning             *bool    `help:"Enable object versioning."`
 	Permissions            []string `sep:";" placeholder:"${bucket_permissions_example}" help:"Permissions configure user access to the objects in this Bucket (repeatable: ROLE=USER[,USER...];ROLE=USER[,USER...). Available roles are: ${bucket_role_options}"`
 	DeletePermissions      []string `sep:";" placeholder:"${bucket_permissions_example}" help:"Permissions which are to be deleted (repeatable: ROLE=USER[,USER...];ROLE=USER[,USER...). Available roles are: ${bucket_role_options}"`
 	LifecyclePolicy        []string `placeholder:"${bucket_lifecycle_policy_example}" help:"LifecyclePolicies allows to define automatic expiry (deletion) of objects using certain rules (repeatable: pass this flag once per policy)."`
