@@ -19,12 +19,17 @@ import (
 type SetProjectCmd struct {
 	format.Writer `hidden:""`
 	Name          string `arg:"" help:"Name of the default project to be used." completion-predictor:"project_name"`
+	Force         bool   `flag:"force" help:"Force setting the project even if it is not found. Required for APIServiceAccounts in sub-projects and APIServiceAccounts in the organization project without organization access."`
 }
 
 func (s *SetProjectCmd) Run(ctx context.Context, client *api.Client) error {
 	org, err := client.Organization()
 	if err != nil {
 		return err
+	}
+
+	if s.Force {
+		return s.do(client)
 	}
 
 	// Ensure the project exists. Try switching otherwise.
@@ -37,10 +42,7 @@ func (s *SetProjectCmd) Run(ctx context.Context, client *api.Client) error {
 			return fmt.Errorf("failed to set project %s: %w", s.Name, err)
 		}
 
-		s.Warningf("Project %q does not exist in organization %q, checking other organizations...\n",
-			s.Name,
-			org,
-		)
+		s.Warningf("Project %q does not exist in organization %q.\nChecking other organizations...\n", s.Name, org)
 		if err := trySwitchOrg(ctx, client, s.Name); err != nil {
 			return err
 		}
@@ -51,16 +53,21 @@ func (s *SetProjectCmd) Run(ctx context.Context, client *api.Client) error {
 		}
 	}
 
-	if err := config.SetContextProject(
-		client.KubeconfigPath,
-		client.KubeconfigContext,
-		s.Name,
-	); err != nil {
+	if err := s.do(client); err != nil {
 		return err
 	}
 
 	s.Successf("📝", "set active Project to %s in organization %s", s.Name, org)
 	return nil
+}
+
+// do sets the project.
+func (s *SetProjectCmd) do(client *api.Client) error {
+	return config.SetContextProject(
+		client.KubeconfigPath,
+		client.KubeconfigContext,
+		s.Name,
+	)
 }
 
 // trySwitchOrg attempts to find the organization containing the given project
@@ -136,5 +143,6 @@ func orgFromProject(ctx context.Context, client *api.Client, project string) (st
 
 	return "", cli.ErrorWithContext(fmt.Errorf("could not find project %q in any available organization", project)).
 		WithExitCode(cli.ExitUsageError).
-		WithSuggestions(format.Command().GetProjects())
+		WithSuggestions("List all available projects:\n" + format.Command().GetProjects()).
+		WithSuggestions("For APIServiceAccounts in sub-projects or without organizational access, you'll need to set the --force flag.")
 }
