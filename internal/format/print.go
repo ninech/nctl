@@ -46,7 +46,7 @@ var spinnerCharset = yacspin.CharSets[24]
 // Progress is a formatted message for use with a spinner.Suffix. An
 // icon can be added which is displayed at the end of the message.
 func Progress(icon, message string) string {
-	return fmt.Sprintf(" %s %s", message, icon)
+	return Progressf(icon, "%s", message)
 }
 
 // Progressf is a formatted message for use with a spinner.Suffix. An
@@ -80,8 +80,12 @@ func info(icon, message string) string {
 	return fmt.Sprintf(" %s %s %s", InfoChar, message, icon)
 }
 
-func warningf(msg string, a ...any) string {
-	return fmt.Sprintf(color.YellowString("Warning: ")+msg, a...)
+func warningf(format string, a ...any) string {
+	const prefix = "Warning: "
+	msg := fmt.Sprintf(format, a...)
+	padding := strings.Repeat(" ", len(prefix))
+	msg = strings.ReplaceAll(msg, "\n", "\n"+padding)
+	return color.YellowString(prefix) + msg
 }
 
 // NewSpinner returns a new spinner with the default config
