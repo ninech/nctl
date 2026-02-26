@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"maps"
+	"os"
 	"slices"
 	"strings"
 
@@ -119,7 +120,15 @@ func (cmd *Cmd) listPrint(ctx context.Context, client *api.Client, lp listPrinte
 	if cmd.Watch {
 		return nil
 	}
-	return lp.print(ctx, client, list, &cmd.output)
+
+	if err := lp.print(ctx, client, list, &cmd.output); err != nil {
+		return err
+	}
+	if cmd.Format == full {
+		fmt.Fprintln(os.Stderr, "Hint: use -o yaml to see full details")
+	}
+	return nil
+
 }
 
 // writeHeader writes the header row, prepending the always shown project
