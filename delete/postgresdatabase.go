@@ -2,6 +2,7 @@ package delete
 
 import (
 	"context"
+	"fmt"
 
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
@@ -13,6 +14,37 @@ type postgresDatabaseCmd struct {
 }
 
 func (cmd *postgresDatabaseCmd) Run(ctx context.Context, client *api.Client) error {
-	postgresDatabase := &storage.PostgresDatabase{ObjectMeta: metav1.ObjectMeta{Name: cmd.Name, Namespace: client.Project}}
-	return cmd.newDeleter(postgresDatabase, storage.PostgresDatabaseKind).deleteResource(ctx, client, cmd.WaitTimeout, cmd.Wait, cmd.Force)
+	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
+	defer cancel()
+
+	postgresDatabase := &storage.PostgresDatabase{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cmd.Name,
+			Namespace: client.Project,
+		},
+	}
+
+	d := cmd.newDeleter(
+		postgresDatabase,
+		storage.PostgresDatabaseKind,
+		prompt(postgresDatabaseDeletePrompt()),
+	)
+
+	if err := d.deleteResource(ctx, client, cmd.WaitTimeout, cmd.Wait, cmd.Force); err != nil {
+		return fmt.Errorf("error while deleting %s: %w", storage.PostgresDatabaseKind, err)
+	}
+
+	return nil
+}
+
+func postgresDatabaseDeletePrompt() promptFunc {
+	return func(kind, name string) string {
+		return fmt.Sprintf("Deleting %s %q will also destroy its default backup bucket and all backups in it."+
+			"\n Make sure to create a copy of them first if you still need them."+
+			"\n\n !!! This can not be recovered !!! \n\n"+
+			"Do you really want to continue?",
+			kind,
+			name,
+		)
+	}
 }
