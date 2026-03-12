@@ -119,7 +119,7 @@ func BucketKongVars() kong.Vars {
 	result["bucket_role_options"] = strings.Join(stringSlice(roles), ", ")
 	result["bucket_permissions_example"] = fmt.Sprintf("%s=frontend,analytics;%s=ingest", storage.BucketRoleReader, storage.BucketRoleWriter)
 	result["bucket_lifecycle_policy_example"] = "prefix=p/;expire-after-days=7;is-live=true"
-	result["bucket_cors_example"] = "origins=https://a.com,https://b.com;response-headers=X-My-Header,ETag;max-age=3600"
+	result["bucket_cors_example"] = "origins=https://a.com,https://b.com;allowed-headers=Content-Type;response-headers=X-My-Header,ETag;max-age=3600"
 	result["bucket_custom_hostnames_example"] = "my-bucket.example.com,your-bucket.example.com"
 	return result
 }
