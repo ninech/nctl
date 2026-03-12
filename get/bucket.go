@@ -171,11 +171,12 @@ func printBucketCORS(b *storage.Bucket, out *output) error {
 	}
 
 	if out.Format == full {
-		out.writeHeader("NAME", "ORIGINS", "RESPONSE HEADERS", "MAX-AGE (s)")
+		out.writeHeader("NAME", "ORIGINS", "ALLOWED HEADERS", "RESPONSE HEADERS", "MAX-AGE (s)")
 	}
 	out.writeTabRow(
 		b.Namespace, b.Name,
 		joinOrDash(cfg.Origins),
+		joinOrDash(cfg.AllowedHeaders),
 		joinOrDash(cfg.ResponseHeaders),
 		fmt.Sprintf("%d", cfg.MaxAge),
 	)
