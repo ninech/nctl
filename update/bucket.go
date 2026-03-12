@@ -22,8 +22,8 @@ type bucketCmd struct {
 	LifecyclePolicy        []string `placeholder:"${bucket_lifecycle_policy_example}" help:"LifecyclePolicies allows to define automatic expiry (deletion) of objects using certain rules (repeatable: pass this flag once per policy)."`
 	DeleteLifecyclePolicy  []string `placeholder:"${bucket_lifecycle_policy_delete_example}" help:"LifecyclePolicies which are to be deleted (repeatable: pass this flag once per policy)."`
 	ClearLifecyclePolicies bool     `help:"Remove all lifecycle policies (can be combined with other updates to clear everything before adding new items)." default:"false"`
-	CORS                   []string `sep:";" placeholder:"${bucket_cors_example}" help:"CORS settings for this bucket (repeatable: ORIGINS=ORIGIN[,ORIGIN...];HEADERS=HEADER[,HEADER...];MAX_AGE)."`
-	DeleteCORS             []string `sep:";" placeholder:"${bucket_cors_delete_example}" help:"CORS settings which are to be deleted (repeatable: ORIGINS=ORIGIN[,ORIGIN...];HEADERS=HEADER[,HEADER...];MAX_AGE)."`
+	CORS                   []string `sep:";" placeholder:"${bucket_cors_example}" help:"CORS settings for this bucket (repeatable: origins=ORIGIN[,ORIGIN...];allowed-headers=HEADER[,HEADER...];response-headers=HEADER[,HEADER...];max-age=SECONDS)."`
+	DeleteCORS             []string `sep:";" placeholder:"${bucket_cors_delete_example}" help:"CORS settings which are to be deleted (repeatable: origins=ORIGIN[,ORIGIN...];allowed-headers=HEADER[,HEADER...];response-headers=HEADER[,HEADER...])."`
 	CustomHostnames        []string `placeholder:"${bucket_custom_hostnames_example}" help:"CustomHostnames are DNS entries under which the bucket should be accessible. This can be used to serve public objects via an own domain name. (repeatable: HOST[,HOST...])."`
 	DeleteCustomHostnames  []string `placeholder:"${bucket_custom_hostnames_example}" help:"CustomHostnames which are to be deleted (repeatable: HOST[,HOST...])."`
 	ClearCustomHostnames   bool     `help:"Remove all CustomHostnames (can be combined with other updates to clear everything before adding new items)."`
@@ -96,6 +96,6 @@ func (cmd *bucketCmd) applyUpdates(b *storage.Bucket) error {
 func BucketKongVars() kong.Vars {
 	result := make(kong.Vars)
 	result["bucket_lifecycle_policy_delete_example"] = "prefix=tmp/"
-	result["bucket_cors_delete_example"] = "origins=https://example.com"
+	result["bucket_cors_delete_example"] = "origins=https://example.com;allowed-headers=Content-Type"
 	return result
 }

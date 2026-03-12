@@ -38,7 +38,7 @@ func TestBucket(t *testing.T) {
 				"--versioning",
 				"--permissions=reader=john",
 				"--lifecycle-policy=prefix=logs/;expire-after-days=14;is-live=true",
-				"--cors=origins=https://example.com;allowed-headers=X-My-Header;response-headers=X-My-Header;max-age=3600",
+				"--cors=origins=https://example.com;allowed-headers=Content-Type;response-headers=ETag,Last-Modified;max-age=3600",
 				"--custom-hostnames=my-bucket.example.com,your-bucket.example.com",
 			},
 			wantForProvider: func() *storage.BucketParameters {
@@ -66,11 +66,12 @@ func TestBucket(t *testing.T) {
 					Origins: []string{
 						"https://example.com",
 					},
-                    AllowedHeaders: []string{
-                        "X-My-Header",
-                    },
+					AllowedHeaders: []string{
+						"Content-Type",
+					},
 					ResponseHeaders: []string{
-						"X-My-Header",
+						"ETag",
+						"Last-Modified",
 					},
 					MaxAge: 3600,
 				}
@@ -194,7 +195,7 @@ func TestBucket(t *testing.T) {
 		"cors-duplicated-keys-in-one-flag": {
 			flags: []string{
 				"--location=nine-cz42",
-				"--cors=origins=https://example.com;allowed-headers=X-My-Header;response-headers=X-My-Header;max-age=3600;origins=https://app.example.com;allowed-headers=ETag;response-headers=ETag",
+				"--cors=origins=https://example.com;allowed-headers=Content-Type;response-headers=ETag;max-age=3600;origins=https://app.example.com;allowed-headers=Content-MD5;response-headers=Last-Modified",
 			},
 			wantForProvider: func() *storage.BucketParameters {
 				p := baseBucketParameters()
@@ -204,13 +205,13 @@ func TestBucket(t *testing.T) {
 						"https://app.example.com",
 						"https://example.com",
 					},
-                    AllowedHeaders: []string{
-                        "ETag",
-                        "X-My-Header",
-                    },
+					AllowedHeaders: []string{
+						"Content-MD5",
+						"Content-Type",
+					},
 					ResponseHeaders: []string{
 						"ETag",
-						"X-My-Header",
+						"Last-Modified",
 					},
 					MaxAge: 3600,
 				}
@@ -220,8 +221,8 @@ func TestBucket(t *testing.T) {
 		"cors-multiple-flags-merged": {
 			flags: []string{
 				"--location=nine-cz42",
-				"--cors=origins=https://example.com;allowed-headers=ETag;response-headers=ETag",
-				"--cors=origins=https://app.example.com;allowed-headers=X-My-Header;response-headers=X-My-Header",
+				"--cors=origins=https://example.com;allowed-headers=Content-Type;response-headers=ETag",
+				"--cors=origins=https://app.example.com;allowed-headers=Content-MD5;response-headers=Last-Modified",
 				"--cors=max-age=3600",
 			},
 			wantForProvider: func() *storage.BucketParameters {
@@ -232,13 +233,13 @@ func TestBucket(t *testing.T) {
 						"https://app.example.com",
 						"https://example.com",
 					},
-                    AllowedHeaders: []string{
-                        "ETag",
-                        "X-My-Header",
-                    },
+					AllowedHeaders: []string{
+						"Content-MD5",
+						"Content-Type",
+					},
 					ResponseHeaders: []string{
 						"ETag",
-						"X-My-Header",
+						"Last-Modified",
 					},
 					MaxAge: 3600,
 				}

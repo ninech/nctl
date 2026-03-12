@@ -158,7 +158,7 @@ func TestBucketGet(t *testing.T) {
 						s.ForProvider.CORS = &storage.CORSConfig{
 							Origins:         []string{}, // explicitly empty: show "-"
 							ResponseHeaders: []string{"ETag"},
-							AllowedHeaders: []string{"Content-Type"},
+							AllowedHeaders:  []string{"Content-Type"},
 							MaxAge:          7200,
 						}
 					},
