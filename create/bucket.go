@@ -27,7 +27,7 @@ type bucketCmd struct {
 	//   --permissions=writer=john;reader=carol
 	Permissions     []string `sep:";" placeholder:"${bucket_permissions_example}" help:"Permissions configure user access to the objects in this Bucket (repeatable: ROLE=USER[,USER...];ROLE=USER[,USER...). Available roles are: ${bucket_role_options}"`
 	LifecyclePolicy []string `placeholder:"${bucket_lifecycle_policy_example}" help:"LifecyclePolicies allows to define automatic expiry (deletion) of objects using certain rules (repeatable: pass this flag once per policy)."`
-	CORS            []string `sep:";" placeholder:"${bucket_cors_example}" help:"CORS settings for this bucket (repeatable: ORIGINS=ORIGIN[,ORIGIN...];HEADERS=HEADER[,HEADER...];MAX_AGE)."`
+	CORS            []string `sep:";" placeholder:"${bucket_cors_example}" help:"CORS settings for this bucket (repeatable: origins=ORIGIN[,ORIGIN...];allowed-headers=HEADER[,HEADER...];response-headers=HEADER[,HEADER...];max-age=SECONDS)."`
 	CustomHostnames []string `placeholder:"${bucket_custom_hostnames_example}" help:"CustomHostnames are DNS entries under which the bucket should be accessible. This can be used to serve public objects via an own domain name. (repeatable: HOST[,HOST...])."`
 }
 
@@ -119,7 +119,7 @@ func BucketKongVars() kong.Vars {
 	result["bucket_role_options"] = strings.Join(stringSlice(roles), ", ")
 	result["bucket_permissions_example"] = fmt.Sprintf("%s=frontend,analytics;%s=ingest", storage.BucketRoleReader, storage.BucketRoleWriter)
 	result["bucket_lifecycle_policy_example"] = "prefix=p/;expire-after-days=7;is-live=true"
-	result["bucket_cors_example"] = "origins=https://a.com,https://b.com;allowed-headers=Content-Type;response-headers=X-My-Header,ETag;max-age=3600"
+	result["bucket_cors_example"] = "origins=https://a.com,https://b.com;allowed-headers=Content-Type,Content-MD5;response-headers=ETag,Last-Modified;max-age=3600"
 	result["bucket_custom_hostnames_example"] = "my-bucket.example.com,your-bucket.example.com"
 	return result
 }

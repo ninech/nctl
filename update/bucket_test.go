@@ -371,7 +371,7 @@ func TestBucket(t *testing.T) {
 						"X-My-Init-Header",
 					},
 					AllowedHeaders: []string{
-						"Content-Disposition",
+						"Content-Length",
 					},
 					MaxAge: 3600,
 				}
@@ -391,7 +391,7 @@ func TestBucket(t *testing.T) {
 						"X-My-Init-Header",
 					},
 					AllowedHeaders: []string{
-						"Content-Disposition",
+						"Content-Length",
 						"Content-MD5",
 						"Content-Type",
 					},
@@ -416,7 +416,7 @@ func TestBucket(t *testing.T) {
 						"X-My-Init-Header",
 					},
 					AllowedHeaders: []string{
-						"Content-Disposition",
+						"Content-Length",
 					},
 					MaxAge: 3600,
 				}
@@ -436,7 +436,7 @@ func TestBucket(t *testing.T) {
 						"X-My-Init-Header",
 					},
 					AllowedHeaders: []string{
-						"Content-Disposition",
+						"Content-Length",
 						"Content-MD5",
 						"Content-Type",
 					},
@@ -493,7 +493,7 @@ func TestBucket(t *testing.T) {
 				"--delete-cors=origins=https://app.example.com;response-headers=ETag",
 				"--delete-cors=origins=https://init.example.com",
 				"--delete-cors=response-headers=X-My-Init-Header",
-				"--delete-cors=allowed-headers=Content-Disposition",
+				"--delete-cors=allowed-headers=Content-Length",
 				// non-existent should just be ignored:
 				"--delete-cors=response-headers=non-existent-header;origins=https://non-existent.example.com",
 			},
@@ -511,7 +511,7 @@ func TestBucket(t *testing.T) {
 						"X-My-Init-Header",
 					},
 					AllowedHeaders: []string{
-						"Content-Disposition",
+						"Content-Length",
 						"Content-Type",
 					},
 					MaxAge: 1800,

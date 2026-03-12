@@ -19,13 +19,11 @@ const (
 
 // PatchCORS applies additive (--cors) and subtractive (--delete-cors) updates to an
 // existing CORS configuration. Semantics for add:
-//   - origins/response-headers: union (trimmed, deduped, sorted)
-//   - origins/allowed-headers: union (trimmed, deduped, sorted)
+//   - origins/response-headers/allowed-headers: union (trimmed, deduped, sorted)
 //   - max-age: set only if explicitly provided
 //
 // Removals:
-//   - origins/response-headers: set-difference
-//   - origins/allowed-headers: set-difference
+//   - origins/response-headers/allowed-headers: set-difference
 //   - specifying max-age here is rejected
 //   - if origins are targeted and removal leaves zero origins, the CORS
 //     configuration is cleared (function returns nil, changed=true)
