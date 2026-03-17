@@ -16,6 +16,7 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/gitinfo"
+	"github.com/ninech/nctl/api/gitonce"
 	"github.com/ninech/nctl/api/log"
 	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/cli"
@@ -37,6 +38,7 @@ const logPrintTimeout = 10 * time.Second
 type applicationCmd struct {
 	resourceCmd
 	Git                      gitConfig         `embed:"" prefix:"git-"`
+	FromLocalDir             *string           `help:"Path to a local directory to upload and deploy. The directory is zipped and uploaded to a one-time-use git repository. Mutually exclusive with --git-url." xor:"git-source" name:"from-local-dir" placeholder:"."`
 	Size                     *string           `help:"Size of the application (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
 	Port                     *int32            `help:"Port the application is listening on (defaults to ${app_default_port})." placeholder:"${app_default_port}"`
 	HealthProbe              healthProbe       `embed:"" prefix:"health-probe-"`
@@ -51,6 +53,7 @@ type applicationCmd struct {
 	WorkerJob                workerJob         `embed:"" prefix:"worker-job-"`
 	ScheduledJob             scheduledJob      `embed:"" prefix:"scheduled-job-"`
 	GitInformationServiceURL string            `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
+	GitOnceURL               string            `help:"URL of the gitonce upload service." default:"${gitonce_default_url}" env:"GITONCE_URL" hidden:""`
 	SkipRepoAccessCheck      bool              `help:"Skip the git repository access check." default:"false"`
 	Debug                    bool              `help:"Enable debug messages." default:"false"`
 	Language                 string            `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static," default:""`
@@ -58,7 +61,7 @@ type applicationCmd struct {
 }
 
 type gitConfig struct {
-	URL                   string  `required:"" help:"URL to the Git repository containing the application source. Both HTTPS and SSH formats are supported."`
+	URL                   string  `help:"URL to the Git repository containing the application source. Both HTTPS and SSH formats are supported." xor:"git-source"`
 	SubPath               string  `help:"SubPath is a path in the git repository which contains the application code. If not given, the root directory of the git repository will be used."`
 	Revision              string  `default:"main" help:"Revision defines the revision of the source to deploy the application to. This can be a commit, tag or branch."`
 	Username              *string `help:"Username to use when authenticating to the git repository over HTTPS." env:"GIT_USERNAME"`
@@ -126,6 +129,23 @@ const (
 )
 
 func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
+	if cmd.Git.URL == "" && cmd.FromLocalDir == nil {
+		return fmt.Errorf("one of --git-url or --from-local-dir is required")
+	}
+
+	if cmd.FromLocalDir != nil {
+		cmd.Successf("📦", "uploading local directory %q to gitonce", *cmd.FromLocalDir)
+		upload, err := gitonce.UploadDirectory(ctx, *cmd.FromLocalDir, cmd.GitOnceURL)
+		if err != nil {
+			return fmt.Errorf("uploading local directory: %w", err)
+		}
+		cmd.Git.URL = upload.URL
+		cmd.Git.Revision = upload.Commit
+		// skip the repo access check for one-time-use gitonce URLs to avoid
+		// consuming the single allowed clone before the actual deployment
+		cmd.SkipRepoAccessCheck = true
+	}
+
 	newApp := cmd.newApplication(client.Project)
 
 	sshPrivateKey, err := cmd.Git.sshPrivateKey()
@@ -730,5 +750,6 @@ func ApplicationKongVars() (kong.Vars, error) {
 	result["app_dockerfile_path_help"] = "Specifies the path to the Dockerfile. If left empty a file " +
 		"named Dockerfile will be searched in the application code root directory."
 	result["app_dockerfile_build_context_help"] = "Defines the build context. If left empty, the application code root directory will be used as build context."
+	result["gitonce_default_url"] = gitonce.DefaultUploadURL
 	return result, nil
 }
