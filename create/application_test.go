@@ -67,6 +67,15 @@ func TestCreateApplication(t *testing.T) {
 	gitInfoService.Start()
 	defer gitInfoService.Close()
 
+	gitOnceService := test.NewGitOnceService()
+	gitOnceService.Start()
+	defer gitOnceService.Close()
+
+	localDir := t.TempDir()
+	if err := os.WriteFile(localDir+"/main.go", []byte("package main"), 0600); err != nil {
+		t.Fatal(err)
+	}
+
 	cases := map[string]struct {
 		cmd                           applicationCmd
 		checkApp                      func(t *testing.T, cmd applicationCmd, app *apps.Application)
@@ -123,6 +132,7 @@ func TestCreateApplication(t *testing.T) {
 					Wait: false,
 					Name: "basic-auth",
 				},
+				Git:                 gitConfig{URL: "https://github.com/ninech/doesnotexist.git"},
 				Size:                new("mini"),
 				BasicAuth:           new(true),
 				SkipRepoAccessCheck: true,
@@ -530,6 +540,41 @@ func TestCreateApplication(t *testing.T) {
 				is.Empty(app.Spec.ForProvider.BuildpackStack)
 			},
 		},
+		"from-local-dir uploads zip and sets git URL": {
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Wait: false,
+					Name: "local-dir-app",
+				},
+				FromLocalDir: &localDir,
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				is := require.New(t)
+				is.Equal("https://gitonce.example.com/gitonce/test-repo.git", app.Spec.ForProvider.Git.URL)
+				// repo access check must have been skipped (SkipRepoAccessCheck set automatically)
+				is.True(cmd.SkipRepoAccessCheck)
+			},
+		},
+		"from-local-dir with non-existent directory returns error": {
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Wait: false,
+					Name: "local-dir-bad",
+				},
+				FromLocalDir: new("/nonexistent/path"),
+			},
+			errorExpected: true,
+		},
+		"neither git-url nor from-local-dir returns error": {
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Wait: false,
+					Name: "no-source",
+				},
+				SkipRepoAccessCheck: true,
+			},
+			errorExpected: true,
+		},
 	}
 
 	for name, tc := range cases {
@@ -538,6 +583,9 @@ func TestCreateApplication(t *testing.T) {
 
 			if tc.cmd.GitInformationServiceURL == "" {
 				tc.cmd.GitInformationServiceURL = gitInfoService.URL()
+			}
+			if tc.cmd.GitOnceURL == "" {
+				tc.cmd.GitOnceURL = gitOnceService.URL()
 			}
 			gitInfoService.SetResponse(tc.gitInformationServiceResponse)
 			app := tc.cmd.newApplication("default")
@@ -566,6 +614,7 @@ func TestApplicationWait(t *testing.T) {
 			WaitTimeout: time.Second * 5,
 			Name:        "some-name",
 		},
+		Git:                 gitConfig{URL: "https://github.com/ninech/doesnotexist.git"},
 		BasicAuth:           new(true),
 		SkipRepoAccessCheck: true,
 	}
@@ -716,6 +765,7 @@ func TestApplicationBuildFail(t *testing.T) {
 			WaitTimeout: time.Second * 5,
 			Name:        "some-name",
 		},
+		Git:                 gitConfig{URL: "https://github.com/ninech/doesnotexist.git"},
 		SkipRepoAccessCheck: true,
 	}
 	project := test.DefaultProject
