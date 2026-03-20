@@ -20,7 +20,7 @@ type postgresDatabaseCmd struct {
 	Location                meta.LocationName                      `placeholder:"${postgresdatabase_location_default}" help:"Where the PostgreSQL database is created. Available locations are: ${postgresdatabase_location_options}"`
 	PostgresDatabaseVersion storage.PostgresVersion                `placeholder:"${postgresdatabase_version_default}" help:"Release version with which the PostgreSQL database is created. Available versions: ${postgresdatabase_versions}"`
 	BackupSchedule          storage.DatabaseBackupScheduleCalendar `placeholder:"${postgresdatabase_backupschedule_default}" help:"Backup schedule for the PostgreSQL database. Available schedules: ${postgresdatabase_backupschedule_options}"`
-	Collation               storage.PostgresCollation              `placeholder:"${postgresdatabase_collation_default}" help:"Collation for the PostgreSQL database. Defaults to ${postgresdatabase_collation_default}."`
+	Collation               storage.PostgresDatabaseCollation      `placeholder:"${postgresdatabase_collation_default}" help:"Collation for the PostgreSQL database. Defaults to ${postgresdatabase_collation_default}."`
 }
 
 func (cmd *postgresDatabaseCmd) Run(ctx context.Context, client *api.Client) error {
@@ -96,7 +96,7 @@ func PostgresDatabaseKongVars() kong.Vars {
 	result["postgresdatabase_versions"] = strings.Join(stringSlice(storage.PostgresDatabaseVersions), ", ")
 	result["postgresdatabase_backupschedule_default"] = string(storage.DatabaseBackupScheduleCalendarDaily)
 	result["postgresdatabase_backupschedule_options"] = strings.Join(stringSlice(storage.DatabaseBackupScheduleCalendars), ", ")
-	result["postgresdatabase_collation_default"] = string(storage.PostgresCollationDefault)
+	result["postgresdatabase_collation_default"] = string(storage.PostgresDatabaseCollationDefault)
 
 	return result
 }
