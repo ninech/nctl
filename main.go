@@ -162,8 +162,7 @@ func main() {
 			}
 		}
 
-		var cliErr *cli.Error
-		if errors.As(err, &cliErr) {
+		if cliErr, ok := errors.AsType[*cli.Error](err); ok {
 			fmt.Fprintln(writer, err.Error())
 			kongCtx.Exit(cliErr.ExitCode())
 			return
