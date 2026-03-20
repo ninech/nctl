@@ -58,6 +58,7 @@ type applicationCmd struct {
 	Debug                    bool              `help:"Enable debug messages." default:"false"`
 	Language                 string            `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static," default:""`
 	DockerfileBuild          dockerfileBuild   `embed:""`
+	BuildpackStack           string            `help:"${app_buildpack_stack_help} Possible values: ${enum}" enum:"paketo,heroku," default:""`
 }
 
 type gitConfig struct {
@@ -420,6 +421,7 @@ func (cmd *applicationCmd) newApplication(project string) *apps.Application {
 					DockerfilePath: cmd.DockerfileBuild.Path,
 					BuildContext:   cmd.DockerfileBuild.BuildContext,
 				},
+				BuildpackStack: apps.BuildpackStack(cmd.BuildpackStack),
 			},
 		},
 	}
@@ -750,6 +752,8 @@ func ApplicationKongVars() (kong.Vars, error) {
 	result["app_dockerfile_path_help"] = "Specifies the path to the Dockerfile. If left empty a file " +
 		"named Dockerfile will be searched in the application code root directory."
 	result["app_dockerfile_build_context_help"] = "Defines the build context. If left empty, the application code root directory will be used as build context."
+	result["app_buildpack_stack_help"] = "BuildpackStack sets the stack of buildpacks to use for building the application. " +
+		"If left empty, the default stack (paketo) will be used. "
 	result["gitonce_default_url"] = gitonce.DefaultUploadURL
 	return result, nil
 }

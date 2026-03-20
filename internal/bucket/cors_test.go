@@ -89,21 +89,24 @@ func TestParseCORSLooseWithMask(t *testing.T) {
 		nilFields struct {
 			origins         bool
 			responseHeaders bool
+			allowedHeaders  bool
 		}
 	}{
 		{
 			name: "ok: single flag with all keys",
 			chunks: []string{
 				"origins=https://example.com, https://app.example.com ",
-				"response-headers= X-My-Header ,ETag ",
+				"response-headers= ETag ,Last-Modified ",
+				"allowed-headers= Content-Type ,Content-MD5 ",
 				"max-age=3600",
 			},
 			want: storage.CORSConfig{
 				Origins:         []string{"https://app.example.com", "https://example.com"},
-				ResponseHeaders: []string{"ETag", "X-My-Header"},
+				ResponseHeaders: []string{"ETag", "Last-Modified"},
+				AllowedHeaders:  []string{"Content-MD5", "Content-Type"},
 				MaxAge:          3600,
 			},
-			wantMask: corsFieldMask{Origins: true, ResponseHeaders: true, MaxAge: true},
+			wantMask: corsFieldMask{Origins: true, ResponseHeaders: true, AllowedHeaders: true, MaxAge: true},
 		},
 		{
 			name: "ok: multiple flags merged & deduped; max-age not provided -> stays zero (unset here, CRD will default later)",
@@ -111,29 +114,33 @@ func TestParseCORSLooseWithMask(t *testing.T) {
 				"origins=https://example.com,https://example.com",
 				"origins=https://app.example.com",
 				"response-headers=ETag",
-				"response-headers=X-My-Header",
+				"response-headers=Last-Modified",
+				"allowed-headers=Content-Type",
+				"allowed-headers=Content-MD5",
 			},
 			want: storage.CORSConfig{
 				Origins:         []string{"https://app.example.com", "https://example.com"},
-				ResponseHeaders: []string{"ETag", "X-My-Header"},
+				ResponseHeaders: []string{"ETag", "Last-Modified"},
+				AllowedHeaders:  []string{"Content-MD5", "Content-Type"},
 				MaxAge:          0, // parser leaves unset
 			},
-			wantMask: corsFieldMask{Origins: true, ResponseHeaders: true},
+			wantMask: corsFieldMask{Origins: true, ResponseHeaders: true, AllowedHeaders: true},
 		},
 		{
 			name: "ok: empty response-headers allowed (treated as none), max-age not provided",
 			chunks: []string{
 				"origins=https://example.com",
 				"response-headers=",
+				"allowed-headers=",
 			},
 			want: storage.CORSConfig{
 				Origins: []string{"https://example.com"},
 				MaxAge:  0,
 			},
-			wantMask: corsFieldMask{Origins: true, ResponseHeaders: true},
+			wantMask: corsFieldMask{Origins: true, ResponseHeaders: true, AllowedHeaders: true},
 			nilFields: struct {
-				origins, responseHeaders bool
-			}{responseHeaders: true},
+				origins, responseHeaders, allowedHeaders bool
+			}{responseHeaders: true, allowedHeaders: true},
 		},
 		{
 			name: "ok: empty max-age value allowed; mask flips but value stays zero",
@@ -155,8 +162,8 @@ func TestParseCORSLooseWithMask(t *testing.T) {
 			want:     storage.CORSConfig{MaxAge: 1800},
 			wantMask: corsFieldMask{MaxAge: true},
 			nilFields: struct {
-				origins, responseHeaders bool
-			}{origins: true, responseHeaders: true},
+				origins, responseHeaders, allowedHeaders bool
+			}{origins: true, responseHeaders: true, allowedHeaders: true},
 		},
 		{
 			name:     "ok: no chunks means zero values; CRD will inject defaults later",
@@ -164,8 +171,8 @@ func TestParseCORSLooseWithMask(t *testing.T) {
 			want:     storage.CORSConfig{MaxAge: 0},
 			wantMask: corsFieldMask{},
 			nilFields: struct {
-				origins, responseHeaders bool
-			}{origins: true, responseHeaders: true},
+				origins, responseHeaders, allowedHeaders bool
+			}{origins: true, responseHeaders: true, allowedHeaders: true},
 		},
 		{
 			name: "error: conflicting max-age values",
@@ -225,6 +232,11 @@ func TestParseCORSLooseWithMask(t *testing.T) {
 				is.Nil(got.ResponseHeaders, "ResponseHeaders should be nil")
 			} else {
 				is.Equal(tt.want.ResponseHeaders, got.ResponseHeaders)
+			}
+			if tt.nilFields.allowedHeaders {
+				is.Nil(got.AllowedHeaders, "AllowedHeaders should be nil")
+			} else {
+				is.Equal(tt.want.AllowedHeaders, got.AllowedHeaders)
 			}
 
 			is.Equal(tt.want.MaxAge, got.MaxAge)

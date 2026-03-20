@@ -586,7 +586,47 @@ func TestApplication(t *testing.T) {
 			},
 			errorExpected: true,
 		},
-		"defaulting to HTTPS when not specifying a scheme in a git URL works": {
+		"update buildpack stack to heroku triggers a build": {
+		orig: existingApp,
+		cmd: applicationCmd{
+			resourceCmd: resourceCmd{
+				Name: existingApp.Name,
+			},
+			BuildpackStack: new(string(apps.BuildpackStackHeroku)),
+		},
+		checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+			is := require.New(t)
+			is.Equal(apps.BuildpackStack(apps.BuildpackStackHeroku), updated.Spec.ForProvider.BuildpackStack)
+			is.NotNil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
+		},
+	},
+	"update buildpack stack to paketo triggers a build": {
+		orig: existingApp,
+		cmd: applicationCmd{
+			resourceCmd: resourceCmd{
+				Name: existingApp.Name,
+			},
+			BuildpackStack: new(string(apps.BuildpackStackPaketo)),
+		},
+		checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+			is := require.New(t)
+			is.Equal(apps.BuildpackStack(apps.BuildpackStackPaketo), updated.Spec.ForProvider.BuildpackStack)
+			is.NotNil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
+		},
+	},
+	"not setting buildpack stack does not trigger a build": {
+		orig: existingApp,
+		cmd: applicationCmd{
+			resourceCmd: resourceCmd{
+				Name: existingApp.Name,
+			},
+		},
+		checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+			is := require.New(t)
+			is.Nil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
+		},
+	},
+	"defaulting to HTTPS when not specifying a scheme in a git URL works": {
 			orig: existingApp,
 			cmd: applicationCmd{
 				resourceCmd: resourceCmd{

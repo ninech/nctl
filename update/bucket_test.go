@@ -359,7 +359,7 @@ func TestBucket(t *testing.T) {
 		},
 		"add-and-merge-cors-single-flag": {
 			flags: []string{
-				"--cors=origins=https://example.com,https://app.example.com;response-headers=X-My-Header,ETag;max-age=1800",
+				"--cors=origins=https://example.com,https://app.example.com;response-headers=X-My-Header,ETag;allowed-headers=Content-Type,Content-MD5;max-age=1800",
 			},
 			origForProvider: func() *storage.BucketParameters {
 				p := baseBucketParameters
@@ -369,6 +369,9 @@ func TestBucket(t *testing.T) {
 					},
 					ResponseHeaders: []string{
 						"X-My-Init-Header",
+					},
+					AllowedHeaders: []string{
+						"Content-Length",
 					},
 					MaxAge: 3600,
 				}
@@ -386,6 +389,11 @@ func TestBucket(t *testing.T) {
 						"ETag",
 						"X-My-Header",
 						"X-My-Init-Header",
+					},
+					AllowedHeaders: []string{
+						"Content-Length",
+						"Content-MD5",
+						"Content-Type",
 					},
 					MaxAge: 1800,
 				}
@@ -396,7 +404,7 @@ func TestBucket(t *testing.T) {
 		// `origins` get merged)
 		"add-and-merge-cors-single-flag-duplicate-keys": {
 			flags: []string{
-				"--cors=origins=https://example.com;response-headers=X-My-Header;max-age=1800;origins=https://app.example.com;response-headers=ETag",
+				"--cors=origins=https://example.com;response-headers=X-My-Header;allowed-headers=Content-Type;max-age=1800;origins=https://app.example.com;response-headers=ETag;allowed-headers=Content-MD5",
 			},
 			origForProvider: func() *storage.BucketParameters {
 				p := baseBucketParameters
@@ -406,6 +414,9 @@ func TestBucket(t *testing.T) {
 					},
 					ResponseHeaders: []string{
 						"X-My-Init-Header",
+					},
+					AllowedHeaders: []string{
+						"Content-Length",
 					},
 					MaxAge: 3600,
 				}
@@ -423,6 +434,11 @@ func TestBucket(t *testing.T) {
 						"ETag",
 						"X-My-Header",
 						"X-My-Init-Header",
+					},
+					AllowedHeaders: []string{
+						"Content-Length",
+						"Content-MD5",
+						"Content-Type",
 					},
 					MaxAge: 1800,
 				}
@@ -434,6 +450,7 @@ func TestBucket(t *testing.T) {
 			flags: []string{
 				"--cors=origins=https://example.com;response-headers=ETag",
 				"--cors=origins=https://app.example.com;response-headers=X-My-Header",
+				"--cors=allowed-headers=Content-Type,Content-MD5",
 				"--cors=max-age=1800",
 			},
 			origForProvider: func() *storage.BucketParameters {
@@ -462,6 +479,10 @@ func TestBucket(t *testing.T) {
 						"X-My-Header",
 						"X-My-Init-Header",
 					},
+					AllowedHeaders: []string{
+						"Content-MD5",
+						"Content-Type",
+					},
 					MaxAge: 1800,
 				}
 				return &p
@@ -472,6 +493,7 @@ func TestBucket(t *testing.T) {
 				"--delete-cors=origins=https://app.example.com;response-headers=ETag",
 				"--delete-cors=origins=https://init.example.com",
 				"--delete-cors=response-headers=X-My-Init-Header",
+				"--delete-cors=allowed-headers=Content-Length",
 				// non-existent should just be ignored:
 				"--delete-cors=response-headers=non-existent-header;origins=https://non-existent.example.com",
 			},
@@ -488,6 +510,10 @@ func TestBucket(t *testing.T) {
 						"X-My-Header",
 						"X-My-Init-Header",
 					},
+					AllowedHeaders: []string{
+						"Content-Length",
+						"Content-Type",
+					},
 					MaxAge: 1800,
 				}
 				return &p
@@ -500,6 +526,9 @@ func TestBucket(t *testing.T) {
 					},
 					ResponseHeaders: []string{
 						"X-My-Header",
+					},
+					AllowedHeaders: []string{
+						"Content-Type",
 					},
 					MaxAge: 1800,
 				}

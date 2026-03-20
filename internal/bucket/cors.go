@@ -13,16 +13,17 @@ import (
 const (
 	corsKeyOrigins         = "origins"
 	corsKeyResponseHeaders = "response-headers"
+	corsKeyAllowedHeaders  = "allowed-headers"
 	corsKeyMaxAge          = "max-age"
 )
 
 // PatchCORS applies additive (--cors) and subtractive (--delete-cors) updates to an
 // existing CORS configuration. Semantics for add:
-//   - origins/response-headers: union (trimmed, deduped, sorted)
+//   - origins/response-headers/allowed-headers: union (trimmed, deduped, sorted)
 //   - max-age: set only if explicitly provided
 //
 // Removals:
-//   - origins/response-headers: set-difference
+//   - origins/response-headers/allowed-headers: set-difference
 //   - specifying max-age here is rejected
 //   - if origins are targeted and removal leaves zero origins, the CORS
 //     configuration is cleared (function returns nil, changed=true)
@@ -35,6 +36,7 @@ func PatchCORS(base *storage.CORSConfig, addChunks []string, removeChunks []stri
 	if base != nil {
 		work.Origins = append([]string(nil), base.Origins...)
 		work.ResponseHeaders = append([]string(nil), base.ResponseHeaders...)
+		work.AllowedHeaders = append([]string(nil), base.AllowedHeaders...)
 		work.MaxAge = base.MaxAge
 	}
 
@@ -71,6 +73,20 @@ func PatchCORS(base *storage.CORSConfig, addChunks []string, removeChunks []stri
 				work.ResponseHeaders = append(work.ResponseHeaders, h)
 			}
 			sort.Strings(work.ResponseHeaders)
+		}
+		if addMask.AllowedHeaders {
+			union := make(map[string]struct{}, len(work.AllowedHeaders)+len(addSpec.AllowedHeaders))
+			for _, h := range work.AllowedHeaders {
+				union[h] = struct{}{}
+			}
+			for _, h := range addSpec.AllowedHeaders {
+				union[h] = struct{}{}
+			}
+			work.AllowedHeaders = make([]string, 0, len(union))
+			for h := range union {
+				work.AllowedHeaders = append(work.AllowedHeaders, h)
+			}
+			sort.Strings(work.AllowedHeaders)
 		}
 		if addMask.MaxAge {
 			work.MaxAge = addSpec.MaxAge
@@ -116,6 +132,20 @@ func PatchCORS(base *storage.CORSConfig, addChunks []string, removeChunks []stri
 			work.ResponseHeaders = kept
 		}
 
+		if rmMask.AllowedHeaders && len(rmSpec.AllowedHeaders) > 0 {
+			rm := make(map[string]struct{}, len(rmSpec.AllowedHeaders))
+			for _, h := range rmSpec.AllowedHeaders {
+				rm[h] = struct{}{}
+			}
+			kept := make([]string, 0, len(work.AllowedHeaders))
+			for _, h := range work.AllowedHeaders {
+				if _, found := rm[h]; !found {
+					kept = append(kept, h)
+				}
+			}
+			work.AllowedHeaders = kept
+		}
+
 		// If delete-cors targeted origins and removal resulted in zero origins,
 		// interpret as "clear CORS" (drop the config entirely).
 		if removedOrigins && len(work.Origins) == 0 {
@@ -130,6 +160,7 @@ func PatchCORS(base *storage.CORSConfig, addChunks []string, removeChunks []stri
 type corsFieldMask struct {
 	Origins         bool
 	ResponseHeaders bool
+	AllowedHeaders  bool
 	MaxAge          bool
 }
 
@@ -158,6 +189,7 @@ func parseCORSLooseWithMask(chunks []string) (storage.CORSConfig, corsFieldMask,
 
 	origins := map[string]struct{}{}
 	respHdrs := map[string]struct{}{}
+	allowHdrs := map[string]struct{}{}
 	var maxAgeSeen bool
 	var maxAgeVal int
 
@@ -179,6 +211,14 @@ func parseCORSLooseWithMask(chunks []string) (storage.CORSConfig, corsFieldMask,
 					respHdrs[h] = struct{}{}
 				}
 			}
+		case corsKeyAllowedHeaders:
+			mask.AllowedHeaders = true
+			for _, h := range splitCSV(p.val) {
+				h = strings.TrimSpace(h)
+				if h != "" {
+					allowHdrs[h] = struct{}{}
+				}
+			}
 		case corsKeyMaxAge:
 			mask.MaxAge = true
 			// NOTE: value may be "", which is fine; PatchCORS will forbid any presence in --delete-cors.
@@ -197,7 +237,7 @@ func parseCORSLooseWithMask(chunks []string) (storage.CORSConfig, corsFieldMask,
 		default:
 			return out, mask, cli.ErrorWithContext(fmt.Errorf("unknown CORS key %q", p.key)).
 				WithExitCode(cli.ExitUsageError).
-				WithAvailable(corsKeyOrigins, corsKeyResponseHeaders, corsKeyMaxAge).
+				WithAvailable(corsKeyOrigins, corsKeyResponseHeaders, corsKeyAllowedHeaders, corsKeyMaxAge).
 				WithSuggestions("Example: --cors='origins=https://example.com;max-age=3600'")
 		}
 	}
@@ -215,6 +255,13 @@ func parseCORSLooseWithMask(chunks []string) (storage.CORSConfig, corsFieldMask,
 			out.ResponseHeaders = append(out.ResponseHeaders, h)
 		}
 		sort.Strings(out.ResponseHeaders)
+	}
+	if len(allowHdrs) > 0 {
+		out.AllowedHeaders = make([]string, 0, len(allowHdrs))
+		for h := range allowHdrs {
+			out.AllowedHeaders = append(out.AllowedHeaders, h)
+		}
+		sort.Strings(out.AllowedHeaders)
 	}
 	if maxAgeSeen {
 		out.MaxAge = maxAgeVal
