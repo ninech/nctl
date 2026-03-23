@@ -46,6 +46,11 @@ func TestPostgresDatabase(t *testing.T) {
 			create: postgresDatabaseCmd{PostgresDatabaseVersion: storage.PostgresDatabaseVersionDefault},
 			want:   storage.PostgresDatabaseParameters{Version: storage.PostgresDatabaseVersionDefault},
 		},
+		{
+			name:   "collation",
+			create: postgresDatabaseCmd{Collation: storage.PostgresDatabaseCollationDefault},
+			want:   storage.PostgresDatabaseParameters{Collation: storage.PostgresDatabaseCollationDefault},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
