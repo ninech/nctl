@@ -477,6 +477,59 @@ func TestCreateApplication(t *testing.T) {
 				is.Equal("banana", buildEnv.Value)
 			},
 		},
+		"with heroku buildpack stack": {
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Wait: false,
+					Name: "heroku-stack",
+				},
+				Git: gitConfig{
+					URL:      "https://github.com/ninech/doesnotexist.git",
+					Revision: "main",
+				},
+				BuildpackStack:      string(apps.BuildpackStackHeroku),
+				SkipRepoAccessCheck: true,
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				is := require.New(t)
+				is.Equal(apps.BuildpackStackHeroku, app.Spec.ForProvider.BuildpackStack.String())
+			},
+		},
+		"with paketo buildpack stack": {
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Wait: false,
+					Name: "paketo-stack",
+				},
+				Git: gitConfig{
+					URL:      "https://github.com/ninech/doesnotexist.git",
+					Revision: "main",
+				},
+				BuildpackStack:      string(apps.BuildpackStackPaketo),
+				SkipRepoAccessCheck: true,
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				is := require.New(t)
+				is.Equal(apps.BuildpackStackPaketo, app.Spec.ForProvider.BuildpackStack.String())
+			},
+		},
+		"without buildpack stack defaults to empty": {
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Wait: false,
+					Name: "no-stack",
+				},
+				Git: gitConfig{
+					URL:      "https://github.com/ninech/doesnotexist.git",
+					Revision: "main",
+				},
+				SkipRepoAccessCheck: true,
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				is := require.New(t)
+				is.Empty(app.Spec.ForProvider.BuildpackStack)
+			},
+		},
 	}
 
 	for name, tc := range cases {

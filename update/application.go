@@ -61,6 +61,7 @@ type applicationCmd struct {
 	Debug                    bool            `help:"Enable debug messages." default:"false"`
 	Language                 *string         `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static,"`
 	DockerfileBuild          dockerfileBuild `embed:""`
+	BuildpackStack           *string         `help:"${app_buildpack_stack_help} Possible values: ${enum}" enum:"paketo,heroku,"`
 }
 
 type gitConfig struct {
@@ -282,6 +283,12 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 		app.Spec.ForProvider.Language = apps.Language(*cmd.Language)
 	}
 
+	buildpackStackChanged := false
+	if cmd.BuildpackStack != nil && len(*cmd.BuildpackStack) != 0 {
+		app.Spec.ForProvider.BuildpackStack = apps.BuildpackStack(*cmd.BuildpackStack)
+		buildpackStackChanged = true
+	}
+
 	runtimeEnv := cmd.Env
 	if runtimeEnv == nil {
 		runtimeEnv = make(map[string]string)
@@ -314,7 +321,7 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 		sensitiveBuildEnv = make(map[string]string)
 	}
 
-	if cmd.RetryBuild != nil && *cmd.RetryBuild {
+	if (cmd.RetryBuild != nil && *cmd.RetryBuild) || buildpackStackChanged {
 		buildEnv[BuildTrigger] = triggerTimestamp()
 	}
 
