@@ -228,6 +228,8 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 }
 
 func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
+	// rebuildNeeded determines if a rebuild trigger should be added
+	rebuildNeeded := false
 	if cmd.Git != nil {
 		if cmd.Git.URL != nil {
 			app.Spec.ForProvider.Git.URL = *cmd.Git.URL
@@ -281,12 +283,12 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 	}
 	if cmd.Language != nil {
 		app.Spec.ForProvider.Language = apps.Language(*cmd.Language)
+		rebuildNeeded = true
 	}
 
-	buildpackStackChanged := false
 	if cmd.BuildpackStack != nil && len(*cmd.BuildpackStack) != 0 {
 		app.Spec.ForProvider.BuildpackStack = apps.BuildpackStack(*cmd.BuildpackStack)
-		buildpackStackChanged = true
+		rebuildNeeded = true
 	}
 
 	runtimeEnv := cmd.Env
@@ -321,7 +323,7 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 		sensitiveBuildEnv = make(map[string]string)
 	}
 
-	if (cmd.RetryBuild != nil && *cmd.RetryBuild) || buildpackStackChanged {
+	if (cmd.RetryBuild != nil && *cmd.RetryBuild) || rebuildNeeded {
 		buildEnv[BuildTrigger] = triggerTimestamp()
 	}
 
