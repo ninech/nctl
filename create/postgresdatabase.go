@@ -20,7 +20,7 @@ type postgresDatabaseCmd struct {
 	Location                meta.LocationName                      `placeholder:"${postgresdatabase_location_default}" help:"Where the PostgreSQL database is created. Available locations are: ${postgresdatabase_location_options}"`
 	PostgresDatabaseVersion storage.PostgresVersion                `placeholder:"${postgresdatabase_version_default}" help:"Release version with which the PostgreSQL database is created. Available versions: ${postgresdatabase_versions}"`
 	BackupSchedule          storage.DatabaseBackupScheduleCalendar `placeholder:"${postgresdatabase_backupschedule_default}" help:"Backup schedule for the PostgreSQL database. Available schedules: ${postgresdatabase_backupschedule_options}"`
-	Collation               storage.PostgresDatabaseCollation      `placeholder:"${postgresdatabase_collation_default}" help:"Collation for the PostgreSQL database. Defaults to ${postgresdatabase_collation_default}."`
+	Collation               storage.PostgresDatabaseCollation      `placeholder:"${postgresdatabase_collation_default}" help:"Collation for the PostgreSQL database. Defaults to ${postgresdatabase_collation_default}"`
 }
 
 func (cmd *postgresDatabaseCmd) Run(ctx context.Context, client *api.Client) error {
