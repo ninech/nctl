@@ -63,7 +63,7 @@ func (cmd *openSearchCmd) print(
 	}
 
 	if cmd.Name != "" && cmd.PrintCACert {
-		return printBase64(&out.Writer, openSearchList.Items[0].Status.AtProvider.CACert)
+		return WriteBase64(&out.Writer, openSearchList.Items[0].Status.AtProvider.CACert)
 	}
 
 	if cmd.Name != "" && cmd.PrintSnapshotBucket {
