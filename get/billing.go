@@ -10,7 +10,7 @@ import (
 	"net/url"
 
 	"github.com/ninech/nctl/api"
-	"sigs.k8s.io/yaml"
+	goyaml "gopkg.in/yaml.v3"
 )
 
 type billingCmd struct {
@@ -18,27 +18,27 @@ type billingCmd struct {
 }
 
 type subscriptionsResponse struct {
-	CustomerIdentifier string         `json:"customer_identifier"`
-	Subscriptions      []subscription `json:"subscriptions"`
-	Total              int            `json:"total"`
+	CustomerIdentifier string         `json:"customer_identifier" yaml:"customer_identifier"`
+	Subscriptions      []subscription `json:"subscriptions" yaml:"subscriptions"`
+	Total              int            `json:"total" yaml:"total"`
 }
 
 type subscription struct {
-	SubscriptionID      int                 `json:"subscription_id"`
-	SubscriptionCode    string              `json:"subscription_code"`
-	ResourceName        string              `json:"resource_name"`
-	CustomerDescription string              `json:"customer_description"`
-	URN                 string              `json:"urn"`
-	ValidFrom           string              `json:"valid_from"`
-	ValidTo             *string             `json:"valid_to"`
-	Product             subscriptionProduct `json:"product"`
-	Options             json.RawMessage     `json:"options"`
+	SubscriptionID      int                 `json:"subscription_id" yaml:"subscription_id"`
+	SubscriptionCode    string              `json:"subscription_code" yaml:"subscription_code"`
+	ResourceName        string              `json:"resource_name" yaml:"resource_name"`
+	CustomerDescription string              `json:"customer_description" yaml:"customer_description"`
+	URN                 string              `json:"urn" yaml:"urn"`
+	ValidFrom           string              `json:"valid_from" yaml:"valid_from"`
+	ValidTo             *string             `json:"valid_to" yaml:"valid_to"`
+	Product             subscriptionProduct `json:"product" yaml:"product"`
+	Options             interface{}         `json:"options" yaml:"options"`
 }
 
 type subscriptionProduct struct {
-	ProductID string  `json:"product_id"`
-	Quantity  float64 `json:"quantity"`
-	PriceUnit float64 `json:"price_unit"`
+	ProductID string  `json:"product_id" yaml:"product_id"`
+	Quantity  float64 `json:"quantity" yaml:"quantity"`
+	PriceUnit float64 `json:"price_unit" yaml:"price_unit"`
 }
 
 func (cmd *billingCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
@@ -83,11 +83,11 @@ func (cmd *billingCmd) Run(ctx context.Context, client *api.Client, get *Cmd) er
 		}
 		get.Printf("%s\n", indented.String())
 	case yamlOut:
-		var raw interface{}
-		if err := json.Unmarshal(body, &raw); err != nil {
+		var result subscriptionsResponse
+		if err := json.Unmarshal(body, &result); err != nil {
 			return fmt.Errorf("unable to parse response: %w", err)
 		}
-		yamlBytes, err := yaml.Marshal(raw)
+		yamlBytes, err := goyaml.Marshal(result)
 		if err != nil {
 			return fmt.Errorf("unable to convert to YAML: %w", err)
 		}
