@@ -11,6 +11,7 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/gitinfo"
+	"github.com/ninech/nctl/api/gitonce"
 	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/format"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -28,6 +29,7 @@ const BuildTrigger = "BUILD_TRIGGER"
 type applicationCmd struct {
 	resourceCmd
 	Git                     *gitConfig        `embed:"" prefix:"git-"`
+	FromLocalDir            *string           `help:"Path to a local directory to upload and deploy. The directory is zipped and uploaded to a one-time-use git repository. Sets --git-url to the returned URL." name:"from-local-dir" placeholder:"."`
 	Size                    *string           `help:"Size of the app."`
 	Port                    *int32            `help:"Port the app is listening on."`
 	HealthProbe             *healthProbe      `embed:"" prefix:"health-probe-"`
@@ -57,6 +59,7 @@ type applicationCmd struct {
 	RetryBuild               *bool           `help:"Retries build for the application if set to true." placeholder:"false"`
 	Pause                    *bool           `help:"Pauses the application if set to true. Stops all costs." placeholder:"false"`
 	GitInformationServiceURL string          `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
+	GitOnceURL               string          `help:"URL of the gitonce upload service." default:"${gitonce_default_url}" env:"GITONCE_URL" hidden:""`
 	SkipRepoAccessCheck      bool            `help:"Skip the git repository access check." default:"false"`
 	Debug                    bool            `help:"Enable debug messages." default:"false"`
 	Language                 *string         `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static,"`
@@ -137,6 +140,22 @@ type dockerfileBuild struct {
 }
 
 func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
+	if cmd.FromLocalDir != nil {
+		cmd.Successf("📦", "uploading local directory %q to gitonce", *cmd.FromLocalDir)
+		upload, err := gitonce.UploadDirectory(ctx, *cmd.FromLocalDir, cmd.GitOnceURL)
+		if err != nil {
+			return fmt.Errorf("uploading local directory: %w", err)
+		}
+		if cmd.Git == nil {
+			cmd.Git = &gitConfig{}
+		}
+		cmd.Git.URL = &upload.URL
+		cmd.Git.Revision = &upload.Commit
+		// skip the repo access check for one-time-use gitonce URLs to avoid
+		// consuming the single allowed clone before the actual deployment
+		cmd.SkipRepoAccessCheck = true
+	}
+
 	app := &apps.Application{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cmd.Name,
