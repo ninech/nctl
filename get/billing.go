@@ -52,7 +52,7 @@ func (cmd *billingCmd) Run(ctx context.Context, client *api.Client, get *Cmd) er
 		return fmt.Errorf("unable to get authentication token")
 	}
 
-	reqURL := fmt.Sprintf("%s/api/cockpit/subscriptions?customer_identifier=%s", cmd.BillingAPIURL, url.QueryEscape(org))
+	reqURL := fmt.Sprintf("%s/api/v1/subscriptions?customer_identifier=%s", cmd.BillingAPIURL, url.QueryEscape(org))
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
 	if err != nil {
