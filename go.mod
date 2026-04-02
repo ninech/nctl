@@ -19,7 +19,7 @@ require (
 	github.com/grafana/dskit v0.0.0-20250917065751-798f5a8fa154
 	github.com/grafana/loki/v3 v3.6.5
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/int128/kubelogin v1.35.2
+	github.com/int128/kubelogin v1.36.0
 	github.com/jotaen/kong-completion v0.0.11
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 	github.com/lucasepe/codename v0.2.1-0.20230220151621-5e31bf1e775f
@@ -32,7 +32,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/theckman/yacspin v0.13.12
 	golang.org/x/crypto v0.48.0
-	golang.org/x/exp v0.0.0-20260209203927-2842357ff358
+	golang.org/x/exp v0.0.0-20260212183809-81e46e3db34a
 	golang.org/x/oauth2 v0.36.0
 	golang.org/x/sync v0.19.0
 	k8s.io/api v0.35.3
