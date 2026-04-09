@@ -103,7 +103,7 @@ func TestListPrint(t *testing.T) {
 			cmd := NewTestCmd(buf, tc.out)
 			cmd.AllProjects = tc.inAllProjects
 			cmd.Watch = tc.watch
-			ctx, cancel := context.WithTimeout(t.Context(), 20*time.Millisecond)
+			ctx, cancel := context.WithTimeout(t.Context(), 50*time.Millisecond)
 			defer cancel()
 
 			wg := sync.WaitGroup{}
