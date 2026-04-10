@@ -25,6 +25,7 @@ type Cmd struct {
 	ServiceConnection   serviceConnectionCmd `cmd:"" group:"update-network" name:"serviceconnection" aliases:"sc" help:"Update a ServiceConnection."`
 	BucketUser          bucketUserCmd        `cmd:"" group:"update-storage" name:"bucketuser" aliases:"bu" help:"Update a BucketUser."`
 	Bucket              bucketCmd            `cmd:"" group:"update-storage" name:"bucket" help:"Update a Bucket."`
+	Grafana             grafanaCmd           `cmd:"" group:"update-observability" name:"grafana" help:"Update an existing Grafana instance."`
 }
 
 type resourceCmd struct {

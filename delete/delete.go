@@ -33,6 +33,7 @@ type Cmd struct {
 	ServiceConnection   serviceConnectionCmd `cmd:"" group:"delete-network" name:"serviceconnection" aliases:"sc" help:"Delete a ServiceConnection."`
 	Bucket              bucketCmd            `cmd:"" group:"delete-storage" name:"bucket" help:"Delete a Bucket."`
 	BucketUser          bucketUserCmd        `cmd:"" group:"delete-storage" name:"bucketuser" aliases:"bu" help:"Delete a BucketUser."`
+	Grafana             grafanaCmd           `cmd:"" group:"delete-observability" name:"grafana" help:"Delete a Grafana instance."`
 }
 
 type resourceCmd struct {
