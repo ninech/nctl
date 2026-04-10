@@ -43,6 +43,7 @@ type Cmd struct {
 	ServiceConnection   serviceConnectionCmd  `cmd:"" group:"networking.nine.ch" name:"serviceconnection" aliases:"sc,serviceconnections" help:"Get a ServiceConnection."`
 	Bucket              bucketCmd             `cmd:"" group:"storage.nine.ch" name:"bucket" help:"Get Bucket instances."`
 	BucketUser          bucketUserCmd         `cmd:"" group:"storage.nine.ch" name:"bucketuser" aliases:"bu" help:"Get BucketUser instances."`
+	Grafana             grafanaCmd            `cmd:"" group:"observability.nine.ch" name:"grafana" help:"Get Grafana instances."`
 }
 
 type output struct {
