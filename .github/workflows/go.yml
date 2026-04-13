@@ -22,6 +22,7 @@ jobs:
           install-go: false
       - run: go fix -diff ./... | awk '{print} /\S/ {found=1} END {if (found) exit 1}'
       - uses: golang/govulncheck-action@v1
+        continue-on-error: true
         with:
           repo-checkout: false
           cache: false

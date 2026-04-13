@@ -13,7 +13,7 @@ import (
 type Cmd struct {
 	Application         applicationCmd       `cmd:"" group:"deplo.io" name:"application" aliases:"app,application" help:"Update an existing deplo.io Application."`
 	APIServiceAccount   apiServiceAccountCmd `cmd:"" group:"iam.nine.ch" name:"apiserviceaccount" aliases:"asa" help:"Update an API Service Account."`
-	Config              configCmd            `cmd:"" group:"deplo.io" name:"config"  help:"Update an existing deplo.io Project Configuration."`
+	ProjectConfig       configCmd            `cmd:"" group:"deplo.io" name:"project-config" aliases:"config" help:"Update an existing deplo.io Project Configuration."`
 	Project             projectCmd           `cmd:"" group:"management.nine.ch" name:"project"  help:"Update an existing Project."`
 	MySQL               mySQLCmd             `cmd:"" group:"storage.nine.ch" name:"mysql" help:"Update an existing MySQL instance."`
 	MySQLDatabase       mysqlDatabaseCmd     `cmd:"" group:"storage.nine.ch" name:"mysqldatabase" help:"Update an existing MySQL database."`

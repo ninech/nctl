@@ -21,7 +21,7 @@ type Cmd struct {
 	VCluster            vclusterCmd          `cmd:"" group:"infrastructure.nine.ch" name:"vcluster" help:"Delete a vcluster."`
 	APIServiceAccount   apiServiceAccountCmd `cmd:"" group:"iam.nine.ch" name:"apiserviceaccount" aliases:"asa" help:"Delete an API Service Account."`
 	Project             projectCmd           `cmd:"" group:"management.nine.ch" name:"project" aliases:"proj" help:"Delete a Project."`
-	Config              configCmd            `cmd:"" group:"deplo.io" name:"config" help:"Delete a deplo.io Project Configuration."`
+	ProjectConfig       configCmd            `cmd:"" group:"deplo.io" name:"project-config" aliases:"config" help:"Delete a deplo.io Project Configuration."`
 	Application         applicationCmd       `cmd:"" group:"deplo.io" name:"application" aliases:"app,application" help:"Delete a deplo.io Application."`
 	MySQL               mySQLCmd             `cmd:"" group:"storage.nine.ch" name:"mysql" help:"Delete a MySQL instance."`
 	MySQLDatabase       mysqlDatabaseCmd     `cmd:"" group:"storage.nine.ch" name:"mysqldatabase" help:"Delete a MySQL database."`

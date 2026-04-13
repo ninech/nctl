@@ -31,7 +31,7 @@ type Cmd struct {
 	Applications        applicationsCmd       `cmd:"" group:"deplo.io" name:"applications" aliases:"app,apps,application" help:"Get deplo.io Applications."`
 	Builds              buildCmd              `cmd:"" group:"deplo.io" name:"builds" aliases:"build" help:"Get deplo.io Builds."`
 	Releases            releasesCmd           `cmd:"" group:"deplo.io" name:"releases" aliases:"release" help:"Get deplo.io Releases."`
-	Configs             configsCmd            `cmd:"" group:"deplo.io" name:"configs" aliases:"config" help:"Get deplo.io Project Configuration."`
+	ProjectConfig       configsCmd            `cmd:"" group:"deplo.io" name:"project-config" aliases:"config,configs,project-configs" help:"Get deplo.io Project Configuration."`
 	MySQL               mySQLCmd              `cmd:"" group:"storage.nine.ch" name:"mysql" help:"Get MySQL instances."`
 	MySQLDatabases      mysqlDatabaseCmd      `cmd:"" group:"storage.nine.ch" name:"mysqldatabases" aliases:"mysqldatabase" help:"Get MySQL databases."`
 	OpenSearch          openSearchCmd         `cmd:"" group:"storage.nine.ch" name:"opensearch" aliases:"os" help:"Get OpenSearch clusters."`

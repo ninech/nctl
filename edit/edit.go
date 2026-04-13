@@ -28,7 +28,7 @@ type Cmd struct {
 	VCluster            resourceCmd `cmd:"" group:"infrastructure.nine.ch" name:"vcluster" help:"Edit a vcluster."`
 	APIServiceAccount   resourceCmd `cmd:"" group:"iam.nine.ch" name:"apiserviceaccount" aliases:"asa" help:"Edit an API Service Account."`
 	Project             resourceCmd `cmd:"" group:"management.nine.ch" name:"project" help:"Edit a project."`
-	Config              resourceCmd `cmd:"" group:"deplo.io" name:"config" alias:"projectconfig" help:"Edit a deplo.io Project Configuration."`
+	ProjectConfig       resourceCmd `cmd:"" group:"deplo.io" name:"project-config" aliases:"config" help:"Edit a deplo.io Project Configuration."`
 	Application         resourceCmd `cmd:"" group:"deplo.io" name:"application" aliases:"app,application" help:"Edit a deplo.io Application."`
 	MySQL               resourceCmd `cmd:"" group:"storage.nine.ch" name:"mysql" help:"Edit a MySQL instance."`
 	MySQLDatabase       resourceCmd `cmd:"" group:"storage.nine.ch" name:"mysqldatabase" help:"Edit a MySQL database."`
