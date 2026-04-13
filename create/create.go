@@ -41,6 +41,7 @@ type Cmd struct {
 	ServiceConnection   serviceConnectionCmd `cmd:"" group:"networking.nine.ch" name:"serviceconnection" aliases:"sc" help:"Create a new ServiceConnection."`
 	Bucket              bucketCmd            `cmd:"" group:"storage.nine.ch" name:"bucket" help:"Create a new Bucket."`
 	BucketUser          bucketUserCmd        `cmd:"" group:"storage.nine.ch" name:"bucketuser" aliases:"bu" help:"Create a new BucketUser."`
+	Grafana             grafanaCmd           `cmd:"" group:"observability.nine.ch" name:"grafana" help:"Create a new Grafana instance."`
 }
 
 type resourceCmd struct {
