@@ -37,7 +37,7 @@ func (cmd *keyValueStoreCmd) print(ctx context.Context, client *api.Client, list
 		return cmd.printSecret(ctx, client, &keyValueStoreList.Items[0], out, func(_, pw string) string { return pw })
 	}
 	if cmd.Name != "" && cmd.PrintCACert {
-		return printBase64(&out.Writer, keyValueStoreList.Items[0].Status.AtProvider.CACert)
+		return WriteBase64(&out.Writer, keyValueStoreList.Items[0].Status.AtProvider.CACert)
 	}
 
 	switch out.Format {
