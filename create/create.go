@@ -25,22 +25,22 @@ import (
 
 type Cmd struct {
 	Filename            *os.File             `short:"f" help:"Create any resource from a yaml or json file." completion-predictor:"file"`
-	FromFile            fromFile             `cmd:"" default:"1" name:"-f <file>" help:"Create any resource from a yaml or json file."`
-	VCluster            vclusterCmd          `cmd:"" group:"infrastructure.nine.ch" name:"vcluster" help:"Create a new vcluster."`
-	APIServiceAccount   apiServiceAccountCmd `cmd:"" group:"iam.nine.ch" name:"apiserviceaccount" aliases:"asa" help:"Create a new API Service Account."`
-	Project             projectCmd           `cmd:"" group:"management.nine.ch" name:"project" help:"Create a new project."`
-	Config              configCmd            `cmd:"" group:"deplo.io" name:"config"  help:"Create a new deplo.io Project Configuration."`
-	Application         applicationCmd       `cmd:"" group:"deplo.io" name:"application" aliases:"app,application" help:"Create a new deplo.io Application."`
-	MySQL               mySQLCmd             `cmd:"" group:"storage.nine.ch" name:"mysql" help:"Create a new MySQL instance."`
-	MySQLDatabase       mysqlDatabaseCmd     `cmd:"" group:"storage.nine.ch" name:"mysqldatabase" help:"Create a new MySQL database."`
-	Postgres            postgresCmd          `cmd:"" group:"storage.nine.ch" name:"postgres" help:"Create a new PostgreSQL instance."`
-	PostgresDatabase    postgresDatabaseCmd  `cmd:"" group:"storage.nine.ch" name:"postgresdatabase" help:"Create a new PostgreSQL database."`
-	KeyValueStore       keyValueStoreCmd     `cmd:"" group:"storage.nine.ch" name:"keyvaluestore" aliases:"kvs" help:"Create a new KeyValueStore instance."`
-	OpenSearch          openSearchCmd        `cmd:"" group:"storage.nine.ch" name:"opensearch" aliases:"os" help:"Create a new OpenSearch cluster."`
-	CloudVirtualMachine cloudVMCmd           `cmd:"" group:"infrastructure.nine.ch" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Create a new CloudVM."`
-	ServiceConnection   serviceConnectionCmd `cmd:"" group:"networking.nine.ch" name:"serviceconnection" aliases:"sc" help:"Create a new ServiceConnection."`
-	Bucket              bucketCmd            `cmd:"" group:"storage.nine.ch" name:"bucket" help:"Create a new Bucket."`
-	BucketUser          bucketUserCmd        `cmd:"" group:"storage.nine.ch" name:"bucketuser" aliases:"bu" help:"Create a new BucketUser."`
+	FromFile            fromFile             `cmd:"" group:"create-general" default:"1" name:"-f <file>" help:"Create any resource from a yaml or json file."`
+	VCluster            vclusterCmd          `cmd:"" group:"create-infra" name:"vcluster" help:"Create a new vcluster."`
+	APIServiceAccount   apiServiceAccountCmd `cmd:"" group:"create-access" name:"apiserviceaccount" aliases:"asa" help:"Create a new API Service Account."`
+	Project             projectCmd           `cmd:"" group:"create-access" name:"project" help:"Create a new project."`
+	Config              configCmd            `cmd:"" group:"create-apps" name:"config"  help:"Create a new deplo.io Project Configuration."`
+	Application         applicationCmd       `cmd:"" group:"create-apps" name:"application" aliases:"app,application" help:"Create a new deplo.io Application."`
+	MySQL               mySQLCmd             `cmd:"" group:"create-storage" name:"mysql" help:"Create a new MySQL instance."`
+	MySQLDatabase       mysqlDatabaseCmd     `cmd:"" group:"create-storage" name:"mysqldatabase" help:"Create a new MySQL database."`
+	Postgres            postgresCmd          `cmd:"" group:"create-storage" name:"postgres" help:"Create a new PostgreSQL instance."`
+	PostgresDatabase    postgresDatabaseCmd  `cmd:"" group:"create-storage" name:"postgresdatabase" help:"Create a new PostgreSQL database."`
+	KeyValueStore       keyValueStoreCmd     `cmd:"" group:"create-storage" name:"keyvaluestore" aliases:"kvs" help:"Create a new KeyValueStore instance."`
+	OpenSearch          openSearchCmd        `cmd:"" group:"create-storage" name:"opensearch" aliases:"os" help:"Create a new OpenSearch cluster."`
+	CloudVirtualMachine cloudVMCmd           `cmd:"" group:"create-infra" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Create a new CloudVM."`
+	ServiceConnection   serviceConnectionCmd `cmd:"" group:"create-network" name:"serviceconnection" aliases:"sc" help:"Create a new ServiceConnection."`
+	Bucket              bucketCmd            `cmd:"" group:"create-storage" name:"bucket" help:"Create a new Bucket."`
+	BucketUser          bucketUserCmd        `cmd:"" group:"create-storage" name:"bucketuser" aliases:"bu" help:"Create a new BucketUser."`
 }
 
 type resourceCmd struct {

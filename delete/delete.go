@@ -17,22 +17,22 @@ import (
 
 type Cmd struct {
 	Filename            *os.File             `short:"f" completion-predictor:"file"`
-	FromFile            fromFile             `cmd:"" default:"1" name:"-f <file>" help:"Delete any resource from a yaml or json file."`
-	VCluster            vclusterCmd          `cmd:"" group:"infrastructure.nine.ch" name:"vcluster" help:"Delete a vcluster."`
-	APIServiceAccount   apiServiceAccountCmd `cmd:"" group:"iam.nine.ch" name:"apiserviceaccount" aliases:"asa" help:"Delete an API Service Account."`
-	Project             projectCmd           `cmd:"" group:"management.nine.ch" name:"project" aliases:"proj" help:"Delete a Project."`
-	ProjectConfig       configCmd            `cmd:"" group:"deplo.io" name:"project-config" aliases:"config" help:"Delete a deplo.io Project Configuration."`
-	Application         applicationCmd       `cmd:"" group:"deplo.io" name:"application" aliases:"app,application" help:"Delete a deplo.io Application."`
-	MySQL               mySQLCmd             `cmd:"" group:"storage.nine.ch" name:"mysql" help:"Delete a MySQL instance."`
-	MySQLDatabase       mysqlDatabaseCmd     `cmd:"" group:"storage.nine.ch" name:"mysqldatabase" help:"Delete a MySQL database."`
-	Postgres            postgresCmd          `cmd:"" group:"storage.nine.ch" name:"postgres" help:"Delete a PostgreSQL instance."`
-	PostgresDatabase    postgresDatabaseCmd  `cmd:"" group:"storage.nine.ch" name:"postgresdatabase" help:"Delete a PostgreSQL database."`
-	KeyValueStore       keyValueStoreCmd     `cmd:"" group:"storage.nine.ch" name:"keyvaluestore" aliases:"kvs" help:"Delete a KeyValueStore instance."`
-	OpenSearch          openSearchCmd        `cmd:"" group:"storage.nine.ch" name:"opensearch" aliases:"os" help:"Delete an OpenSearch cluster."`
-	CloudVirtualMachine cloudVMCmd           `cmd:"" group:"infrastructure.nine.ch" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Delete a CloudVM."`
-	ServiceConnection   serviceConnectionCmd `cmd:"" group:"networking.nine.ch" name:"serviceconnection" aliases:"sc" help:"Delete a ServiceConnection."`
-	Bucket              bucketCmd            `cmd:"" group:"storage.nine.ch" name:"bucket" help:"Delete a Bucket."`
-	BucketUser          bucketUserCmd        `cmd:"" group:"storage.nine.ch" name:"bucketuser" aliases:"bu" help:"Delete a BucketUser."`
+	FromFile            fromFile             `cmd:"" group:"delete-general" default:"1" name:"-f <file>" help:"Delete any resource from a yaml or json file."`
+	VCluster            vclusterCmd          `cmd:"" group:"delete-infra" name:"vcluster" help:"Delete a vcluster."`
+	APIServiceAccount   apiServiceAccountCmd `cmd:"" group:"delete-access" name:"apiserviceaccount" aliases:"asa" help:"Delete an API Service Account."`
+	Project             projectCmd           `cmd:"" group:"delete-access" name:"project" aliases:"proj" help:"Delete a Project."`
+	ProjectConfig       configCmd            `cmd:"" group:"delete-apps" name:"project-config" aliases:"config" help:"Delete a deplo.io Project Configuration."`
+	Application         applicationCmd       `cmd:"" group:"delete-apps" name:"application" aliases:"app,application" help:"Delete a deplo.io Application."`
+	MySQL               mySQLCmd             `cmd:"" group:"delete-storage" name:"mysql" help:"Delete a MySQL instance."`
+	MySQLDatabase       mysqlDatabaseCmd     `cmd:"" group:"delete-storage" name:"mysqldatabase" help:"Delete a MySQL database."`
+	Postgres            postgresCmd          `cmd:"" group:"delete-storage" name:"postgres" help:"Delete a PostgreSQL instance."`
+	PostgresDatabase    postgresDatabaseCmd  `cmd:"" group:"delete-storage" name:"postgresdatabase" help:"Delete a PostgreSQL database."`
+	KeyValueStore       keyValueStoreCmd     `cmd:"" group:"delete-storage" name:"keyvaluestore" aliases:"kvs" help:"Delete a KeyValueStore instance."`
+	OpenSearch          openSearchCmd        `cmd:"" group:"delete-storage" name:"opensearch" aliases:"os" help:"Delete an OpenSearch cluster."`
+	CloudVirtualMachine cloudVMCmd           `cmd:"" group:"delete-infra" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Delete a CloudVM."`
+	ServiceConnection   serviceConnectionCmd `cmd:"" group:"delete-network" name:"serviceconnection" aliases:"sc" help:"Delete a ServiceConnection."`
+	Bucket              bucketCmd            `cmd:"" group:"delete-storage" name:"bucket" help:"Delete a Bucket."`
+	BucketUser          bucketUserCmd        `cmd:"" group:"delete-storage" name:"bucketuser" aliases:"bu" help:"Delete a BucketUser."`
 }
 
 type resourceCmd struct {

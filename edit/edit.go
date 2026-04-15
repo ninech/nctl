@@ -25,18 +25,18 @@ import (
 )
 
 type Cmd struct {
-	VCluster            resourceCmd `cmd:"" group:"infrastructure.nine.ch" name:"vcluster" help:"Edit a vcluster."`
-	APIServiceAccount   resourceCmd `cmd:"" group:"iam.nine.ch" name:"apiserviceaccount" aliases:"asa" help:"Edit an API Service Account."`
-	Project             resourceCmd `cmd:"" group:"management.nine.ch" name:"project" help:"Edit a project."`
-	ProjectConfig       resourceCmd `cmd:"" group:"deplo.io" name:"project-config" aliases:"config" help:"Edit a deplo.io Project Configuration."`
-	Application         resourceCmd `cmd:"" group:"deplo.io" name:"application" aliases:"app,application" help:"Edit a deplo.io Application."`
-	MySQL               resourceCmd `cmd:"" group:"storage.nine.ch" name:"mysql" help:"Edit a MySQL instance."`
-	MySQLDatabase       resourceCmd `cmd:"" group:"storage.nine.ch" name:"mysqldatabase" help:"Edit a MySQL database."`
-	Postgres            resourceCmd `cmd:"" group:"storage.nine.ch" name:"postgres" help:"Edit a PostgreSQL instance."`
-	PostgresDatabase    resourceCmd `cmd:"" group:"storage.nine.ch" name:"postgresdatabase" help:"Edit a PostgreSQL database."`
-	KeyValueStore       resourceCmd `cmd:"" group:"storage.nine.ch" name:"keyvaluestore" aliases:"kvs" help:"Edit a KeyValueStore instance."`
-	OpenSearch          resourceCmd `cmd:"" group:"storage.nine.ch" name:"opensearch" aliases:"os" help:"Edit an OpenSearch cluster."`
-	CloudVirtualMachine resourceCmd `cmd:"" group:"infrastructure.nine.ch" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Edit a CloudVM."`
+	VCluster            resourceCmd `cmd:"" group:"edit-infra" name:"vcluster" help:"Edit a vcluster."`
+	APIServiceAccount   resourceCmd `cmd:"" group:"edit-access" name:"apiserviceaccount" aliases:"asa" help:"Edit an API Service Account."`
+	Project             resourceCmd `cmd:"" group:"edit-access" name:"project" help:"Edit a project."`
+	ProjectConfig       resourceCmd `cmd:"" group:"edit-apps" name:"project-config" aliases:"config" help:"Edit a deplo.io Project Configuration."`
+	Application         resourceCmd `cmd:"" group:"edit-apps" name:"application" aliases:"app,application" help:"Edit a deplo.io Application."`
+	MySQL               resourceCmd `cmd:"" group:"edit-storage" name:"mysql" help:"Edit a MySQL instance."`
+	MySQLDatabase       resourceCmd `cmd:"" group:"edit-storage" name:"mysqldatabase" help:"Edit a MySQL database."`
+	Postgres            resourceCmd `cmd:"" group:"edit-storage" name:"postgres" help:"Edit a PostgreSQL instance."`
+	PostgresDatabase    resourceCmd `cmd:"" group:"edit-storage" name:"postgresdatabase" help:"Edit a PostgreSQL database."`
+	KeyValueStore       resourceCmd `cmd:"" group:"edit-storage" name:"keyvaluestore" aliases:"kvs" help:"Edit a KeyValueStore instance."`
+	OpenSearch          resourceCmd `cmd:"" group:"edit-storage" name:"opensearch" aliases:"os" help:"Edit an OpenSearch cluster."`
+	CloudVirtualMachine resourceCmd `cmd:"" group:"edit-infra" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Edit a CloudVM."`
 }
 
 type resourceCmd struct {

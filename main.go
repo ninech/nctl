@@ -45,17 +45,21 @@ type flags struct {
 
 type rootCommand struct {
 	flags
-	Get         get.Cmd               `cmd:"" help:"Get resource."`
-	Auth        auth.Cmd              `cmd:"" help:"Authenticate with resource."`
-	Completions completion.Completion `cmd:"" help:"Print shell completions."`
-	Create      create.Cmd            `cmd:"" help:"Create resource."`
-	Copy        copy.Cmd              `cmd:"" help:"Copy resource."`
-	Apply       apply.Cmd             `cmd:"" help:"Apply resource."`
-	Delete      delete.Cmd            `cmd:"" help:"Delete resource."`
-	Logs        logs.Cmd              `cmd:"" help:"Get logs of resource."`
-	Update      update.Cmd            `cmd:"" help:"Update resource."`
-	Exec        exec.Cmd              `cmd:"" help:"Execute a command."`
-	Edit        edit.Cmd              `cmd:"" help:"Edit a resource."`
+
+	// Resource management
+	Get    get.Cmd    `cmd:"" help:"List resources across Nine APIs and watch them for changes." group:"verbs"`
+	Create create.Cmd `cmd:"" help:"Create resources from YAML or JSON files, or from resource-specific subcommands." group:"verbs"`
+	Apply  apply.Cmd  `cmd:"" help:"Apply resources declaratively from YAML or JSON files." group:"verbs"`
+	Update update.Cmd `cmd:"" help:"Update existing resources using resource-specific subcommands." group:"verbs"`
+	Delete delete.Cmd `cmd:"" help:"Delete resources by file or through resource-specific subcommands." group:"verbs"`
+	Edit   edit.Cmd   `cmd:"" help:"Edit supported resources interactively in your configured editor." group:"verbs"`
+
+	// Utility & interaction
+	Auth        auth.Cmd              `cmd:"" help:"Log in, switch organization or project context, and inspect your current session." group:"utils"`
+	Logs        logs.Cmd              `cmd:"" help:"Show logs for supported deplo.io resources such as applications and builds." group:"utils"`
+	Exec        exec.Cmd              `cmd:"" help:"Run a command or open a shell in a deplo.io application." group:"utils"`
+	Copy        copy.Cmd              `cmd:"" help:"Copy supported resources such as deplo.io applications." group:"utils"`
+	Completions completion.Completion `cmd:"" help:"Generate shell completion commands for your current shell." group:"utils"`
 }
 
 const (
@@ -88,6 +92,46 @@ func main() {
 		kong.Description(
 			"Interact with Nine API resources. See https://docs.nineapis.ch for the full API docs.",
 		),
+		kong.Groups{
+			"verbs": "Resource Management Commands",
+			"utils": "Utility Commands",
+
+			"get-general": "General",
+			"get-access":  "Project & Access",
+			"get-infra":   "Infrastructure",
+			"get-apps":    "Applications",
+			"get-storage": "Databases & Object Storage",
+			"get-network": "Networking",
+
+			"create-general": "General",
+			"create-access":  "Project & Access",
+			"create-infra":   "Infrastructure",
+			"create-apps":    "Applications",
+			"create-storage": "Databases & Object Storage",
+			"create-network": "Networking",
+
+			"update-access":  "Project & Access",
+			"update-infra":   "Infrastructure",
+			"update-apps":    "Applications",
+			"update-storage": "Databases & Object Storage",
+			"update-network": "Networking",
+
+			"edit-access":  "Project & Access",
+			"edit-infra":   "Infrastructure",
+			"edit-apps":    "Applications",
+			"edit-storage": "Databases & Object Storage",
+
+			"delete-general": "General",
+			"delete-access":  "Project & Access",
+			"delete-infra":   "Infrastructure",
+			"delete-apps":    "Applications",
+			"delete-storage": "Databases & Object Storage",
+			"delete-network": "Networking",
+		},
+		kong.ConfigureHelp(kong.HelpOptions{
+			Compact:             true,
+			NoExpandSubcommands: true,
+		}),
 		kong.UsageOnError(),
 		kong.PostBuild(format.InterpolateFlagPlaceholders(kongVars)),
 		kongVars,
