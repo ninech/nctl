@@ -11,20 +11,20 @@ import (
 )
 
 type Cmd struct {
-	Application         applicationCmd       `cmd:"" group:"deplo.io" name:"application" aliases:"app,application" help:"Update an existing deplo.io Application."`
-	APIServiceAccount   apiServiceAccountCmd `cmd:"" group:"iam.nine.ch" name:"apiserviceaccount" aliases:"asa" help:"Update an API Service Account."`
-	ProjectConfig       configCmd            `cmd:"" group:"deplo.io" name:"project-config" aliases:"config" help:"Update an existing deplo.io Project Configuration."`
-	Project             projectCmd           `cmd:"" group:"management.nine.ch" name:"project"  help:"Update an existing Project."`
-	MySQL               mySQLCmd             `cmd:"" group:"storage.nine.ch" name:"mysql" help:"Update an existing MySQL instance."`
-	MySQLDatabase       mysqlDatabaseCmd     `cmd:"" group:"storage.nine.ch" name:"mysqldatabase" help:"Update an existing MySQL database."`
-	Postgres            postgresCmd          `cmd:"" group:"storage.nine.ch" name:"postgres" help:"Update an existing PostgreSQL instance."`
-	PostgresDatabase    postgresDatabaseCmd  `cmd:"" group:"storage.nine.ch" name:"postgresdatabase" help:"Update an existing PostgreSQL database."`
-	KeyValueStore       keyValueStoreCmd     `cmd:"" group:"storage.nine.ch" name:"keyvaluestore" aliases:"kvs" help:"Update an existing KeyValueStore instance."`
-	OpenSearch          openSearchCmd        `cmd:"" group:"storage.nine.ch" name:"opensearch" aliases:"os" help:"Update an existing OpenSearch cluster."`
-	CloudVirtualMachine cloudVMCmd           `cmd:"" group:"infrastructure.nine.ch" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Update a CloudVM."`
-	ServiceConnection   serviceConnectionCmd `cmd:"" group:"networking.nine.ch" name:"serviceconnection" aliases:"sc" help:"Update a ServiceConnection."`
-	BucketUser          bucketUserCmd        `cmd:"" group:"storage.nine.ch" name:"bucketuser" aliases:"bu" help:"Update a BucketUser."`
-	Bucket              bucketCmd            `cmd:"" group:"storage.nine.ch" name:"bucket" help:"Update a Bucket."`
+	Application         applicationCmd       `cmd:"" group:"update-apps" name:"application" aliases:"app,application" help:"Update an existing deplo.io Application."`
+	APIServiceAccount   apiServiceAccountCmd `cmd:"" group:"update-access" name:"apiserviceaccount" aliases:"asa" help:"Update an API Service Account."`
+	ProjectConfig       configCmd            `cmd:"" group:"update-apps" name:"project-config" aliases:"config" help:"Update an existing deplo.io Project Configuration."`
+	Project             projectCmd           `cmd:"" group:"update-access" name:"project"  help:"Update an existing Project."`
+	MySQL               mySQLCmd             `cmd:"" group:"update-storage" name:"mysql" help:"Update an existing MySQL instance."`
+	MySQLDatabase       mysqlDatabaseCmd     `cmd:"" group:"update-storage" name:"mysqldatabase" help:"Update an existing MySQL database."`
+	Postgres            postgresCmd          `cmd:"" group:"update-storage" name:"postgres" help:"Update an existing PostgreSQL instance."`
+	PostgresDatabase    postgresDatabaseCmd  `cmd:"" group:"update-storage" name:"postgresdatabase" help:"Update an existing PostgreSQL database."`
+	KeyValueStore       keyValueStoreCmd     `cmd:"" group:"update-storage" name:"keyvaluestore" aliases:"kvs" help:"Update an existing KeyValueStore instance."`
+	OpenSearch          openSearchCmd        `cmd:"" group:"update-storage" name:"opensearch" aliases:"os" help:"Update an existing OpenSearch cluster."`
+	CloudVirtualMachine cloudVMCmd           `cmd:"" group:"update-infra" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Update a CloudVM."`
+	ServiceConnection   serviceConnectionCmd `cmd:"" group:"update-network" name:"serviceconnection" aliases:"sc" help:"Update a ServiceConnection."`
+	BucketUser          bucketUserCmd        `cmd:"" group:"update-storage" name:"bucketuser" aliases:"bu" help:"Update a BucketUser."`
+	Bucket              bucketCmd            `cmd:"" group:"update-storage" name:"bucket" help:"Update a Bucket."`
 }
 
 type resourceCmd struct {
