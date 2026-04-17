@@ -2,6 +2,7 @@ package update
 
 import (
 	"io"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -33,6 +34,15 @@ func TestApplication(t *testing.T) {
 	gitInfoService := test.NewGitInformationService()
 	gitInfoService.Start()
 	defer gitInfoService.Close()
+
+	gitOnceService := test.NewGitOnceService()
+	gitOnceService.Start()
+	defer gitOnceService.Close()
+
+	localDir := t.TempDir()
+	if err := os.WriteFile(localDir+"/main.go", []byte("package main"), 0600); err != nil {
+		t.Fatal(err)
+	}
 
 	existingApp := &apps.Application{
 		ObjectMeta: metav1.ObjectMeta{
@@ -687,6 +697,30 @@ func TestApplication(t *testing.T) {
 				is.Equal("main", updated.Spec.ForProvider.Git.Revision)
 			},
 		},
+		"from-local-dir uploads zip and updates git URL": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
+				FromLocalDir: &localDir,
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				is := require.New(t)
+				is.Equal("https://gitonce.example.com/gitonce/test-repo.git", updated.Spec.ForProvider.Git.URL)
+				is.True(cmd.SkipRepoAccessCheck)
+			},
+		},
+		"from-local-dir with non-existent directory returns error": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
+				FromLocalDir: new("/nonexistent/path/to/dir"),
+			},
+			errorExpected: true,
+		},
 	}
 
 	for name, tc := range cases {
@@ -695,6 +729,9 @@ func TestApplication(t *testing.T) {
 
 			if tc.cmd.GitInformationServiceURL == "" {
 				tc.cmd.GitInformationServiceURL = gitInfoService.URL()
+			}
+			if tc.cmd.GitOnceURL == "" {
+				tc.cmd.GitOnceURL = gitOnceService.URL()
 			}
 			gitInfoService.SetResponse(tc.gitInformationServiceResponse)
 
