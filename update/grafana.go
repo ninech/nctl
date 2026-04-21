@@ -12,8 +12,8 @@ import (
 
 type grafanaCmd struct {
 	resourceCmd
-	EnableAdminAccess  *bool `help:"Give admin permissions in the Grafana instance."`
-	DisableAdminAccess *bool `help:"Revoke admin permissions in the Grafana instance."`
+	AdminAccess *bool `negatable:"" help:"Give admin permissions in the Grafana instance."`
+	LocalUsers  *bool `negatable:"" help:"Allow local Grafana users to sign in by disabling the automatic redirect to the OAuth sign-in page."`
 }
 
 func (cmd *grafanaCmd) Run(ctx context.Context, client *api.Client) error {
@@ -36,10 +36,10 @@ func (cmd *grafanaCmd) Run(ctx context.Context, client *api.Client) error {
 }
 
 func (cmd *grafanaCmd) applyUpdates(grafana *observability.Grafana) {
-	if cmd.EnableAdminAccess != nil {
-		grafana.Spec.ForProvider.EnableAdminAccess = *cmd.EnableAdminAccess
+	if cmd.AdminAccess != nil {
+		grafana.Spec.ForProvider.EnableAdminAccess = *cmd.AdminAccess
 	}
-	if cmd.DisableAdminAccess != nil {
-		grafana.Spec.ForProvider.EnableAdminAccess = !*cmd.DisableAdminAccess
+	if cmd.LocalUsers != nil {
+		grafana.Spec.ForProvider.AllowLocalUsers = *cmd.LocalUsers
 	}
 }

@@ -46,6 +46,11 @@ func TestGrafana(t *testing.T) {
 			create: grafanaCmd{EnableAdminAccess: true},
 			want:   observability.GrafanaParameters{EnableAdminAccess: true},
 		},
+		{
+			name:   "allow local users",
+			create: grafanaCmd{AllowLocalUsers: true},
+			want:   observability.GrafanaParameters{AllowLocalUsers: true},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

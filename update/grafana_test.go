@@ -32,14 +32,25 @@ func TestGrafana(t *testing.T) {
 		},
 		{
 			name:   "enable admin access",
-			update: grafanaCmd{EnableAdminAccess: new(true)},
+			update: grafanaCmd{AdminAccess: new(true)},
 			want:   observability.GrafanaParameters{EnableAdminAccess: true},
 		},
 		{
 			name:   "disable admin access",
 			create: observability.GrafanaParameters{EnableAdminAccess: true},
-			update: grafanaCmd{DisableAdminAccess: new(true)},
+			update: grafanaCmd{AdminAccess: new(false)},
 			want:   observability.GrafanaParameters{EnableAdminAccess: false},
+		},
+		{
+			name:   "allow local users",
+			update: grafanaCmd{LocalUsers: new(true)},
+			want:   observability.GrafanaParameters{AllowLocalUsers: true},
+		},
+		{
+			name:   "disallow local users",
+			create: observability.GrafanaParameters{AllowLocalUsers: true},
+			update: grafanaCmd{LocalUsers: new(false)},
+			want:   observability.GrafanaParameters{AllowLocalUsers: false},
 		},
 	}
 	for _, tt := range tests {

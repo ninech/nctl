@@ -13,6 +13,7 @@ import (
 type grafanaCmd struct {
 	resourceCmd
 	EnableAdminAccess bool `help:"Give admin permissions in the Grafana instance."`
+	AllowLocalUsers   bool `help:"Allow local Grafana users to sign in by disabling the automatic redirect to the OAuth sign-in page."`
 }
 
 func (cmd *grafanaCmd) Run(ctx context.Context, client *api.Client) error {
@@ -53,6 +54,7 @@ func (cmd *grafanaCmd) newGrafana(namespace string) *observability.Grafana {
 			ResourceSpec: runtimev1.ResourceSpec{},
 			ForProvider: observability.GrafanaParameters{
 				EnableAdminAccess: cmd.EnableAdminAccess,
+				AllowLocalUsers:   cmd.AllowLocalUsers,
 			},
 		},
 	}

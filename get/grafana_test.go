@@ -17,6 +17,7 @@ func TestGrafana(t *testing.T) {
 		name              string
 		project           string
 		enableAdminAccess bool
+		allowLocalUsers   bool
 	}
 
 	tests := []struct {
@@ -87,6 +88,22 @@ func TestGrafana(t *testing.T) {
 			wantContain: []string{"test1", "ADMIN ACCESS", "false"},
 			wantLines:   2,
 		},
+		{
+			name: "local users login enabled",
+			instances: []grafanaInstance{
+				{name: "test1", project: test.DefaultProject, allowLocalUsers: true},
+			},
+			wantContain: []string{"test1", "LOCAL USERS LOGIN", "true"},
+			wantLines:   2,
+		},
+		{
+			name: "local users login disabled",
+			instances: []grafanaInstance{
+				{name: "test1", project: test.DefaultProject, allowLocalUsers: false},
+			},
+			wantContain: []string{"test1", "LOCAL USERS LOGIN", "false"},
+			wantLines:   2,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -96,6 +113,7 @@ func TestGrafana(t *testing.T) {
 			for _, instance := range tt.instances {
 				g := test.Grafana(instance.name, instance.project)
 				g.Spec.ForProvider.EnableAdminAccess = instance.enableAdminAccess
+			g.Spec.ForProvider.AllowLocalUsers = instance.allowLocalUsers
 				objects = append(objects, g)
 			}
 			apiClient := test.SetupClient(t,
