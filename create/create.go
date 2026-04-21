@@ -41,6 +41,7 @@ type Cmd struct {
 	ServiceConnection   serviceConnectionCmd `cmd:"" group:"create-network" name:"serviceconnection" aliases:"sc" help:"Create a new ServiceConnection."`
 	Bucket              bucketCmd            `cmd:"" group:"create-storage" name:"bucket" help:"Create a new Bucket."`
 	BucketUser          bucketUserCmd        `cmd:"" group:"create-storage" name:"bucketuser" aliases:"bu" help:"Create a new BucketUser."`
+	Grafana             grafanaCmd           `cmd:"" group:"create-observability" name:"grafana" help:"Create a new Grafana instance."`
 }
 
 type resourceCmd struct {

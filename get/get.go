@@ -43,6 +43,7 @@ type Cmd struct {
 	ServiceConnection   serviceConnectionCmd  `cmd:"" group:"get-network" name:"serviceconnection" aliases:"sc,serviceconnections" help:"Get a ServiceConnection."`
 	Bucket              bucketCmd             `cmd:"" group:"get-storage" name:"bucket" help:"Get Bucket instances."`
 	BucketUser          bucketUserCmd         `cmd:"" group:"get-storage" name:"bucketuser" aliases:"bu" help:"Get BucketUser instances."`
+	Grafana             grafanaCmd            `cmd:"" group:"get-observability" name:"grafana" help:"Get Grafana instances."`
 }
 
 type output struct {
