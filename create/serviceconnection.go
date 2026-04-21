@@ -8,7 +8,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/alecthomas/kong"
@@ -18,7 +17,7 @@ import (
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/internal/cli"
+	"github.com/ninech/nctl/internal/application"
 )
 
 // These might be replaced to fetch compatible resources from the schema.
@@ -31,8 +30,8 @@ var (
 
 type serviceConnectionCmd struct {
 	resourceCmd
-	Source                   TypedReference           `placeholder:"kind/name" help:"Source of the connection in the form kind/name. Allowed source kinds are: ${allowed_sources}." required:""`
-	Destination              TypedReference           `placeholder:"kind/name" help:"Destination of the connection in the form kind/name. Must be in the same project as the service connection. Allowed destination kinds are: ${allowed_destinations}." required:""`
+	Source                   application.TypedReference `placeholder:"kind/name" help:"Source of the connection in the form kind/name. Allowed source kinds are: ${allowed_sources}." required:""`
+	Destination              application.TypedReference `placeholder:"kind/name" help:"Destination of the connection in the form kind/name. Must be in the same project as the service connection. Allowed destination kinds are: ${allowed_destinations}." required:""`
 	SourceNamespace          string                   `help:"Source namespace of the connection. Defaults to current project."`
 	KubernetesClusterOptions KubernetesClusterOptions `embed:"" prefix:"source-"`
 }
@@ -86,29 +85,6 @@ func (ls *LabelSelector) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// TypedReference is a reference to a resource with a specific type.
-type TypedReference struct {
-	meta.TypedReference
-}
-
-// UnmarshalText parses a typed reference from a string.
-func (r *TypedReference) UnmarshalText(text []byte) error {
-	s := strings.TrimSpace(string(text))
-	kind, name, found := strings.Cut(s, "/")
-	if !found || kind == "" || name == "" {
-		return fmt.Errorf("unmarshal error: expected kind/name, got %q", text)
-	}
-
-	gvk, err := groupVersionKindFromKind(kind)
-	if err != nil {
-		return fmt.Errorf("unmarshal error: %w", err)
-	}
-
-	r.Name = name
-	r.GroupKind = metav1.GroupKind(gvk.GroupKind())
-
-	return nil
-}
 
 func (cmd *serviceConnectionCmd) Run(ctx context.Context, client *api.Client) error {
 	sc, err := cmd.newServiceConnection(client.Project)
@@ -157,7 +133,7 @@ func (cmd *serviceConnectionCmd) Run(ctx context.Context, client *api.Client) er
 }
 
 func resourceExists(ctx context.Context, key meta.TypedReference, kube client.Reader) (bool, error) {
-	gvk, err := groupVersionKindFromKind(key.Kind)
+	gvk, err := application.GroupVersionKindFromKind(key.Kind)
 	if err != nil {
 		return false, err
 	}
@@ -203,26 +179,6 @@ func (cmd *serviceConnectionCmd) newServiceConnection(namespace string) (*networ
 	sc.Spec.ForProvider.Source.KubernetesClusterOptions = cmd.KubernetesClusterOptions.APIType()
 
 	return sc, nil
-}
-
-func groupVersionKindFromKind(kind string) (schema.GroupVersionKind, error) {
-	scheme, err := api.NewScheme()
-	if err != nil {
-		return schema.GroupVersionKind{}, fmt.Errorf("error creating scheme: %w", err)
-	}
-
-	for gvk := range scheme.AllKnownTypes() {
-		if strings.EqualFold(kind, gvk.Kind) {
-			return gvk, nil
-		}
-	}
-
-	return schema.GroupVersionKind{}, cli.ErrorWithContext(fmt.Errorf("kind %q is invalid", kind)).
-		WithExitCode(cli.ExitUsageError).
-		WithSuggestions(
-			"Valid source kinds: "+strings.Join(allowedSources, ", "),
-			"Valid destination kinds: "+strings.Join(allowedDestinations, ", "),
-		)
 }
 
 // ServiceConnectionKongVars returns all variables which are used in the ServiceConnection

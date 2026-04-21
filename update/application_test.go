@@ -8,6 +8,8 @@ import (
 
 	"github.com/alecthomas/kong"
 	apps "github.com/ninech/apis/apps/v1alpha1"
+	meta "github.com/ninech/apis/meta/v1alpha1"
+	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api/gitinfo"
 	"github.com/ninech/nctl/create"
 	"github.com/ninech/nctl/internal/application"
@@ -685,6 +687,61 @@ func TestApplication(t *testing.T) {
 				is := require.New(t)
 				is.Equal("https://github.com/ninech/new-repo", updated.Spec.ForProvider.Git.URL)
 				is.Equal("main", updated.Spec.ForProvider.Git.Revision)
+			},
+		},
+		"add service": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
+				Service: func() application.ServiceMap {
+					ref := application.TypedReference{}
+					ref.UnmarshalText([]byte("keyvaluestore/my-kvs"))
+					return application.ServiceMap{"cache": ref}
+				}(),
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				is := require.New(t)
+				is.Len(updated.Spec.ForProvider.Services, 1)
+				is.Equal("cache", updated.Spec.ForProvider.Services[0].Name)
+				is.Equal("my-kvs", updated.Spec.ForProvider.Services[0].Target.Name)
+				is.Equal(storage.KeyValueStoreKind, updated.Spec.ForProvider.Services[0].Target.Kind)
+			},
+		},
+		"delete service": {
+			orig: &apps.Application{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "some-name",
+					Namespace: test.DefaultProject,
+				},
+				Spec: apps.ApplicationSpec{
+					ForProvider: apps.ApplicationParameters{
+						Git: existingApp.Spec.ForProvider.Git,
+						Config: apps.Config{
+							Size: initialSize,
+						},
+						Services: apps.NamedServiceTargetList{
+							{
+								Name: "cache",
+								Target: meta.TypedReference{
+									Reference: meta.Reference{Name: "my-kvs", Namespace: test.DefaultProject},
+									GroupKind: metav1.GroupKind{Group: storage.Group, Kind: storage.KeyValueStoreKind},
+								},
+							},
+						},
+					},
+				},
+			},
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
+				DeleteService: []string{"cache"},
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				is := require.New(t)
+				is.Empty(updated.Spec.ForProvider.Services)
 			},
 		},
 	}

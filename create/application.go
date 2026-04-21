@@ -47,6 +47,7 @@ type applicationCmd struct {
 	SensitiveEnv             map[string]string `help:"Sensitive environment variables which are passed to the application at runtime."`
 	BuildEnv                 map[string]string `help:"Environment variables which are passed to the application build process."`
 	SensitiveBuildEnv        map[string]string `help:"Sensitive environment variables which are passed to the application build process."`
+	Service                  application.ServiceMap `help:"Service reference in the form name=kind/target-name. Credentials will be automatically injected as environment variables."`
 	DeployJob                deployJob         `embed:"" prefix:"deploy-job-"`
 	WorkerJob                workerJob         `embed:"" prefix:"worker-job-"`
 	ScheduledJob             scheduledJob      `embed:"" prefix:"scheduled-job-"`
@@ -396,6 +397,7 @@ func (cmd *applicationCmd) newApplication(project string) *apps.Application {
 				Hosts:    cmd.Hosts,
 				Config:   cmd.config(),
 				BuildEnv: combineEnvVars(cmd.BuildEnv, cmd.SensitiveBuildEnv),
+				Services: application.ServicesFromMap(cmd.Service, project),
 				DockerfileBuild: apps.DockerfileBuild{
 					Enabled:        cmd.DockerfileBuild.Enabled,
 					DockerfilePath: cmd.DockerfileBuild.Path,

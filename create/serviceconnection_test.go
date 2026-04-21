@@ -10,6 +10,7 @@ import (
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -309,7 +310,7 @@ func TestTypedReference_UnmarshalText(t *testing.T) {
 			t.Parallel()
 			is := require.New(t)
 
-			r := &TypedReference{}
+			r := &application.TypedReference{}
 			err := r.UnmarshalText([]byte(tt.arg))
 			if err == nil && !tt.wantErr {
 				is.Equal(tt.want, r.TypedReference)
