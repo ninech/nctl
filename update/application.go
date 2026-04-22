@@ -53,6 +53,8 @@ type applicationCmd struct {
 	ScheduledJob             *scheduledJob   `embed:"" prefix:"scheduled-job-"`
 	DeleteWorkerJob          *string         `help:"Delete a worker job by name."`
 	DeleteScheduledJob       *string         `help:"Delete a scheduled job by name."`
+	Service                  application.ServiceMap `help:"Service reference to add/update in the form name=kind/target-name."`
+	DeleteService            []string          `help:"Service reference names to remove."`
 	RetryRelease             *bool           `help:"Retries release for the application." placeholder:"false"`
 	RetryBuild               *bool           `help:"Retries build for the application if set to true." placeholder:"false"`
 	Pause                    *bool           `help:"Pauses the application if set to true. Stops all costs." placeholder:"false"`
@@ -350,6 +352,13 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 	if cmd.DockerfileBuild.BuildContext != nil {
 		app.Spec.ForProvider.DockerfileBuild.BuildContext = *cmd.DockerfileBuild.BuildContext
 		warnIfDockerfileNotEnabled(cmd.Writer, app, "build context")
+	}
+
+	if len(cmd.Service) > 0 || len(cmd.DeleteService) > 0 {
+		toAdd := application.ServicesFromMap(cmd.Service, app.Namespace)
+		app.Spec.ForProvider.Services = application.UpdateServices(
+			app.Spec.ForProvider.Services, toAdd, cmd.DeleteService, cmd.Writer,
+		)
 	}
 }
 

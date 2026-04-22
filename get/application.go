@@ -95,7 +95,7 @@ func (cmd *applicationsCmd) Help() string {
 
 func printApplication(apps []apps.Application, out *output, header bool) error {
 	if header {
-		out.writeHeader("NAME", "REPLICAS", "WORKERJOBS", "SCHEDULEDJOBS", "HOSTS", "UNVERIFIEDHOSTS")
+		out.writeHeader("NAME", "REPLICAS", "WORKERJOBS", "SCHEDULEDJOBS", "SERVICES", "HOSTS", "UNVERIFIEDHOSTS")
 	}
 
 	for _, app := range apps {
@@ -108,10 +108,21 @@ func printApplication(apps []apps.Application, out *output, header bool) error {
 		workerJobs := fmt.Sprintf("%d", len(app.Status.AtProvider.WorkerJobs))
 		scheduledJobs := fmt.Sprintf("%d", len(app.Status.AtProvider.ScheduledJobs))
 
-		out.writeTabRow(app.Namespace, app.Name, fmt.Sprintf("%d", replicas), workerJobs, scheduledJobs, join(verifiedHosts), join(unverifiedHosts))
+		out.writeTabRow(app.Namespace, app.Name, fmt.Sprintf("%d", replicas), workerJobs, scheduledJobs, formatServices(app.Spec.ForProvider.Services), join(verifiedHosts), join(unverifiedHosts))
 	}
 
 	return out.tabWriter.Flush()
+}
+
+func formatServices(services apps.NamedServiceTargetList) string {
+	if len(services) == 0 {
+		return noneText
+	}
+	names := make([]string, 0, len(services))
+	for _, s := range services {
+		names = append(names, fmt.Sprintf("%s=%s/%s", s.Name, strings.ToLower(s.Target.Kind), s.Target.Name))
+	}
+	return strings.Join(names, ",")
 }
 
 func printCredentials(creds []appCredentials, out *output) error {

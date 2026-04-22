@@ -530,6 +530,40 @@ func TestCreateApplication(t *testing.T) {
 				is.Empty(app.Spec.ForProvider.BuildpackStack)
 			},
 		},
+		"with services": {
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Wait: false,
+					Name: "with-services",
+				},
+				Git: gitConfig{
+					URL:      "https://github.com/ninech/doesnotexist.git",
+					Revision: "main",
+				},
+				Service: func() application.ServiceMap {
+					m := application.ServiceMap{}
+					cache := application.TypedReference{}
+					cache.UnmarshalText([]byte("keyvaluestore/my-kvs"))
+					m["cache"] = cache
+					db := application.TypedReference{}
+					db.UnmarshalText([]byte("mysql/my-db"))
+					m["db"] = db
+					return m
+				}(),
+				SkipRepoAccessCheck: true,
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				is := require.New(t)
+				is.Len(app.Spec.ForProvider.Services, 2)
+				// sorted by name
+				is.Equal("cache", app.Spec.ForProvider.Services[0].Name)
+				is.Equal("my-kvs", app.Spec.ForProvider.Services[0].Target.Name)
+				is.Equal("KeyValueStore", app.Spec.ForProvider.Services[0].Target.Kind)
+				is.Equal("db", app.Spec.ForProvider.Services[1].Name)
+				is.Equal("my-db", app.Spec.ForProvider.Services[1].Target.Name)
+				is.Equal("MySQL", app.Spec.ForProvider.Services[1].Target.Kind)
+			},
+		},
 	}
 
 	for name, tc := range cases {
