@@ -91,7 +91,7 @@ type scheduledJob struct {
 	Command  string        `help:"Command to execute to start the scheduled job." placeholder:"\"bundle exec rails runner\""`
 	Name     string        `help:"Name of the scheduled job job to add." placeholder:"scheduled-1"`
 	Size     *string       `help:"Size (resources) of the scheduled job (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
-	Schedule string        `help:"Cron notation string for the scheduled job (defaults to \"* * * * *\")." placeholder:"* * * * *"`
+	Schedule string        `help:"Cron notation string for the scheduled job (defaults to \"* * * * *\")." placeholder:"\"* * * * *\""`
 	Retries  int32         `default:"${app_default_scheduled_job_retries}" help:"How many times the job will be restarted on failure. Default is ${app_default_scheduled_job_retries} and maximum 5."`
 	Timeout  time.Duration `default:"${app_default_scheduled_job_timeout}" help:"Timeout of the job. Default is ${app_default_scheduled_job_timeout}, minimum is 1 minute and maximum is 30 minutes."`
 }
