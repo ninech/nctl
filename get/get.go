@@ -179,7 +179,7 @@ func (out *output) notFound(kind, project string) error {
 	return err
 }
 
-func getConnectionSecretMap(ctx context.Context, client *api.Client, mg resource.Managed) (map[string][]byte, error) {
+func ConnectionSecretMap(ctx context.Context, client *api.Client, mg resource.Managed) (map[string][]byte, error) {
 	secret, err := client.GetConnectionSecret(ctx, mg)
 	if err != nil {
 		return nil, err
@@ -188,8 +188,8 @@ func getConnectionSecretMap(ctx context.Context, client *api.Client, mg resource
 	return secret.Data, nil
 }
 
-func getConnectionSecret(ctx context.Context, client *api.Client, key string, mg resource.Managed) (string, error) {
-	secrets, err := getConnectionSecretMap(ctx, client, mg)
+func connectionSecret(ctx context.Context, client *api.Client, key string, mg resource.Managed) (string, error) {
+	secrets, err := ConnectionSecretMap(ctx, client, mg)
 	if err != nil {
 		return "", fmt.Errorf("unable to get connection secret: %w", err)
 	}
@@ -209,7 +209,7 @@ func (cmd *resourceCmd) printSecret(
 	out *output,
 	field func(string, string) string,
 ) error {
-	secrets, err := getConnectionSecretMap(ctx, client, mg)
+	secrets, err := ConnectionSecretMap(ctx, client, mg)
 	if err != nil {
 		return err
 	}
@@ -228,7 +228,7 @@ func (cmd *resourceCmd) printCredentials(
 	out *output,
 	filter func(key string) bool,
 ) error {
-	data, err := getConnectionSecretMap(ctx, client, mg)
+	data, err := ConnectionSecretMap(ctx, client, mg)
 	if err != nil {
 		return err
 	}
@@ -265,7 +265,7 @@ func (cmd *resourceCmd) printCredentials(
 	return nil
 }
 
-func printBase64(out io.Writer, s string) error {
+func WriteBase64(out io.Writer, s string) error {
 	s = strings.TrimSpace(s)
 	if s == "" {
 		return nil

@@ -14,6 +14,7 @@ import (
 	"github.com/posener/complete"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -26,6 +27,7 @@ const (
 // completion.
 var argResourceMap = map[string]string{
 	"clusters": "kubernetesclusters",
+	"kvs":      "keyvaluestore",
 }
 
 // Resource is a predictor that completes resource names by querying the API.
@@ -170,6 +172,79 @@ func findProjectInSlice(args []string) string {
 		if (arg == "-p" || arg == "--project") && i+1 < len(args) {
 			return args[i+1]
 		}
+	}
+	return ""
+}
+
+// InstanceDatabases is a predictor that completes database names for a
+// dedicated database instance (e.g. Postgres, MySQL) by reading the Databases
+// map from its status.
+type InstanceDatabases struct {
+	client *api.Client
+	gvk    schema.GroupVersionKind
+}
+
+// NewInstanceDatabases returns a predictor that completes database names for a
+// dedicated instance resource. It fetches the instance named by the first
+// positional argument on the command line and returns the keys of its
+// status.atProvider.databases map.
+func NewInstanceDatabases(client *api.Client, gvk schema.GroupVersionKind) complete.Predictor {
+	return &InstanceDatabases{client: client, gvk: gvk}
+}
+
+// Predict returns the database names available on the instance whose name
+// appears as the first positional argument in the completion context.
+func (d *InstanceDatabases) Predict(args complete.Args) []string {
+	name := firstPositionalArg(args.Completed)
+	if name == "" {
+		return nil
+	}
+
+	p, incomplete := findProject(args)
+	if incomplete {
+		return nil
+	}
+
+	ns := d.client.Project
+	if p != "" {
+		ns = p
+	}
+
+	u := &unstructured.Unstructured{}
+	u.SetGroupVersionKind(d.gvk)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	if err := d.client.Get(ctx, types.NamespacedName{Name: name, Namespace: ns}, u); err != nil {
+		return nil
+	}
+
+	databases, found, err := unstructured.NestedMap(u.Object, "status", "atProvider", "databases")
+	if err != nil || !found {
+		return nil
+	}
+
+	names := make([]string, 0, len(databases))
+	for dbName := range databases {
+		names = append(names, dbName)
+	}
+	return names
+}
+
+// firstPositionalArg returns the first positional (non-flag) argument in args,
+// skipping flag-value pairs. It assumes all flags that are not of the form
+// --flag=value take a separate value token.
+func firstPositionalArg(args []string) string {
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if strings.HasPrefix(arg, "-") {
+			if !strings.Contains(arg, "=") {
+				i++ // skip the following value token
+			}
+			continue
+		}
+		return arg
 	}
 	return ""
 }
