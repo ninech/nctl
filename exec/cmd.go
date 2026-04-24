@@ -11,8 +11,9 @@ import (
 	"os/exec"
 	"time"
 
+	"golang.org/x/term"
+
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
-	"github.com/mattn/go-isatty"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/get"
@@ -281,7 +282,7 @@ func (cmd serviceCmd) checkPath(name string) error {
 // so that piped input (e.g. SQL dumps) does not consume the prompt, mirroring
 // the pattern used by git and ssh.
 func (cmd serviceCmd) confirm(msg string) (bool, error) {
-	if !isatty.IsTerminal(os.Stdin.Fd()) {
+	if !term.IsTerminal(int(os.Stdin.Fd())) {
 		tty, err := cmd.openTTY()()
 		if err == nil {
 			defer tty.Close()
