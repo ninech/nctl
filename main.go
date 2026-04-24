@@ -16,6 +16,7 @@ import (
 	"github.com/alecthomas/kong"
 	completion "github.com/jotaen/kong-completion"
 	management "github.com/ninech/apis/management/v1alpha1"
+	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/apply"
 	"github.com/ninech/nctl/auth"
@@ -206,8 +207,7 @@ func main() {
 			}
 		}
 
-		var cliErr *cli.Error
-		if errors.As(err, &cliErr) {
+		if cliErr, ok := errors.AsType[*cli.Error](err); ok {
 			fmt.Fprintln(writer, err.Error())
 			kongCtx.Exit(cliErr.ExitCode())
 			return
@@ -223,6 +223,8 @@ func clientPredictors(ctx context.Context, apiClientRequired bool) []completion.
 	nothing := []completion.Option{
 		completion.WithPredictor("resource_name", complete.PredictNothing),
 		completion.WithPredictor("project_name", complete.PredictNothing),
+		completion.WithPredictor("postgres_databases", complete.PredictNothing),
+		completion.WithPredictor("mysql_databases", complete.PredictNothing),
 	}
 
 	if !apiClientRequired {
@@ -239,6 +241,8 @@ func clientPredictors(ctx context.Context, apiClientRequired bool) []completion.
 		completion.WithPredictor("project_name", predictor.NewResourceNameWithKind(client,
 			management.SchemeGroupVersion.WithKind(reflect.TypeFor[management.ProjectList]().Name())),
 		),
+		completion.WithPredictor("postgres_databases", predictor.NewInstanceDatabases(client, storage.PostgresGroupVersionKind)),
+		completion.WithPredictor("mysql_databases", predictor.NewInstanceDatabases(client, storage.MySQLGroupVersionKind)),
 	}
 }
 
