@@ -26,6 +26,7 @@ const (
 // completion.
 var argResourceMap = map[string]string{
 	"clusters": "kubernetesclusters",
+	"kvs":      "keyvaluestore",
 }
 
 // Resource is a predictor that completes resource names by querying the API.
