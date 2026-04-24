@@ -107,7 +107,7 @@ func (cmd *bucketUserCmd) printSecret(
 	key string,
 	out *output,
 ) error {
-	data, err := getConnectionSecret(ctx, client, key, user)
+	data, err := connectionSecret(ctx, client, key, user)
 	if err != nil {
 		return err
 	}

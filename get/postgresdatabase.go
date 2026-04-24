@@ -66,21 +66,25 @@ func (cmd *postgresDatabaseCmd) connectionString(mg resource.Managed, secrets ma
 	}
 
 	for user, pw := range secrets {
-		return postgresConnectionString(my.Status.AtProvider.FQDN, user, user, pw), nil
+		return PostgresConnectionString(my.Status.AtProvider.FQDN, user, user, pw).String(), nil
 	}
 
 	return "", nil
 }
 
-// postgresConnectionString according to the PostgreSQL documentation:
+// PostgresConnectionString according to the PostgreSQL documentation:
 // https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING
-func postgresConnectionString(fqdn, user, db string, pw []byte) string {
+func PostgresConnectionString(fqdn, user, db string, pw []byte) *url.URL {
+	q := url.Values{}
+	q.Set("sslmode", "require")
+
 	u := &url.URL{
-		Scheme: "postgres",
-		Host:   fqdn,
-		User:   url.UserPassword(user, string(pw)),
-		Path:   db,
+		Scheme:   "postgres",
+		Host:     fqdn,
+		User:     url.UserPassword(user, string(pw)),
+		Path:     db,
+		RawQuery: q.Encode(),
 	}
 
-	return u.String()
+	return u
 }

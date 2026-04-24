@@ -144,7 +144,7 @@ func (cmd *apiServiceAccountsCmd) printSecret(
 	key string,
 	out *output,
 ) error {
-	data, err := getConnectionSecret(ctx, client, key, sa)
+	data, err := connectionSecret(ctx, client, key, sa)
 	if err != nil {
 		return err
 	}
