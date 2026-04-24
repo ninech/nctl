@@ -65,7 +65,7 @@ func (cmd *postgresCmd) connectionString(mg resource.Managed, secrets map[string
 	}
 
 	for user, pw := range secrets {
-		return postgresConnectionString(my.Status.AtProvider.FQDN, user, "postgres", pw), nil
+		return PostgresConnectionString(my.Status.AtProvider.FQDN, user, "postgres", pw).String(), nil
 	}
 
 	return "", nil
