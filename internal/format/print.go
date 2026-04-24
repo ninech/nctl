@@ -14,7 +14,8 @@ import (
 	"github.com/fatih/color"
 	"github.com/goccy/go-yaml/lexer"
 	"github.com/goccy/go-yaml/printer"
-	"github.com/mattn/go-isatty"
+	"golang.org/x/term"
+
 	"github.com/theckman/yacspin"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -282,7 +283,7 @@ func IsInteractiveEnvironment(out io.Writer) bool {
 	if !isFile {
 		return false
 	}
-	return isatty.IsTerminal(f.Fd()) || isatty.IsCygwinTerminal(f.Fd())
+	return term.IsTerminal(int(f.Fd()))
 }
 
 // stripObj removes some fields which simply add clutter to the yaml output.
