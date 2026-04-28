@@ -31,6 +31,7 @@ type Cmd struct {
 	OpenSearch          openSearchCmd        `cmd:"" group:"delete-storage" name:"opensearch" aliases:"os" help:"Delete an OpenSearch cluster."`
 	CloudVirtualMachine cloudVMCmd           `cmd:"" group:"delete-infra" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Delete a CloudVM."`
 	ServiceConnection   serviceConnectionCmd `cmd:"" group:"delete-network" name:"serviceconnection" aliases:"sc" help:"Delete a ServiceConnection."`
+	StaticEgress        staticEgressCmd      `cmd:"" group:"delete-network" name:"staticegress" aliases:"se" help:"Delete a StaticEgress."`
 	Bucket              bucketCmd            `cmd:"" group:"delete-storage" name:"bucket" help:"Delete a Bucket."`
 	BucketUser          bucketUserCmd        `cmd:"" group:"delete-storage" name:"bucketuser" aliases:"bu" help:"Delete a BucketUser."`
 	Grafana             grafanaCmd           `cmd:"" group:"delete-observability" name:"grafana" help:"Delete a Grafana instance."`

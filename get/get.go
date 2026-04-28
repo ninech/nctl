@@ -41,6 +41,7 @@ type Cmd struct {
 	KeyValueStore       keyValueStoreCmd      `cmd:"" group:"get-storage" name:"keyvaluestore" aliases:"kvs" help:"Get KeyValueStore instances."`
 	CloudVirtualMachine cloudVMCmd            `cmd:"" group:"get-infra" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Get a CloudVM."`
 	ServiceConnection   serviceConnectionCmd  `cmd:"" group:"get-network" name:"serviceconnection" aliases:"sc,serviceconnections" help:"Get a ServiceConnection."`
+	StaticEgress        staticEgressCmd       `cmd:"" group:"get-network" name:"staticegress" aliases:"se,staticegresses" help:"Get StaticEgress resources."`
 	Bucket              bucketCmd             `cmd:"" group:"get-storage" name:"bucket" help:"Get Bucket instances."`
 	BucketUser          bucketUserCmd         `cmd:"" group:"get-storage" name:"bucketuser" aliases:"bu" help:"Get BucketUser instances."`
 	Grafana             grafanaCmd            `cmd:"" group:"get-observability" name:"grafana" help:"Get Grafana instances."`
