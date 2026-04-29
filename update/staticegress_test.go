@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	apps "github.com/ninech/apis/apps/v1alpha1"
+	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/api"
@@ -18,48 +19,80 @@ import (
 func TestStaticEgress(t *testing.T) {
 	t.Parallel()
 
-	target := meta.LocalTypedReference{
+	appTarget := meta.LocalTypedReference{
 		LocalReference: meta.LocalReference{Name: "my-app"},
 		GroupKind:      metav1.GroupKind{Group: apps.Group, Kind: apps.ApplicationKind},
 	}
+	clusterTarget := meta.LocalTypedReference{
+		LocalReference: meta.LocalReference{Name: "my-cluster"},
+		GroupKind:      metav1.GroupKind{Group: infrastructure.Group, Kind: infrastructure.KubernetesClusterKind},
+	}
 
 	tests := []struct {
-		name    string
-		create  networking.StaticEgressParameters
-		update  staticEgressCmd
-		want    networking.StaticEgressParameters
-		wantErr bool
+		name       string
+		create     networking.StaticEgressParameters
+		update     staticEgressCmd
+		want       networking.StaticEgressParameters
+		targetName string
+		wantErr    bool
 	}{
 		{
 			name: "empty update",
 			create: networking.StaticEgressParameters{
-				Target: target,
+				Target: appTarget,
 			},
-			update: staticEgressCmd{},
+			update:     staticEgressCmd{},
+			targetName: "my-app",
 			want: networking.StaticEgressParameters{
-				Target: target,
+				Target: appTarget,
 			},
 		},
 		{
 			name: "enable disabled",
 			create: networking.StaticEgressParameters{
-				Target: target,
+				Target: appTarget,
 			},
-			update: staticEgressCmd{Disabled: new(true)},
+			update:     staticEgressCmd{Disabled: new(true)},
+			targetName: "my-app",
 			want: networking.StaticEgressParameters{
 				Disabled: true,
-				Target:   target,
+				Target:   appTarget,
 			},
 		},
 		{
 			name: "disable disabled",
 			create: networking.StaticEgressParameters{
 				Disabled: true,
-				Target:   target,
+				Target:   appTarget,
 			},
-			update: staticEgressCmd{Disabled: new(false)},
+			update:     staticEgressCmd{Disabled: new(false)},
+			targetName: "my-app",
 			want: networking.StaticEgressParameters{
-				Target: target,
+				Target: appTarget,
+			},
+		},
+		{
+			name: "cluster target enable disabled",
+			create: networking.StaticEgressParameters{
+				Target: clusterTarget,
+			},
+			update:     staticEgressCmd{Disabled: new(true)},
+			targetName: "my-cluster",
+			want: networking.StaticEgressParameters{
+				Disabled: true,
+				Target:   clusterTarget,
+			},
+		},
+		{
+			name: "cluster target disable disabled",
+			create: networking.StaticEgressParameters{
+				Disabled: true,
+				Target:   clusterTarget,
+			},
+			update:     staticEgressCmd{Disabled: new(false)},
+			targetName: "my-cluster",
+			want: networking.StaticEgressParameters{
+				Target: clusterTarget,
 			},
 		},
 	}
@@ -73,7 +106,16 @@ func TestStaticEgress(t *testing.T) {
 
 			apiClient := test.SetupClient(t)
 
-			created := test.StaticEgress(tt.update.Name, apiClient.Project, "my-app")
+			targetName := tt.targetName
+			if targetName == "" {
+				targetName = "my-app"
+			}
+			var created *networking.StaticEgress
+			if tt.create.Target.Kind == infrastructure.KubernetesClusterKind {
+				created = test.StaticEgressForCluster(tt.update.Name, apiClient.Project, targetName)
+			} else {
+				created = test.StaticEgress(tt.update.Name, apiClient.Project, targetName)
+			}
 			created.Spec.ForProvider = tt.create
 			if err := apiClient.Create(t.Context(), created); err != nil {
 				t.Fatalf("static egress create error, got: %s", err)

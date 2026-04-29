@@ -56,13 +56,14 @@ func (cmd *staticEgressCmd) print(ctx context.Context, client *api.Client, list 
 
 func (cmd *staticEgressCmd) printStaticEgresses(list []networking.StaticEgress, out *output, header bool) error {
 	if header {
-		out.writeHeader("NAME", "TARGET", "EGRESS ADDRESS", "DISABLED")
+		out.writeHeader("NAME", "TARGET KIND", "TARGET", "EGRESS ADDRESS", "DISABLED")
 	}
 
 	for _, se := range list {
 		out.writeTabRow(
 			se.Namespace,
 			se.Name,
+			se.Spec.ForProvider.Target.Kind,
 			se.Spec.ForProvider.Target.Name,
 			se.Status.AtProvider.Address,
 			strconv.FormatBool(se.Spec.ForProvider.Disabled),

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/internal/test"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -14,10 +15,11 @@ func TestStaticEgress(t *testing.T) {
 	t.Parallel()
 
 	type staticEgressInstance struct {
-		name     string
-		project  string
-		appName  string
-		disabled bool
+		name        string
+		project     string
+		appName     string
+		clusterName string
+		disabled    bool
 	}
 
 	tests := []struct {
@@ -38,7 +40,7 @@ func TestStaticEgress(t *testing.T) {
 		{
 			name:        "single instance in project",
 			instances:   []staticEgressInstance{{name: "test", project: test.DefaultProject, appName: "my-app"}},
-			wantContain: []string{"test", "my-app"},
+			wantContain: []string{"test", "my-app", "Application"},
 			wantLines:   2, // header + result
 		},
 		{
@@ -80,6 +82,21 @@ func TestStaticEgress(t *testing.T) {
 			wantContain: []string{"test1", "DISABLED", "true"},
 			wantLines:   2,
 		},
+		{
+			name:        "cluster target",
+			instances:   []staticEgressInstance{{name: "test-cluster", project: test.DefaultProject, clusterName: "my-cluster"}},
+			wantContain: []string{"test-cluster", "my-cluster", infrastructure.KubernetesClusterKind},
+			wantLines:   2,
+		},
+		{
+			name: "mixed targets",
+			instances: []staticEgressInstance{
+				{name: "se-app", project: test.DefaultProject, appName: "my-app"},
+				{name: "se-cluster", project: test.DefaultProject, clusterName: "my-cluster"},
+			},
+			wantContain: []string{"se-app", "se-cluster", "Application", infrastructure.KubernetesClusterKind, "TARGET KIND"},
+			wantLines:   3, // header + 2 results
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -87,7 +104,12 @@ func TestStaticEgress(t *testing.T) {
 
 			objects := []client.Object{}
 			for _, instance := range tt.instances {
-				se := test.StaticEgress(instance.name, instance.project, instance.appName)
+				var se *networking.StaticEgress
+				if instance.clusterName != "" {
+					se = test.StaticEgressForCluster(instance.name, instance.project, instance.clusterName)
+				} else {
+					se = test.StaticEgress(instance.name, instance.project, instance.appName)
+				}
 				se.Spec.ForProvider.Disabled = instance.disabled
 				objects = append(objects, se)
 			}

@@ -2,9 +2,11 @@ package create
 
 import (
 	"context"
+	"fmt"
 
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	apps "github.com/ninech/apis/apps/v1alpha1"
+	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/api"
@@ -14,12 +16,16 @@ import (
 
 type staticEgressCmd struct {
 	resourceCmd
-	Application string `help:"Name of the target Application." required:""`
+	Application string `help:"Name of the target Application." xor:"target" required:""`
+	Cluster     string `help:"Name of the target KubernetesCluster (NKE/vCluster)." xor:"target" required:""`
 	Disabled    bool   `help:"Create the static egress in disabled state." default:"false"`
 }
 
 func (cmd *staticEgressCmd) Run(ctx context.Context, client *api.Client) error {
-	staticEgress := cmd.newStaticEgress(client.Project)
+	staticEgress, err := cmd.newStaticEgress(client.Project)
+	if err != nil {
+		return err
+	}
 
 	c := cmd.newCreator(client, staticEgress, networking.StaticEgressKind)
 	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
@@ -44,7 +50,12 @@ func (cmd *staticEgressCmd) Run(ctx context.Context, client *api.Client) error {
 	})
 }
 
-func (cmd *staticEgressCmd) newStaticEgress(namespace string) *networking.StaticEgress {
+func (cmd *staticEgressCmd) newStaticEgress(namespace string) (*networking.StaticEgress, error) {
+	target, err := cmd.target()
+	if err != nil {
+		return nil, err
+	}
+
 	name := getName(cmd.Name)
 
 	return &networking.StaticEgress{
@@ -56,16 +67,25 @@ func (cmd *staticEgressCmd) newStaticEgress(namespace string) *networking.Static
 			ResourceSpec: runtimev1.ResourceSpec{},
 			ForProvider: networking.StaticEgressParameters{
 				Disabled: cmd.Disabled,
-				Target: meta.LocalTypedReference{
-					LocalReference: meta.LocalReference{
-						Name: cmd.Application,
-					},
-					GroupKind: metav1.GroupKind{
-						Group: apps.Group,
-						Kind:  apps.ApplicationKind,
-					},
-				},
+				Target:   target,
 			},
 		},
+	}, nil
+}
+
+func (cmd *staticEgressCmd) target() (meta.LocalTypedReference, error) {
+	switch {
+	case cmd.Application != "":
+		return meta.LocalTypedReference{
+			LocalReference: meta.LocalReference{Name: cmd.Application},
+			GroupKind:      metav1.GroupKind{Group: apps.Group, Kind: apps.ApplicationKind},
+		}, nil
+	case cmd.Cluster != "":
+		return meta.LocalTypedReference{
+			LocalReference: meta.LocalReference{Name: cmd.Cluster},
+			GroupKind:      metav1.GroupKind{Group: infrastructure.Group, Kind: infrastructure.KubernetesClusterKind},
+		}, nil
+	default:
+		return meta.LocalTypedReference{}, fmt.Errorf("missing static egress target")
 	}
 }

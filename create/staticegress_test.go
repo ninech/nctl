@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	apps "github.com/ninech/apis/apps/v1alpha1"
+	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/api"
@@ -48,6 +49,32 @@ func TestStaticEgress(t *testing.T) {
 					GroupKind:      metav1.GroupKind{Group: apps.Group, Kind: apps.ApplicationKind},
 				},
 			},
+		},
+		{
+			name:   "cluster target",
+			create: staticEgressCmd{Cluster: "my-cluster"},
+			want: networking.StaticEgressParameters{
+				Target: meta.LocalTypedReference{
+					LocalReference: meta.LocalReference{Name: "my-cluster"},
+					GroupKind:      metav1.GroupKind{Group: infrastructure.Group, Kind: infrastructure.KubernetesClusterKind},
+				},
+			},
+		},
+		{
+			name:   "cluster target with disabled",
+			create: staticEgressCmd{Cluster: "my-cluster", Disabled: true},
+			want: networking.StaticEgressParameters{
+				Disabled: true,
+				Target: meta.LocalTypedReference{
+					LocalReference: meta.LocalReference{Name: "my-cluster"},
+					GroupKind:      metav1.GroupKind{Group: infrastructure.Group, Kind: infrastructure.KubernetesClusterKind},
+				},
+			},
+		},
+		{
+			name:    "no target specified",
+			create:  staticEgressCmd{},
+			wantErr: true,
 		},
 		{
 			name:    "error on creation",
