@@ -39,6 +39,7 @@ type Cmd struct {
 	OpenSearch          openSearchCmd        `cmd:"" group:"create-storage" name:"opensearch" aliases:"os" help:"Create a new OpenSearch cluster."`
 	CloudVirtualMachine cloudVMCmd           `cmd:"" group:"create-infra" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Create a new CloudVM."`
 	ServiceConnection   serviceConnectionCmd `cmd:"" group:"create-network" name:"serviceconnection" aliases:"sc" help:"Create a new ServiceConnection."`
+	StaticEgress        staticEgressCmd      `cmd:"" group:"create-network" name:"staticegress" aliases:"se" help:"Create a new StaticEgress."`
 	Bucket              bucketCmd            `cmd:"" group:"create-storage" name:"bucket" help:"Create a new Bucket."`
 	BucketUser          bucketUserCmd        `cmd:"" group:"create-storage" name:"bucketuser" aliases:"bu" help:"Create a new BucketUser."`
 	Grafana             grafanaCmd           `cmd:"" group:"create-observability" name:"grafana" help:"Create a new Grafana instance."`

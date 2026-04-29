@@ -23,6 +23,7 @@ type Cmd struct {
 	OpenSearch          openSearchCmd        `cmd:"" group:"update-storage" name:"opensearch" aliases:"os" help:"Update an existing OpenSearch cluster."`
 	CloudVirtualMachine cloudVMCmd           `cmd:"" group:"update-infra" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Update a CloudVM."`
 	ServiceConnection   serviceConnectionCmd `cmd:"" group:"update-network" name:"serviceconnection" aliases:"sc" help:"Update a ServiceConnection."`
+	StaticEgress        staticEgressCmd      `cmd:"" group:"update-network" name:"staticegress" aliases:"se" help:"Update a StaticEgress."`
 	BucketUser          bucketUserCmd        `cmd:"" group:"update-storage" name:"bucketuser" aliases:"bu" help:"Update a BucketUser."`
 	Bucket              bucketCmd            `cmd:"" group:"update-storage" name:"bucket" help:"Update a Bucket."`
 	Grafana             grafanaCmd           `cmd:"" group:"update-observability" name:"grafana" help:"Update an existing Grafana instance."`
