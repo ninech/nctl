@@ -35,10 +35,6 @@ func (cmd *configCmd) newUpdater(
 }
 
 func (cmd *configCmd) Run(ctx context.Context, client *api.Client) error {
-	if !cmd.hasUpdates() {
-		return fmt.Errorf("no flags or arguments provided for update. please specify what you want to update (e.g. --size or --replicas)")
-	}
-
 	cfg := &apps.ProjectConfig{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      client.Project,
@@ -52,7 +48,9 @@ func (cmd *configCmd) Run(ctx context.Context, client *api.Client) error {
 			return fmt.Errorf("resource is of type %T, expected %T", current, apps.ProjectConfig{})
 		}
 
-		cmd.applyUpdates(cfg)
+		if !cmd.applyUpdates(cfg) {
+			return fmt.Errorf("no flags or arguments provided for update. please specify what you want to update (e.g. --size or --replicas)")
+		}
 
 		return nil
 	})
@@ -60,42 +58,35 @@ func (cmd *configCmd) Run(ctx context.Context, client *api.Client) error {
 	return upd.Update(ctx)
 }
 
-func (cmd *configCmd) applyUpdates(cfg *apps.ProjectConfig) {
+func (cmd *configCmd) applyUpdates(cfg *apps.ProjectConfig) bool {
+	var changed bool
 	if cmd.Size != nil {
 		cfg.Spec.ForProvider.Config.Size = apps.ApplicationSize(*cmd.Size)
+		changed = true
 	}
 	if cmd.Port != nil {
 		cfg.Spec.ForProvider.Config.Port = cmd.Port
+		changed = true
 	}
 	if cmd.Replicas != nil {
 		cfg.Spec.ForProvider.Config.Replicas = cmd.Replicas
+		changed = true
 	}
 	if cmd.Env != nil {
 		cfg.Spec.ForProvider.Config.Env = application.EnvVarsFromMap(cmd.Env)
+		changed = true
 	}
 	if cmd.BasicAuth != nil {
 		cfg.Spec.ForProvider.Config.EnableBasicAuth = cmd.BasicAuth
+		changed = true
 	}
 	if cmd.DeployJob != nil {
 		cmd.DeployJob.applyUpdates(&cfg.Spec.ForProvider.Config)
-	}
-}
-
-func (cmd *configCmd) hasUpdates() bool {
-	if cmd.Size != nil || cmd.Port != nil || cmd.Replicas != nil || cmd.BasicAuth != nil {
-		return true
-	}
-
-	if len(cmd.Env) > 0 {
-		return true
-	}
-
-	if cmd.DeployJob != nil {
 		d := cmd.DeployJob
 		if d.Enabled != nil || d.Command != nil || d.Name != nil || d.Retries != nil || d.Timeout != nil {
-			return true
+			changed = true
 		}
-	}
 
-	return false
+	}
+	return changed
 }
