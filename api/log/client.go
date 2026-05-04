@@ -169,30 +169,37 @@ func (c *Client) TailQuery(ctx context.Context, delayFor time.Duration, out outp
 		tailResponse := new(loghttp.TailResponse)
 		err := unmarshal.ReadTailResponseJSON(tailResponse, conn)
 		if err != nil {
+			if ctx.Err() != nil {
+				return nil
+			}
+
 			// Check if the websocket connection closed unexpectedly. If so, retry.
 			// The connection might close unexpectedly if the querier handling the tail request
 			// in Loki stops running. The following error would be printed:
 			// "websocket: close 1006 (abnormal closure): unexpected EOF"
-			if websocket.IsCloseError(err, websocket.CloseAbnormalClosure) {
+			if retryableTailError(err) {
 				// Close previous connection. If it fails to close the connection it should be fine as it is already broken.
 				_ = conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 
 				// Try to re-establish the connection up to 5 times.
-				backoff := backoff.New(context.Background(), backoff.Config{
+				reconnectBackoff := backoff.New(ctx, backoff.Config{
 					MinBackoff: 1 * time.Second,
 					MaxBackoff: 10 * time.Second,
 					MaxRetries: 5,
 				})
 
-				for backoff.Ongoing() {
+				for reconnectBackoff.Ongoing() {
 					conn, err = c.LiveTailQueryConn(ctx, q.QueryString, delayFor, q.Limit, lastReceivedTimestamp, q.Quiet)
 					if err == nil {
 						break
 					}
-					backoff.Wait()
+					reconnectBackoff.Wait()
 				}
 
-				if err = backoff.Err(); err != nil {
+				if err = reconnectBackoff.Err(); err != nil {
+					if ctx.Err() != nil {
+						return nil
+					}
 					return fmt.Errorf("error recreating tailing connection: %w", err)
 				}
 
@@ -213,4 +220,13 @@ func (c *Client) TailQuery(ctx context.Context, delayFor time.Duration, out outp
 			}
 		}
 	}
+}
+
+func retryableTailError(err error) bool {
+	return websocket.IsCloseError(
+		err,
+		websocket.CloseGoingAway,
+		websocket.CloseAbnormalClosure,
+		websocket.CloseInternalServerErr,
+	)
 }

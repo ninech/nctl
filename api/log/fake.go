@@ -59,6 +59,9 @@ func lokiTailHandler(t *testing.T, timestamp time.Time, lines []string) http.Han
 			if v == int(req.Limit) {
 				break
 			}
+			if !timestamp.After(req.Start) {
+				continue
+			}
 			entries = append(entries, logproto.Entry{
 				Timestamp: timestamp,
 				Line:      line,
