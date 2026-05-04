@@ -49,7 +49,7 @@ func (cmd *configCmd) Run(ctx context.Context, client *api.Client) error {
 		}
 
 		if !cmd.applyUpdates(cfg) {
-			return fmt.Errorf("no flags or arguments provided for update. please specify what you want to update (e.g. --size or --replicas)")
+			return fmt.Errorf("no flags or arguments provided for update; specify what you want to update")
 		}
 
 		return nil
