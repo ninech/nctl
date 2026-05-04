@@ -35,6 +35,10 @@ func (cmd *configCmd) newUpdater(
 }
 
 func (cmd *configCmd) Run(ctx context.Context, client *api.Client) error {
+	if !cmd.hasUpdates() {
+		return fmt.Errorf("no flags or arguments provided for update. please specify what you want to update (e.g. --size or --replicas)")
+	}
+
 	cfg := &apps.ProjectConfig{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      client.Project,
@@ -75,4 +79,23 @@ func (cmd *configCmd) applyUpdates(cfg *apps.ProjectConfig) {
 	if cmd.DeployJob != nil {
 		cmd.DeployJob.applyUpdates(&cfg.Spec.ForProvider.Config)
 	}
+}
+
+func (cmd *configCmd) hasUpdates() bool {
+	if cmd.Size != nil || cmd.Port != nil || cmd.Replicas != nil || cmd.BasicAuth != nil {
+		return true
+	}
+
+	if len(cmd.Env) > 0 {
+		return true
+	}
+
+	if cmd.DeployJob != nil {
+		d := cmd.DeployJob
+		if d.Enabled != nil || d.Command != nil || d.Name != nil || d.Retries != nil || d.Timeout != nil {
+			return true
+		}
+	}
+
+	return false
 }
