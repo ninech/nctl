@@ -7,7 +7,6 @@ import (
 
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
-	"golang.org/x/exp/maps"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -88,8 +87,12 @@ func update(ctx context.Context, client *api.Client, obj *unstructured.Unstructu
 
 	// merge annotations/labels
 	annotations, labels := oldObj.GetAnnotations(), oldObj.GetLabels()
-	maps.Copy(annotations, obj.GetAnnotations())
-	maps.Copy(labels, obj.GetLabels())
+	for k, v := range obj.GetAnnotations() {
+		annotations[k] = v
+	}
+	for k, v := range obj.GetLabels() {
+		labels[k] = v
+	}
 	obj.SetAnnotations(annotations)
 	obj.SetLabels(labels)
 
