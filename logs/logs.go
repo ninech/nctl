@@ -85,6 +85,10 @@ func (cmd *logsCmd) Run(
 	}
 
 	if cmd.Follow {
+		if err := client.Log.QueryRange(ctx, out, query); err != nil {
+			return err
+		}
+		query.Start = end
 		return client.Log.TailQuery(ctx, 0, out, query)
 	}
 
