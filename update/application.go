@@ -116,6 +116,10 @@ type workerJob struct {
 	Size    *string `help:"Size of the worker (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
 }
 
+func (job deployJob) changesGiven() bool {
+	return job.Enabled != nil || job.Command != nil || job.Name != nil || job.Retries != nil || job.Timeout != nil
+}
+
 func (job workerJob) changesGiven() bool {
 	return job.Command != nil || job.Size != nil
 }
@@ -138,6 +142,42 @@ type dockerfileBuild struct {
 	BuildContext *string `name:"dockerfile-build-context" help:"${app_dockerfile_build_context_help}" placeholder:"."`
 }
 
+func (cmd *applicationCmd) changesGiven() bool {
+	if cmd.Git != nil && !cmd.Git.empty() {
+		return true
+	}
+	if cmd.Size != nil || cmd.Port != nil || cmd.DeleteHealthProbe != nil ||
+		cmd.Replicas != nil || cmd.Hosts != nil ||
+		cmd.BasicAuth != nil || cmd.ChangeBasicAuthPassword != nil ||
+		cmd.DeleteEnv != nil || cmd.DeleteBuildEnv != nil ||
+		cmd.DeleteWorkerJob != nil || cmd.DeleteScheduledJob != nil ||
+		cmd.RetryRelease != nil || cmd.RetryBuild != nil ||
+		cmd.Pause != nil || cmd.Language != nil || cmd.BuildpackStack != nil {
+		return true
+	}
+	if len(cmd.Env) > 0 || len(cmd.SensitiveEnv) > 0 ||
+		len(cmd.BuildEnv) > 0 || len(cmd.SensitiveBuildEnv) > 0 ||
+		len(cmd.Service) > 0 || len(cmd.DeleteService) > 0 {
+		return true
+	}
+	if cmd.DockerfileBuild.Path != nil || cmd.DockerfileBuild.BuildContext != nil {
+		return true
+	}
+	if cmd.HealthProbe != nil && (cmd.HealthProbe.PeriodSeconds != nil || cmd.HealthProbe.Path != nil) {
+		return true
+	}
+	if cmd.DeployJob != nil && cmd.DeployJob.changesGiven() {
+		return true
+	}
+	if cmd.WorkerJob != nil && cmd.WorkerJob.changesGiven() {
+		return true
+	}
+	if cmd.ScheduledJob != nil && cmd.ScheduledJob.changesGiven() {
+		return true
+	}
+	return false
+}
+
 func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	app := &apps.Application{
 		ObjectMeta: metav1.ObjectMeta{
@@ -150,6 +190,9 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		app, ok := current.(*apps.Application)
 		if !ok {
 			return fmt.Errorf("resource is of type %T, expected %T", current, apps.Application{})
+		}
+		if !cmd.changesGiven() {
+			return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --size or --replicas)")
 		}
 		cmd.applyUpdates(app)
 
@@ -390,26 +433,32 @@ func (h healthProbe) applyUpdates(cfg *apps.Config) {
 	application.ApplyProbePatch(cfg, h.ToProbePatch())
 }
 
-func (job deployJob) applyUpdates(cfg *apps.Config) {
+func (job deployJob) applyUpdates(cfg *apps.Config) bool {
 	if job.Enabled != nil && !*job.Enabled {
 		// if enabled is explicitly set to false we set the DeployJob field to
 		// nil on the API, to completely remove the object.
 		cfg.DeployJob = nil
-		return
+		return true
 	}
 
+	changed := false
 	if job.Name != nil && len(*job.Name) != 0 {
 		ensureDeployJob(cfg).DeployJob.Name = *job.Name
+		changed = true
 	}
 	if job.Command != nil && len(*job.Command) != 0 {
 		ensureDeployJob(cfg).DeployJob.Command = *job.Command
+		changed = true
 	}
 	if job.Retries != nil {
 		ensureDeployJob(cfg).DeployJob.Retries = job.Retries
+		changed = true
 	}
 	if job.Timeout != nil {
 		ensureDeployJob(cfg).DeployJob.Timeout = &metav1.Duration{Duration: *job.Timeout}
+		changed = true
 	}
+	return changed
 }
 
 func ensureDeployJob(cfg *apps.Config) *apps.Config {

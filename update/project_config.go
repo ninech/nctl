@@ -81,12 +81,7 @@ func (cmd *configCmd) applyUpdates(cfg *apps.ProjectConfig) bool {
 		changed = true
 	}
 	if cmd.DeployJob != nil {
-		cmd.DeployJob.applyUpdates(&cfg.Spec.ForProvider.Config)
-		d := cmd.DeployJob
-		if d.Enabled != nil || d.Command != nil || d.Name != nil || d.Retries != nil || d.Timeout != nil {
-			changed = true
-		}
-
+		changed = cmd.DeployJob.applyUpdates(&cfg.Spec.ForProvider.Config) || changed
 	}
 	return changed
 }
