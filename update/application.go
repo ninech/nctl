@@ -191,10 +191,9 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		if !ok {
 			return fmt.Errorf("resource is of type %T, expected %T", current, apps.Application{})
 		}
-		if !cmd.changesGiven() {
-			return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --size or --replicas)")
+		if err := cmd.applyUpdates(app); err != nil {
+			return err
 		}
-		cmd.applyUpdates(app)
 
 		// if there was no change in the git config, we don't have
 		// anything to do anymore
@@ -272,7 +271,10 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	return upd.Update(ctx)
 }
 
-func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
+func (cmd *applicationCmd) applyUpdates(app *apps.Application) error {
+	if !cmd.changesGiven() {
+		return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --size or --replicas)")
+	}
 	// rebuildNeeded determines if a rebuild trigger should be added
 	rebuildNeeded := false
 	if cmd.Git != nil {
@@ -403,6 +405,7 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 			app.Spec.ForProvider.Services, toAdd, cmd.DeleteService, cmd.Writer,
 		)
 	}
+	return nil
 }
 
 func triggerTimestamp() string {

@@ -27,18 +27,14 @@ func (cmd *apiServiceAccountCmd) Run(ctx context.Context, client *api.Client) er
 		if !ok {
 			return fmt.Errorf("resource is of type %T, expected %T", current, iam.APIServiceAccount{})
 		}
-		if !cmd.applyUpdates(asa) {
-			return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --organization-access)")
-		}
-		return nil
+		return cmd.applyUpdates(asa)
 	}).Update(ctx)
 }
 
-func (cmd *apiServiceAccountCmd) applyUpdates(asa *iam.APIServiceAccount) bool {
-	changed := false
+func (cmd *apiServiceAccountCmd) applyUpdates(asa *iam.APIServiceAccount) error {
 	if cmd.OrganizationAccess != nil {
 		asa.Spec.ForProvider.OrganizationAccess = *cmd.OrganizationAccess
-		changed = true
+		return nil
 	}
-	return changed
+	return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --organization-access)")
 }

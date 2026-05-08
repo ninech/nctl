@@ -29,18 +29,14 @@ func (cmd *staticEgressCmd) Run(ctx context.Context, client *api.Client) error {
 			return fmt.Errorf("resource is of type %T, expected %T", current, networking.StaticEgress{})
 		}
 
-		if !cmd.applyUpdates(staticEgress) {
-			return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --disabled)")
-		}
-		return nil
+		return cmd.applyUpdates(staticEgress)
 	}).Update(ctx)
 }
 
-func (cmd *staticEgressCmd) applyUpdates(staticEgress *networking.StaticEgress) bool {
-	changed := false
+func (cmd *staticEgressCmd) applyUpdates(staticEgress *networking.StaticEgress) error {
 	if cmd.Disabled != nil {
 		staticEgress.Spec.ForProvider.Disabled = *cmd.Disabled
-		changed = true
+		return nil
 	}
-	return changed
+	return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --disabled)")
 }

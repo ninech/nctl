@@ -47,16 +47,13 @@ func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client) error {
 			cmd.SSHKeys = keys
 		}
 
-		if !cmd.applyUpdates(postgres) {
-			return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --machine-type)")
-		}
-		return nil
+		return cmd.applyUpdates(postgres)
 	})
 
 	return upd.Update(ctx)
 }
 
-func (cmd *postgresCmd) applyUpdates(postgres *storage.Postgres) bool {
+func (cmd *postgresCmd) applyUpdates(postgres *storage.Postgres) error {
 	changed := false
 	if cmd.MachineType != nil {
 		postgres.Spec.ForProvider.MachineType = infra.NewMachineType(*cmd.MachineType)
@@ -74,5 +71,8 @@ func (cmd *postgresCmd) applyUpdates(postgres *storage.Postgres) bool {
 		postgres.Spec.ForProvider.KeepDailyBackups = cmd.KeepDailyBackups
 		changed = true
 	}
-	return changed
+	if !changed {
+		return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --machine-type)")
+	}
+	return nil
 }

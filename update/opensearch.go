@@ -38,14 +38,11 @@ func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client) error {
 			return fmt.Errorf("resource is of type %T, expected %T", current, storage.OpenSearch{})
 		}
 
-		if !cmd.applyUpdates(openSearch) {
-			return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --machine-type)")
-		}
-		return nil
+		return cmd.applyUpdates(openSearch)
 	}).Update(ctx)
 }
 
-func (cmd *openSearchCmd) applyUpdates(os *storage.OpenSearch) bool {
+func (cmd *openSearchCmd) applyUpdates(os *storage.OpenSearch) error {
 	changed := false
 	if cmd.MachineType != nil {
 		os.Spec.ForProvider.MachineType = infra.NewMachineType(*cmd.MachineType)
@@ -73,5 +70,8 @@ func (cmd *openSearchCmd) applyUpdates(os *storage.OpenSearch) bool {
 		changed = true
 	}
 
-	return changed
+	if !changed {
+		return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --machine-type)")
+	}
+	return nil
 }

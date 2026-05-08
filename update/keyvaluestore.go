@@ -36,14 +36,11 @@ func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client) error 
 			return fmt.Errorf("resource is of type %T, expected %T", current, storage.KeyValueStore{})
 		}
 
-		if !cmd.applyUpdates(keyValueStore) {
-			return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --memory-size)")
-		}
-		return nil
+		return cmd.applyUpdates(keyValueStore)
 	}).Update(ctx)
 }
 
-func (cmd *keyValueStoreCmd) applyUpdates(kvs *storage.KeyValueStore) bool {
+func (cmd *keyValueStoreCmd) applyUpdates(kvs *storage.KeyValueStore) error {
 	changed := false
 	if cmd.MemorySize != nil {
 		kvs.Spec.ForProvider.MemorySize = cmd.MemorySize
@@ -67,5 +64,8 @@ func (cmd *keyValueStoreCmd) applyUpdates(kvs *storage.KeyValueStore) bool {
 		changed = true
 	}
 
-	return changed
+	if !changed {
+		return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --memory-size)")
+	}
+	return nil
 }

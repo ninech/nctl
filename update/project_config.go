@@ -48,18 +48,14 @@ func (cmd *configCmd) Run(ctx context.Context, client *api.Client) error {
 			return fmt.Errorf("resource is of type %T, expected %T", current, apps.ProjectConfig{})
 		}
 
-		if !cmd.applyUpdates(cfg) {
-			return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --size or --replicas)")
-		}
-
-		return nil
+		return cmd.applyUpdates(cfg)
 	})
 
 	return upd.Update(ctx)
 }
 
-func (cmd *configCmd) applyUpdates(cfg *apps.ProjectConfig) bool {
-	var changed bool
+func (cmd *configCmd) applyUpdates(cfg *apps.ProjectConfig) error {
+	changed := false
 	if cmd.Size != nil {
 		cfg.Spec.ForProvider.Config.Size = apps.ApplicationSize(*cmd.Size)
 		changed = true
@@ -83,5 +79,8 @@ func (cmd *configCmd) applyUpdates(cfg *apps.ProjectConfig) bool {
 	if cmd.DeployJob != nil {
 		changed = cmd.DeployJob.applyUpdates(&cfg.Spec.ForProvider.Config) || changed
 	}
-	return changed
+	if !changed {
+		return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --size or --replicas)")
+	}
+	return nil
 }

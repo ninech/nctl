@@ -31,15 +31,14 @@ func (cmd *serviceConnectionCmd) Run(ctx context.Context, client *api.Client) er
 			return fmt.Errorf("resource is of type %T, expected %T", current, networking.ServiceConnection{})
 		}
 
-		if cmd.KubernetesClusterOptions.PodSelector == nil && cmd.KubernetesClusterOptions.NamespaceSelector == nil {
-			return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --source-pod-selector)")
-		}
 		return cmd.applyUpdates(sc)
 	}).Update(ctx)
 }
 
 func (cmd *serviceConnectionCmd) applyUpdates(sc *networking.ServiceConnection) error {
+	if cmd.KubernetesClusterOptions.PodSelector == nil && cmd.KubernetesClusterOptions.NamespaceSelector == nil {
+		return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --source-pod-selector)")
+	}
 	sc.Spec.ForProvider.Source.KubernetesClusterOptions = cmd.KubernetesClusterOptions.APIType()
-
 	return nil
 }

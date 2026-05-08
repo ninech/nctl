@@ -34,19 +34,16 @@ func (cmd *projectCmd) Run(ctx context.Context, client *api.Client) error {
 			return fmt.Errorf("resource is of type %T, expected %T", current, management.Project{})
 		}
 
-		if cmd.DisplayName == nil {
-			return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --display-name)")
-		}
-		cmd.applyUpdates(project)
-
-		return nil
+		return cmd.applyUpdates(project)
 	})
 
 	return upd.Update(ctx)
 }
 
-func (cmd *projectCmd) applyUpdates(project *management.Project) {
-	if cmd.DisplayName != nil {
-		project.Spec.DisplayName = *cmd.DisplayName
+func (cmd *projectCmd) applyUpdates(project *management.Project) error {
+	if cmd.DisplayName == nil {
+		return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --display-name)")
 	}
+	project.Spec.DisplayName = *cmd.DisplayName
+	return nil
 }

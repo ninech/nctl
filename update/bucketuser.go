@@ -29,12 +29,16 @@ func (cmd *bucketUserCmd) Run(ctx context.Context, client *api.Client) error {
 			return fmt.Errorf("resource is of type %T, expected %T", current, storage.BucketUser{})
 		}
 
-		if cmd.ResetCredentials == nil {
-			return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --reset-credentials)")
-		}
-		bu.Spec.ForProvider.ResetCredentials = cmd.ResetCredentials
-		return nil
+		return cmd.applyUpdates(bu)
 	})
 
 	return upd.Update(ctx)
+}
+
+func (cmd *bucketUserCmd) applyUpdates(bu *storage.BucketUser) error {
+	if cmd.ResetCredentials == nil {
+		return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --reset-credentials)")
+	}
+	bu.Spec.ForProvider.ResetCredentials = cmd.ResetCredentials
+	return nil
 }

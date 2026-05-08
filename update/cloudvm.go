@@ -43,9 +43,6 @@ func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {
 			return fmt.Errorf("resource is of type %T, expected %T", current, infrastructure.CloudVirtualMachine{})
 		}
 
-		if !cmd.changesGiven() {
-			return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --machine-type)")
-		}
 		return cmd.applyUpdates(cloudvm)
 	}).Update(ctx); err != nil {
 		return err
@@ -58,22 +55,13 @@ func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {
 	return nil
 }
 
-func (cmd *cloudVMCmd) changesGiven() bool {
-	return cmd.MachineType != "" ||
-		cmd.Hostname != "" ||
-		cmd.ReverseDNS != "" ||
-		cmd.OS != "" ||
-		cmd.BootDiskSize != "" ||
-		len(cmd.Disks) != 0 ||
-		cmd.On != nil ||
-		cmd.Off != nil ||
-		cmd.Shutdown != nil ||
-		cmd.BootRescue != nil ||
-		len(cmd.RescuePublicKeys) != 0 ||
-		len(cmd.RescuePublicKeysFromFiles) != 0
-}
-
 func (cmd *cloudVMCmd) applyUpdates(cloudVM *infrastructure.CloudVirtualMachine) error {
+	if cmd.MachineType == "" && cmd.Hostname == "" && cmd.ReverseDNS == "" && cmd.OS == "" &&
+		cmd.BootDiskSize == "" && len(cmd.Disks) == 0 && cmd.On == nil && cmd.Off == nil &&
+		cmd.Shutdown == nil && cmd.BootRescue == nil &&
+		len(cmd.RescuePublicKeys) == 0 && len(cmd.RescuePublicKeysFromFiles) == 0 {
+		return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --machine-type)")
+	}
 	if cmd.MachineType != "" {
 		cloudVM.Spec.ForProvider.MachineType = infrastructure.NewMachineType(cmd.MachineType)
 	}
@@ -148,3 +136,4 @@ func (cmd *cloudVMCmd) applyUpdates(cloudVM *infrastructure.CloudVirtualMachine)
 
 	return nil
 }
+

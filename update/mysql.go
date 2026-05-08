@@ -53,16 +53,13 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
 			cmd.SSHKeys = keys
 		}
 
-		if !cmd.applyUpdates(mysql) {
-			return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --machine-type)")
-		}
-		return nil
+		return cmd.applyUpdates(mysql)
 	})
 
 	return upd.Update(ctx)
 }
 
-func (cmd *mySQLCmd) applyUpdates(mysql *storage.MySQL) bool {
+func (cmd *mySQLCmd) applyUpdates(mysql *storage.MySQL) error {
 	changed := false
 	if cmd.MachineType != nil {
 		mysql.Spec.ForProvider.MachineType = infra.NewMachineType(*cmd.MachineType)
@@ -104,5 +101,8 @@ func (cmd *mySQLCmd) applyUpdates(mysql *storage.MySQL) bool {
 		mysql.Spec.ForProvider.KeepDailyBackups = cmd.KeepDailyBackups
 		changed = true
 	}
-	return changed
+	if !changed {
+		return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --machine-type)")
+	}
+	return nil
 }

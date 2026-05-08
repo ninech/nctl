@@ -29,20 +29,16 @@ func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error 
 			return fmt.Errorf("resource is of type %T, expected %T", current, storage.MySQLDatabase{})
 		}
 
-		if !cmd.applyUpdates(mysqlDatabase) {
-			return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --backup-schedule)")
-		}
-		return nil
+		return cmd.applyUpdates(mysqlDatabase)
 	})
 
 	return upd.Update(ctx)
 }
 
-func (cmd *mysqlDatabaseCmd) applyUpdates(db *storage.MySQLDatabase) bool {
-	changed := false
+func (cmd *mysqlDatabaseCmd) applyUpdates(db *storage.MySQLDatabase) error {
 	if cmd.BackupSchedule != nil {
 		db.Spec.ForProvider.BackupSchedule = *cmd.BackupSchedule
-		changed = true
+		return nil
 	}
-	return changed
+	return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --backup-schedule)")
 }
