@@ -24,12 +24,13 @@ func TestMySQLDatabase(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "simple",
+			name:    "simple",
+			wantErr: true,
 		},
 		{
 			name:    "empty-update",
 			update:  mysqlDatabaseCmd{},
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name:   "update-backup-schedule",

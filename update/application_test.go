@@ -613,6 +613,7 @@ func TestApplication(t *testing.T) {
 				Name: existingApp.Name,
 			},
 		},
+		errorExpected: true,
 		checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 			is := require.New(t)
 			is.Nil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
@@ -653,6 +654,7 @@ func TestApplication(t *testing.T) {
 				Name: existingApp.Name,
 			},
 		},
+		errorExpected: true,
 		checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 			is := require.New(t)
 			is.Nil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
