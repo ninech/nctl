@@ -36,19 +36,26 @@ func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client) error 
 			return fmt.Errorf("resource is of type %T, expected %T", current, storage.KeyValueStore{})
 		}
 
-		return cmd.applyUpdates(keyValueStore)
+		if !cmd.applyUpdates(keyValueStore) {
+			return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --memory-size)")
+		}
+		return nil
 	}).Update(ctx)
 }
 
-func (cmd *keyValueStoreCmd) applyUpdates(kvs *storage.KeyValueStore) error {
+func (cmd *keyValueStoreCmd) applyUpdates(kvs *storage.KeyValueStore) bool {
+	changed := false
 	if cmd.MemorySize != nil {
 		kvs.Spec.ForProvider.MemorySize = cmd.MemorySize
+		changed = true
 	}
 	if cmd.MaxMemoryPolicy != nil {
 		kvs.Spec.ForProvider.MaxMemoryPolicy = *cmd.MaxMemoryPolicy
+		changed = true
 	}
 	if cmd.AllowedCidrs != nil {
 		kvs.Spec.ForProvider.AllowedCIDRs = *cmd.AllowedCidrs
+		changed = true
 	}
 
 	publicNetworking := cmd.PublicNetworking
@@ -57,7 +64,8 @@ func (cmd *keyValueStoreCmd) applyUpdates(kvs *storage.KeyValueStore) error {
 	}
 	if publicNetworking != nil {
 		kvs.Spec.ForProvider.PublicNetworkingEnabled = publicNetworking
+		changed = true
 	}
 
-	return nil
+	return changed
 }

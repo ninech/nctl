@@ -29,15 +29,20 @@ func (cmd *postgresDatabaseCmd) Run(ctx context.Context, client *api.Client) err
 			return fmt.Errorf("resource is of type %T, expected %T", current, storage.PostgresDatabase{})
 		}
 
-		cmd.applyUpdates(postgresDatabase)
+		if !cmd.applyUpdates(postgresDatabase) {
+			return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --backup-schedule)")
+		}
 		return nil
 	})
 
 	return upd.Update(ctx)
 }
 
-func (cmd *postgresDatabaseCmd) applyUpdates(db *storage.PostgresDatabase) {
+func (cmd *postgresDatabaseCmd) applyUpdates(db *storage.PostgresDatabase) bool {
+	changed := false
 	if cmd.BackupSchedule != nil {
 		db.Spec.ForProvider.BackupSchedule = *cmd.BackupSchedule
+		changed = true
 	}
+	return changed
 }

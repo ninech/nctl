@@ -12,7 +12,7 @@ import (
 
 type projectCmd struct {
 	resourceCmd
-	DisplayName *string `default:"" help:"Display Name of the project."`
+	DisplayName *string `help:"Display Name of the project."`
 }
 
 func (cmd *projectCmd) Run(ctx context.Context, client *api.Client) error {
@@ -34,6 +34,9 @@ func (cmd *projectCmd) Run(ctx context.Context, client *api.Client) error {
 			return fmt.Errorf("resource is of type %T, expected %T", current, management.Project{})
 		}
 
+		if cmd.DisplayName == nil {
+			return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --display-name)")
+		}
 		cmd.applyUpdates(project)
 
 		return nil
