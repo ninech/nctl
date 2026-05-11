@@ -136,4 +136,3 @@ func (cmd *cloudVMCmd) applyUpdates(cloudVM *infrastructure.CloudVirtualMachine)
 
 	return nil
 }
-

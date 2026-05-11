@@ -100,7 +100,6 @@ func (cmd *bucketCmd) applyUpdates(b *storage.Bucket) error {
 	return nil
 }
 
-
 func BucketKongVars() kong.Vars {
 	result := make(kong.Vars)
 	result["bucket_lifecycle_policy_delete_example"] = "prefix=tmp/"

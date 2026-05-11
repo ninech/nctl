@@ -48,22 +48,22 @@ type applicationCmd struct {
 	// structs. Due to the usage of kong these pointers will never be `nil`.
 	// So checking for `nil` values can not be used to find out if some of
 	// the struct fields have been set.
-	DeployJob                *deployJob      `embed:"" prefix:"deploy-job-"`
-	WorkerJob                *workerJob      `embed:"" prefix:"worker-job-"`
-	ScheduledJob             *scheduledJob   `embed:"" prefix:"scheduled-job-"`
-	DeleteWorkerJob          *string         `help:"Delete a worker job by name."`
-	DeleteScheduledJob       *string         `help:"Delete a scheduled job by name."`
+	DeployJob                *deployJob             `embed:"" prefix:"deploy-job-"`
+	WorkerJob                *workerJob             `embed:"" prefix:"worker-job-"`
+	ScheduledJob             *scheduledJob          `embed:"" prefix:"scheduled-job-"`
+	DeleteWorkerJob          *string                `help:"Delete a worker job by name."`
+	DeleteScheduledJob       *string                `help:"Delete a scheduled job by name."`
 	Service                  application.ServiceMap `help:"Service reference to add/update in the form name=kind/target-name."`
-	DeleteService            []string          `help:"Service reference names to remove."`
-	RetryRelease             *bool           `help:"Retries release for the application." placeholder:"false"`
-	RetryBuild               *bool           `help:"Retries build for the application if set to true." placeholder:"false"`
-	Pause                    *bool           `help:"Pauses the application if set to true. Stops all costs." placeholder:"false"`
-	GitInformationServiceURL string          `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
-	SkipRepoAccessCheck      bool            `help:"Skip the git repository access check." default:"false"`
-	Debug                    bool            `help:"Enable debug messages." default:"false"`
-	Language                 *string         `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static,"`
-	DockerfileBuild          dockerfileBuild `embed:""`
-	BuildpackStack           *string         `help:"${app_buildpack_stack_help} Possible values: ${enum}" enum:"paketo,heroku,"`
+	DeleteService            []string               `help:"Service reference names to remove."`
+	RetryRelease             *bool                  `help:"Retries release for the application." placeholder:"false"`
+	RetryBuild               *bool                  `help:"Retries build for the application if set to true." placeholder:"false"`
+	Pause                    *bool                  `help:"Pauses the application if set to true. Stops all costs." placeholder:"false"`
+	GitInformationServiceURL string                 `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
+	SkipRepoAccessCheck      bool                   `help:"Skip the git repository access check." default:"false"`
+	Debug                    bool                   `help:"Enable debug messages." default:"false"`
+	Language                 *string                `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static,"`
+	DockerfileBuild          dockerfileBuild        `embed:""`
+	BuildpackStack           *string                `help:"${app_buildpack_stack_help} Possible values: ${enum}" enum:"paketo,heroku,"`
 }
 
 type gitConfig struct {
@@ -116,10 +116,6 @@ type workerJob struct {
 	Size    *string `help:"Size of the worker (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
 }
 
-func (job deployJob) changesGiven() bool {
-	return job.Enabled != nil || job.Command != nil || job.Name != nil || job.Retries != nil || job.Timeout != nil
-}
-
 func (job workerJob) changesGiven() bool {
 	return job.Command != nil || job.Size != nil
 }
@@ -140,42 +136,6 @@ func (job scheduledJob) changesGiven() bool {
 type dockerfileBuild struct {
 	Path         *string `name:"dockerfile-path" help:"${app_dockerfile_path_help}" placeholder:"."`
 	BuildContext *string `name:"dockerfile-build-context" help:"${app_dockerfile_build_context_help}" placeholder:"."`
-}
-
-func (cmd *applicationCmd) changesGiven() bool {
-	if cmd.Git != nil && !cmd.Git.empty() {
-		return true
-	}
-	if cmd.Size != nil || cmd.Port != nil || cmd.DeleteHealthProbe != nil ||
-		cmd.Replicas != nil || cmd.Hosts != nil ||
-		cmd.BasicAuth != nil || cmd.ChangeBasicAuthPassword != nil ||
-		cmd.DeleteEnv != nil || cmd.DeleteBuildEnv != nil ||
-		cmd.DeleteWorkerJob != nil || cmd.DeleteScheduledJob != nil ||
-		cmd.RetryRelease != nil || cmd.RetryBuild != nil ||
-		cmd.Pause != nil || cmd.Language != nil || cmd.BuildpackStack != nil {
-		return true
-	}
-	if len(cmd.Env) > 0 || len(cmd.SensitiveEnv) > 0 ||
-		len(cmd.BuildEnv) > 0 || len(cmd.SensitiveBuildEnv) > 0 ||
-		len(cmd.Service) > 0 || len(cmd.DeleteService) > 0 {
-		return true
-	}
-	if cmd.DockerfileBuild.Path != nil || cmd.DockerfileBuild.BuildContext != nil {
-		return true
-	}
-	if cmd.HealthProbe != nil && (cmd.HealthProbe.PeriodSeconds != nil || cmd.HealthProbe.Path != nil) {
-		return true
-	}
-	if cmd.DeployJob != nil && cmd.DeployJob.changesGiven() {
-		return true
-	}
-	if cmd.WorkerJob != nil && cmd.WorkerJob.changesGiven() {
-		return true
-	}
-	if cmd.ScheduledJob != nil && cmd.ScheduledJob.changesGiven() {
-		return true
-	}
-	return false
 }
 
 func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
@@ -272,7 +232,23 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 }
 
 func (cmd *applicationCmd) applyUpdates(app *apps.Application) error {
-	if !cmd.changesGiven() {
+	changed := (cmd.Git != nil && !cmd.Git.empty()) ||
+		cmd.Size != nil || cmd.Port != nil || cmd.DeleteHealthProbe != nil ||
+		cmd.Replicas != nil || cmd.Hosts != nil ||
+		cmd.BasicAuth != nil || cmd.ChangeBasicAuthPassword != nil ||
+		cmd.DeleteEnv != nil || cmd.DeleteBuildEnv != nil ||
+		cmd.DeleteWorkerJob != nil || cmd.DeleteScheduledJob != nil ||
+		cmd.RetryRelease != nil || cmd.RetryBuild != nil ||
+		cmd.Pause != nil || cmd.Language != nil || cmd.BuildpackStack != nil ||
+		len(cmd.Env) > 0 || len(cmd.SensitiveEnv) > 0 ||
+		len(cmd.BuildEnv) > 0 || len(cmd.SensitiveBuildEnv) > 0 ||
+		len(cmd.Service) > 0 || len(cmd.DeleteService) > 0 ||
+		cmd.DockerfileBuild.Path != nil || cmd.DockerfileBuild.BuildContext != nil ||
+		(cmd.HealthProbe != nil && (cmd.HealthProbe.PeriodSeconds != nil || cmd.HealthProbe.Path != nil)) ||
+		(cmd.DeployJob != nil && (cmd.DeployJob.Enabled != nil || cmd.DeployJob.Command != nil || cmd.DeployJob.Name != nil || cmd.DeployJob.Retries != nil || cmd.DeployJob.Timeout != nil)) ||
+		(cmd.WorkerJob != nil && cmd.WorkerJob.changesGiven()) ||
+		(cmd.ScheduledJob != nil && cmd.ScheduledJob.changesGiven())
+	if !changed {
 		return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --size or --replicas)")
 	}
 	// rebuildNeeded determines if a rebuild trigger should be added
