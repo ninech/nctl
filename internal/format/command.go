@@ -24,7 +24,7 @@ func Command() command {
 
 // Login returns the login command.
 func (c command) Login() string {
-	return fmt.Sprintf("%s %s", string(c), LoginCommand)
+	return fmt.Sprintf("%s auth %s", string(c), LoginCommand)
 }
 
 // Get returns the command for getting a resource with nctl.
