@@ -50,13 +50,6 @@ func (cmd *bucketCmd) Run(ctx context.Context, client *api.Client) error {
 }
 
 func (cmd *bucketCmd) applyUpdates(b *storage.Bucket) error {
-	if cmd.PublicRead == nil && cmd.PublicList == nil && cmd.Versioning == nil &&
-		len(cmd.Permissions) == 0 && len(cmd.DeletePermissions) == 0 &&
-		len(cmd.LifecyclePolicy) == 0 && len(cmd.DeleteLifecyclePolicy) == 0 && !cmd.ClearLifecyclePolicies &&
-		len(cmd.CORS) == 0 && len(cmd.DeleteCORS) == 0 &&
-		len(cmd.CustomHostnames) == 0 && len(cmd.DeleteCustomHostnames) == 0 && !cmd.ClearCustomHostnames {
-		return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --public-read)")
-	}
 	if cmd.PublicRead != nil {
 		b.Spec.ForProvider.PublicRead = *cmd.PublicRead
 	}

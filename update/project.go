@@ -41,9 +41,8 @@ func (cmd *projectCmd) Run(ctx context.Context, client *api.Client) error {
 }
 
 func (cmd *projectCmd) applyUpdates(project *management.Project) error {
-	if cmd.DisplayName == nil {
-		return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --display-name)")
+	if cmd.DisplayName != nil {
+		project.Spec.DisplayName = *cmd.DisplayName
 	}
-	project.Spec.DisplayName = *cmd.DisplayName
 	return nil
 }

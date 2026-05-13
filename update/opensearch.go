@@ -43,14 +43,11 @@ func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client) error {
 }
 
 func (cmd *openSearchCmd) applyUpdates(os *storage.OpenSearch) error {
-	changed := false
 	if cmd.MachineType != nil {
 		os.Spec.ForProvider.MachineType = infra.NewMachineType(*cmd.MachineType)
-		changed = true
 	}
 	if cmd.AllowedCidrs != nil {
 		os.Spec.ForProvider.AllowedCIDRs = *cmd.AllowedCidrs
-		changed = true
 	}
 	if cmd.BucketUsers != nil {
 		bucketUsers := make([]meta.LocalReference, 0, len(*cmd.BucketUsers))
@@ -58,7 +55,6 @@ func (cmd *openSearchCmd) applyUpdates(os *storage.OpenSearch) error {
 			bucketUsers = append(bucketUsers, user.LocalReference)
 		}
 		os.Spec.ForProvider.BucketUsers = bucketUsers
-		changed = true
 	}
 
 	publicNetworking := cmd.PublicNetworking
@@ -67,11 +63,7 @@ func (cmd *openSearchCmd) applyUpdates(os *storage.OpenSearch) error {
 	}
 	if publicNetworking != nil {
 		os.Spec.ForProvider.PublicNetworkingEnabled = publicNetworking
-		changed = true
 	}
 
-	if !changed {
-		return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --machine-type)")
-	}
 	return nil
 }

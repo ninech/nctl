@@ -34,7 +34,6 @@ func (cmd *apiServiceAccountCmd) Run(ctx context.Context, client *api.Client) er
 func (cmd *apiServiceAccountCmd) applyUpdates(asa *iam.APIServiceAccount) error {
 	if cmd.OrganizationAccess != nil {
 		asa.Spec.ForProvider.OrganizationAccess = *cmd.OrganizationAccess
-		return nil
 	}
-	return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --organization-access)")
+	return nil
 }

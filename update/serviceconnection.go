@@ -36,9 +36,6 @@ func (cmd *serviceConnectionCmd) Run(ctx context.Context, client *api.Client) er
 }
 
 func (cmd *serviceConnectionCmd) applyUpdates(sc *networking.ServiceConnection) error {
-	if cmd.KubernetesClusterOptions.PodSelector == nil && cmd.KubernetesClusterOptions.NamespaceSelector == nil {
-		return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --source-pod-selector)")
-	}
 	sc.Spec.ForProvider.Source.KubernetesClusterOptions = cmd.KubernetesClusterOptions.APIType()
 	return nil
 }

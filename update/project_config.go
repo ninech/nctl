@@ -55,32 +55,23 @@ func (cmd *configCmd) Run(ctx context.Context, client *api.Client) error {
 }
 
 func (cmd *configCmd) applyUpdates(cfg *apps.ProjectConfig) error {
-	changed := false
 	if cmd.Size != nil {
 		cfg.Spec.ForProvider.Config.Size = apps.ApplicationSize(*cmd.Size)
-		changed = true
 	}
 	if cmd.Port != nil {
 		cfg.Spec.ForProvider.Config.Port = cmd.Port
-		changed = true
 	}
 	if cmd.Replicas != nil {
 		cfg.Spec.ForProvider.Config.Replicas = cmd.Replicas
-		changed = true
 	}
 	if cmd.Env != nil {
 		cfg.Spec.ForProvider.Config.Env = application.EnvVarsFromMap(cmd.Env)
-		changed = true
 	}
 	if cmd.BasicAuth != nil {
 		cfg.Spec.ForProvider.Config.EnableBasicAuth = cmd.BasicAuth
-		changed = true
 	}
 	if cmd.DeployJob != nil {
-		changed = cmd.DeployJob.applyUpdates(&cfg.Spec.ForProvider.Config) || changed
-	}
-	if !changed {
-		return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --size or --replicas)")
+		cmd.DeployJob.applyUpdates(&cfg.Spec.ForProvider.Config)
 	}
 	return nil
 }

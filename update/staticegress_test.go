@@ -43,7 +43,6 @@ func TestStaticEgress(t *testing.T) {
 			},
 			update:     staticEgressCmd{},
 			targetName: "my-app",
-			wantErr:    true,
 			want: networking.StaticEgressParameters{
 				Target: appTarget,
 			},

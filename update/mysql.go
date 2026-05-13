@@ -60,49 +60,35 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
 }
 
 func (cmd *mySQLCmd) applyUpdates(mysql *storage.MySQL) error {
-	changed := false
 	if cmd.MachineType != nil {
 		mysql.Spec.ForProvider.MachineType = infra.NewMachineType(*cmd.MachineType)
-		changed = true
 	}
 	if cmd.AllowedCidrs != nil {
 		mysql.Spec.ForProvider.AllowedCIDRs = *cmd.AllowedCidrs
-		changed = true
 	}
 	if cmd.SSHKeys != nil {
 		mysql.Spec.ForProvider.SSHKeys = cmd.SSHKeys
-		changed = true
 	}
 	if cmd.SQLMode != nil {
 		mysql.Spec.ForProvider.SQLMode = cmd.SQLMode
-		changed = true
 	}
 	if cmd.CharacterSetName != nil {
 		mysql.Spec.ForProvider.CharacterSet.Name = *cmd.CharacterSetName
-		changed = true
 	}
 	if cmd.CharacterSetCollation != nil {
 		mysql.Spec.ForProvider.CharacterSet.Collation = *cmd.CharacterSetCollation
-		changed = true
 	}
 	if cmd.LongQueryTime != nil {
 		mysql.Spec.ForProvider.LongQueryTime = *cmd.LongQueryTime
-		changed = true
 	}
 	if cmd.MinWordLength != nil {
 		mysql.Spec.ForProvider.MinWordLength = cmd.MinWordLength
-		changed = true
 	}
 	if cmd.TransactionIsolation != nil {
 		mysql.Spec.ForProvider.TransactionIsolation = *cmd.TransactionIsolation
-		changed = true
 	}
 	if cmd.KeepDailyBackups != nil {
 		mysql.Spec.ForProvider.KeepDailyBackups = cmd.KeepDailyBackups
-		changed = true
-	}
-	if !changed {
-		return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --machine-type)")
 	}
 	return nil
 }

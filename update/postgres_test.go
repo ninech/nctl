@@ -22,8 +22,7 @@ func TestPostgres(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "simple",
-			wantErr: true,
+			name: "simple",
 		},
 		{
 			name:   "increase-machineType",

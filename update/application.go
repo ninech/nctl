@@ -232,25 +232,6 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 }
 
 func (cmd *applicationCmd) applyUpdates(app *apps.Application) error {
-	changed := (cmd.Git != nil && !cmd.Git.empty()) ||
-		cmd.Size != nil || cmd.Port != nil || cmd.DeleteHealthProbe != nil ||
-		cmd.Replicas != nil || cmd.Hosts != nil ||
-		cmd.BasicAuth != nil || cmd.ChangeBasicAuthPassword != nil ||
-		cmd.DeleteEnv != nil || cmd.DeleteBuildEnv != nil ||
-		cmd.DeleteWorkerJob != nil || cmd.DeleteScheduledJob != nil ||
-		cmd.RetryRelease != nil || cmd.RetryBuild != nil ||
-		cmd.Pause != nil || cmd.Language != nil || cmd.BuildpackStack != nil ||
-		len(cmd.Env) > 0 || len(cmd.SensitiveEnv) > 0 ||
-		len(cmd.BuildEnv) > 0 || len(cmd.SensitiveBuildEnv) > 0 ||
-		len(cmd.Service) > 0 || len(cmd.DeleteService) > 0 ||
-		cmd.DockerfileBuild.Path != nil || cmd.DockerfileBuild.BuildContext != nil ||
-		(cmd.HealthProbe != nil && (cmd.HealthProbe.PeriodSeconds != nil || cmd.HealthProbe.Path != nil)) ||
-		(cmd.DeployJob != nil && (cmd.DeployJob.Enabled != nil || cmd.DeployJob.Command != nil || cmd.DeployJob.Name != nil || cmd.DeployJob.Retries != nil || cmd.DeployJob.Timeout != nil)) ||
-		(cmd.WorkerJob != nil && cmd.WorkerJob.changesGiven()) ||
-		(cmd.ScheduledJob != nil && cmd.ScheduledJob.changesGiven())
-	if !changed {
-		return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --size or --replicas)")
-	}
 	// rebuildNeeded determines if a rebuild trigger should be added
 	rebuildNeeded := false
 	if cmd.Git != nil {

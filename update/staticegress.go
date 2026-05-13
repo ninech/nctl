@@ -36,7 +36,6 @@ func (cmd *staticEgressCmd) Run(ctx context.Context, client *api.Client) error {
 func (cmd *staticEgressCmd) applyUpdates(staticEgress *networking.StaticEgress) error {
 	if cmd.Disabled != nil {
 		staticEgress.Spec.ForProvider.Disabled = *cmd.Disabled
-		return nil
 	}
-	return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --disabled)")
+	return nil
 }

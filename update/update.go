@@ -3,6 +3,7 @@ package update
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
@@ -67,8 +68,14 @@ func (u *updater) Update(ctx context.Context) error {
 		return err
 	}
 
+	oldRV := u.mg.GetResourceVersion()
+
 	if err := u.client.Update(ctx, u.mg); err != nil {
 		return err
+	}
+
+	if u.mg.GetResourceVersion() == oldRV {
+		return fmt.Errorf("no changes detected; use --help to see available flags")
 	}
 
 	u.Successf("⬆️", "updated %s %q", u.kind, u.mg.GetName())

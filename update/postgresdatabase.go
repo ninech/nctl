@@ -38,7 +38,6 @@ func (cmd *postgresDatabaseCmd) Run(ctx context.Context, client *api.Client) err
 func (cmd *postgresDatabaseCmd) applyUpdates(db *storage.PostgresDatabase) error {
 	if cmd.BackupSchedule != nil {
 		db.Spec.ForProvider.BackupSchedule = *cmd.BackupSchedule
-		return nil
 	}
-	return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --backup-schedule)")
+	return nil
 }

@@ -36,9 +36,8 @@ func (cmd *bucketUserCmd) Run(ctx context.Context, client *api.Client) error {
 }
 
 func (cmd *bucketUserCmd) applyUpdates(bu *storage.BucketUser) error {
-	if cmd.ResetCredentials == nil {
-		return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --reset-credentials)")
+	if cmd.ResetCredentials != nil {
+		bu.Spec.ForProvider.ResetCredentials = cmd.ResetCredentials
 	}
-	bu.Spec.ForProvider.ResetCredentials = cmd.ResetCredentials
 	return nil
 }

@@ -35,17 +35,11 @@ func (cmd *grafanaCmd) Run(ctx context.Context, client *api.Client) error {
 }
 
 func (cmd *grafanaCmd) applyUpdates(grafana *observability.Grafana) error {
-	changed := false
 	if cmd.AdminAccess != nil {
 		grafana.Spec.ForProvider.EnableAdminAccess = *cmd.AdminAccess
-		changed = true
 	}
 	if cmd.LocalUsers != nil {
 		grafana.Spec.ForProvider.AllowLocalUsers = *cmd.LocalUsers
-		changed = true
-	}
-	if !changed {
-		return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --admin-access)")
 	}
 	return nil
 }

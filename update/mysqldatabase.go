@@ -38,7 +38,6 @@ func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error 
 func (cmd *mysqlDatabaseCmd) applyUpdates(db *storage.MySQLDatabase) error {
 	if cmd.BackupSchedule != nil {
 		db.Spec.ForProvider.BackupSchedule = *cmd.BackupSchedule
-		return nil
 	}
-	return fmt.Errorf("no flags or arguments provided for update; please specify what you want to update (e.g. --backup-schedule)")
+	return nil
 }
