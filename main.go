@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"reflect"
 	"runtime/debug"
+	"slices"
 	"strings"
 	"syscall"
 
@@ -227,7 +228,7 @@ func clientPredictors(ctx context.Context, apiClientRequired bool) []completion.
 		completion.WithPredictor("mysql_databases", complete.PredictNothing),
 	}
 
-	if !apiClientRequired {
+	if !apiClientRequired || os.Getenv("COMP_LINE") == "" {
 		return nothing
 	}
 
@@ -249,11 +250,23 @@ func clientPredictors(ctx context.Context, apiClientRequired bool) []completion.
 // noAPIClientRequired returns true if the command does not need to (or can't)
 // require an API client.
 func noAPIClientRequired(command string) bool {
-	return matchCommand(command, auth.CmdName, format.LoginCommand) ||
+	return containsFlag(command, "--help", "-h", "--version") ||
+		matchCommand(command, auth.CmdName, format.LoginCommand) ||
 		matchCommand(command, auth.CmdName, format.LogoutCommand) ||
 		matchCommand(command, auth.CmdName, auth.OIDCCmdName) ||
 		matchCommand(command, auth.CmdName, auth.ClientCredentialsCmdName) ||
 		matchCommand(command, "completions")
+}
+
+// containsFlag reports whether any whitespace-delimited token in command
+// equals one of the given flags.
+func containsFlag(command string, flags ...string) bool {
+	for arg := range strings.SplitSeq(command, " ") {
+		if slices.Contains(flags, arg) {
+			return true
+		}
+	}
+	return false
 }
 
 func matchCommand(command string, parts ...string) bool {
