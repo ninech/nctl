@@ -1,6 +1,7 @@
 package update
 
 import (
+	"context"
 	"testing"
 
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
@@ -10,18 +11,30 @@ import (
 	"github.com/ninech/nctl/create"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 func TestOpenSearch(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
-		create  storage.OpenSearchParameters
-		update  openSearchCmd
-		want    storage.OpenSearchParameters
-		wantErr bool
+		name             string
+		create           storage.OpenSearchParameters
+		update           openSearchCmd
+		want             storage.OpenSearchParameters
+		wantErr          bool
+		interceptorFuncs *interceptor.Funcs
 	}{
+		{
+			name:    "no-flags",
+			wantErr: true,
+			interceptorFuncs: &interceptor.Funcs{
+				Update: func(_ context.Context, _ client.WithWatch, _ client.Object, _ ...client.UpdateOption) error {
+					return nil
+				},
+			},
+		},
 		{
 			name:   "increase-machineType",
 			create: storage.OpenSearchParameters{MachineType: infra.MachineTypeNineSearchS},
@@ -103,7 +116,11 @@ func TestOpenSearch(t *testing.T) {
 
 			tt.update.Name = "test-" + t.Name()
 
-			apiClient := test.SetupClient(t)
+			opts := []test.ClientSetupOption{}
+			if tt.interceptorFuncs != nil {
+				opts = append(opts, test.WithInterceptorFuncs(*tt.interceptorFuncs))
+			}
+			apiClient := test.SetupClient(t, opts...)
 
 			created := test.OpenSearch(tt.update.Name, apiClient.Project, meta.LocationNineES34)
 			created.Spec.ForProvider = tt.create

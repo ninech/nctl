@@ -29,13 +29,13 @@ func (cmd *staticEgressCmd) Run(ctx context.Context, client *api.Client) error {
 			return fmt.Errorf("resource is of type %T, expected %T", current, networking.StaticEgress{})
 		}
 
-		cmd.applyUpdates(staticEgress)
-		return nil
+		return cmd.applyUpdates(staticEgress)
 	}).Update(ctx)
 }
 
-func (cmd *staticEgressCmd) applyUpdates(staticEgress *networking.StaticEgress) {
+func (cmd *staticEgressCmd) applyUpdates(staticEgress *networking.StaticEgress) error {
 	if cmd.Disabled != nil {
 		staticEgress.Spec.ForProvider.Disabled = *cmd.Disabled
 	}
+	return nil
 }

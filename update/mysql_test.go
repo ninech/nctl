@@ -1,6 +1,7 @@
 package update
 
 import (
+	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -10,20 +11,32 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 func TestMySQL(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
-		create  storage.MySQLParameters
-		update  mySQLCmd
-		want    storage.MySQLParameters
-		wantErr bool
+		name             string
+		create           storage.MySQLParameters
+		update           mySQLCmd
+		want             storage.MySQLParameters
+		wantErr          bool
+		interceptorFuncs *interceptor.Funcs
 	}{
 		{
 			name: "simple",
+		},
+		{
+			name:    "no-flags",
+			wantErr: true,
+			interceptorFuncs: &interceptor.Funcs{
+				Update: func(_ context.Context, _ client.WithWatch, _ client.Object, _ ...client.UpdateOption) error {
+					return nil
+				},
+			},
 		},
 		{
 			name:   "increase-machineType",
@@ -101,7 +114,11 @@ func TestMySQL(t *testing.T) {
 
 			tt.update.Name = "test-" + t.Name()
 
-			apiClient := test.SetupClient(t)
+			opts := []test.ClientSetupOption{}
+			if tt.interceptorFuncs != nil {
+				opts = append(opts, test.WithInterceptorFuncs(*tt.interceptorFuncs))
+			}
+			apiClient := test.SetupClient(t, opts...)
 
 			created := test.MySQL(tt.update.Name, apiClient.Project, "nine-es34")
 			created.Spec.ForProvider = tt.create

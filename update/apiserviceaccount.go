@@ -27,13 +27,13 @@ func (cmd *apiServiceAccountCmd) Run(ctx context.Context, client *api.Client) er
 		if !ok {
 			return fmt.Errorf("resource is of type %T, expected %T", current, iam.APIServiceAccount{})
 		}
-		cmd.applyUpdates(asa)
-		return nil
+		return cmd.applyUpdates(asa)
 	}).Update(ctx)
 }
 
-func (cmd *apiServiceAccountCmd) applyUpdates(asa *iam.APIServiceAccount) {
+func (cmd *apiServiceAccountCmd) applyUpdates(asa *iam.APIServiceAccount) error {
 	if cmd.OrganizationAccess != nil {
 		asa.Spec.ForProvider.OrganizationAccess = *cmd.OrganizationAccess
 	}
+	return nil
 }
