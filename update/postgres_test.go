@@ -25,6 +25,10 @@ func TestPostgres(t *testing.T) {
 			name: "simple",
 		},
 		{
+			name:    "no-flags",
+			wantErr: true,
+		},
+		{
 			name:   "increase-machineType",
 			update: postgresCmd{MachineType: new(infra.MachineTypeNineDBS.String())},
 			want:   storage.PostgresParameters{MachineType: infra.MachineTypeNineDBS},

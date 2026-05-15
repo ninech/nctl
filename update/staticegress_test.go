@@ -48,6 +48,10 @@ func TestStaticEgress(t *testing.T) {
 			},
 		},
 		{
+			name:    "no-flags",
+			wantErr: true,
+		},
+		{
 			name: "enable disabled",
 			create: networking.StaticEgressParameters{
 				Target: appTarget,

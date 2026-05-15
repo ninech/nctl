@@ -31,6 +31,10 @@ func TestPostgresDatabase(t *testing.T) {
 			update: postgresDatabaseCmd{},
 		},
 		{
+			name:    "no-flags",
+			wantErr: true,
+		},
+		{
 			name:   "update-backup-schedule",
 			create: storage.PostgresDatabaseParameters{BackupSchedule: storage.DatabaseBackupScheduleCalendarDisabled},
 			update: postgresDatabaseCmd{BackupSchedule: ptr.To(storage.DatabaseBackupScheduleCalendarDaily)},

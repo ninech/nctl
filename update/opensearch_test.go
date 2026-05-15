@@ -23,6 +23,10 @@ func TestOpenSearch(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			name:    "no-flags",
+			wantErr: true,
+		},
+		{
 			name:   "increase-machineType",
 			create: storage.OpenSearchParameters{MachineType: infra.MachineTypeNineSearchS},
 			update: openSearchCmd{MachineType: new(infra.MachineTypeNineSearchL.String())},

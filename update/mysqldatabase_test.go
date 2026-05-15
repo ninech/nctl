@@ -31,6 +31,10 @@ func TestMySQLDatabase(t *testing.T) {
 			update: mysqlDatabaseCmd{},
 		},
 		{
+			name:    "no-flags",
+			wantErr: true,
+		},
+		{
 			name:   "update-backup-schedule",
 			create: storage.MySQLDatabaseParameters{BackupSchedule: storage.DatabaseBackupScheduleCalendarDaily},
 			update: mysqlDatabaseCmd{BackupSchedule: ptr.To(storage.DatabaseBackupScheduleCalendarDisabled)},

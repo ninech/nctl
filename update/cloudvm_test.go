@@ -27,6 +27,10 @@ func TestCloudVM(t *testing.T) {
 			name: "simple",
 		},
 		{
+			name:    "no-flags",
+			wantErr: true,
+		},
+		{
 			name:   "hostname",
 			update: cloudVMCmd{Hostname: "a"},
 			want:   infrastructure.CloudVirtualMachineParameters{Hostname: "a"},

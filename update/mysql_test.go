@@ -26,6 +26,10 @@ func TestMySQL(t *testing.T) {
 			name: "simple",
 		},
 		{
+			name:    "no-flags",
+			wantErr: true,
+		},
+		{
 			name:   "increase-machineType",
 			update: mySQLCmd{MachineType: new(infra.MachineTypeNineDBM.String())},
 			want:   storage.MySQLParameters{MachineType: infra.MachineTypeNineDBM},

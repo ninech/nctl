@@ -30,6 +30,10 @@ func TestGrafana(t *testing.T) {
 			update: grafanaCmd{},
 		},
 		{
+			name:    "no-flags",
+			wantErr: true,
+		},
+		{
 			name:   "enable admin access",
 			update: grafanaCmd{AdminAccess: new(true)},
 			want:   observability.GrafanaParameters{EnableAdminAccess: true},

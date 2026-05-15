@@ -26,6 +26,10 @@ func TestKeyValueStore(t *testing.T) {
 			name: "simple",
 		},
 		{
+			name:    "no-flags",
+			wantErr: true,
+		},
+		{
 			name:   "memorySize upgrade",
 			update: keyValueStoreCmd{MemorySize: new(storage.KeyValueStoreMemorySize{Quantity: resource.MustParse("1G")})},
 			want:   storage.KeyValueStoreParameters{MemorySize: memorySize("1G")},
