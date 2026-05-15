@@ -2,6 +2,7 @@ package update
 
 import (
 	"bytes"
+	"context"
 	"reflect"
 	"strings"
 	"testing"
@@ -11,17 +12,20 @@ import (
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/test"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 func TestCloudVM(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
-		create  infrastructure.CloudVirtualMachineParameters
-		update  cloudVMCmd
-		want    infrastructure.CloudVirtualMachineParameters
-		wantErr bool
+		name             string
+		create           infrastructure.CloudVirtualMachineParameters
+		update           cloudVMCmd
+		want             infrastructure.CloudVirtualMachineParameters
+		wantErr          bool
+		interceptorFuncs *interceptor.Funcs
 	}{
 		{
 			name: "simple",
@@ -29,6 +33,11 @@ func TestCloudVM(t *testing.T) {
 		{
 			name:    "no-flags",
 			wantErr: true,
+			interceptorFuncs: &interceptor.Funcs{
+				Update: func(_ context.Context, _ client.WithWatch, _ client.Object, _ ...client.UpdateOption) error {
+					return nil
+				},
+			},
 		},
 		{
 			name:   "hostname",
@@ -64,7 +73,11 @@ func TestCloudVM(t *testing.T) {
 			tt.update.Writer = format.NewWriter(out)
 			tt.update.Name = "test-" + t.Name()
 
-			apiClient := test.SetupClient(t)
+			opts := []test.ClientSetupOption{}
+			if tt.interceptorFuncs != nil {
+				opts = append(opts, test.WithInterceptorFuncs(*tt.interceptorFuncs))
+			}
+			apiClient := test.SetupClient(t, opts...)
 
 			created := test.CloudVirtualMachine(tt.update.Name, apiClient.Project, "nine-es34", tt.create.PowerState)
 			created.Spec.ForProvider = tt.create
