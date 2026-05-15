@@ -10,7 +10,6 @@ import (
 	"os/signal"
 	"reflect"
 	"runtime/debug"
-	"slices"
 	"strings"
 	"syscall"
 
@@ -142,10 +141,9 @@ func main() {
 		kong.BindTo(reader, (*io.Reader)(nil)),
 	)
 
-	apiClientRequired := !noAPIClientRequired(strings.Join(os.Args[1:], " "))
 	predictors := append([]completion.Option{
 		completion.WithPredictor("file", complete.PredictFiles("*")),
-	}, clientPredictors(ctx, apiClientRequired)...)
+	}, clientPredictors(ctx)...)
 	completion.Register(parser, predictors...)
 
 	kongCtx, err := parser.Parse(os.Args[1:])
@@ -173,7 +171,9 @@ func main() {
 		kong.BindTo(writer, (*io.Writer)(nil)),
 		kong.BindTo(reader, (*io.Reader)(nil)),
 	}
-	if apiClientRequired {
+	// Kong exits during Parse for --help and --version, so those cases
+	// never reach here. Only auth and completions commands remain.
+	if !noAPIClientRequired(kongCtx.Command()) {
 		client, err := api.New(
 			ctx,
 			cmd.APICluster,
@@ -218,7 +218,7 @@ func main() {
 	}
 }
 
-func clientPredictors(ctx context.Context, apiClientRequired bool) []completion.Option {
+func clientPredictors(ctx context.Context) []completion.Option {
 	// complete needs all used predictors to be defined, so we just use
 	// [complete.PredictNothing] for those that would require an API client.
 	nothing := []completion.Option{
@@ -228,7 +228,10 @@ func clientPredictors(ctx context.Context, apiClientRequired bool) []completion.
 		completion.WithPredictor("mysql_databases", complete.PredictNothing),
 	}
 
-	if !apiClientRequired || os.Getenv("COMP_LINE") == "" {
+	// During completion for commands that don't need an API client (auth,
+	// completions), this still attempts a kubeconfig read. The cost is
+	// negligible and the predictors are never invoked for those commands.
+	if os.Getenv("COMP_LINE") == "" {
 		return nothing
 	}
 
@@ -248,25 +251,14 @@ func clientPredictors(ctx context.Context, apiClientRequired bool) []completion.
 }
 
 // noAPIClientRequired returns true if the command does not need to (or can't)
-// require an API client.
+// require an API client. The command parameter is the resolved command path
+// from [kong.Context.Command].
 func noAPIClientRequired(command string) bool {
-	return containsFlag(command, "--help", "-h", "--version") ||
-		matchCommand(command, auth.CmdName, format.LoginCommand) ||
+	return matchCommand(command, auth.CmdName, format.LoginCommand) ||
 		matchCommand(command, auth.CmdName, format.LogoutCommand) ||
 		matchCommand(command, auth.CmdName, auth.OIDCCmdName) ||
 		matchCommand(command, auth.CmdName, auth.ClientCredentialsCmdName) ||
 		matchCommand(command, "completions")
-}
-
-// containsFlag reports whether any whitespace-delimited token in command
-// equals one of the given flags.
-func containsFlag(command string, flags ...string) bool {
-	for arg := range strings.SplitSeq(command, " ") {
-		if slices.Contains(flags, arg) {
-			return true
-		}
-	}
-	return false
 }
 
 func matchCommand(command string, parts ...string) bool {

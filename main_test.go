@@ -22,22 +22,25 @@ func TestNoAPIClientRequired(t *testing.T) {
 	t.Parallel()
 	is := assert.New(t)
 
+	// Commands use the resolved format from kong.Context.Command().
+	// --help and --version are not tested here because Kong exits
+	// during Parse before noAPIClientRequired is called.
 	tests := []struct {
 		command  string
 		expected bool
 	}{
-		{"--help", true},
-		{"-h", true},
-		{"--version", true},
-		{"get --help", true},
-		{"get application --help", true},
-		{"get -h", true},
 		{"auth login", true},
+		{"auth login <organization>", true},
 		{"auth logout", true},
+		{"auth oidc", true},
+		{"auth client-credentials", true},
 		{"completions", true},
+		{"completions bash", true},
 		{"get", false},
 		{"get application", false},
-		{"create application", false},
+		{"get application <name>", false},
+		{"create application <name>", false},
+		{"exec application <name>", false},
 		{"", false},
 	}
 	for _, tt := range tests {
