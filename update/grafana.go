@@ -30,16 +30,16 @@ func (cmd *grafanaCmd) Run(ctx context.Context, client *api.Client) error {
 			return fmt.Errorf("resource is of type %T, expected %T", current, observability.Grafana{})
 		}
 
-		cmd.applyUpdates(grafana)
-		return nil
+		return cmd.applyUpdates(grafana)
 	}).Update(ctx)
 }
 
-func (cmd *grafanaCmd) applyUpdates(grafana *observability.Grafana) {
+func (cmd *grafanaCmd) applyUpdates(grafana *observability.Grafana) error {
 	if cmd.AdminAccess != nil {
 		grafana.Spec.ForProvider.EnableAdminAccess = *cmd.AdminAccess
 	}
 	if cmd.LocalUsers != nil {
 		grafana.Spec.ForProvider.AllowLocalUsers = *cmd.LocalUsers
 	}
+	return nil
 }

@@ -53,14 +53,13 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
 			cmd.SSHKeys = keys
 		}
 
-		cmd.applyUpdates(mysql)
-		return nil
+		return cmd.applyUpdates(mysql)
 	})
 
 	return upd.Update(ctx)
 }
 
-func (cmd *mySQLCmd) applyUpdates(mysql *storage.MySQL) {
+func (cmd *mySQLCmd) applyUpdates(mysql *storage.MySQL) error {
 	if cmd.MachineType != nil {
 		mysql.Spec.ForProvider.MachineType = infra.NewMachineType(*cmd.MachineType)
 	}
@@ -91,4 +90,5 @@ func (cmd *mySQLCmd) applyUpdates(mysql *storage.MySQL) {
 	if cmd.KeepDailyBackups != nil {
 		mysql.Spec.ForProvider.KeepDailyBackups = cmd.KeepDailyBackups
 	}
+	return nil
 }

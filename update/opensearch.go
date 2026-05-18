@@ -54,7 +54,6 @@ func (cmd *openSearchCmd) applyUpdates(os *storage.OpenSearch) error {
 		for _, user := range *cmd.BucketUsers {
 			bucketUsers = append(bucketUsers, user.LocalReference)
 		}
-
 		os.Spec.ForProvider.BucketUsers = bucketUsers
 	}
 

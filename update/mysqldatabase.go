@@ -29,15 +29,15 @@ func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error 
 			return fmt.Errorf("resource is of type %T, expected %T", current, storage.MySQLDatabase{})
 		}
 
-		cmd.applyUpdates(mysqlDatabase)
-		return nil
+		return cmd.applyUpdates(mysqlDatabase)
 	})
 
 	return upd.Update(ctx)
 }
 
-func (cmd *mysqlDatabaseCmd) applyUpdates(db *storage.MySQLDatabase) {
+func (cmd *mysqlDatabaseCmd) applyUpdates(db *storage.MySQLDatabase) error {
 	if cmd.BackupSchedule != nil {
 		db.Spec.ForProvider.BackupSchedule = *cmd.BackupSchedule
 	}
+	return nil
 }

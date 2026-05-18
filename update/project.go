@@ -12,7 +12,7 @@ import (
 
 type projectCmd struct {
 	resourceCmd
-	DisplayName *string `default:"" help:"Display Name of the project."`
+	DisplayName *string `help:"Display Name of the project."`
 }
 
 func (cmd *projectCmd) Run(ctx context.Context, client *api.Client) error {
@@ -34,16 +34,15 @@ func (cmd *projectCmd) Run(ctx context.Context, client *api.Client) error {
 			return fmt.Errorf("resource is of type %T, expected %T", current, management.Project{})
 		}
 
-		cmd.applyUpdates(project)
-
-		return nil
+		return cmd.applyUpdates(project)
 	})
 
 	return upd.Update(ctx)
 }
 
-func (cmd *projectCmd) applyUpdates(project *management.Project) {
+func (cmd *projectCmd) applyUpdates(project *management.Project) error {
 	if cmd.DisplayName != nil {
 		project.Spec.DisplayName = *cmd.DisplayName
 	}
+	return nil
 }

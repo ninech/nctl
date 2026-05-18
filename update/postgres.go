@@ -47,14 +47,13 @@ func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client) error {
 			cmd.SSHKeys = keys
 		}
 
-		cmd.applyUpdates(postgres)
-		return nil
+		return cmd.applyUpdates(postgres)
 	})
 
 	return upd.Update(ctx)
 }
 
-func (cmd *postgresCmd) applyUpdates(postgres *storage.Postgres) {
+func (cmd *postgresCmd) applyUpdates(postgres *storage.Postgres) error {
 	if cmd.MachineType != nil {
 		postgres.Spec.ForProvider.MachineType = infra.NewMachineType(*cmd.MachineType)
 	}
@@ -67,4 +66,5 @@ func (cmd *postgresCmd) applyUpdates(postgres *storage.Postgres) {
 	if cmd.KeepDailyBackups != nil {
 		postgres.Spec.ForProvider.KeepDailyBackups = cmd.KeepDailyBackups
 	}
+	return nil
 }

@@ -48,15 +48,13 @@ func (cmd *configCmd) Run(ctx context.Context, client *api.Client) error {
 			return fmt.Errorf("resource is of type %T, expected %T", current, apps.ProjectConfig{})
 		}
 
-		cmd.applyUpdates(cfg)
-
-		return nil
+		return cmd.applyUpdates(cfg)
 	})
 
 	return upd.Update(ctx)
 }
 
-func (cmd *configCmd) applyUpdates(cfg *apps.ProjectConfig) {
+func (cmd *configCmd) applyUpdates(cfg *apps.ProjectConfig) error {
 	if cmd.Size != nil {
 		cfg.Spec.ForProvider.Config.Size = apps.ApplicationSize(*cmd.Size)
 	}
@@ -75,4 +73,5 @@ func (cmd *configCmd) applyUpdates(cfg *apps.ProjectConfig) {
 	if cmd.DeployJob != nil {
 		cmd.DeployJob.applyUpdates(&cfg.Spec.ForProvider.Config)
 	}
+	return nil
 }
