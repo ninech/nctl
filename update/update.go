@@ -8,6 +8,7 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/format"
 )
 
@@ -75,7 +76,8 @@ func (u *updater) Update(ctx context.Context) error {
 	}
 
 	if u.mg.GetResourceVersion() == oldRV {
-		return fmt.Errorf("no changes detected; use --help to see available flags")
+		return cli.ErrorWithContext(fmt.Errorf("no changes detected")).
+			WithSuggestions("use --help to see available flags")
 	}
 
 	u.Successf("⬆️", "updated %s %q", u.kind, u.mg.GetName())
