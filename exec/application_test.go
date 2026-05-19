@@ -1,10 +1,13 @@
 package exec
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"testing"
 	"time"
 
+	"github.com/creack/pty/v2"
 	"github.com/google/uuid"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
@@ -18,6 +21,91 @@ import (
 const (
 	project = test.DefaultProject
 )
+
+func TestSetupTTY(t *testing.T) {
+	t.Parallel()
+
+	for name, tc := range map[string]struct {
+		usePTYStdin   bool
+		usePTYStdout  bool
+		tty           bool
+		enableStdin   bool
+		wantRaw       bool
+		wantTTY       bool
+		wantSizeQueue bool
+	}{
+		"stdin-disabled": {
+			tty:         true,
+			enableStdin: false,
+			wantTTY:     true,
+		},
+		"tty-disabled": {
+			enableStdin: true,
+		},
+		"non-terminal-stdin": {
+			tty:         true,
+			enableStdin: true,
+		},
+		"redirected-stdout": {
+			usePTYStdin: true,
+			tty:         true,
+			enableStdin: true,
+			wantRaw:     true,
+			wantTTY:     true,
+		},
+		"full-terminal": {
+			usePTYStdin:   true,
+			usePTYStdout:  true,
+			tty:           true,
+			enableStdin:   true,
+			wantRaw:       true,
+			wantTTY:       true,
+			wantSizeQueue: true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			is := require.New(t)
+
+			var stdin io.Reader = bytes.NewReader(nil)
+			var stdout io.Writer = &bytes.Buffer{}
+
+			if tc.usePTYStdin || tc.usePTYStdout {
+				ptmx, ptty, err := pty.Open()
+				is.NoError(err)
+				t.Cleanup(func() {
+					ptmx.Close()
+					ptty.Close()
+				})
+				if tc.usePTYStdin {
+					stdin = ptty
+				}
+				if tc.usePTYStdout {
+					stdout = ptty
+				}
+			}
+
+			params := remoteCommandParameters{
+				tty:         tc.tty,
+				enableStdin: tc.enableStdin,
+				stdin:       stdin,
+				stdout:      stdout,
+			}
+
+			result := setupTTY(&params)
+
+			is.Equal(tc.wantRaw, result.Raw)
+			is.Equal(tc.wantTTY, params.tty)
+
+			sizeQueue := newSizeQueue(result)
+			if tc.wantSizeQueue {
+				is.NotNil(sizeQueue)
+			} else {
+				is.Nil(sizeQueue)
+			}
+		})
+	}
+}
 
 func TestApplicationReplicaSelection(t *testing.T) {
 	t.Parallel()
