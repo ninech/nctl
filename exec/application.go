@@ -182,10 +182,7 @@ func executeRemoteCommand(ctx context.Context, params remoteCommandParameters) e
 	tty := setupTTY(&params)
 	var sizeQueue remotecommand.TerminalSizeQueue
 	if tty.Raw {
-		// this call spawns a goroutine to monitor/update the terminal size
-		sizeQueue = &terminalSizeQueueWrapper{
-			tsq: tty.MonitorSize(tty.GetSize()),
-		}
+		sizeQueue = newSizeQueue(tty)
 
 		// unset stderr if it was previously set because both stdout
 		// and stderr go over params.stdout when tty is
@@ -253,6 +250,16 @@ func latestAvailableReleaseForApplication(ctx context.Context, client *api.Clien
 	}
 
 	return release, nil
+}
+
+// newSizeQueue returns a [remotecommand.TerminalSizeQueue] that monitors terminal
+// size changes. It returns nil when the terminal cannot be monitored.
+func newSizeQueue(tty term.TTY) remotecommand.TerminalSizeQueue {
+	if tsq := tty.MonitorSize(tty.GetSize()); tsq != nil {
+		return &terminalSizeQueueWrapper{tsq: tsq}
+	}
+
+	return nil
 }
 
 // terminalSizeQueueWrapper implements the [remotecommand.TerminalSizeQueue] interface.

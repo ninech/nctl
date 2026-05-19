@@ -7,6 +7,7 @@ require (
 	github.com/charmbracelet/bubbles v1.0.0
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.0
+	github.com/creack/pty/v2 v2.0.1
 	github.com/crossplane/crossplane-runtime v1.20.0
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/fatih/color v1.19.0
