@@ -2,6 +2,7 @@ package update
 
 import (
 	"bytes"
+	"context"
 	"strings"
 	"testing"
 
@@ -11,18 +12,37 @@ import (
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/test"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 func TestPostgresDatabase(t *testing.T) {
 	t.Parallel()
 
+	noFlagsInterceptor := &interceptor.Funcs{
+		Update: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+			oldRV := obj.GetResourceVersion()
+			if err := c.Update(ctx, obj, opts...); err != nil {
+				return err
+			}
+			obj.SetResourceVersion(oldRV)
+			return nil
+		},
+	}
+
 	tests := []struct {
-		name    string
-		create  storage.PostgresDatabaseParameters
-		update  postgresDatabaseCmd
-		want    storage.PostgresDatabaseParameters
-		wantErr bool
+		name             string
+		create           storage.PostgresDatabaseParameters
+		update           postgresDatabaseCmd
+		want             storage.PostgresDatabaseParameters
+		wantErr          bool
+		interceptorFuncs *interceptor.Funcs
 	}{
+		{
+			name:             "no-flags",
+			wantErr:          true,
+			interceptorFuncs: noFlagsInterceptor,
+		},
 		{
 			name: "simple",
 		},
@@ -46,7 +66,11 @@ func TestPostgresDatabase(t *testing.T) {
 			tt.update.Writer = format.NewWriter(out)
 			tt.update.Name = "test-" + t.Name()
 
-			apiClient := test.SetupClient(t)
+			var opts []test.ClientSetupOption
+			if tt.interceptorFuncs != nil {
+				opts = append(opts, test.WithInterceptorFuncs(*tt.interceptorFuncs))
+			}
+			apiClient := test.SetupClient(t, opts...)
 
 			created := test.PostgresDatabase(tt.update.Name, apiClient.Project, "nine-es34")
 			created.Spec.ForProvider = tt.create
