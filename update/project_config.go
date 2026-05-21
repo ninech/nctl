@@ -71,7 +71,9 @@ func (cmd *configCmd) applyUpdates(cfg *apps.ProjectConfig) error {
 		cfg.Spec.ForProvider.Config.EnableBasicAuth = cmd.BasicAuth
 	}
 	if cmd.DeployJob != nil {
-		cmd.DeployJob.applyUpdates(&cfg.Spec.ForProvider.Config)
+		if err := cmd.DeployJob.applyUpdates(&cfg.Spec.ForProvider.Config); err != nil {
+			return err
+		}
 	}
 	return nil
 }

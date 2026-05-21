@@ -271,7 +271,9 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) error {
 		app.Spec.ForProvider.BasicAuthPasswordChange = new(metav1.Now())
 	}
 	if cmd.DeployJob != nil {
-		cmd.DeployJob.applyUpdates(&app.Spec.ForProvider.Config)
+		if err := cmd.DeployJob.applyUpdates(&app.Spec.ForProvider.Config); err != nil {
+			return err
+		}
 	}
 	if cmd.WorkerJob != nil && cmd.WorkerJob.changesGiven() {
 		cmd.WorkerJob.applyUpdates(cmd.Writer, &app.Spec.ForProvider.Config)
