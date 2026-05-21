@@ -29,10 +29,20 @@ func TestProject(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		orig         *management.Project
-		cmd          projectCmd
-		checkProject func(t *testing.T, cmd projectCmd, orig, updated *management.Project)
+		orig          *management.Project
+		cmd           projectCmd
+		checkProject  func(t *testing.T, cmd projectCmd, orig, updated *management.Project)
+		errorExpected bool
+		clientOpts    []test.ClientSetupOption
 	}{
+		"no-flags": {
+			orig: existingProject,
+			cmd: projectCmd{
+				resourceCmd: resourceCmd{Name: projectName},
+			},
+			errorExpected: true,
+			clientOpts:    []test.ClientSetupOption{test.WithNoFlagsInterceptor()},
+		},
 		"all fields update": {
 			orig: existingProject,
 			cmd: projectCmd{
@@ -51,15 +61,17 @@ func TestProject(t *testing.T) {
 			out := &bytes.Buffer{}
 			tc.cmd.Writer = format.NewWriter(out)
 
-			apiClient := test.SetupClient(t,
+			opts := []test.ClientSetupOption{
 				test.WithObjects(tc.orig),
 				test.WithOrganization(organization),
 				test.WithDefaultProject(tc.orig.Name),
 				test.WithKubeconfig(),
-			)
+			}
+			opts = append(opts, tc.clientOpts...)
+			apiClient := test.SetupClient(t, opts...)
 
-			if err := tc.cmd.Run(t.Context(), apiClient); err != nil {
-				t.Fatal(err)
+			if err := tc.cmd.Run(t.Context(), apiClient); (err != nil) != tc.errorExpected {
+				t.Fatalf("projectCmd.Run() error = %v, errorExpected %v", err, tc.errorExpected)
 			}
 
 			updated := &management.Project{}
@@ -67,15 +79,17 @@ func TestProject(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if tc.checkProject != nil {
-				tc.checkProject(t, tc.cmd, tc.orig, updated)
-			}
+			if !tc.errorExpected {
+				if tc.checkProject != nil {
+					tc.checkProject(t, tc.cmd, tc.orig, updated)
+				}
 
-			if !strings.Contains(out.String(), "updated") {
-				t.Errorf("expected output to contain 'updated', got %q", out.String())
-			}
-			if !strings.Contains(out.String(), projectName) {
-				t.Errorf("expected output to contain project name %q, got %q", projectName, out.String())
+				if !strings.Contains(out.String(), "updated") {
+					t.Errorf("expected output to contain 'updated', got %q", out.String())
+				}
+				if !strings.Contains(out.String(), projectName) {
+					t.Errorf("expected output to contain project name %q, got %q", projectName, out.String())
+				}
 			}
 		})
 	}

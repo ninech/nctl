@@ -21,11 +21,17 @@ func TestServiceConnection(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
-		update  serviceConnectionCmd
-		want    networking.ServiceConnectionParameters
-		wantErr bool
+		name       string
+		update     serviceConnectionCmd
+		want       networking.ServiceConnectionParameters
+		wantErr    bool
+		clientOpts []test.ClientSetupOption
 	}{
+		{
+			name:       "no-flags",
+			wantErr:    true,
+			clientOpts: []test.ClientSetupOption{test.WithNoFlagsInterceptor()},
+		},
 		{
 			name: "addClusterOptions",
 			update: serviceConnectionCmd{
@@ -136,7 +142,7 @@ func TestServiceConnection(t *testing.T) {
 			tt.update.Writer = format.NewWriter(out)
 			tt.update.Name = "test-" + t.Name()
 
-			apiClient := test.SetupClient(t)
+			apiClient := test.SetupClient(t, tt.clientOpts...)
 
 			created := test.ServiceConnection(tt.update.Name, apiClient.Project)
 			if err := apiClient.Create(t.Context(), created); err != nil {
@@ -154,8 +160,10 @@ func TestServiceConnection(t *testing.T) {
 				t.Fatalf("expected serviceconnection to exist, got: %s", err)
 			}
 
-			if !cmp.Equal(updated.Spec.ForProvider, tt.want) {
-				t.Fatalf("expected serviceConnection.Spec.ForProvider = %v, got: %v", updated.Spec.ForProvider, tt.want)
+			if !tt.wantErr {
+				if !cmp.Equal(updated.Spec.ForProvider, tt.want) {
+					t.Fatalf("expected serviceConnection.Spec.ForProvider = %v, got: %v", updated.Spec.ForProvider, tt.want)
+				}
 			}
 
 			if !tt.wantErr {

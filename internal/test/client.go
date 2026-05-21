@@ -2,6 +2,7 @@
 package test
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -118,6 +119,22 @@ func WithInterceptorFuncs(f interceptor.Funcs) ClientSetupOption {
 	return func(cs *clientSetup) {
 		cs.interceptorFuncs = &f
 	}
+}
+
+// WithNoFlagsInterceptor returns a ClientSetupOption that resets the
+// ResourceVersion after each Update call, causing the updater to detect a
+// no-op and return an error. Use this in "no-flags" test cases.
+func WithNoFlagsInterceptor() ClientSetupOption {
+	return WithInterceptorFuncs(interceptor.Funcs{
+		Update: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+			oldRV := obj.GetResourceVersion()
+			if err := c.Update(ctx, obj, opts...); err != nil {
+				return err
+			}
+			obj.SetResourceVersion(oldRV)
+			return nil
+		},
+	})
 }
 
 func SetupClient(t *testing.T, opts ...ClientSetupOption) *api.Client {

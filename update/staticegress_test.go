@@ -2,7 +2,6 @@ package update
 
 import (
 	"bytes"
-	"context"
 	"strings"
 	"testing"
 
@@ -15,8 +14,6 @@ import (
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/test"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 func TestStaticEgress(t *testing.T) {
@@ -31,25 +28,14 @@ func TestStaticEgress(t *testing.T) {
 		GroupKind:      metav1.GroupKind{Group: infrastructure.Group, Kind: infrastructure.KubernetesClusterKind},
 	}
 
-	noFlagsInterceptor := &interceptor.Funcs{
-		Update: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
-			oldRV := obj.GetResourceVersion()
-			if err := c.Update(ctx, obj, opts...); err != nil {
-				return err
-			}
-			obj.SetResourceVersion(oldRV)
-			return nil
-		},
-	}
-
 	tests := []struct {
-		name             string
-		create           networking.StaticEgressParameters
-		update           staticEgressCmd
-		want             networking.StaticEgressParameters
-		targetName       string
-		wantErr          bool
-		interceptorFuncs *interceptor.Funcs
+		name       string
+		create     networking.StaticEgressParameters
+		update     staticEgressCmd
+		want       networking.StaticEgressParameters
+		targetName string
+		wantErr    bool
+		clientOpts []test.ClientSetupOption
 	}{
 		{
 			name: "no-flags",
@@ -60,8 +46,8 @@ func TestStaticEgress(t *testing.T) {
 			want: networking.StaticEgressParameters{
 				Target: appTarget,
 			},
-			wantErr:          true,
-			interceptorFuncs: noFlagsInterceptor,
+			wantErr:    true,
+			clientOpts: []test.ClientSetupOption{test.WithNoFlagsInterceptor()},
 		},
 		{
 			name: "empty update",
@@ -131,11 +117,7 @@ func TestStaticEgress(t *testing.T) {
 			tt.update.Writer = format.NewWriter(out)
 			tt.update.Name = "test-" + t.Name()
 
-			var opts []test.ClientSetupOption
-			if tt.interceptorFuncs != nil {
-				opts = append(opts, test.WithInterceptorFuncs(*tt.interceptorFuncs))
-			}
-			apiClient := test.SetupClient(t, opts...)
+			apiClient := test.SetupClient(t, tt.clientOpts...)
 
 			targetName := tt.targetName
 			if targetName == "" {

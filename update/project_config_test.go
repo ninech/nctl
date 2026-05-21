@@ -39,10 +39,18 @@ func TestConfig(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		orig        *apps.ProjectConfig
-		cmd         configCmd
-		checkConfig func(t *testing.T, cmd configCmd, orig, updated *apps.ProjectConfig)
+		orig          *apps.ProjectConfig
+		cmd           configCmd
+		checkConfig   func(t *testing.T, cmd configCmd, orig, updated *apps.ProjectConfig)
+		errorExpected bool
+		clientOpts    []test.ClientSetupOption
 	}{
+		"no-flags": {
+			orig:          existingConfig,
+			cmd:           configCmd{},
+			errorExpected: true,
+			clientOpts:    []test.ClientSetupOption{test.WithNoFlagsInterceptor()},
+		},
 		"change port": {
 			orig: existingConfig,
 			cmd: configCmd{
@@ -104,12 +112,11 @@ func TestConfig(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			apiClient := test.SetupClient(t,
-				test.WithObjects(tc.orig),
-			)
+			opts := append([]test.ClientSetupOption{test.WithObjects(tc.orig)}, tc.clientOpts...)
+			apiClient := test.SetupClient(t, opts...)
 
-			if err := tc.cmd.Run(t.Context(), apiClient); err != nil {
-				t.Fatal(err)
+			if err := tc.cmd.Run(t.Context(), apiClient); (err != nil) != tc.errorExpected {
+				t.Fatalf("configCmd.Run() error = %v, errorExpected %v", err, tc.errorExpected)
 			}
 
 			updated := &apps.ProjectConfig{}
@@ -117,8 +124,10 @@ func TestConfig(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if tc.checkConfig != nil {
-				tc.checkConfig(t, tc.cmd, tc.orig, updated)
+			if !tc.errorExpected {
+				if tc.checkConfig != nil {
+					tc.checkConfig(t, tc.cmd, tc.orig, updated)
+				}
 			}
 		})
 	}

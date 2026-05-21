@@ -393,32 +393,27 @@ func (h healthProbe) applyUpdates(cfg *apps.Config) {
 	application.ApplyProbePatch(cfg, h.ToProbePatch())
 }
 
-func (job deployJob) applyUpdates(cfg *apps.Config) bool {
+func (job deployJob) applyUpdates(cfg *apps.Config) error {
 	if job.Enabled != nil && !*job.Enabled {
 		// if enabled is explicitly set to false we set the DeployJob field to
 		// nil on the API, to completely remove the object.
 		cfg.DeployJob = nil
-		return true
+		return nil
 	}
 
-	changed := false
 	if job.Name != nil && len(*job.Name) != 0 {
 		ensureDeployJob(cfg).DeployJob.Name = *job.Name
-		changed = true
 	}
 	if job.Command != nil && len(*job.Command) != 0 {
 		ensureDeployJob(cfg).DeployJob.Command = *job.Command
-		changed = true
 	}
 	if job.Retries != nil {
 		ensureDeployJob(cfg).DeployJob.Retries = job.Retries
-		changed = true
 	}
 	if job.Timeout != nil {
 		ensureDeployJob(cfg).DeployJob.Timeout = &metav1.Duration{Duration: *job.Timeout}
-		changed = true
 	}
-	return changed
+	return nil
 }
 
 func ensureDeployJob(cfg *apps.Config) *apps.Config {

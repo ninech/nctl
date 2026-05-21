@@ -81,7 +81,18 @@ func TestApplication(t *testing.T) {
 		checkSecret                   func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret)
 		gitInformationServiceResponse test.GitInformationServiceResponse
 		errorExpected                 bool
+		clientOpts                    []test.ClientSetupOption
 	}{
+		"no-flags": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
+			},
+			errorExpected: true,
+			clientOpts:    []test.ClientSetupOption{test.WithNoFlagsInterceptor()},
+		},
 		"change port": {
 			orig: existingApp,
 			cmd: applicationCmd{
@@ -761,9 +772,8 @@ func TestApplication(t *testing.T) {
 				tc.gitAuth.ApplyToSecret(secret)
 				objects = append(objects, secret)
 			}
-			apiClient := test.SetupClient(t,
-				test.WithObjects(objects...),
-			)
+			opts := append([]test.ClientSetupOption{test.WithObjects(objects...)}, tc.clientOpts...)
+			apiClient := test.SetupClient(t, opts...)
 
 			if err := tc.cmd.Run(t.Context(), apiClient); err != nil {
 				if tc.errorExpected {

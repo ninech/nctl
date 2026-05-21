@@ -49,6 +49,23 @@ func TestBucketUser(t *testing.T) {
 	}
 }
 
+func TestBucketUserNoFlags(t *testing.T) {
+	t.Parallel()
+
+	apiClient := test.SetupClient(t, test.WithNoFlagsInterceptor())
+
+	created := bucketUser("user-noflags", apiClient.Project, "nine-es34")
+	if err := apiClient.Create(t.Context(), created); err != nil {
+		t.Fatalf("bucketuser create error, got: %s", err)
+	}
+
+	out := &bytes.Buffer{}
+	cmd := bucketUserCmd{resourceCmd{Writer: format.NewWriter(out), Name: created.Name}, nil}
+	if err := cmd.Run(t.Context(), apiClient); err == nil {
+		t.Error("expected error when no flags provided, got nil")
+	}
+}
+
 func bucketUser(name, project, location string) *storage.BucketUser {
 	return &storage.BucketUser{
 		ObjectMeta: metav1.ObjectMeta{
