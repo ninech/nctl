@@ -709,6 +709,36 @@ func TestApplication(t *testing.T) {
 				is.Equal(storage.KeyValueStoreKind, updated.Spec.ForProvider.Services[0].Target.Kind)
 			},
 		},
+		"pause application": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
+				Pause: new(true),
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				is := require.New(t)
+				is.True(updated.Spec.ForProvider.Paused)
+			},
+		},
+		"unpause application": {
+			orig: func() *apps.Application {
+				a := existingApp.DeepCopy()
+				a.Spec.ForProvider.Paused = true
+				return a
+			}(),
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
+				Pause: new(false),
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				is := require.New(t)
+				is.False(updated.Spec.ForProvider.Paused)
+			},
+		},
 		"delete service": {
 			orig: &apps.Application{
 				ObjectMeta: metav1.ObjectMeta{
@@ -819,4 +849,16 @@ func TestApplicationFlags(t *testing.T) {
 	is.NotNil(emptyFlags.Hosts)
 	is.NotNil(emptyFlags.Env)
 	is.NotNil(emptyFlags.BuildEnv)
+
+	pauseFlags := &applicationCmd{}
+	_, err = kong.Must(pauseFlags, vars, kong.BindTo(t.Output(), (*io.Writer)(nil))).Parse([]string{`testname`, `--pause`})
+	is.NoError(err)
+	is.NotNil(pauseFlags.Pause)
+	is.True(*pauseFlags.Pause)
+
+	noPauseFlags := &applicationCmd{}
+	_, err = kong.Must(noPauseFlags, vars, kong.BindTo(t.Output(), (*io.Writer)(nil))).Parse([]string{`testname`, `--no-pause`})
+	is.NoError(err)
+	is.NotNil(noPauseFlags.Pause)
+	is.False(*noPauseFlags.Pause)
 }
