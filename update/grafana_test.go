@@ -23,12 +23,13 @@ func TestGrafana(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "simple",
+			name:    "simple",
+			wantErr: true,
 		},
 		{
 			name:    "empty update",
 			update:  grafanaCmd{},
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name:   "enable admin access",

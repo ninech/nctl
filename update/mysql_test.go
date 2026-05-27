@@ -23,7 +23,14 @@ func TestMySQL(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "simple",
+			name:    "simple",
+			wantErr: true,
+		},
+		{
+			name:    "no-flags-with-machinetype",
+			create:  storage.MySQLParameters{MachineType: infra.MachineTypeNineDBM},
+			want:    storage.MySQLParameters{MachineType: infra.MachineTypeNineDBM},
+			wantErr: true,
 		},
 		{
 			name:   "increase-machineType",

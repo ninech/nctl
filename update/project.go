@@ -12,7 +12,7 @@ import (
 
 type projectCmd struct {
 	resourceCmd
-	DisplayName *string `default:"" help:"Display Name of the project."`
+	DisplayName *string `help:"Display Name of the project."`
 }
 
 func (cmd *projectCmd) Run(ctx context.Context, client *api.Client) error {

@@ -180,7 +180,8 @@ func TestApplication(t *testing.T) {
 			},
 		},
 		"replicas unchanged when unset flag is false": {
-			orig: existingApp,
+			orig:          existingApp,
+			errorExpected: true,
 			cmd: applicationCmd{
 				resourceCmd: resourceCmd{
 					Name: existingApp.Name,
@@ -217,6 +218,7 @@ func TestApplication(t *testing.T) {
 			},
 		},
 		"no-op when delete custom health probe set false": {
+			errorExpected: true,
 			orig: func() *apps.Application {
 				a := existingApp
 				a.Spec.ForProvider.Config.HealthProbe = &apps.Probe{
@@ -501,7 +503,8 @@ func TestApplication(t *testing.T) {
 			},
 		},
 		"do not retry release": {
-			orig: existingApp,
+			errorExpected: true,
+			orig:          existingApp,
 			cmd: applicationCmd{
 				resourceCmd: resourceCmd{
 					Name: existingApp.Name,
@@ -527,7 +530,8 @@ func TestApplication(t *testing.T) {
 			},
 		},
 		"do not retry build": {
-			orig: existingApp,
+			errorExpected: true,
+			orig:          existingApp,
 			cmd: applicationCmd{
 				resourceCmd: resourceCmd{
 					Name: existingApp.Name,
@@ -606,86 +610,88 @@ func TestApplication(t *testing.T) {
 			errorExpected: true,
 		},
 		"update buildpack stack to heroku triggers a build": {
-		orig: existingApp,
-		cmd: applicationCmd{
-			resourceCmd: resourceCmd{
-				Name: existingApp.Name,
+			orig: existingApp,
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
+				BuildpackStack: new(string(apps.BuildpackStackHeroku)),
 			},
-			BuildpackStack: new(string(apps.BuildpackStackHeroku)),
-		},
-		checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
-			is := require.New(t)
-			is.Equal(apps.BuildpackStack(apps.BuildpackStackHeroku), updated.Spec.ForProvider.BuildpackStack)
-			is.NotNil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
-		},
-	},
-	"update buildpack stack to paketo triggers a build": {
-		orig: existingApp,
-		cmd: applicationCmd{
-			resourceCmd: resourceCmd{
-				Name: existingApp.Name,
-			},
-			BuildpackStack: new(string(apps.BuildpackStackPaketo)),
-		},
-		checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
-			is := require.New(t)
-			is.Equal(apps.BuildpackStack(apps.BuildpackStackPaketo), updated.Spec.ForProvider.BuildpackStack)
-			is.NotNil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
-		},
-	},
-	"not setting buildpack stack does not trigger a build": {
-		orig: existingApp,
-		cmd: applicationCmd{
-			resourceCmd: resourceCmd{
-				Name: existingApp.Name,
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				is := require.New(t)
+				is.Equal(apps.BuildpackStack(apps.BuildpackStackHeroku), updated.Spec.ForProvider.BuildpackStack)
+				is.NotNil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
 			},
 		},
-		checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
-			is := require.New(t)
-			is.Nil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
-		},
-	},
-	"update language triggers a build": {
-		orig: existingApp,
-		cmd: applicationCmd{
-			resourceCmd: resourceCmd{
-				Name: existingApp.Name,
+		"update buildpack stack to paketo triggers a build": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
+				BuildpackStack: new(string(apps.BuildpackStackPaketo)),
 			},
-			Language: new("ruby"),
-		},
-		checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
-			is := require.New(t)
-			is.Equal(apps.Language("ruby"), updated.Spec.ForProvider.Language)
-			is.NotNil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
-		},
-	},
-	"update language to empty triggers a build": {
-		orig: existingApp,
-		cmd: applicationCmd{
-			resourceCmd: resourceCmd{
-				Name: existingApp.Name,
-			},
-			Language: new(""),
-		},
-		checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
-			is := require.New(t)
-			is.Equal(apps.Language(""), updated.Spec.ForProvider.Language)
-			is.NotNil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
-		},
-	},
-	"not setting language does not trigger a build": {
-		orig: existingApp,
-		cmd: applicationCmd{
-			resourceCmd: resourceCmd{
-				Name: existingApp.Name,
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				is := require.New(t)
+				is.Equal(apps.BuildpackStack(apps.BuildpackStackPaketo), updated.Spec.ForProvider.BuildpackStack)
+				is.NotNil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
 			},
 		},
-		checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
-			is := require.New(t)
-			is.Nil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
+		"not setting buildpack stack does not trigger a build": {
+			errorExpected: true,
+			orig:          existingApp,
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				is := require.New(t)
+				is.Nil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
+			},
 		},
-	},
-	"defaulting to HTTPS when not specifying a scheme in a git URL works": {
+		"update language triggers a build": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
+				Language: new("ruby"),
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				is := require.New(t)
+				is.Equal(apps.Language("ruby"), updated.Spec.ForProvider.Language)
+				is.NotNil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
+			},
+		},
+		"update language to empty triggers a build": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
+				Language: new(""),
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				is := require.New(t)
+				is.Equal(apps.Language(""), updated.Spec.ForProvider.Language)
+				is.NotNil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
+			},
+		},
+		"not setting language does not trigger a build": {
+			errorExpected: true,
+			orig:          existingApp,
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				is := require.New(t)
+				is.Nil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
+			},
+		},
+		"defaulting to HTTPS when not specifying a scheme in a git URL works": {
 			orig: existingApp,
 			cmd: applicationCmd{
 				resourceCmd: resourceCmd{

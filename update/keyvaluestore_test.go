@@ -23,7 +23,8 @@ func TestKeyValueStore(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "simple",
+			name:    "simple",
+			wantErr: true,
 		},
 		{
 			name:   "memorySize upgrade",

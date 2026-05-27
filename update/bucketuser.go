@@ -29,7 +29,9 @@ func (cmd *bucketUserCmd) Run(ctx context.Context, client *api.Client) error {
 			return fmt.Errorf("resource is of type %T, expected %T", current, storage.BucketUser{})
 		}
 
-		bu.Spec.ForProvider.ResetCredentials = cmd.ResetCredentials
+		if cmd.ResetCredentials != nil {
+			bu.Spec.ForProvider.ResetCredentials = cmd.ResetCredentials
+		}
 		return nil
 	})
 

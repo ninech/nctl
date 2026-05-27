@@ -24,12 +24,13 @@ func TestPostgresDatabase(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "simple",
+			name:    "simple",
+			wantErr: true,
 		},
 		{
 			name:    "empty-update",
 			update:  postgresDatabaseCmd{},
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name:   "update-backup-schedule",
