@@ -735,6 +735,6 @@ func ApplicationKongVars() (kong.Vars, error) {
 		"named Dockerfile will be searched in the application code root directory."
 	result["app_dockerfile_build_context_help"] = "Defines the build context. If left empty, the application code root directory will be used as build context."
 	result["app_buildpack_stack_help"] = "BuildpackStack sets the stack of buildpacks to use for building the application. " +
-		"If left empty, the default stack (paketo) will be used. "
+		"If left empty, the default stack (heroku) will be used. "
 	return result, nil
 }
