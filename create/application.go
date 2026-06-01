@@ -32,6 +32,8 @@ import (
 
 const logPrintTimeout = 10 * time.Second
 
+const DefaultReplicas = 2
+
 // note: when adding/changing fields here also make sure to carry it over to
 // update/application.go.
 type applicationCmd struct {
@@ -40,7 +42,7 @@ type applicationCmd struct {
 	Size                     *string           `help:"Size of the application (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
 	Port                     *int32            `help:"Port the application is listening on (defaults to ${app_default_port})." placeholder:"${app_default_port}"`
 	HealthProbe              healthProbe       `embed:"" prefix:"health-probe-"`
-	Replicas                 *int32            `help:"Amount of replicas of the running application (defaults to ${app_default_replicas})." placeholder:"${app_default_replicas}"`
+	Replicas                 int32             `help:"Amount of replicas of the running application (defaults to ${app_default_replicas})." placeholder:"${app_default_replicas}" default:"${app_default_replicas}"`
 	Hosts                    []string          `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
 	BasicAuth                *bool             `help:"Enable/Disable basic authentication for the application (defaults to ${app_default_basic_auth})." placeholder:"${app_default_basic_auth}"`
 	Env                      map[string]string `help:"Environment variables which are passed to the application at runtime."`
@@ -351,9 +353,7 @@ func (cmd *applicationCmd) config() apps.Config {
 	if cmd.Port != nil {
 		config.Port = cmd.Port
 	}
-	if cmd.Replicas != nil {
-		config.Replicas = cmd.Replicas
-	}
+	config.Replicas = &cmd.Replicas
 
 	cmd.HealthProbe.applyCreate(&config)
 
@@ -712,10 +712,7 @@ func ApplicationKongVars() (kong.Vars, error) {
 		return nil, errors.New("no default application port found")
 	}
 	result["app_default_port"] = strconv.Itoa(int(*apps.DefaultConfig.Port))
-	if apps.DefaultConfig.Replicas == nil {
-		return nil, errors.New("no default application replicas found")
-	}
-	result["app_default_replicas"] = strconv.Itoa(int(*apps.DefaultConfig.Replicas))
+	result["app_default_replicas"] = strconv.Itoa(DefaultReplicas)
 	if apps.DefaultConfig.EnableBasicAuth == nil {
 		return nil, errors.New("no default application basic authentication settings found")
 	}

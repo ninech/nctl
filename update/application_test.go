@@ -165,6 +165,33 @@ func TestApplication(t *testing.T) {
 				is.Nil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
 			},
 		},
+		"unset replicas": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
+				UnsetReplicas: new(true),
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				is := require.New(t)
+				is.NotNil(orig.Spec.ForProvider.Config.Replicas)
+				is.Nil(updated.Spec.ForProvider.Config.Replicas)
+			},
+		},
+		"replicas unchanged when unset flag is false": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
+				UnsetReplicas: new(false),
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				is := require.New(t)
+				is.Equal(orig.Spec.ForProvider.Config.Replicas, updated.Spec.ForProvider.Config.Replicas)
+			},
+		},
 		"reset custom health probe": {
 			orig: func() *apps.Application {
 				a := existingApp
@@ -861,4 +888,14 @@ func TestApplicationFlags(t *testing.T) {
 	is.NoError(err)
 	is.NotNil(noPauseFlags.Pause)
 	is.False(*noPauseFlags.Pause)
+
+	unsetReplicasFlags := &applicationCmd{}
+	_, err = kong.Must(unsetReplicasFlags, vars, kong.BindTo(t.Output(), (*io.Writer)(nil))).Parse([]string{`testname`, `--unset-replicas`})
+	is.NoError(err)
+	is.NotNil(unsetReplicasFlags.UnsetReplicas)
+	is.True(*unsetReplicasFlags.UnsetReplicas)
+
+	xorReplicasFlags := &applicationCmd{}
+	_, err = kong.Must(xorReplicasFlags, vars, kong.BindTo(t.Output(), (*io.Writer)(nil))).Parse([]string{`testname`, `--replicas=2`, `--unset-replicas`})
+	is.Error(err)
 }
