@@ -32,7 +32,8 @@ type applicationCmd struct {
 	Port                    *int32            `help:"Port the app is listening on."`
 	HealthProbe             *healthProbe      `embed:"" prefix:"health-probe-"`
 	DeleteHealthProbe       *bool             `help:"Delete existing custom health probe."`
-	Replicas                *int32            `help:"Amount of replicas of the running app."`
+	Replicas                *int32            `help:"Amount of replicas of the running app." xor:"replicas"`
+	UnsetReplicas           *bool             `help:"Unset the replicas, deferring to other possible configuration layer values (.deploio.yaml, etc)." xor:"replicas"`
 	Hosts                   *[]string         `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
 	BasicAuth               *bool             `help:"Enable/Disable basic authentication for the application."`
 	ChangeBasicAuthPassword *bool             `help:"Generate a new basic auth password."`
@@ -258,6 +259,9 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 	}
 	if cmd.Replicas != nil {
 		app.Spec.ForProvider.Config.Replicas = cmd.Replicas
+	}
+	if cmd.UnsetReplicas != nil && *cmd.UnsetReplicas {
+		app.Spec.ForProvider.Config.Replicas = nil
 	}
 	if cmd.Hosts != nil {
 		app.Spec.ForProvider.Hosts = *cmd.Hosts

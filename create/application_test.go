@@ -3,11 +3,13 @@ package create
 import (
 	"bytes"
 	"context"
+	"io"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/alecthomas/kong"
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/grafana/loki/v3/pkg/logcli/output"
@@ -88,7 +90,7 @@ func TestCreateApplication(t *testing.T) {
 				Hosts:               []string{"custom.example.org", "custom2.example.org"},
 				Port:                new(int32(1337)),
 				HealthProbe:         healthProbe{PeriodSeconds: int32(7), Path: "/he"},
-				Replicas:            new(int32(42)),
+				Replicas:            42,
 				BasicAuth:           new(false),
 				Env:                 map[string]string{"hello": "world"},
 				BuildEnv:            map[string]string{"BP_GO_TARGETS": "./cmd/web-server"},
@@ -106,7 +108,7 @@ func TestCreateApplication(t *testing.T) {
 				is.Equal(*cmd.Port, *app.Spec.ForProvider.Config.Port)
 				is.Equal(cmd.HealthProbe.PeriodSeconds, *app.Spec.ForProvider.Config.HealthProbe.PeriodSeconds)
 				is.Equal(cmd.HealthProbe.Path, app.Spec.ForProvider.Config.HealthProbe.HTTPGet.Path)
-				is.Equal(*cmd.Replicas, *app.Spec.ForProvider.Config.Replicas)
+				is.Equal(cmd.Replicas, *app.Spec.ForProvider.Config.Replicas)
 				is.Equal(*cmd.BasicAuth, *app.Spec.ForProvider.Config.EnableBasicAuth)
 				is.Equal(application.EnvVarsFromMap(cmd.Env), app.Spec.ForProvider.Config.Env)
 				is.Equal(application.EnvVarsFromMap(cmd.BuildEnv), app.Spec.ForProvider.BuildEnv)
@@ -836,4 +838,32 @@ func setResourceCondition(ctx context.Context, apiClient *api.Client, mg resourc
 
 	mg.SetConditions(condition)
 	return apiClient.Update(ctx, mg)
+}
+
+// TestApplicationFlags tests that Kong applies the default value for the
+// replicas flag when it is not explicitly provided.
+func TestApplicationFlags(t *testing.T) {
+	t.Parallel()
+
+	is := require.New(t)
+
+	vars, err := ApplicationKongVars()
+	is.NoError(err)
+
+	defaultCmd := &applicationCmd{}
+	_, err = kong.Must(defaultCmd, vars, kong.BindTo(io.Discard, (*io.Writer)(nil))).Parse([]string{
+		`test-app`,
+		`--git-url=https://github.com/ninech/doesnotexist.git`,
+	})
+	is.NoError(err)
+	is.Equal(int32(DefaultReplicas), defaultCmd.Replicas)
+
+	explicitCmd := &applicationCmd{}
+	_, err = kong.Must(explicitCmd, vars, kong.BindTo(io.Discard, (*io.Writer)(nil))).Parse([]string{
+		`test-app`,
+		`--git-url=https://github.com/ninech/doesnotexist.git`,
+		`--replicas=5`,
+	})
+	is.NoError(err)
+	is.Equal(int32(5), explicitCmd.Replicas)
 }
