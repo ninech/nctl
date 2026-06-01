@@ -27,6 +27,7 @@ import (
 	"github.com/int128/kubelogin/pkg/usecases/authentication/authcode"
 	"github.com/int128/kubelogin/pkg/usecases/authentication/ropc"
 	"github.com/int128/kubelogin/pkg/usecases/credentialplugin"
+	"github.com/ninech/nctl/internal/format"
 	"golang.org/x/oauth2/clientcredentials"
 	"k8s.io/client-go/pkg/apis/clientauthentication"
 	"k8s.io/client-go/rest"
@@ -49,6 +50,11 @@ const (
 var (
 	defaultBindAddresses = []string{"127.0.0.1:8000", "127.0.0.1:18000"}
 	defaultAuthTimeout   = 180 * time.Second
+	// tokenExpiryLeeway is added to the current time when checking the exp
+	// claim of an access token. This treats tokens that are about to expire as
+	// already expired so we refresh them before they are rejected in-flight by
+	// a resource server.
+	tokenExpiryLeeway = 10 * time.Second
 )
 
 // GetTokenFromConfig takes a rest.Config and returns a valid OIDC access
@@ -126,31 +132,114 @@ type TokenGetter interface {
 type DefaultTokenGetter struct{}
 
 func (t *DefaultTokenGetter) GetTokenString(ctx context.Context, issuerURL, clientID string, usePKCE bool) (string, error) {
-	buf := &bytes.Buffer{}
-	if err := GetToken(ctx, issuerURL, clientID, usePKCE, buf); err != nil {
+	return validToken(ctx, issuerURL, clientID, usePKCE, time.Now(), getTokenString)
+}
+
+// tokenFetcher obtains a token (and the expiry reported by kubelogin) for the
+// given OIDC parameters. forceRefresh makes kubelogin bypass its token cache.
+// It is a separate type so the orchestration in validToken can be tested
+// without driving the real kubelogin login flow.
+type tokenFetcher func(ctx context.Context, issuerURL, clientID string, usePKCE, forceRefresh bool) (string, *time.Time, error)
+
+// validToken fetches a token and guarantees it is not expired. If the fetched
+// token is already expired it forces a refresh, and if even the refreshed
+// token is expired it returns an actionable error instead of a stale token.
+func validToken(ctx context.Context, issuerURL, clientID string, usePKCE bool, now time.Time, fetch tokenFetcher) (string, error) {
+	token, kubeExpiry, err := fetch(ctx, issuerURL, clientID, usePKCE, false)
+	if err != nil {
 		return "", err
+	}
+
+	// kubelogin only refreshes the token when its own cache considers it
+	// expired (e.g. based on a stored ExpirationTimestamp). That can hand us a
+	// token whose JWT exp has already passed while the cache still thinks it's
+	// valid. Inspect the exp claim ourselves and, if the token is stale, force
+	// kubelogin to refresh instead of returning it.
+	if _, expired := accessTokenExpired(token, kubeExpiry, now); !expired {
+		return token, nil
+	}
+
+	token, kubeExpiry, err = fetch(ctx, issuerURL, clientID, usePKCE, true)
+	if err != nil {
+		return "", err
+	}
+
+	// If the forced refresh still yields an expired token, a non-interactive
+	// refresh was not possible (e.g. the refresh token is gone). Fail with an
+	// actionable error instead of writing a stale token to stdout.
+	if expiry, expired := accessTokenExpired(token, kubeExpiry, now); expired {
+		return "", fmt.Errorf(
+			"access token expired on %s, run %q to re-authenticate",
+			expiry.UTC().Format(time.RFC3339), format.Command().Login(),
+		)
+	}
+
+	return token, nil
+}
+
+// getTokenString runs the OIDC login flow via kubelogin and returns the access
+// token together with the expiry reported by kubelogin (nil if absent). When
+// forceRefresh is true, kubelogin bypasses its token cache and refreshes.
+func getTokenString(ctx context.Context, issuerURL, clientID string, usePKCE, forceRefresh bool) (string, *time.Time, error) {
+	buf := &bytes.Buffer{}
+	if err := GetToken(ctx, issuerURL, clientID, usePKCE, forceRefresh, buf); err != nil {
+		return "", nil, err
 	}
 
 	creds := &clientauthentication.ExecCredential{}
 	if err := json.NewDecoder(buf).Decode(creds); err != nil {
-		return "", fmt.Errorf("unable to decode exec credentials: %w", err)
+		return "", nil, fmt.Errorf("unable to decode exec credentials: %w", err)
 	}
 
-	if creds.Status.ExpirationTimestamp != nil && creds.Status.ExpirationTimestamp.Time.Before(time.Now()) {
-		return "", fmt.Errorf("token expired on %s", creds.Status.ExpirationTimestamp.Time)
+	var kubeExpiry *time.Time
+	if creds.Status.ExpirationTimestamp != nil {
+		kubeExpiry = &creds.Status.ExpirationTimestamp.Time
 	}
 
-	return creds.Status.Token, nil
+	return creds.Status.Token, kubeExpiry, nil
+}
+
+// accessTokenExpired reports whether the access token is expired as of now. It
+// prefers the exp claim of the JWT itself and falls back to the expiry
+// reported by kubelogin for non-JWT tokens. The returned time is the expiry
+// the decision was based on (zero if no expiry information is available, in
+// which case the token is treated as not expired).
+func accessTokenExpired(token string, kubeExpiry *time.Time, now time.Time) (time.Time, bool) {
+	if exp, ok := tokenExpiry(token); ok {
+		return exp, !exp.After(now.Add(tokenExpiryLeeway))
+	}
+	if kubeExpiry != nil {
+		return *kubeExpiry, !kubeExpiry.After(now.Add(tokenExpiryLeeway))
+	}
+	return time.Time{}, false
+}
+
+// tokenExpiry decodes the (unverified) JWT and returns the time encoded in its
+// exp claim. The signature is intentionally not verified: we only need the
+// expiry to decide whether to force a refresh. ok is false if the token is not
+// a parseable JWT or carries no exp claim.
+func tokenExpiry(token string) (expiry time.Time, ok bool) {
+	claims := jwt.RegisteredClaims{}
+	if _, _, err := jwt.NewParser().ParseUnverified(token, &claims); err != nil {
+		return time.Time{}, false
+	}
+	if claims.ExpiresAt == nil {
+		return time.Time{}, false
+	}
+	return claims.ExpiresAt.Time, true
 }
 
 // GetToken executes the OIDC login flow using the kubelogin with the provided
-// OIDC parameters writes the raw JSON ExecCredential result to out.
-func GetToken(ctx context.Context, issuerURL, clientID string, usePKCE bool, out io.Writer) error {
+// OIDC parameters writes the raw JSON ExecCredential result to out. When
+// forceRefresh is true, kubelogin bypasses its token cache and refreshes the
+// token regardless of its cached expiration.
+func GetToken(ctx context.Context, issuerURL, clientID string, usePKCE, forceRefresh bool, out io.Writer) error {
 	in := credentialplugin.Input{
 		Provider: oidc.Provider{
 			IssuerURL: issuerURL,
 			ClientID:  clientID,
 		},
+		ForceRefresh: forceRefresh,
 		TokenCacheConfig: tokencache.Config{
 			Directory: path.Join(homedir.HomeDir(), DefaultTokenCachePath),
 		},
