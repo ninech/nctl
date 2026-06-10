@@ -21,10 +21,6 @@ import (
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	dockerAPIVersion = "1.42"
-)
-
 type buildCmd struct {
 	resourceCmd
 	ApplicationName string `short:"a" help:"Name of the Application to get builds for. If omitted all in the project will be listed."`
@@ -96,7 +92,7 @@ func printBuild(builds []apps.Build, out *output, header bool) error {
 }
 
 func pullImage(ctx context.Context, apiClient *api.Client, build *apps.Build, out *output) error {
-	cli, err := client.NewClientWithOpts(client.WithVersion(dockerAPIVersion), client.FromEnv)
+	cli, err := client.NewClientWithOpts(client.WithAPIVersionNegotiation(), client.FromEnv)
 	if err != nil {
 		return err
 	}
