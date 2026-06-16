@@ -2,12 +2,14 @@ package get
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"strings"
 	"testing"
 
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api/config"
+	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -25,6 +27,7 @@ func TestProject(t *testing.T) {
 		allProjects   bool
 		output        string
 		errorContains []string
+		exitCode      int
 	}{
 		"projects exist, full format": {
 			projects:     test.Projects(organization, "dev", "staging", "prod"),
@@ -58,11 +61,13 @@ staging  <none>
 			projects:      []client.Object{},
 			outputFormat:  full,
 			errorContains: []string{`no "Projects" found`},
+			exitCode:      cli.ExitOK,
 		},
 		"no projects exist, no header format": {
 			projects:      []client.Object{},
 			outputFormat:  noHeader,
 			errorContains: []string{`no "Projects" found`},
+			exitCode:      cli.ExitOK,
 		},
 		"specific project requested": {
 			projects:     test.Projects(organization, "dev", "staging"),
@@ -76,7 +81,15 @@ dev      <none>
 			projects:      test.Projects(organization, "staging"),
 			name:          "dev",
 			outputFormat:  full,
-			errorContains: []string{`no "Projects" found`},
+			errorContains: []string{`project "dev" was not found`},
+			exitCode:      cli.ExitUsageError,
+		},
+		"specific project requested, but does not exist, json output": {
+			projects:      test.Projects(organization, "staging"),
+			name:          "dev",
+			outputFormat:  jsonOut,
+			errorContains: []string{`project "dev" was not found`},
+			exitCode:      cli.ExitUsageError,
 		},
 		"specific project requested, yaml output": {
 			projects:     test.Projects(organization, "dev", "staging"),
@@ -168,6 +181,14 @@ dev      <none>
 				is.Error(err)
 				for _, s := range testCase.errorContains {
 					is.Contains(strings.ToLower(err.Error()), strings.ToLower(s))
+				}
+				var cliErr *cli.Error
+				is.True(errors.As(err, &cliErr), "expected a *cli.Error")
+				is.Equal(testCase.exitCode, cliErr.ExitCode())
+				// a not-found-by-name error must not have printed any
+				// output (e.g. no "[]" for json)
+				if testCase.exitCode != cli.ExitOK {
+					is.Empty(buf.String())
 				}
 				return
 			}
