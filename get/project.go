@@ -2,10 +2,12 @@ package get
 
 import (
 	"context"
+	"fmt"
 	"sort"
 
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/format"
 )
 
@@ -19,6 +21,10 @@ func (proj *projectCmd) Run(ctx context.Context, client *api.Client, get *Cmd) e
 		return err
 	}
 	if len(projectList) == 0 {
+		if proj.Name != "" {
+			return cli.ErrorWithContext(fmt.Errorf("project %q was not found", proj.Name)).
+				WithExitCode(cli.ExitUsageError)
+		}
 		return get.notFound(management.ProjectKind, "")
 	}
 
