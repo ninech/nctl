@@ -8,6 +8,7 @@ import (
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/create"
+	"github.com/ninech/nctl/internal/cli"
 
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/internal/test"
@@ -343,6 +344,7 @@ func TestBucket(t *testing.T) {
 			}(),
 		},
 		"lifecycle-policy-no-op": {
+			wantErr: true,
 			flags: []string{
 				"--lifecycle-policy=prefix=tmp/;expire-after-days=7;is-live=true",
 				"--delete-lifecycle-policy=prefix=tmp/",
@@ -788,6 +790,39 @@ func TestBucket(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestBucketNoFlagsDoesNotUpdate(t *testing.T) {
+	t.Parallel()
+
+	is := require.New(t)
+
+	project := "proj-" + t.Name()
+	name := "bucket-" + t.Name()
+	orig := &storage.Bucket{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: project,
+		},
+	}
+
+	apiClient := test.SetupClient(
+		t,
+		test.WithDefaultProject(project),
+		test.WithObjects(orig),
+	)
+
+	cmd := bucketCmd{resourceCmd: resourceCmd{Name: name}}
+	err := cmd.Run(t.Context(), apiClient)
+	is.Error(err)
+
+	updated := &storage.Bucket{}
+	is.NoError(apiClient.Get(
+		t.Context(),
+		api.NamespacedName(name, apiClient.Project),
+		updated,
+	))
+	is.NotContains(updated.GetAnnotations(), cli.ManagedByAnnotation)
 }
 
 func runBucketUpdateNamedWithFlags(

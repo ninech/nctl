@@ -24,7 +24,8 @@ func TestCloudVM(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "simple",
+			name:    "simple",
+			wantErr: true,
 		},
 		{
 			name:   "hostname",

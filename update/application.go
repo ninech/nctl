@@ -147,7 +147,8 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		},
 	}
 
-	upd := cmd.newUpdater(client, app, apps.ApplicationKind, func(current resource.Managed) error {
+	var upd *updater
+	upd = cmd.newUpdater(client, app, apps.ApplicationKind, func(current resource.Managed) error {
 		app, ok := current.(*apps.Application)
 		if !ok {
 			return fmt.Errorf("resource is of type %T, expected %T", current, apps.Application{})
@@ -169,6 +170,8 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 			Password:      cmd.Git.Password,
 			SSHPrivateKey: sshPrivateKey,
 		}
+		userProvidedAuth := cmd.Git.Username != nil || cmd.Git.Password != nil ||
+			cmd.Git.SSHPrivateKey != nil || cmd.Git.SSHPrivateKeyFromFile != nil
 		if !cmd.SkipRepoAccessCheck {
 			gitClient, err := gitinfo.New(cmd.GitInformationServiceURL, client.Token(ctx))
 			if err != nil {
@@ -205,7 +208,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 					if err := client.Create(ctx, secret); err != nil {
 						return err
 					}
-
+					upd.forceUpdate = true
 					return nil
 				}
 
@@ -215,6 +218,9 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 			auth.ApplyToSecret(secret)
 			if err := client.Update(ctx, secret); err != nil {
 				return err
+			}
+			if userProvidedAuth {
+				upd.forceUpdate = true
 			}
 		}
 

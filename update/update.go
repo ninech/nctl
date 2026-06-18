@@ -3,11 +3,17 @@ package update
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"reflect"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	infra "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/format"
+	"k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/apimachinery/pkg/conversion"
 )
 
 type Cmd struct {
@@ -41,10 +47,11 @@ func (cmd *resourceCmd) BeforeApply(writer io.Writer) error {
 
 type updater struct {
 	format.Writer
-	mg         resource.Managed
-	client     *api.Client
-	kind       string
-	updateFunc updateFunc
+	mg          resource.Managed
+	client      *api.Client
+	kind        string
+	updateFunc  updateFunc
+	forceUpdate bool
 }
 
 type updateFunc func(current resource.Managed) error
@@ -63,8 +70,23 @@ func (u *updater) Update(ctx context.Context) error {
 		return err
 	}
 
+	before, ok := u.mg.DeepCopyObject().(resource.Managed)
+	if !ok {
+		return fmt.Errorf("resource %T does not implement resource.Managed after deepcopy", u.mg)
+	}
+
 	if err := u.updateFunc(u.mg); err != nil {
 		return err
+	}
+
+	changed, err := specChanged(before, u.mg)
+	if err != nil {
+		return err
+	}
+	if !changed && !u.forceUpdate {
+		return cli.ErrorWithContext(fmt.Errorf("no changes detected")).
+			WithExitCode(cli.ExitUsageError).
+			WithSuggestions("use --help to see available flags")
 	}
 
 	if err := u.client.Update(ctx, u.mg); err != nil {
@@ -73,4 +95,42 @@ func (u *updater) Update(ctx context.Context) error {
 
 	u.Successf("⬆️", "updated %s %q", u.kind, u.mg.GetName())
 	return nil
+}
+
+var specEqual = func() conversion.Equalities {
+	eq := equality.Semantic.Copy()
+	if err := eq.AddFunc(func(a, b infra.MachineType) bool {
+		return a.Equal(b)
+	}); err != nil {
+		panic(err)
+	}
+	return eq
+}()
+
+func specChanged(before, after resource.Managed) (bool, error) {
+	beforeSpec, err := specOf(before)
+	if err != nil {
+		return false, err
+	}
+
+	afterSpec, err := specOf(after)
+	if err != nil {
+		return false, err
+	}
+
+	return !specEqual.DeepEqual(beforeSpec, afterSpec), nil
+}
+
+func specOf(obj resource.Managed) (any, error) {
+	v := reflect.ValueOf(obj)
+	if v.Kind() != reflect.Pointer || v.IsNil() {
+		return nil, fmt.Errorf("resource %T must be a non-nil pointer", obj)
+	}
+
+	spec := v.Elem().FieldByName("Spec")
+	if !spec.IsValid() {
+		return nil, fmt.Errorf("resource %T has no Spec field", obj)
+	}
+
+	return spec.Interface(), nil
 }

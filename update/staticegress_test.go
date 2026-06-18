@@ -46,6 +46,7 @@ func TestStaticEgress(t *testing.T) {
 			want: networking.StaticEgressParameters{
 				Target: appTarget,
 			},
+			wantErr: true,
 		},
 		{
 			name: "enable disabled",
