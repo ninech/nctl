@@ -28,6 +28,8 @@ It lets you manage applications, services, storage, and more from your terminal.
 go install github.com/ninech/nctl@latest
 
 # Homebrew
+# if you have brew >= 6 you will need to trust the formula
+# brew trust --formula ninech/taps/nctl
 brew install ninech/taps/nctl
 
 # Debian/Ubuntu
