@@ -79,6 +79,7 @@ func TestApplication(t *testing.T) {
 		cmd                           applicationCmd
 		checkApp                      func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application)
 		checkSecret                   func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret)
+		verifyRequest                 func(t *testing.T, p test.GitInfoServiceParsed)
 		gitInformationServiceResponse test.GitInformationServiceResponse
 		errorExpected                 bool
 	}{
@@ -772,6 +773,46 @@ func TestApplication(t *testing.T) {
 				is.False(updated.Spec.ForProvider.Paused)
 			},
 		},
+		"existing ssh auth is used when only updating revision": {
+			orig: func() *apps.Application {
+				a := existingApp.DeepCopy()
+				a.Spec.ForProvider.Git.URL = "git@github.com:ninech/some-repo.git"
+				return a
+			}(),
+			gitAuth: &gitinfo.Auth{
+				SSHPrivateKey: &dummyRSAKey,
+			},
+			cmd: applicationCmd{
+				resourceCmd: resourceCmd{
+					Name: existingApp.Name,
+				},
+				Git: &gitConfig{
+					Revision: new("v1.2.3"),
+				},
+			},
+			gitInformationServiceResponse: test.GitInformationServiceResponse{
+				Code: 200,
+				Content: apps.GitExploreResponse{
+					RepositoryInfo: &apps.RepositoryInfo{
+						URL:      "git@github.com:ninech/some-repo.git",
+						Branches: []string{"v1.2.3"},
+						RevisionResponse: &apps.RevisionResponse{
+							RevisionRequested: "v1.2.3",
+							Found:             true,
+						},
+					},
+				},
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				is := require.New(t)
+				is.Equal("v1.2.3", updated.Spec.ForProvider.Git.Revision)
+			},
+			verifyRequest: func(t *testing.T, p test.GitInfoServiceParsed) {
+				is := require.New(t)
+				is.NotNil(p.Request.Auth, "existing SSH key should have been sent to the git info service")
+				is.NotEmpty(p.Request.Auth.PrivateKey)
+			},
+		},
 		"delete service": {
 			orig: &apps.Application{
 				ObjectMeta: metav1.ObjectMeta{
@@ -852,6 +893,12 @@ func TestApplication(t *testing.T) {
 				}
 
 				tc.checkSecret(t, tc.cmd, updatedSecret)
+			}
+
+			if tc.verifyRequest != nil {
+				req, err := gitInfoService.Request()
+				is.NoError(err)
+				tc.verifyRequest(t, req)
 			}
 		})
 	}

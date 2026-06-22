@@ -177,12 +177,6 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 			if err != nil {
 				return err
 			}
-			validator := &application.RepositoryValidator{
-				Auth:   auth,
-				Client: gitClient,
-				Debug:  cmd.Debug,
-			}
-
 			if !auth.Enabled() {
 				// if the auth was not changed but e.g. the branch changes and
 				// auth is pre-configured, we need to fetch the existing git
@@ -192,6 +186,12 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 					return fmt.Errorf("error reading preconfigured auth secret: %w", err)
 				}
 				auth = a
+			}
+
+			validator := &application.RepositoryValidator{
+				Auth:   auth,
+				Client: gitClient,
+				Debug:  cmd.Debug,
 			}
 
 			app.Spec.ForProvider.Git.GitTarget, err = validator.Validate(ctx, app.Spec.ForProvider.Git.GitTarget)
