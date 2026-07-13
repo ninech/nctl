@@ -16,12 +16,15 @@ import (
 
 type staticEgressCmd struct {
 	resourceCmd
-	Application string `help:"Name of the target Application." xor:"target" required:""`
-	Cluster     string `help:"Name of the target KubernetesCluster (NKE/vCluster)." xor:"target" required:""`
+	Application string `help:"Name of the target Application." xor:"target"`
+	Cluster     string `help:"Name of the target KubernetesCluster (NKE/vCluster)." xor:"target"`
 	Disabled    bool   `help:"Create the static egress in disabled state." default:"false"`
 }
 
-func (cmd *staticEgressCmd) Run(ctx context.Context, client *api.Client) error {
+func (cmd *staticEgressCmd) Run(ctx context.Context, client *api.Client, create *Cmd) error {
+	if ok, err := create.applyFile(ctx, cmd.Writer, client); ok {
+		return err
+	}
 	staticEgress, err := cmd.newStaticEgress(client.Project)
 	if err != nil {
 		return err

@@ -247,7 +247,7 @@ func TestServiceConnection(t *testing.T) {
 				t.Errorf("destination.UnmarshalText() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if err := tt.create.Run(t.Context(), apiClient); (err != nil) != tt.wantErr {
+			if err := tt.create.Run(t.Context(), apiClient, &Cmd{}); (err != nil) != tt.wantErr {
 				t.Errorf("serviceConnectionCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
 

@@ -13,6 +13,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/lucasepe/codename"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/apply"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/theckman/yacspin"
 
@@ -287,6 +288,13 @@ func resourceAvailable(event watch.Event) (bool, error) {
 func isAvailable(mg resource.Managed) bool {
 	return mg.GetCondition(runtimev1.TypeReady).Reason == runtimev1.ReasonAvailable &&
 		mg.GetCondition(runtimev1.TypeReady).Status == corev1.ConditionTrue
+}
+
+func (cmd *Cmd) applyFile(ctx context.Context, w format.Writer, client *api.Client) (bool, error) {
+	if cmd.Filename == nil {
+		return false, nil
+	}
+	return true, apply.File(ctx, w, client, cmd.Filename)
 }
 
 func getName(name string) string {

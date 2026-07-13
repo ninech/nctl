@@ -102,7 +102,7 @@ func TestStaticEgress(t *testing.T) {
 			}
 			apiClient := test.SetupClient(t, opts...)
 
-			if err := tt.create.Run(t.Context(), apiClient); (err != nil) != tt.wantErr {
+			if err := tt.create.Run(t.Context(), apiClient, &Cmd{}); (err != nil) != tt.wantErr {
 				t.Errorf("staticEgressCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
 

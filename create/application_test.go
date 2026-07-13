@@ -125,6 +125,9 @@ func TestCreateApplication(t *testing.T) {
 					Wait: false,
 					Name: "basic-auth",
 				},
+				Git: gitConfig{
+					URL: "https://github.com/ninech/doesnotexist.git",
+				},
 				Size:                new("mini"),
 				BasicAuth:           new(true),
 				SkipRepoAccessCheck: true,
@@ -578,7 +581,7 @@ func TestCreateApplication(t *testing.T) {
 			gitInfoService.SetResponse(tc.gitInformationServiceResponse)
 			app := tc.cmd.newApplication("default")
 
-			err := tc.cmd.Run(t.Context(), apiClient)
+			err := tc.cmd.Run(t.Context(), apiClient, &Cmd{})
 			if tc.errorExpected {
 				is.Error(err)
 				return
@@ -601,6 +604,9 @@ func TestApplicationWait(t *testing.T) {
 			Wait:        true,
 			WaitTimeout: time.Second * 5,
 			Name:        "some-name",
+		},
+		Git: gitConfig{
+			URL: "https://github.com/ninech/doesnotexist.git",
 		},
 		BasicAuth:           new(true),
 		SkipRepoAccessCheck: true,
@@ -730,7 +736,7 @@ func TestApplicationWait(t *testing.T) {
 		}
 	}()
 
-	if err := cmd.Run(ctx, apiClient); err != nil {
+	if err := cmd.Run(ctx, apiClient, &Cmd{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -751,6 +757,9 @@ func TestApplicationBuildFail(t *testing.T) {
 			Wait:        true,
 			WaitTimeout: time.Second * 5,
 			Name:        "some-name",
+		},
+		Git: gitConfig{
+			URL: "https://github.com/ninech/doesnotexist.git",
 		},
 		SkipRepoAccessCheck: true,
 	}
@@ -816,7 +825,7 @@ func TestApplicationBuildFail(t *testing.T) {
 		}
 	}()
 
-	if err := cmd.Run(ctx, client); err == nil {
+	if err := cmd.Run(ctx, client, &Cmd{}); err == nil {
 		t.Fatal("expected build error, got nil")
 	}
 

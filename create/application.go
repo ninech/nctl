@@ -62,7 +62,7 @@ type applicationCmd struct {
 }
 
 type gitConfig struct {
-	URL                   string  `required:"" help:"URL to the Git repository containing the application source. Both HTTPS and SSH formats are supported."`
+	URL                   string  `help:"URL to the Git repository containing the application source. Both HTTPS and SSH formats are supported."`
 	SubPath               string  `help:"SubPath is a path in the git repository which contains the application code. If not given, the root directory of the git repository will be used."`
 	Revision              string  `default:"main" help:"Revision defines the revision of the source to deploy the application to. This can be a commit, tag or branch."`
 	Username              *string `help:"Username to use when authenticating to the git repository over HTTPS." env:"GIT_USERNAME"`
@@ -129,7 +129,13 @@ const (
 	releaseStatusReplicaFailure = "replicaFailure"
 )
 
-func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
+func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client, create *Cmd) error {
+	if ok, err := create.applyFile(ctx, cmd.Writer, client); ok {
+		return err
+	}
+	if cmd.Git.URL == "" {
+		return fmt.Errorf("--git-url is required")
+	}
 	newApp := cmd.newApplication(client.Project)
 
 	sshPrivateKey, err := cmd.Git.sshPrivateKey()

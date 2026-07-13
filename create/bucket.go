@@ -16,7 +16,7 @@ import (
 
 type bucketCmd struct {
 	resourceCmd
-	Location   meta.LocationName `placeholder:"${bucket_location_default}" help:"Where the Bucket instance is created. Available locations are: ${bucket_location_options}" required:""`
+	Location   meta.LocationName `placeholder:"${bucket_location_default}" help:"Where the Bucket instance is created. Available locations are: ${bucket_location_options}"`
 	PublicRead bool              `help:"Publicly readable objects." default:"false"`
 	PublicList bool              `help:"Publicly listable objects." default:"false"`
 	Versioning bool              `help:"Enable object versioning." default:"false"`
@@ -31,7 +31,13 @@ type bucketCmd struct {
 	CustomHostnames []string `placeholder:"${bucket_custom_hostnames_example}" help:"CustomHostnames are DNS entries under which the bucket should be accessible. This can be used to serve public objects via an own domain name. (repeatable: HOST[,HOST...])."`
 }
 
-func (cmd *bucketCmd) Run(ctx context.Context, client *api.Client) error {
+func (cmd *bucketCmd) Run(ctx context.Context, client *api.Client, create *Cmd) error {
+	if ok, err := create.applyFile(ctx, cmd.Writer, client); ok {
+		return err
+	}
+	if cmd.Location == "" {
+		return fmt.Errorf("--location is required")
+	}
 	bucket, err := cmd.newBucket(client.Project)
 	if err != nil {
 		return err

@@ -2,6 +2,7 @@ package create
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/alecthomas/kong"
@@ -16,10 +17,16 @@ import (
 
 type bucketUserCmd struct {
 	resourceCmd
-	Location meta.LocationName `placeholder:"${bucketuser_location_default}" help:"Where the BucketUser instance is created. Available locations are: ${bucketuser_location_options}" required:""`
+	Location meta.LocationName `placeholder:"${bucketuser_location_default}" help:"Where the BucketUser instance is created. Available locations are: ${bucketuser_location_options}"`
 }
 
-func (cmd *bucketUserCmd) Run(ctx context.Context, client *api.Client) error {
+func (cmd *bucketUserCmd) Run(ctx context.Context, client *api.Client, create *Cmd) error {
+	if ok, err := create.applyFile(ctx, cmd.Writer, client); ok {
+		return err
+	}
+	if cmd.Location == "" {
+		return fmt.Errorf("--location is required")
+	}
 	bucketuser := cmd.newBucketUser(client.Project)
 
 	c := cmd.newCreator(client, bucketuser, storage.BucketUserKind)

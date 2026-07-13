@@ -30,8 +30,8 @@ var (
 
 type serviceConnectionCmd struct {
 	resourceCmd
-	Source                   application.TypedReference `placeholder:"kind/name" help:"Source of the connection in the form kind/name. Allowed source kinds are: ${allowed_sources}." required:""`
-	Destination              application.TypedReference `placeholder:"kind/name" help:"Destination of the connection in the form kind/name. Must be in the same project as the service connection. Allowed destination kinds are: ${allowed_destinations}." required:""`
+	Source                   application.TypedReference `placeholder:"kind/name" help:"Source of the connection in the form kind/name. Allowed source kinds are: ${allowed_sources}."`
+	Destination              application.TypedReference `placeholder:"kind/name" help:"Destination of the connection in the form kind/name. Must be in the same project as the service connection. Allowed destination kinds are: ${allowed_destinations}."`
 	SourceNamespace          string                   `help:"Source namespace of the connection. Defaults to current project."`
 	KubernetesClusterOptions KubernetesClusterOptions `embed:"" prefix:"source-"`
 }
@@ -86,7 +86,16 @@ func (ls *LabelSelector) UnmarshalText(text []byte) error {
 }
 
 
-func (cmd *serviceConnectionCmd) Run(ctx context.Context, client *api.Client) error {
+func (cmd *serviceConnectionCmd) Run(ctx context.Context, client *api.Client, create *Cmd) error {
+	if ok, err := create.applyFile(ctx, cmd.Writer, client); ok {
+		return err
+	}
+	if cmd.Source.Kind == "" {
+		return fmt.Errorf("--source is required")
+	}
+	if cmd.Destination.Kind == "" {
+		return fmt.Errorf("--destination is required")
+	}
 	sc, err := cmd.newServiceConnection(client.Project)
 	if err != nil {
 		return err

@@ -30,7 +30,7 @@ func TestBucketUser(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if err := tc.cmd.Run(t.Context(), apiClient); err != nil {
+			if err := tc.cmd.Run(t.Context(), apiClient, &Cmd{}); err != nil {
 				t.Fatal(err)
 			}
 			created := &storage.BucketUser{}
