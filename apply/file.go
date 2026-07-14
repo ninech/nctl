@@ -15,10 +15,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type fromFile struct{}
+type fromFile struct {
+	format.Writer `hidden:""`
+	Filename      *os.File `short:"f" completion-predictor:"file"`
+}
 
-func (cmd *Cmd) Run(ctx context.Context, client *api.Client, apply *Cmd) error {
-	return File(ctx, cmd.Writer, client, apply.Filename, UpdateOnExists())
+func (cmd *fromFile) Run(ctx context.Context, client *api.Client) error {
+	return File(ctx, cmd.Writer, client, cmd.Filename, UpdateOnExists())
 }
 
 type Option func(*config)
