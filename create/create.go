@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
-	"os"
 	"time"
 
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
@@ -24,8 +23,7 @@ import (
 )
 
 type Cmd struct {
-	Filename            *os.File             `short:"f" help:"Create any resource from a yaml or json file." completion-predictor:"file"`
-	FromFile            fromFile             `cmd:"" group:"create-general" default:"1" name:"-f <file>" help:"Create any resource from a yaml or json file."`
+	FromFile            fromFile             `cmd:"" group:"create-general" default:"withargs" name:"-f <file>" help:"Create any resource from a yaml or json file."`
 	VCluster            vclusterCmd          `cmd:"" group:"create-infra" name:"vcluster" help:"Create a new vcluster."`
 	APIServiceAccount   apiServiceAccountCmd `cmd:"" group:"create-access" name:"apiserviceaccount" aliases:"asa" help:"Create a new API Service Account."`
 	Project             projectCmd           `cmd:"" group:"create-access" name:"project" help:"Create a new project."`

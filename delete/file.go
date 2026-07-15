@@ -2,6 +2,7 @@ package delete
 
 import (
 	"context"
+	"os"
 
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/apply"
@@ -10,8 +11,9 @@ import (
 
 type fromFile struct {
 	format.Writer
+	Filename *os.File `short:"f" completion-predictor:"file"`
 }
 
-func (cmd *fromFile) Run(ctx context.Context, client *api.Client, delete *Cmd) error {
-	return apply.File(ctx, cmd.Writer, client, delete.Filename, apply.Delete())
+func (cmd *fromFile) Run(ctx context.Context, client *api.Client) error {
+	return apply.File(ctx, cmd.Writer, client, cmd.Filename, apply.Delete())
 }
