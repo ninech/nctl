@@ -1,6 +1,6 @@
 module github.com/ninech/nctl
 
-go 1.26.2
+go 1.26.5
 
 require (
 	github.com/alecthomas/kong v1.14.0
@@ -27,7 +27,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20
 	github.com/moby/moby v28.5.2+incompatible
 	github.com/moby/term v0.5.2
-	github.com/ninech/apis v0.0.0-20260420170138-f082e6318aed
+	github.com/ninech/apis v0.0.0-20260729111053-21d9803cc471
 	github.com/posener/complete v1.2.3
 	github.com/prometheus/common v0.67.5
 	github.com/stretchr/testify v1.11.1
@@ -356,3 +356,5 @@ require (
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.2 // indirect
 )
+
+replace github.com/ninech/apis => ../ninech-apis-dev
