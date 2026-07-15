@@ -12,6 +12,11 @@ type PrintAccessTokenCmd struct {
 }
 
 func (cmd *PrintAccessTokenCmd) Run(ctx context.Context, client *api.Client) error {
-	cmd.Println(client.Token(ctx))
+	token, err := client.TokenE(ctx)
+	if err != nil {
+		return err
+	}
+
+	cmd.Println(token)
 	return nil
 }
