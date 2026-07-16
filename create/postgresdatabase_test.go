@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/test"
@@ -51,6 +52,11 @@ func TestPostgresDatabase(t *testing.T) {
 			create: postgresDatabaseCmd{Collation: storage.PostgresDatabaseCollationDefault},
 			want:   storage.PostgresDatabaseParameters{Collation: storage.PostgresDatabaseCollationDefault},
 		},
+		{
+			name:   "restoreFrom",
+			create: postgresDatabaseCmd{RestoreFrom: "mybackup"},
+			want:   storage.PostgresDatabaseParameters{RestoreFrom: &meta.LocalReference{Name: "mybackup"}},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -82,4 +88,22 @@ func TestPostgresDatabase(t *testing.T) {
 			is.True(cmp.Equal(tt.want, created.Spec.ForProvider))
 		})
 	}
+}
+
+// TestPostgresDatabaseAlreadyExists covers creating a database whose name is
+// already taken.
+func TestPostgresDatabaseAlreadyExists(t *testing.T) {
+	t.Parallel()
+	is := require.New(t)
+
+	existing := test.PostgresDatabase("dup", test.DefaultProject, "nine-es34")
+	apiClient := test.SetupClient(t, test.WithObjects(existing))
+
+	cmd := postgresDatabaseCmd{}
+	cmd.Name = "dup"
+	cmd.Wait = false
+	cmd.WaitTimeout = time.Second
+
+	err := cmd.Run(t.Context(), apiClient)
+	is.ErrorContains(err, `PostgresDatabase "dup" already exists in project`)
 }

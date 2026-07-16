@@ -8,6 +8,7 @@ import (
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
 )
 
 func TestParseRef(t *testing.T) {
@@ -87,4 +88,44 @@ func TestNewRestore(t *testing.T) {
 		is.Equal("chosen", r.Name)
 		is.Empty(r.GenerateName)
 	})
+}
+
+// TestBootstrapCompleted covers the outcomes a database records for its
+// bootstrap restore. The recorded shape must be the one the controller
+// writes.
+func TestBootstrapCompleted(t *testing.T) {
+	done := BootstrapCompleted(storage.PostgresDatabaseKind, "mydb")
+
+	newDB := func(name string, bootstrap *storage.BootstrapStatus) *storage.PostgresDatabase {
+		db := &storage.PostgresDatabase{ObjectMeta: metav1.ObjectMeta{Name: name}}
+		db.Status.AtProvider.Bootstrap = bootstrap
+		return db
+	}
+	recorded := func(state storage.DatabaseRestoreState) *storage.BootstrapStatus {
+		return &storage.BootstrapStatus{State: state, Restore: "postgresdatabase-mydb", End: metav1.Now()}
+	}
+
+	tests := map[string]struct {
+		db       *storage.PostgresDatabase
+		finished bool
+		wantErr  string
+	}{
+		"not recorded yet": {db: newDB("mydb", nil)},
+		"succeeded":        {db: newDB("mydb", recorded(storage.DatabaseRestoreStateSucceeded)), finished: true},
+		"failed":           {db: newDB("mydb", recorded(storage.DatabaseRestoreStateFailed)), wantErr: "postgresdatabase-mydb"},
+		"another database": {db: newDB("otherdb", recorded(storage.DatabaseRestoreStateSucceeded))},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			is := require.New(t)
+			finished, err := done(watch.Event{Type: watch.Modified, Object: tt.db})
+			is.Equal(tt.finished, finished)
+			if tt.wantErr == "" {
+				is.NoError(err)
+				return
+			}
+			is.ErrorIs(err, ErrRestoreFailed)
+			is.ErrorContains(err, tt.wantErr, "the failure should name the restore to inspect")
+		})
+	}
 }

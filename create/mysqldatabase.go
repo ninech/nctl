@@ -9,6 +9,7 @@ import (
 
 	"github.com/alecthomas/kong"
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 
@@ -21,6 +22,7 @@ type mysqlDatabaseCmd struct {
 	MysqlDatabaseVersion storage.MySQLVersion                   `placeholder:"${mysqldatabase_version_default}" help:"Version of the MySQL database. Available versions: ${mysqldatabase_versions}"`
 	CharacterSet         string                                 `placeholder:"${mysqldatabase_characterset_default}" help:"Character set for the MySQL database. Available character sets: ${mysqldatabase_characterset_options}"`
 	BackupSchedule       storage.DatabaseBackupScheduleCalendar `placeholder:"${mysqldatabase_backupschedule_default}" help:"Backup schedule for the MySQL database. Available schedules: ${mysqldatabase_backupschedule_options}"`
+	RestoreFrom          string                                 `help:"Create the database from an existing DatabaseBackup instead of empty. List them with 'nctl get databasebackups'." default:"" completion-predictor:"resource_name"`
 }
 
 func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error {
@@ -30,7 +32,15 @@ func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error 
 	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
 	defer cancel()
 
-	if err := c.createResource(ctx); err != nil {
+	if cmd.RestoreFrom != "" {
+		mysqlDatabase.Spec.ForProvider.RestoreFrom = &meta.LocalReference{Name: cmd.RestoreFrom}
+		return c.createFromRestore(ctx, cmd.Wait, cmd.RestoreFrom, func(mg resource.Managed) bool {
+			db, ok := mg.(*storage.MySQLDatabase)
+			return ok && db.Spec.ForProvider.RestoreFrom != nil
+		})
+	}
+
+	if err := c.createDatabase(ctx); err != nil {
 		return err
 	}
 

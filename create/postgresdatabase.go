@@ -9,6 +9,7 @@ import (
 
 	"github.com/alecthomas/kong"
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 
@@ -21,6 +22,7 @@ type postgresDatabaseCmd struct {
 	PostgresDatabaseVersion storage.PostgresVersion                `placeholder:"${postgresdatabase_version_default}" help:"Release version with which the PostgreSQL database is created. Available versions: ${postgresdatabase_versions}"`
 	BackupSchedule          storage.DatabaseBackupScheduleCalendar `placeholder:"${postgresdatabase_backupschedule_default}" help:"Backup schedule for the PostgreSQL database. Available schedules: ${postgresdatabase_backupschedule_options}"`
 	Collation               storage.PostgresDatabaseCollation      `placeholder:"${postgresdatabase_collation_default}" help:"Collation for the PostgreSQL database. Defaults to ${postgresdatabase_collation_default}"`
+	RestoreFrom             string                                 `help:"Create the database from an existing DatabaseBackup instead of empty. List them with 'nctl get databasebackups'." default:"" completion-predictor:"resource_name"`
 }
 
 func (cmd *postgresDatabaseCmd) Run(ctx context.Context, client *api.Client) error {
@@ -30,7 +32,15 @@ func (cmd *postgresDatabaseCmd) Run(ctx context.Context, client *api.Client) err
 	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
 	defer cancel()
 
-	if err := c.createResource(ctx); err != nil {
+	if cmd.RestoreFrom != "" {
+		postgresDatabase.Spec.ForProvider.RestoreFrom = &meta.LocalReference{Name: cmd.RestoreFrom}
+		return c.createFromRestore(ctx, cmd.Wait, cmd.RestoreFrom, func(mg resource.Managed) bool {
+			db, ok := mg.(*storage.PostgresDatabase)
+			return ok && db.Spec.ForProvider.RestoreFrom != nil
+		})
+	}
+
+	if err := c.createDatabase(ctx); err != nil {
 		return err
 	}
 

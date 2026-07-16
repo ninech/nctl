@@ -89,6 +89,45 @@ func NewRestore(name, project, backup string, target meta.LocalTypedReference) *
 	}
 }
 
+// ListFor returns an empty object list of the given database kind.
+func ListFor(kind string) (runtimeclient.ObjectList, error) {
+	switch kind {
+	case storage.PostgresDatabaseKind:
+		return &storage.PostgresDatabaseList{}, nil
+	case storage.MySQLDatabaseKind:
+		return &storage.MySQLDatabaseList{}, nil
+	}
+	return nil, fmt.Errorf("unsupported database kind %q, expected one of: %s", kind, kindNames)
+}
+
+// BootstrapCompleted reports whether the bootstrap restore of the named
+// database has finished. That is the restore the controller composes for a
+// restoreFrom or cloneFrom reference. The database records its outcome
+// durably, so it is still observed after the restore itself was
+// garbage-collected.
+func BootstrapCompleted(kind, name string) func(watch.Event) (bool, error) {
+	return func(event watch.Event) (bool, error) {
+		db, ok := event.Object.(storage.BootstrapRecorder)
+		if !ok || db.GetName() != name {
+			return false, nil
+		}
+		bootstrap := db.Bootstrap()
+		if bootstrap == nil {
+			return false, nil
+		}
+		switch bootstrap.State {
+		case storage.DatabaseRestoreStateSucceeded:
+			return true, nil
+		case storage.DatabaseRestoreStateFailed:
+			return false, fmt.Errorf(
+				"%w: the restore of %s %q from its backup failed and will not be retried. Inspect it with: nctl get databaserestores %s -o yaml",
+				ErrRestoreFailed, strings.ToLower(kind), name, bootstrap.Restore,
+			)
+		}
+		return false, nil
+	}
+}
+
 // ErrRestoreFailed reports a restore that reached the failed state. That
 // state is final and the restore is never retried.
 var ErrRestoreFailed = errors.New("restore failed")
