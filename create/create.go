@@ -98,11 +98,15 @@ type message struct {
 	disabled bool
 }
 
+// watchBackoff shapes the reconnect delays after a dropped watch. The steps
+// budget is generous and the cap keeps individual delays short, so a long wait
+// survives routine watch recycling.
 var watchBackoff = wait.Backoff{
-	Steps:    15,
-	Duration: 10 * time.Millisecond,
-	Factor:   1.0,
+	Steps:    8,
+	Duration: 250 * time.Millisecond,
+	Factor:   2.0,
 	Jitter:   0.1,
+	Cap:      15 * time.Second,
 }
 
 const remainingTimeUpdateInterval = time.Second
@@ -118,13 +122,7 @@ func (m *message) progress() string {
 // progressWithRemaining returns the progress message with the remaining time
 // from the context deadline appended.
 func (w *waitStage) progressWithRemaining(ctx context.Context) string {
-	text := w.waitMessage.text
-	if deadline, ok := ctx.Deadline(); ok {
-		if remaining := time.Until(deadline); remaining > 0 {
-			text += fmt.Sprintf(" (%s)", remaining.Truncate(time.Second))
-		}
-	}
-	return format.Progress(w.waitMessage.icon, text)
+	return format.ProgressWithRemaining(ctx, w.waitMessage.icon, w.waitMessage.text)
 }
 
 func (cmd *resourceCmd) newCreator(client *api.Client, mg resource.Managed, kind string) *creator {

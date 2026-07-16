@@ -3,6 +3,7 @@
 package format
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -54,6 +55,18 @@ func Progress(icon, message string) string {
 // icon can be added which is displayed at the end of the message.
 func Progressf(icon, format string, a ...any) string {
 	return fmt.Sprintf(" %s %s", fmt.Sprintf(format, a...), icon)
+}
+
+// ProgressWithRemaining is like Progress with the time remaining until the
+// context deadline appended, e.g. "restoring database (29m59s)". Without a
+// deadline it is equivalent to Progress.
+func ProgressWithRemaining(ctx context.Context, icon, message string) string {
+	if deadline, ok := ctx.Deadline(); ok {
+		if remaining := time.Until(deadline); remaining > 0 {
+			message += fmt.Sprintf(" (%s)", remaining.Truncate(time.Second))
+		}
+	}
+	return Progress(icon, message)
 }
 
 // successf is a formatted message for indicating a successful step.
