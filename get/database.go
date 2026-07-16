@@ -5,15 +5,18 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/database"
 	"github.com/ninech/nctl/internal/format"
 )
 
 type databaseCmd struct {
 	resourceCmd
-	PrintPassword         bool `help:"Print the password of the database. Requires name to be set." xor:"print"`
-	PrintUser             bool `help:"Print the database name and user of the database. Requires name to be set." xor:"print" aliases:"print-database-user"`
-	PrintConnectionString bool `help:"Print the connection string of the database. Requires name to be set." xor:"print"`
-	PrintCACert           bool `help:"Print the ca certificate. Requires name to be set." xor:"print"`
+	PrintPassword          bool `help:"Print the password of the database. Requires name to be set." xor:"print"`
+	PrintUser              bool `help:"Print the database name and user of the database. Requires name to be set." xor:"print" aliases:"print-database-user"`
+	PrintConnectionString  bool `help:"Print the connection string of the database. Requires name to be set." xor:"print"`
+	PrintCACert            bool `help:"Print the ca certificate. Requires name to be set." xor:"print"`
+	PrintBackupBucket      bool `help:"Print the URL of the bucket storing the backups of the database. Requires name to be set." xor:"print"`
+	PrintBackupCredentials bool `help:"Print credentials for read access to the backups of the database. Requires name to be set." xor:"print"`
 }
 
 func (cmd *databaseCmd) run(ctx context.Context, client *api.Client, get *Cmd,
@@ -24,6 +27,31 @@ func (cmd *databaseCmd) run(ctx context.Context, client *api.Client, get *Cmd,
 ) error {
 	if len(databaseResources.GetItems()) == 0 {
 		return get.notFound(databaseKind, client.Project)
+	}
+
+	if cmd.Name != "" && cmd.PrintBackupBucket {
+		bucket, err := backupBucketName(ctx, client, database.Ref(databaseKind, cmd.Name))
+		if err != nil {
+			return err
+		}
+		url, err := backupBucketURL(ctx, client, bucket, "")
+		if err != nil {
+			return err
+		}
+		get.Println(url)
+		return nil
+	}
+
+	if cmd.Name != "" && cmd.PrintBackupCredentials {
+		bucket, err := backupBucketName(ctx, client, database.Ref(databaseKind, cmd.Name))
+		if err != nil {
+			return err
+		}
+		user, err := backupBucketUser(ctx, client, bucket)
+		if err != nil {
+			return err
+		}
+		return cmd.printCredentials(ctx, client, user, &get.output, nil)
 	}
 
 	if cmd.Name != "" && cmd.PrintUser {

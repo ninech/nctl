@@ -33,6 +33,7 @@ type Cmd struct {
 	MySQLDatabase       mysqlDatabaseCmd     `cmd:"" group:"create-storage" name:"mysqldatabase" help:"Create a new MySQL database."`
 	Postgres            postgresCmd          `cmd:"" group:"create-storage" name:"postgres" help:"Create a new PostgreSQL instance."`
 	PostgresDatabase    postgresDatabaseCmd  `cmd:"" group:"create-storage" name:"postgresdatabase" help:"Create a new PostgreSQL database."`
+	DatabaseRestore     databaseRestoreCmd   `cmd:"" group:"create-storage" name:"databaserestore" help:"Restore a database backup into an existing database."`
 	KeyValueStore       keyValueStoreCmd     `cmd:"" group:"create-storage" name:"keyvaluestore" aliases:"kvs" help:"Create a new KeyValueStore instance."`
 	OpenSearch          openSearchCmd        `cmd:"" group:"create-storage" name:"opensearch" aliases:"os" help:"Create a new OpenSearch cluster."`
 	CloudVirtualMachine cloudVMCmd           `cmd:"" group:"create-infra" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Create a new CloudVM."`
@@ -81,6 +82,10 @@ type waitStage struct {
 	spinner        *yacspin.Spinner
 	disableSpinner bool
 	startTime      time.Time
+	// timeoutHint is appended to the timeout error to tell the user where the
+	// operation stands and how to follow it, e.g. that a restore continues on
+	// the server.
+	timeoutHint string
 	// beforeWait is a hook that is called just before the wait is being run.
 	beforeWait func()
 	// afterWait is a hook that is called after the wait to clean up.
@@ -264,6 +269,9 @@ func (w *waitStage) watch(ctx context.Context, client *api.Client) error {
 				w.spinner.StopFailMessage(format.Progressf("", msg, w.kind))
 				_ = w.spinner.StopFail()
 
+				if w.timeoutHint != "" {
+					return fmt.Errorf(msg+"; %s", w.kind, w.timeoutHint)
+				}
 				return fmt.Errorf(msg, w.kind)
 			case context.Canceled:
 				_ = w.spinner.StopFail()

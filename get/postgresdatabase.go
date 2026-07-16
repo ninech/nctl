@@ -49,11 +49,11 @@ func (cmd *postgresDatabaseCmd) printPostgresDatabases(resources resource.Manage
 	}
 
 	if header {
-		get.writeHeader("NAME", "LOCATION", "VERSION", "FQDN", "SIZE", "CONNECTIONS")
+		get.writeHeader("NAME", "LOCATION", "VERSION", "FQDN", "SIZE", "CONNECTIONS", "BACKUP")
 	}
 
 	for _, db := range dbs.Items {
-		get.writeTabRow(db.Namespace, db.Name, string(db.Spec.ForProvider.Location), string(db.Spec.ForProvider.Version), db.Status.AtProvider.FQDN, db.Status.AtProvider.Size.String(), strconv.FormatUint(uint64(db.Status.AtProvider.Connections), 10))
+		get.writeTabRow(db.Namespace, db.Name, string(db.Spec.ForProvider.Location), string(db.Spec.ForProvider.Version), db.Status.AtProvider.FQDN, db.Status.AtProvider.Size.String(), strconv.FormatUint(uint64(db.Status.AtProvider.Connections), 10), string(db.Spec.ForProvider.BackupSchedule))
 	}
 
 	return get.tabWriter.Flush()

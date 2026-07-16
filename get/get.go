@@ -38,6 +38,8 @@ type Cmd struct {
 	OpenSearch          openSearchCmd         `cmd:"" group:"get-storage" name:"opensearch" aliases:"os" help:"Get OpenSearch clusters."`
 	Postgres            postgresCmd           `cmd:"" group:"get-storage" name:"postgres" help:"Get PostgreSQL instances."`
 	PostgresDatabases   postgresDatabaseCmd   `cmd:"" group:"get-storage" name:"postgresdatabases" aliases:"postgresdatabase" help:"Get PostgreSQL databases."`
+	DatabaseBackups     databaseBackupCmd     `cmd:"" group:"get-storage" name:"databasebackups" aliases:"databasebackup" help:"Get database backups."`
+	DatabaseRestores    databaseRestoreCmd    `cmd:"" group:"get-storage" name:"databaserestores" aliases:"databaserestore" help:"Get database restores."`
 	KeyValueStore       keyValueStoreCmd      `cmd:"" group:"get-storage" name:"keyvaluestore" aliases:"kvs" help:"Get KeyValueStore instances."`
 	CloudVirtualMachine cloudVMCmd            `cmd:"" group:"get-infra" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Get a CloudVM."`
 	ServiceConnection   serviceConnectionCmd  `cmd:"" group:"get-network" name:"serviceconnection" aliases:"sc,serviceconnections" help:"Get a ServiceConnection."`
