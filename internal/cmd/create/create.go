@@ -30,6 +30,7 @@ type Cmd struct {
 	MySQLDatabase       mysqlDatabaseCmd     `cmd:"" group:"create-storage" name:"mysqldatabase" help:"Create a new MySQL database."`
 	Postgres            postgresCmd          `cmd:"" group:"create-storage" name:"postgres" help:"Create a new PostgreSQL instance."`
 	PostgresDatabase    postgresDatabaseCmd  `cmd:"" group:"create-storage" name:"postgresdatabase" help:"Create a new PostgreSQL database."`
+	DatabaseRestore     databaseRestoreCmd   `cmd:"" group:"create-storage" name:"databaserestore" help:"Restore a database backup into an existing database."`
 	KeyValueStore       keyValueStoreCmd     `cmd:"" group:"create-storage" name:"keyvaluestore" aliases:"kvs" help:"Create a new KeyValueStore instance."`
 	OpenSearch          openSearchCmd        `cmd:"" group:"create-storage" name:"opensearch" aliases:"os" help:"Create a new OpenSearch cluster."`
 	CloudVirtualMachine cloudVMCmd           `cmd:"" group:"create-infra" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Create a new CloudVM."`

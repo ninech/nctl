@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type postgresDatabaseCmd struct{ ServiceCmd }
+type postgresDatabaseCmd struct{ DatabaseCmd }
 
 func (cmd *postgresDatabaseCmd) Run(ctx context.Context, c *api.Client, get *Cmd) error {
 	return get.listPrint(ctx, c, cmd, api.MatchName(cmd.Name))
@@ -48,11 +48,11 @@ func (cmd *postgresDatabaseCmd) printPostgresDatabases(resources resource.Manage
 	}
 
 	if header {
-		out.writeHeader("NAME", "LOCATION", "VERSION", "FQDN", "SIZE", "CONNECTIONS")
+		out.writeHeader("NAME", "LOCATION", "VERSION", "FQDN", "SIZE", "CONNECTIONS", "BACKUP")
 	}
 
 	for _, db := range dbs.Items {
-		out.writeTabRow(db.Namespace, db.Name, string(db.Spec.ForProvider.Location), string(db.Spec.ForProvider.Version), db.Status.AtProvider.FQDN, db.Status.AtProvider.Size.String(), strconv.FormatUint(uint64(db.Status.AtProvider.Connections), 10))
+		out.writeTabRow(db.Namespace, db.Name, string(db.Spec.ForProvider.Location), string(db.Spec.ForProvider.Version), db.Status.AtProvider.FQDN, db.Status.AtProvider.Size.String(), strconv.FormatUint(uint64(db.Status.AtProvider.Connections), 10), noneIfEmpty(string(db.Spec.ForProvider.BackupSchedule)))
 	}
 
 	return out.tabWriter.Flush()

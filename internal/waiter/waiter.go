@@ -44,6 +44,9 @@ type Stage struct {
 	spinner        *yacspin.Spinner
 	DisableSpinner bool
 	startTime      time.Time
+	// ContinueHint tells the user how to follow an operation which continues
+	// on the server after the wait ended, e.g. by a timeout or an interrupt.
+	ContinueHint string
 	// BeforeWait is a hook that is called just before the wait is being run.
 	BeforeWait func()
 	// AfterWait is a hook that is called after the wait to clean up.
@@ -219,9 +222,15 @@ func (w *Stage) watch(ctx context.Context, client *api.Client) error {
 				w.spinner.StopFailMessage(format.Progressf("", msg, w.Kind))
 				_ = w.spinner.StopFail()
 
+				if w.ContinueHint != "" {
+					return fmt.Errorf(msg+"; %s", w.Kind, w.ContinueHint)
+				}
 				return fmt.Errorf(msg, w.Kind)
 			case context.Canceled:
 				_ = w.spinner.StopFail()
+				if w.ContinueHint != "" {
+					w.writer.Infof("💡", "%s", w.ContinueHint)
+				}
 				return nil
 			}
 		}

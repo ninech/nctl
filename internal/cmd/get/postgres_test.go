@@ -110,7 +110,7 @@ func TestPostgres(t *testing.T) {
 					machineType: machineType("nine-db-prod-m"),
 				},
 			},
-			get:         postgresCmd{ServiceCmd{ResourceCmd: ResourceCmd{Name: "test1"}}},
+			get:         postgresCmd{DatabaseCmd{ServiceCmd: ServiceCmd{ResourceCmd: ResourceCmd{Name: "test1"}}}},
 			wantContain: []string{"test1", "nine-db-prod-s"},
 			wantLines:   2,
 		},
@@ -128,7 +128,7 @@ func TestPostgres(t *testing.T) {
 					machineType: machineType("nine-db-prod-m"),
 				},
 			},
-			get:         postgresCmd{ServiceCmd{ResourceCmd: ResourceCmd{Name: "test2"}, PrintPassword: true}},
+			get:         postgresCmd{DatabaseCmd{ServiceCmd: ServiceCmd{ResourceCmd: ResourceCmd{Name: "test2"}, PrintPassword: true}}},
 			wantContain: []string{"test2-topsecret"},
 			wantLines:   1, // no header in this case
 		},
