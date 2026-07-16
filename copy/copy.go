@@ -11,7 +11,9 @@ import (
 )
 
 type Cmd struct {
-	Application applicationCmd `cmd:"" aliases:"app"`
+	Application      applicationCmd      `cmd:"" aliases:"app"`
+	MySQLDatabase    mysqlDatabaseCmd    `cmd:"" name:"mysqldatabase" help:"Copy a MySQL database into a new one, cloned from a fresh backup of the source."`
+	PostgresDatabase postgresDatabaseCmd `cmd:"" name:"postgresdatabase" help:"Copy a PostgreSQL database into a new one, cloned from a fresh backup of the source."`
 }
 
 type resourceCmd struct {
