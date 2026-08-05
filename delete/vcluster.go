@@ -11,7 +11,7 @@ import (
 )
 
 type vclusterCmd struct {
-	resourceCmd
+	ResourceCmd
 }
 
 func (cmd *vclusterCmd) Run(ctx context.Context, client *api.Client) error {

@@ -16,7 +16,7 @@ func TestOpenSearch(t *testing.T) {
 	t.Parallel()
 	out := &bytes.Buffer{}
 	cmd := openSearchCmd{
-		resourceCmd: resourceCmd{
+		ResourceCmd: ResourceCmd{
 			Writer:      format.NewWriter(out),
 			Name:        "test",
 			Force:       true,

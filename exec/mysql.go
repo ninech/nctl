@@ -20,7 +20,7 @@ const (
 )
 
 type mysqlCmd struct {
-	serviceCmd
+	ServiceCmd
 	Database string `name:"database" short:"d" completion-predictor:"mysql_databases" help:"Database name to connect to."`
 }
 
@@ -51,7 +51,7 @@ func (cmd *mysqlCmd) Run(ctx context.Context, client *api.Client) error {
 	if err := client.Get(ctx, client.Name(cmd.Name), my); err != nil {
 		return fmt.Errorf("getting mysql %q: %w", cmd.Name, err)
 	}
-	return connectAndExec(ctx, client, my, mysqlConnector{database: cmd.Database}, cmd.serviceCmd)
+	return connectAndExec(ctx, client, my, mysqlConnector{database: cmd.Database}, cmd.ServiceCmd)
 }
 
 // mysqlConnector implements cmdExecutor for storage.MySQL instances.

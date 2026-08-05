@@ -77,7 +77,7 @@ func TestCreateApplication(t *testing.T) {
 	}{
 		"without git auth": {
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Wait: false,
 					Name: "custom-name",
 				},
@@ -121,7 +121,7 @@ func TestCreateApplication(t *testing.T) {
 		},
 		"with basic auth": {
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Wait: false,
 					Name: "basic-auth",
 				},
@@ -143,7 +143,7 @@ func TestCreateApplication(t *testing.T) {
 					Username: new("deploy"),
 					Password: new("hunter2"),
 				},
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Wait: false,
 					Name: "user-pass-auth",
 				},
@@ -167,7 +167,7 @@ func TestCreateApplication(t *testing.T) {
 					URL:           "https://github.com/ninech/doesnotexist.git",
 					SSHPrivateKey: &dummyRSAKey,
 				},
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Wait: false,
 					Name: "ssh-key-auth",
 				},
@@ -191,7 +191,7 @@ func TestCreateApplication(t *testing.T) {
 					URL:           "https://github.com/ninech/doesnotexist.git",
 					SSHPrivateKey: &dummyED25519Key,
 				},
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Wait: false,
 					Name: "ssh-key-auth-ed25519",
 				},
@@ -215,7 +215,7 @@ func TestCreateApplication(t *testing.T) {
 					URL:                   "https://github.com/ninech/doesnotexist.git",
 					SSHPrivateKeyFromFile: new(filenameRSAKey),
 				},
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Wait: false,
 					Name: "ssh-key-auth-from-file",
 				},
@@ -239,7 +239,7 @@ func TestCreateApplication(t *testing.T) {
 					URL:                   "https://github.com/ninech/doesnotexist.git",
 					SSHPrivateKeyFromFile: new(filenameED25519Key),
 				},
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Wait: false,
 					Name: "ssh-key-auth-from-file-ed25519",
 				},
@@ -263,7 +263,7 @@ func TestCreateApplication(t *testing.T) {
 					URL:           "https://github.com/ninech/doesnotexist.git",
 					SSHPrivateKey: new("not valid"),
 				},
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Wait: false,
 					Name: "ssh-key-auth-non-valid",
 				},
@@ -277,7 +277,7 @@ func TestCreateApplication(t *testing.T) {
 				Git: gitConfig{
 					URL: "https://github.com/ninech/doesnotexist.git",
 				},
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Wait: false,
 					Name: "deploy-job-empty-command",
 				},
@@ -295,7 +295,7 @@ func TestCreateApplication(t *testing.T) {
 				Git: gitConfig{
 					URL: "https://github.com/ninech/doesnotexist.git",
 				},
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Wait: false,
 					Name: "deploy-job-empty-name",
 				},
@@ -315,7 +315,7 @@ func TestCreateApplication(t *testing.T) {
 					SubPath:  "/my/app",
 					Revision: "superbug",
 				},
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Wait: false,
 					Name: "git-information-happy-path",
 				},
@@ -352,7 +352,7 @@ func TestCreateApplication(t *testing.T) {
 					SubPath:  "/my/app",
 					Revision: "superbug",
 				},
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Wait: false,
 					Name: "git-information-errors",
 				},
@@ -373,7 +373,7 @@ func TestCreateApplication(t *testing.T) {
 					SubPath:  "/my/app",
 					Revision: "notexistent",
 				},
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Wait: false,
 					Name: "git-information-unknown-revision",
 				},
@@ -402,7 +402,7 @@ func TestCreateApplication(t *testing.T) {
 					SubPath:  "/my/app",
 					Revision: "notexistent",
 				},
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Wait: false,
 					Name: "git-information-unknown-revision",
 				},
@@ -421,7 +421,7 @@ func TestCreateApplication(t *testing.T) {
 					SubPath:  "/my/app",
 					Revision: "main",
 				},
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Wait: false,
 					Name: "git-information-update-url-to-https",
 				},
@@ -452,7 +452,7 @@ func TestCreateApplication(t *testing.T) {
 		},
 		"with sensitive env": {
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: "sensitive-env-test",
 				},
 				Git: gitConfig{
@@ -481,7 +481,7 @@ func TestCreateApplication(t *testing.T) {
 		},
 		"with heroku buildpack stack": {
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Wait: false,
 					Name: "heroku-stack",
 				},
@@ -499,7 +499,7 @@ func TestCreateApplication(t *testing.T) {
 		},
 		"with paketo buildpack stack": {
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Wait: false,
 					Name: "paketo-stack",
 				},
@@ -517,7 +517,7 @@ func TestCreateApplication(t *testing.T) {
 		},
 		"without buildpack stack defaults to empty": {
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Wait: false,
 					Name: "no-stack",
 				},
@@ -534,7 +534,7 @@ func TestCreateApplication(t *testing.T) {
 		},
 		"with services": {
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Wait: false,
 					Name: "with-services",
 				},
@@ -597,7 +597,7 @@ func TestApplicationWait(t *testing.T) {
 	t.Parallel()
 
 	cmd := applicationCmd{
-		resourceCmd: resourceCmd{
+		ResourceCmd: ResourceCmd{
 			Wait:        true,
 			WaitTimeout: time.Second * 5,
 			Name:        "some-name",
@@ -747,7 +747,7 @@ func TestApplicationBuildFail(t *testing.T) {
 
 	is := require.New(t)
 	cmd := applicationCmd{
-		resourceCmd: resourceCmd{
+		ResourceCmd: ResourceCmd{
 			Wait:        true,
 			WaitTimeout: time.Second * 5,
 			Name:        "some-name",

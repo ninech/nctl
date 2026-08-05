@@ -9,7 +9,7 @@ import (
 )
 
 type staticEgressCmd struct {
-	resourceCmd
+	ResourceCmd
 }
 
 func (cmd *staticEgressCmd) Run(ctx context.Context, client *api.Client) error {

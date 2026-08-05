@@ -16,7 +16,7 @@ func TestPostgres(t *testing.T) {
 	t.Parallel()
 	out := &bytes.Buffer{}
 	cmd := postgresCmd{
-		resourceCmd: resourceCmd{
+		ResourceCmd: ResourceCmd{
 			Writer:      format.NewWriter(out),
 			Name:        "test",
 			Force:       true,

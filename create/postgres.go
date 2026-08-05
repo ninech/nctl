@@ -19,7 +19,7 @@ import (
 )
 
 type postgresCmd struct {
-	resourceCmd
+	ResourceCmd
 	Location         meta.LocationName       `placeholder:"${postgres_location_default}" help:"Where the PostgreSQL instance is created. Available locations are: ${postgres_location_options}"`
 	MachineType      string                  `placeholder:"${postgres_machine_default}" help:"Defines the sizing for a particular PostgreSQL instance. Available types: ${postgres_machine_types}"`
 	AllowedCidrs     []meta.IPv4CIDR         `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the instance."`

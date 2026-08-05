@@ -13,7 +13,7 @@ import (
 )
 
 type serviceConnectionCmd struct {
-	resourceCmd
+	ResourceCmd
 	KubernetesClusterOptions create.KubernetesClusterOptions `embed:"" prefix:"source-"`
 }
 

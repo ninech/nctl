@@ -43,7 +43,11 @@ type Cmd struct {
 	Grafana             grafanaCmd           `cmd:"" group:"create-observability" name:"grafana" help:"Create a new Grafana instance."`
 }
 
-type resourceCmd struct {
+// ResourceCmd is the shared base for the create sub-commands.
+//
+// It has to be exported so that Kong initializes the embedded
+// [format.Writer], see [format.Writer.BeforeApply].
+type ResourceCmd struct {
 	format.Writer `kong:"-"`
 	Name          string        `arg:"" help:"Name of the new resource. A random name is generated if omitted." default:""`
 	Wait          bool          `default:"true" help:"Wait until resource is fully created."`
@@ -51,7 +55,7 @@ type resourceCmd struct {
 }
 
 // BeforeApply initializes Writer from Kong's bound [io.Writer].
-func (cmd *resourceCmd) BeforeApply(writer io.Writer) error {
+func (cmd *ResourceCmd) BeforeApply(writer io.Writer) error {
 	return cmd.Writer.BeforeApply(writer)
 }
 
@@ -122,7 +126,7 @@ func (w *waitStage) progressWithRemaining(ctx context.Context) string {
 	return format.Progress(w.waitMessage.icon, text)
 }
 
-func (cmd *resourceCmd) newCreator(client *api.Client, mg resource.Managed, kind string) *creator {
+func (cmd *ResourceCmd) newCreator(client *api.Client, mg resource.Managed, kind string) *creator {
 	return &creator{client: client, mg: mg, kind: kind, timeout: cmd.WaitTimeout, Writer: cmd.Writer}
 }
 

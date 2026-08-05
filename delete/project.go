@@ -10,7 +10,7 @@ import (
 )
 
 type projectCmd struct {
-	resourceCmd
+	ResourceCmd
 }
 
 func (cmd *projectCmd) Run(ctx context.Context, client *api.Client) error {

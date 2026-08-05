@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type mysqlDatabaseCmd struct{ databaseCmd }
+type mysqlDatabaseCmd struct{ DatabaseCmd }
 
 func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, c *api.Client, get *Cmd) error {
 	return get.listPrint(ctx, c, cmd, api.MatchName(cmd.Name))

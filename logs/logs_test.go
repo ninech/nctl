@@ -30,26 +30,26 @@ func TestRun(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		cmd                 logsCmd
+		cmd                 LogsCmd
 		expectedLines       int
 		expectedErrContains string
 	}{
 		"line limit": {
-			cmd: logsCmd{
+			cmd: LogsCmd{
 				Output: "default",
 				Lines:  10,
 			},
 			expectedLines: 10,
 		},
 		"json output": {
-			cmd: logsCmd{
+			cmd: LogsCmd{
 				Output: "json",
 				Lines:  8,
 			},
 			expectedLines: 8,
 		},
 		"follow": {
-			cmd: logsCmd{
+			cmd: LogsCmd{
 				Output: "default",
 				Follow: true,
 				Lines:  50,
@@ -57,7 +57,7 @@ func TestRun(t *testing.T) {
 			expectedLines: 50,
 		},
 		"follow json": {
-			cmd: logsCmd{
+			cmd: LogsCmd{
 				Output: "json",
 				Follow: true,
 				Lines:  len(lines),
@@ -65,7 +65,7 @@ func TestRun(t *testing.T) {
 			expectedLines: len(lines),
 		},
 		"exceeds retention": {
-			cmd: logsCmd{
+			cmd: LogsCmd{
 				Output: "default",
 				Lines:  len(lines),
 				Since:  logRetention * 2,
@@ -73,7 +73,7 @@ func TestRun(t *testing.T) {
 			expectedErrContains: "the logs requested exceed the retention period",
 		},
 		"from/to flags override since": {
-			cmd: logsCmd{
+			cmd: LogsCmd{
 				Output: "default",
 				Lines:  len(lines),
 				Since:  logRetention * 2,
@@ -83,7 +83,7 @@ func TestRun(t *testing.T) {
 			expectedLines: len(lines),
 		},
 		"from flag alone overrides since": {
-			cmd: logsCmd{
+			cmd: LogsCmd{
 				Output: "default",
 				Lines:  len(lines),
 				Since:  logRetention * 2,

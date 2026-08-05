@@ -14,7 +14,7 @@ import (
 )
 
 type openSearchCmd struct {
-	resourceCmd
+	ResourceCmd
 	MachineType      *string                  `help:"Configures OpenSearch to use a specified machine type." placeholder:"nine-search-m"`
 	AllowedCidrs     *[]meta.IPv4CIDR         `help:"IP addresses allowed to connect to the cluster. These restrictions do not apply for service connections." placeholder:"203.0.113.1/32"`
 	BucketUsers      *[]create.LocalReference `help:"Users who have read access to the OpenSearch snapshots bucket." placeholder:"user1,user2"`

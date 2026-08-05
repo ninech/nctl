@@ -11,7 +11,7 @@ import (
 )
 
 type bucketUserCmd struct {
-	resourceCmd
+	ResourceCmd
 	ResetCredentials *bool `help:"Permanently reset both the access key and the secret key of this user. This cannot be undone." placeholder:"false"`
 }
 

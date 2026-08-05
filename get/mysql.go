@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type mySQLCmd struct{ databaseCmd }
+type mySQLCmd struct{ DatabaseCmd }
 
 func (cmd *mySQLCmd) Run(ctx context.Context, c *api.Client, get *Cmd) error {
 	return get.listPrint(ctx, c, cmd, api.MatchName(cmd.Name))

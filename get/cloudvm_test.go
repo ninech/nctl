@@ -83,7 +83,7 @@ func TestCloudVM(t *testing.T) {
 				},
 			},
 			get: cloudVMCmd{
-				resourceCmd: resourceCmd{Name: "test2"},
+				ResourceCmd: ResourceCmd{Name: "test2"},
 			},
 			out:     full,
 			wantErr: true,

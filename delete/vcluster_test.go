@@ -18,7 +18,7 @@ func TestVCluster(t *testing.T) {
 	t.Parallel()
 	out := &bytes.Buffer{}
 	cmd := vclusterCmd{
-		resourceCmd: resourceCmd{
+		ResourceCmd: ResourceCmd{
 			Writer: format.NewWriter(out),
 			Name:   "test",
 			Force:  true,

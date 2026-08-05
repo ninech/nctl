@@ -2,6 +2,7 @@ package format
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"strings"
 	"testing"
@@ -91,6 +92,40 @@ func TestWriter_writer(t *testing.T) {
 
 			w := tt.writer.writer()
 			is.Equal(tt.expect, w)
+		})
+	}
+}
+
+func TestWriter_Write(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		writer   func(io.Writer) Writer
+		expected string
+	}{
+		{
+			name:     "writes to the wrapped writer",
+			writer:   NewWriter,
+			expected: "hello",
+		},
+		{
+			name:   "zero value discards instead of panicking",
+			writer: func(io.Writer) Writer { return Writer{} },
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			is := require.New(t)
+
+			buf := &bytes.Buffer{}
+			n, err := fmt.Fprint(tt.writer(buf), "hello")
+
+			is.NoError(err)
+			is.Equal(len("hello"), n)
+			is.Equal(tt.expected, buf.String())
 		})
 	}
 }

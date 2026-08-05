@@ -35,13 +35,17 @@ type Cmd struct {
 	Grafana             grafanaCmd           `cmd:"" group:"update-observability" name:"grafana" help:"Update an existing Grafana instance."`
 }
 
-type resourceCmd struct {
+// ResourceCmd is the shared base for the update sub-commands.
+//
+// It has to be exported so that Kong initializes the embedded
+// [format.Writer], see [format.Writer.BeforeApply].
+type ResourceCmd struct {
 	format.Writer `kong:"-"`
 	Name          string `arg:"" completion-predictor:"resource_name" help:"Name of the resource to update."`
 }
 
 // BeforeApply initializes Writer from Kong's bound [io.Writer].
-func (cmd *resourceCmd) BeforeApply(writer io.Writer) error {
+func (cmd *ResourceCmd) BeforeApply(writer io.Writer) error {
 	return cmd.Writer.BeforeApply(writer)
 }
 
@@ -56,7 +60,7 @@ type updater struct {
 
 type updateFunc func(current resource.Managed) error
 
-func (cmd *resourceCmd) newUpdater(
+func (cmd *ResourceCmd) newUpdater(
 	client *api.Client,
 	mg resource.Managed,
 	kind string,

@@ -11,7 +11,7 @@ import (
 )
 
 type mysqlDatabaseCmd struct {
-	serviceCmd
+	ServiceCmd
 }
 
 // Help displays usage examples for the mysqldatabase exec command.
@@ -36,7 +36,7 @@ func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error 
 	if err := client.Get(ctx, client.Name(cmd.Name), db); err != nil {
 		return fmt.Errorf("getting mysqldatabase %q: %w", cmd.Name, err)
 	}
-	return connectAndExec(ctx, client, db, mysqlDatabaseConnector{}, cmd.serviceCmd)
+	return connectAndExec(ctx, client, db, mysqlDatabaseConnector{}, cmd.ServiceCmd)
 }
 
 // mysqlDatabaseConnector implements cmdExecutor for storage.MySQLDatabase resources.

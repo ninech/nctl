@@ -15,7 +15,7 @@ import (
 )
 
 type bucketUserCmd struct {
-	resourceCmd
+	ResourceCmd
 	Location meta.LocationName `placeholder:"${bucketuser_location_default}" help:"Where the BucketUser instance is created. Available locations are: ${bucketuser_location_options}" required:""`
 }
 

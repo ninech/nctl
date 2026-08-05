@@ -86,7 +86,7 @@ func TestApplication(t *testing.T) {
 		"change port": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				Port: new(int32(1234)),
@@ -99,7 +99,7 @@ func TestApplication(t *testing.T) {
 		"port is unchanged when updating unrelated field": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				Size: new("newsize"),
@@ -113,7 +113,7 @@ func TestApplication(t *testing.T) {
 		"all field updates": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				Git: &gitConfig{
@@ -169,7 +169,7 @@ func TestApplication(t *testing.T) {
 		"unset replicas": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				UnsetReplicas: new(true),
@@ -184,7 +184,7 @@ func TestApplication(t *testing.T) {
 			orig:          existingApp,
 			errorExpected: true,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				UnsetReplicas: new(false),
@@ -208,7 +208,7 @@ func TestApplication(t *testing.T) {
 				return a
 			}(),
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				DeleteHealthProbe: new(true),
@@ -233,7 +233,7 @@ func TestApplication(t *testing.T) {
 				return a
 			}(),
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				DeleteHealthProbe: new(false),
@@ -247,7 +247,7 @@ func TestApplication(t *testing.T) {
 		"reset env variable": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				DeleteEnv: &[]string{"foo"},
@@ -267,7 +267,7 @@ func TestApplication(t *testing.T) {
 		"change multiple env variables at once": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				Env: map[string]string{"bar1": "zoo", "bar2": "foo"},
@@ -282,7 +282,7 @@ func TestApplication(t *testing.T) {
 		"reset build env variable": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				DeleteBuildEnv: &[]string{"BP_ENVIRONMENT_VARIABLE"},
@@ -296,7 +296,7 @@ func TestApplication(t *testing.T) {
 		"update variable from normal/sensitive": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				SensitiveEnv: map[string]string{"poo": "blue"},
@@ -313,7 +313,7 @@ func TestApplication(t *testing.T) {
 		"change basic auth password": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				ChangeBasicAuthPassword: new(true),
@@ -330,7 +330,7 @@ func TestApplication(t *testing.T) {
 				Password: new("some-password"),
 			},
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				Git: &gitConfig{
@@ -364,7 +364,7 @@ func TestApplication(t *testing.T) {
 				SSHPrivateKey: new("fakekey"),
 			},
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				Git: &gitConfig{
@@ -394,7 +394,7 @@ func TestApplication(t *testing.T) {
 			orig:    existingApp,
 			gitAuth: nil,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				Git: &gitConfig{
@@ -428,7 +428,7 @@ func TestApplication(t *testing.T) {
 				SSHPrivateKey: new("fakekey"),
 			},
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				Git: &gitConfig{
@@ -464,7 +464,7 @@ func TestApplication(t *testing.T) {
 				SSHPrivateKey: new("fakekey"),
 			},
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				Git: &gitConfig{
@@ -493,7 +493,7 @@ func TestApplication(t *testing.T) {
 		"retry release": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				RetryRelease: new(true),
@@ -507,7 +507,7 @@ func TestApplication(t *testing.T) {
 			errorExpected: true,
 			orig:          existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				RetryRelease: new(false),
@@ -520,7 +520,7 @@ func TestApplication(t *testing.T) {
 		"retry build": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				RetryBuild: new(true),
@@ -534,7 +534,7 @@ func TestApplication(t *testing.T) {
 			errorExpected: true,
 			orig:          existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				RetryBuild: new(false),
@@ -547,7 +547,7 @@ func TestApplication(t *testing.T) {
 		"disabling the git repo check works": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				Git: &gitConfig{
@@ -569,7 +569,7 @@ func TestApplication(t *testing.T) {
 		"an error on the git repo check will lead to an error shown to the user": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				Git: &gitConfig{
@@ -587,7 +587,7 @@ func TestApplication(t *testing.T) {
 		"specifying a non existing branch/tag will be detected": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				Git: &gitConfig{
@@ -613,7 +613,7 @@ func TestApplication(t *testing.T) {
 		"update buildpack stack to heroku triggers a build": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				BuildpackStack: new(string(apps.BuildpackStackHeroku)),
@@ -627,7 +627,7 @@ func TestApplication(t *testing.T) {
 		"update buildpack stack to paketo triggers a build": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				BuildpackStack: new(string(apps.BuildpackStackPaketo)),
@@ -642,7 +642,7 @@ func TestApplication(t *testing.T) {
 			errorExpected: true,
 			orig:          existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 			},
@@ -654,7 +654,7 @@ func TestApplication(t *testing.T) {
 		"update language triggers a build": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				Language: new("ruby"),
@@ -668,7 +668,7 @@ func TestApplication(t *testing.T) {
 		"update language to empty triggers a build": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				Language: new(""),
@@ -683,7 +683,7 @@ func TestApplication(t *testing.T) {
 			errorExpected: true,
 			orig:          existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 			},
@@ -695,7 +695,7 @@ func TestApplication(t *testing.T) {
 		"defaulting to HTTPS when not specifying a scheme in a git URL works": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				Git: &gitConfig{
@@ -726,7 +726,7 @@ func TestApplication(t *testing.T) {
 		"add service": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				Service: func() application.ServiceMap {
@@ -746,7 +746,7 @@ func TestApplication(t *testing.T) {
 		"pause application": {
 			orig: existingApp,
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				Pause: new(true),
@@ -763,7 +763,7 @@ func TestApplication(t *testing.T) {
 				return a
 			}(),
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				Pause: new(false),
@@ -783,7 +783,7 @@ func TestApplication(t *testing.T) {
 				SSHPrivateKey: &dummyRSAKey,
 			},
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				Git: &gitConfig{
@@ -838,7 +838,7 @@ func TestApplication(t *testing.T) {
 				},
 			},
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
 				DeleteService: []string{"cache"},

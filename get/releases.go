@@ -14,7 +14,7 @@ import (
 )
 
 type releasesCmd struct {
-	resourceCmd
+	ResourceCmd
 	ApplicationName string `short:"a" help:"Name of the Application to get releases for. If omitted all applications in the project will be listed."`
 }
 

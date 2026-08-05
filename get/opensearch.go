@@ -13,7 +13,7 @@ import (
 )
 
 type openSearchCmd struct {
-	resourceCmd
+	ResourceCmd
 	PrintPassword       bool `help:"Print the password of the OpenSearch BasicAuth User. Requires name to be set." xor:"print"`
 	PrintUser           bool `help:"Print the name of the OpenSearch BasicAuth User. Requires name to be set."     xor:"print"`
 	PrintCACert         bool `help:"Print the ca certificate. Requires name to be set."                            xor:"print"`

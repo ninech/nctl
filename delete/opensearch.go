@@ -9,7 +9,7 @@ import (
 )
 
 type openSearchCmd struct {
-	resourceCmd
+	ResourceCmd
 }
 
 func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client) error {

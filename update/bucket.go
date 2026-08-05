@@ -13,7 +13,7 @@ import (
 )
 
 type bucketCmd struct {
-	resourceCmd
+	ResourceCmd
 	PublicRead             *bool    `help:"Publicly readable objects."`
 	PublicList             *bool    `help:"Publicly listable objects."`
 	Versioning             *bool    `help:"Enable object versioning."`

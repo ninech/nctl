@@ -35,7 +35,7 @@ func TestAPIServiceAccount(t *testing.T) {
 				Spec: iam.APIServiceAccountSpec{},
 			},
 			cmd: apiServiceAccountCmd{
-				resourceCmd:        resourceCmd{Name: asaName},
+				ResourceCmd:        ResourceCmd{Name: asaName},
 				OrganizationAccess: new(true),
 			},
 			checkAPIServiceAccount: func(t *testing.T, cmd apiServiceAccountCmd, orig, updated *iam.APIServiceAccount) {

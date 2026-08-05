@@ -12,7 +12,7 @@ import (
 )
 
 type keyValueStoreCmd struct {
-	resourceCmd
+	ResourceCmd
 	MemorySize       *storage.KeyValueStoreMemorySize      `placeholder:"${keyvaluestore_memorysize_default}" help:"Available amount of memory."`
 	MaxMemoryPolicy  *storage.KeyValueStoreMaxMemoryPolicy `placeholder:"${keyvaluestore_maxmemorypolicy_default}" help:"Behaviour when the memory limit is reached."`
 	AllowedCidrs     *[]meta.IPv4CIDR                      `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the public endpoint."`

@@ -9,7 +9,7 @@ import (
 )
 
 type bucketCmd struct {
-	resourceCmd
+	ResourceCmd
 }
 
 func (cmd *bucketCmd) Run(ctx context.Context, client *api.Client) error {

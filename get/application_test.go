@@ -305,7 +305,7 @@ dev      dev-second  dev-second  sample-second
 			)
 
 			cmd := applicationsCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: testCase.name,
 				},
 				BasicAuthCredentials: true,
@@ -474,7 +474,7 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 			)
 
 			cmd := applicationsCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: testCase.name,
 				},
 				BasicAuthCredentials: false,

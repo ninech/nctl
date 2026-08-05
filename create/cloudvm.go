@@ -19,7 +19,7 @@ import (
 )
 
 type cloudVMCmd struct {
-	resourceCmd
+	ResourceCmd
 	Location            meta.LocationName                       `default:"nine-es34" help:"Where the CloudVM instance is created."`
 	MachineType         string                                  `default:"" help:"Defines the sizing for a particular CloudVM."`
 	Hostname            string                                  `default:"" help:"Configures the hostname explicitly. If unset, the name of the resource will be used as the hostname. This does not affect the DNS name."`

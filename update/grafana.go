@@ -11,7 +11,7 @@ import (
 )
 
 type grafanaCmd struct {
-	resourceCmd
+	ResourceCmd
 	AdminAccess *bool `negatable:"" help:"Give admin permissions in the Grafana instance."`
 	LocalUsers  *bool `negatable:"" help:"Allow local Grafana users to sign in by disabling the automatic redirect to the OAuth sign-in page."`
 }

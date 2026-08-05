@@ -11,7 +11,7 @@ import (
 )
 
 type projectCmd struct {
-	resourceCmd
+	ResourceCmd
 	DisplayName *string `help:"Display Name of the project."`
 }
 

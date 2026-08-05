@@ -17,7 +17,7 @@ import (
 )
 
 type applicationCmd struct {
-	resourceCmd
+	ResourceCmd
 }
 
 func (app *applicationCmd) Run(ctx context.Context, client *api.Client) error {

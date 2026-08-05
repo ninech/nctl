@@ -15,7 +15,7 @@ import (
 )
 
 type mySQLCmd struct {
-	resourceCmd
+	ResourceCmd
 	MachineType           *string                                 `placeholder:"${mysql_machine_default}" help:"Defines the sizing for a particular MySQL instance. Available types: ${mysql_machine_types}"`
 	AllowedCidrs          *[]meta.IPv4CIDR                        `placeholder:"203.0.113.1/32" help:"Specifies the IP addresses allowed to connect to the instance."`
 	SSHKeys               []storage.SSHKey                        `help:"SSH public keys allowed to connect to the database server in order to up-/download and directly restore database backups."`

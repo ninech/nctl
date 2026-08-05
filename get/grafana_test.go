@@ -68,7 +68,7 @@ func TestGrafana(t *testing.T) {
 				{name: "test1", project: test.DefaultProject},
 				{name: "test2", project: test.DefaultProject},
 			},
-			get:         grafanaCmd{resourceCmd: resourceCmd{Name: "test1"}},
+			get:         grafanaCmd{ResourceCmd: ResourceCmd{Name: "test1"}},
 			wantContain: []string{"test1"},
 			wantLines:   2,
 		},

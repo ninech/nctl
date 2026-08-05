@@ -14,7 +14,7 @@ import (
 )
 
 type vclusterCmd struct {
-	resourceCmd
+	ResourceCmd
 	Location          meta.LocationName `default:"nine-es34" help:"Where the vCluster is created."`
 	KubernetesVersion string            `default:"" help:"Kubernetes version to use. The API default will be used if not specified."`
 	MinNodes          int               `default:"1" help:"Minimum amount of nodes."`

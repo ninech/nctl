@@ -43,18 +43,18 @@ func TestPostgresDatabaseCmd(t *testing.T) {
 	}{
 		{
 			name:    "resource not found",
-			cmd:     postgresDatabaseCmd{serviceCmd: notFoundCmd},
+			cmd:     postgresDatabaseCmd{ServiceCmd: notFoundCmd},
 			wantErr: true,
 		},
 		{
 			name:        "resource not ready",
-			cmd:         postgresDatabaseCmd{serviceCmd: notReadyCmd},
+			cmd:         postgresDatabaseCmd{ServiceCmd: notReadyCmd},
 			wantErr:     true,
 			errContains: "not ready",
 		},
 		{
 			name: "connects without cidr management",
-			cmd:  postgresDatabaseCmd{serviceCmd: connectCmd},
+			cmd:  postgresDatabaseCmd{ServiceCmd: connectCmd},
 			cap:  connectCap,
 			check: func(t *testing.T, cmd *exec.Cmd) {
 				t.Helper()

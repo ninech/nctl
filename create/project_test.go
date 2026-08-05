@@ -24,7 +24,7 @@ func TestProjects(t *testing.T) {
 	)
 
 	cmd := projectCmd{
-		resourceCmd: resourceCmd{
+		ResourceCmd: ResourceCmd{
 			Name:        projectName,
 			Wait:        false,
 			WaitTimeout: time.Second,
@@ -57,7 +57,7 @@ func TestProjectsConfigErrors(t *testing.T) {
 	is := require.New(t)
 	apiClient := test.SetupClient(t)
 	cmd := projectCmd{
-		resourceCmd: resourceCmd{
+		ResourceCmd: ResourceCmd{
 			Name:        "testproject",
 			Wait:        false,
 			WaitTimeout: time.Second,

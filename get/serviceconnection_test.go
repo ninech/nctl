@@ -95,7 +95,7 @@ func TestServiceConnection(t *testing.T) {
 					destination: "test-destination-2",
 				},
 			},
-			get:         serviceConnectionCmd{resourceCmd: resourceCmd{Name: "test1"}},
+			get:         serviceConnectionCmd{ResourceCmd: ResourceCmd{Name: "test1"}},
 			wantContain: []string{"test1", "test-source-1", "test-destination-1"},
 			wantLines:   2,
 		},

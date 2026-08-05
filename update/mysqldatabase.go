@@ -11,7 +11,7 @@ import (
 )
 
 type mysqlDatabaseCmd struct {
-	resourceCmd
+	ResourceCmd
 	BackupSchedule *storage.DatabaseBackupScheduleCalendar `help:"Backup schedule for the MySQL database. Available schedules: ${mysqldatabase_backupschedule_options}"`
 }
 

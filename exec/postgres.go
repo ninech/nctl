@@ -19,7 +19,7 @@ const (
 )
 
 type postgresCmd struct {
-	serviceCmd
+	ServiceCmd
 	Database string `name:"database" short:"d" default:"postgres" completion-predictor:"postgres_databases" help:"Database name to connect to."`
 }
 
@@ -50,7 +50,7 @@ func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client) error {
 	if err := client.Get(ctx, client.Name(cmd.Name), pg); err != nil {
 		return fmt.Errorf("getting postgres %q: %w", cmd.Name, err)
 	}
-	return connectAndExec(ctx, client, pg, postgresConnector{database: cmd.Database}, cmd.serviceCmd)
+	return connectAndExec(ctx, client, pg, postgresConnector{database: cmd.Database}, cmd.ServiceCmd)
 }
 
 // postgresConnector implements cmdExecutor for storage.Postgres instances.

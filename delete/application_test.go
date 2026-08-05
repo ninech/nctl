@@ -147,7 +147,7 @@ func TestApplication(t *testing.T) {
 			t.Parallel()
 			out := &bytes.Buffer{}
 			cmd := applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Writer: format.NewWriter(out),
 					Force:  true,
 					Wait:   false,

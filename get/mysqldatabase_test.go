@@ -56,7 +56,7 @@ func TestMySQLDatabase(t *testing.T) {
 					location: meta.LocationNineCZ41,
 				},
 			},
-			get:         mysqlDatabaseCmd{databaseCmd: databaseCmd{resourceCmd: resourceCmd{Name: "test1"}, PrintConnectionString: true}},
+			get:         mysqlDatabaseCmd{DatabaseCmd: DatabaseCmd{ResourceCmd: ResourceCmd{Name: "test1"}, PrintConnectionString: true}},
 			wantContain: []string{"mysql://", "foo_bar", "topsecret"},
 			wantLines:   1,
 		},

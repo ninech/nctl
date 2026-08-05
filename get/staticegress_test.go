@@ -70,7 +70,7 @@ func TestStaticEgress(t *testing.T) {
 				{name: "test1", project: test.DefaultProject, appName: "app1"},
 				{name: "test2", project: test.DefaultProject, appName: "app2"},
 			},
-			get:         staticEgressCmd{resourceCmd: resourceCmd{Name: "test1"}},
+			get:         staticEgressCmd{ResourceCmd: ResourceCmd{Name: "test1"}},
 			wantContain: []string{"test1"},
 			wantLines:   2,
 		},

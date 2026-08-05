@@ -12,7 +12,7 @@ func TestVCluster(t *testing.T) {
 	t.Parallel()
 
 	cmd := vclusterCmd{
-		resourceCmd: resourceCmd{
+		ResourceCmd: ResourceCmd{
 			Name:        "falcon",
 			Wait:        false,
 			WaitTimeout: time.Second,

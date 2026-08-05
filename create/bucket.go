@@ -15,7 +15,7 @@ import (
 )
 
 type bucketCmd struct {
-	resourceCmd
+	ResourceCmd
 	Location   meta.LocationName `placeholder:"${bucket_location_default}" help:"Where the Bucket instance is created. Available locations are: ${bucket_location_options}" required:""`
 	PublicRead bool              `help:"Publicly readable objects." default:"false"`
 	PublicList bool              `help:"Publicly listable objects." default:"false"`

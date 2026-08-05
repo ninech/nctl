@@ -14,7 +14,10 @@ type Cmd struct {
 	Application applicationCmd `cmd:"" aliases:"app"`
 }
 
-type resourceCmd struct {
+// ResourceCmd is the shared base for the copy sub-commands.
+//
+// It has to be exported so that Kong initializes the embedded [format.Writer], see [format.Writer.BeforeApply].
+type ResourceCmd struct {
 	format.Writer `kong:"-"`
 	Name          string `arg:"" help:"Name of the resource to copy." default:"" completion-predictor:"resource_name"`
 	TargetName    string `help:"Target name of the new resource. A random name is generated if omitted." default:""`
@@ -22,7 +25,7 @@ type resourceCmd struct {
 }
 
 // BeforeApply initializes Writer from Kong's bound [io.Writer].
-func (cmd *resourceCmd) BeforeApply(writer io.Writer) error {
+func (cmd *ResourceCmd) BeforeApply(writer io.Writer) error {
 	return cmd.Writer.BeforeApply(writer)
 }
 

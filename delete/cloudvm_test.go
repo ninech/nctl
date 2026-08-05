@@ -17,7 +17,7 @@ func TestCloudVM(t *testing.T) {
 	t.Parallel()
 	out := &bytes.Buffer{}
 	cmd := cloudVMCmd{
-		resourceCmd: resourceCmd{
+		ResourceCmd: ResourceCmd{
 			Writer:      format.NewWriter(out),
 			Name:        "test",
 			Force:       true,

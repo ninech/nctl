@@ -11,7 +11,7 @@ import (
 )
 
 type staticEgressCmd struct {
-	resourceCmd
+	ResourceCmd
 	Disabled *bool `negatable:"" help:"Enable or disable the static egress."`
 }
 
