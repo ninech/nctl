@@ -71,6 +71,6 @@ func (cmd *bucketUserCmd) newBucketUser(namespace string) *storage.BucketUser {
 func BucketUserKongVars() kong.Vars {
 	result := make(kong.Vars)
 	result["bucketuser_location_default"] = string(storage.BucketUserLocationDefault)
-	result["bucketuser_location_options"] = strings.Join(storage.BucketUserLocationOptions, ", ")
+	result["bucketuser_location_options"] = strings.Join(stringSlice(storage.BucketUserLocationOptions), ", ")
 	return result
 }

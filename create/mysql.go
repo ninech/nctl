@@ -121,7 +121,7 @@ func MySQLKongVars() kong.Vars {
 	result := make(kong.Vars)
 	result["mysql_machine_types"] = strings.Join(stringerSlice(storage.MySQLMachineTypes), ", ")
 	result["mysql_machine_default"] = storage.MySQLMachineTypeDefault.String()
-	result["mysql_location_options"] = strings.Join(storage.MySQLLocationOptions, ", ")
+	result["mysql_location_options"] = strings.Join(stringSlice(storage.MySQLLocationOptions), ", ")
 	result["mysql_location_default"] = string(storage.MySQLLocationDefault)
 	result["mysql_user"] = string(storage.MySQLUser)
 	result["mysql_mode"] = strings.Join(storage.MySQLModeDefault, ", ")

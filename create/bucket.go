@@ -113,7 +113,7 @@ func (cmd *bucketCmd) newBucket(project string) (*storage.Bucket, error) {
 func BucketKongVars() kong.Vars {
 	result := make(kong.Vars)
 	result["bucket_location_default"] = string(storage.BucketUserLocationDefault)
-	result["bucket_location_options"] = strings.Join(storage.BucketLocationOptions, ", ")
+	result["bucket_location_options"] = strings.Join(stringSlice(storage.BucketLocationOptions), ", ")
 
 	roles := []storage.BucketRole{storage.BucketRoleReader, storage.BucketRoleWriter}
 	result["bucket_role_options"] = strings.Join(stringSlice(roles), ", ")
