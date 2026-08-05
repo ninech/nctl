@@ -1,6 +1,6 @@
 module github.com/ninech/nctl
 
-go 1.26.2
+go 1.26.5
 
 require (
 	github.com/alecthomas/kong v1.16.0
@@ -27,7 +27,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20
 	github.com/moby/moby v28.5.2+incompatible
 	github.com/moby/term v0.5.2
-	github.com/ninech/apis v0.0.0-20260420170138-f082e6318aed
+	github.com/ninech/apis v0.0.0-20260724082511-e7728fc766fd
 	github.com/posener/complete v1.2.3
 	github.com/prometheus/common v0.70.1
 	github.com/stretchr/testify v1.11.1
