@@ -163,8 +163,8 @@ github.com/containerd/errdefs/pkg v0.3.0 h1:9IKJ06FvyNlexW690DXuQNx2KA2cUJXx151X
 github.com/containerd/errdefs/pkg v0.3.0/go.mod h1:NJw6s9HwNuRhnjJhM7pylWwMyAkmCQvQ4GpJHEqRLVk=
 github.com/containerd/log v0.1.0 h1:TCJt7ioM2cr/tfR8GPbGf9/VRAX8D2B4PjzCpfX540I=
 github.com/containerd/log v0.1.0/go.mod h1:VRRf09a7mHDIRezVKTRCrOq78v577GXq3bSa3EhrzVo=
-github.com/coreos/go-oidc/v3 v3.18.0 h1:V9orjXynvu5wiC9SemFTWnG4F45v403aIcjWo0d41+A=
-github.com/coreos/go-oidc/v3 v3.18.0/go.mod h1:DYCf24+ncYi+XkIH97GY1+dqoRlbaSI26KVTCI9SrY4=
+github.com/coreos/go-oidc/v3 v3.20.0 h1:EtE0WIBHk03N+DqGkY4+UONzzZHk7amKt6IyNd7OsZE=
+github.com/coreos/go-oidc/v3 v3.20.0/go.mod h1:DYCf24+ncYi+XkIH97GY1+dqoRlbaSI26KVTCI9SrY4=
 github.com/coreos/go-semver v0.3.1 h1:yi21YpKnrx1gt5R+la8n5WgS0kCrsPp33dmEyHReZr4=
 github.com/coreos/go-semver v0.3.1/go.mod h1:irMmmIw/7yzSRPWryHsK7EYSg09caPQL03VsM8rvUec=
 github.com/coreos/go-systemd/v22 v22.7.0 h1:LAEzFkke61DFROc7zNLX/WA2i5J8gYqe0rSj9KI28KA=
@@ -461,8 +461,8 @@ github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/influxdata/tdigest v0.0.2-0.20210216194612-fc98d27c9e8b h1:i44CesU68ZBRvtCjBi3QSosCIKrjmMbYlQMFAwVLds4=
 github.com/influxdata/tdigest v0.0.2-0.20210216194612-fc98d27c9e8b/go.mod h1:Z0kXnxzbTC2qrx4NaIzYkE1k66+6oEDQTvL95hQFh5Y=
-github.com/int128/kubelogin v1.36.2 h1:DgT5FydGmR90KRh7R7uKGH2hyM1ofF9GrR8BE13SeBs=
-github.com/int128/kubelogin v1.36.2/go.mod h1:2hh2/t/R3gQUpVG4hJOuMiMHln09mDrf5cx7b4ZfZrQ=
+github.com/int128/kubelogin v1.36.3 h1:NICz9qNkJfrlXtYJiUGIYtJiz40lOX+YS0Hia9dGjLk=
+github.com/int128/kubelogin v1.36.3/go.mod h1:Gn3u6JQuRP0UCKR0TIXDT7fQA0VF3RmXneRyHlZyXbo=
 github.com/int128/listener v1.3.0 h1:ZFePbpzFUt1i6hBSY15rzqo8tHZHJPPQkqCtgOAwS8g=
 github.com/int128/listener v1.3.0/go.mod h1:zF9mx2wn+2J/7Idmxi5kgqrGgERr6vr8fK8KqENrRZ0=
 github.com/int128/oauth2cli v1.18.0 h1:ECW600WoYKh5Z4gv92yNVsJ22iqzPW7u7z0dfWxMzkU=
