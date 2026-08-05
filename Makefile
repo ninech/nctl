@@ -4,12 +4,26 @@ APP_NAME ?= nctl
 NPROCS := $(shell getconf _NPROCESSORS_ONLN 2>/dev/null || getconf NPROCESSORS_ONLN 2>/dev/null || nproc 2>/dev/null || echo 1)
 MAKEFLAGS += --jobs=$(NPROCS)
 
-.PHONY: all build test clean lint update help
+.PHONY: all build completions test clean lint update help
+
+# Shells for which completion scripts are generated into completions/.
+COMPLETION_SHELLS ?= bash zsh fish
 
 all: build
 
 build:
 	GITHUB_REPOSITORY=ninech/nctl goreleaser build --clean --snapshot --single-target
+
+# The generated init code embeds the absolute path of the binary. Rewrite it to the
+# bare binary name so the completion resolves $(APP_NAME) via PATH instead.
+completions:
+	@tmp="$$(mktemp -d)"; trap 'rm -rf "$$tmp"' EXIT; \
+	go build -o "$$tmp/$(APP_NAME)" . && \
+	for shell in $(COMPLETION_SHELLS); do \
+		"$$tmp/$(APP_NAME)" completions -c "$$shell" \
+			| sed "s|$$tmp/$(APP_NAME)|$(APP_NAME)|g" \
+			> "completions/$(APP_NAME).$$shell"; \
+	done
 
 test:
 	go test -race ./...
@@ -47,9 +61,10 @@ clean:
 	rm -rf dist/
 
 help:
-	@echo "make           # Build $(APP_NAME)"
-	@echo "make test      # Run tests"
-	@echo "make lint-fix  # Run linters and try fix issues"
-	@echo "make lint      # Run linters"
-	@echo "make update    # Update dependencies"
-	@echo "make clean     # Remove built app"
+	@echo "make             # Build $(APP_NAME)"
+	@echo "make completions # Regenerate the shell completions in completions/"
+	@echo "make test        # Run tests"
+	@echo "make lint-fix    # Run linters and try fix issues"
+	@echo "make lint        # Run linters"
+	@echo "make update      # Update dependencies"
+	@echo "make clean       # Remove built app"

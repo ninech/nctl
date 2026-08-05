@@ -13,6 +13,13 @@ jobs:
           go-version: stable
       - run: go mod tidy -diff
       - run: go vet ./...
+      - name: completions
+        run: |
+          make completions
+          git diff --exit-code -- completions/ || {
+            echo "::error::completions/ is out of date, run 'make completions' and commit the result"
+            exit 1
+          }
       - uses: golangci/golangci-lint-action@v9
         with:
           version: latest
