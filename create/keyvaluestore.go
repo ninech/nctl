@@ -14,7 +14,7 @@ import (
 )
 
 type keyValueStoreCmd struct {
-	resourceCmd
+	ResourceCmd
 	Location         meta.LocationName                    `placeholder:"${keyvaluestore_location_default}" help:"Where the Key-Value Store instance is created. Available locations are: ${keyvaluestore_location_options}"`
 	MemorySize       *storage.KeyValueStoreMemorySize     `placeholder:"${keyvaluestore_memorysize_default}" help:"Available amount of memory."`
 	MaxMemoryPolicy  storage.KeyValueStoreMaxMemoryPolicy `placeholder:"${keyvaluestore_maxmemorypolicy_default}" help:"Behaviour when the memory limit is reached."`

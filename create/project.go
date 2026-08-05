@@ -10,7 +10,7 @@ import (
 )
 
 type projectCmd struct {
-	resourceCmd
+	ResourceCmd
 	DisplayName string `default:"" help:"Display Name of the project."`
 }
 

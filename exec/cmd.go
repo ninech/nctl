@@ -46,8 +46,11 @@ type accessManager[T resource.Managed] interface {
 	Update(ctx context.Context, client *api.Client, res T, cidrs []meta.IPv4CIDR) error
 }
 
-// serviceCmd is the shared base for all database exec sub-commands.
-type serviceCmd struct {
+// ServiceCmd is the shared base for all database exec sub-commands.
+//
+// It has to be exported so that Kong initializes the embedded
+// [format.Writer], see [format.Writer.BeforeApply].
+type ServiceCmd struct {
 	resourceCmd
 	format.Writer `kong:"-"`
 	format.Reader `kong:"-"`
@@ -63,14 +66,14 @@ type serviceCmd struct {
 }
 
 // BeforeApply initializes Writer and Reader from Kong's bound io.Writer and io.Reader.
-func (cmd *serviceCmd) BeforeApply(writer io.Writer, reader io.Reader) error {
+func (cmd *ServiceCmd) BeforeApply(writer io.Writer, reader io.Reader) error {
 	return errors.Join(
 		cmd.Writer.BeforeApply(writer),
 		cmd.Reader.BeforeApply(reader),
 	)
 }
 
-func (cmd serviceCmd) getRunCommand() func(*exec.Cmd) error {
+func (cmd ServiceCmd) getRunCommand() func(*exec.Cmd) error {
 	if cmd.runCommand != nil {
 		return cmd.runCommand
 	}
@@ -79,7 +82,7 @@ func (cmd serviceCmd) getRunCommand() func(*exec.Cmd) error {
 	}
 }
 
-func (cmd serviceCmd) getLookPath() func(string) (string, error) {
+func (cmd ServiceCmd) getLookPath() func(string) (string, error) {
 	if cmd.lookPath != nil {
 		return cmd.lookPath
 	}
@@ -87,7 +90,7 @@ func (cmd serviceCmd) getLookPath() func(string) (string, error) {
 	return exec.LookPath
 }
 
-func (cmd serviceCmd) connectivityCheck() func(context.Context, format.Writer, string, time.Duration) error {
+func (cmd ServiceCmd) connectivityCheck() func(context.Context, format.Writer, string, time.Duration) error {
 	if cmd.waitForConnectivity != nil {
 		return cmd.waitForConnectivity
 	}
@@ -96,7 +99,7 @@ func (cmd serviceCmd) connectivityCheck() func(context.Context, format.Writer, s
 }
 
 // openTTY returns the openTTY function to use for confirming prompts.
-func (cmd serviceCmd) openTTY() func() (io.ReadCloser, error) {
+func (cmd ServiceCmd) openTTY() func() (io.ReadCloser, error) {
 	if cmd.openTTYForConfirm != nil {
 		return cmd.openTTYForConfirm
 	}
@@ -113,7 +116,7 @@ func connectAndExec[T resource.Managed](
 	client *api.Client,
 	res T,
 	connector cmdExecutor[T],
-	opts serviceCmd,
+	opts ServiceCmd,
 ) error {
 	if err := opts.checkPath(connector.Command()); err != nil {
 		return err
@@ -171,7 +174,7 @@ func ensureAccess[T resource.Managed](
 	client *api.Client,
 	connector accessManager[T],
 	res T,
-	cmd serviceCmd,
+	cmd ServiceCmd,
 ) error {
 	var toAdd []meta.IPv4CIDR
 
@@ -267,7 +270,7 @@ func waitForConnectivity(ctx context.Context, writer format.Writer, endpoint str
 }
 
 // checkPath verifies that the named CLI binary is installed and on PATH.
-func (cmd serviceCmd) checkPath(name string) error {
+func (cmd ServiceCmd) checkPath(name string) error {
 	if _, err := cmd.getLookPath()(name); err != nil {
 		return cli.ErrorWithContext(fmt.Errorf("%q CLI not found", name)).
 			WithSuggestions(
@@ -280,7 +283,7 @@ func (cmd serviceCmd) checkPath(name string) error {
 // confirm prints a confirmation prompt. When stdin is not a TTY it opens /dev/tty
 // so that piped input (e.g. SQL dumps) does not consume the prompt, mirroring
 // the pattern used by git and ssh.
-func (cmd serviceCmd) confirm(msg string) (bool, error) {
+func (cmd ServiceCmd) confirm(msg string) (bool, error) {
 	if !isatty.IsTerminal(os.Stdin.Fd()) {
 		tty, err := cmd.openTTY()()
 		if err == nil {

@@ -29,7 +29,7 @@ var (
 )
 
 type serviceConnectionCmd struct {
-	resourceCmd
+	ResourceCmd
 	Source                   application.TypedReference `placeholder:"kind/name" help:"Source of the connection in the form kind/name. Allowed source kinds are: ${allowed_sources}." required:""`
 	Destination              application.TypedReference `placeholder:"kind/name" help:"Destination of the connection in the form kind/name. Must be in the same project as the service connection. Allowed destination kinds are: ${allowed_destinations}." required:""`
 	SourceNamespace          string                   `help:"Source namespace of the connection. Defaults to current project."`

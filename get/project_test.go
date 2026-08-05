@@ -171,7 +171,7 @@ dev      <none>
 			)
 
 			cmd := projectCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name: testCase.name,
 				},
 			}
@@ -205,7 +205,7 @@ func TestProjectsConfigErrors(t *testing.T) {
 	is := require.New(t)
 	apiClient := test.SetupClient(t)
 	cmd := projectCmd{
-		resourceCmd: resourceCmd{
+		ResourceCmd: ResourceCmd{
 			Name: "testproject",
 		},
 	}

@@ -43,18 +43,18 @@ func TestMySQLDatabaseCmd(t *testing.T) {
 	}{
 		{
 			name:    "resource not found",
-			cmd:     mysqlDatabaseCmd{serviceCmd: notFoundCmd},
+			cmd:     mysqlDatabaseCmd{ServiceCmd: notFoundCmd},
 			wantErr: true,
 		},
 		{
 			name:        "resource not ready",
-			cmd:         mysqlDatabaseCmd{serviceCmd: notReadyCmd},
+			cmd:         mysqlDatabaseCmd{ServiceCmd: notReadyCmd},
 			wantErr:     true,
 			errContains: "not ready",
 		},
 		{
 			name: "connects without cidr management",
-			cmd:  mysqlDatabaseCmd{serviceCmd: connectCmd},
+			cmd:  mysqlDatabaseCmd{ServiceCmd: connectCmd},
 			cap:  connectCap,
 			check: func(t *testing.T, cmd *exec.Cmd) {
 				t.Helper()

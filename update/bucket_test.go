@@ -812,7 +812,7 @@ func TestBucketNoFlagsDoesNotUpdate(t *testing.T) {
 		test.WithObjects(orig),
 	)
 
-	cmd := bucketCmd{resourceCmd: resourceCmd{Name: name}}
+	cmd := bucketCmd{ResourceCmd: ResourceCmd{Name: name}}
 	err := cmd.Run(t.Context(), apiClient)
 	is.Error(err)
 

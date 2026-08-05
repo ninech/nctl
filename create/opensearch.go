@@ -16,7 +16,7 @@ import (
 )
 
 type openSearchCmd struct {
-	resourceCmd
+	ResourceCmd
 	Location          meta.LocationName             `placeholder:"${opensearch_location_default}" help:"Where the OpenSearch cluster is created. Available locations are: ${opensearch_location_options}"`
 	OpensearchVersion storage.OpenSearchVersion     `placeholder:"${opensearch_version_default}" help:"Version of the OpenSearch cluster. Available versions: ${opensearch_versions}"`
 	ClusterType       storage.OpenSearchClusterType `placeholder:"${opensearch_cluster_type_default}" help:"Type of cluster. Available types: ${opensearch_cluster_types}"`

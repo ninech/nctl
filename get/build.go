@@ -22,7 +22,7 @@ import (
 )
 
 type buildCmd struct {
-	resourceCmd
+	ResourceCmd
 	ApplicationName string `short:"a" help:"Name of the Application to get builds for. If omitted all in the project will be listed."`
 	PullImage       bool   `help:"Pull the image of the build. Uses the local docker socket at the env DOCKER_HOST if set."`
 }

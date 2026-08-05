@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type postgresCmd struct{ databaseCmd }
+type postgresCmd struct{ DatabaseCmd }
 
 func (cmd *postgresCmd) Run(ctx context.Context, c *api.Client, get *Cmd) error {
 	return get.listPrint(ctx, c, cmd, api.MatchName(cmd.Name))

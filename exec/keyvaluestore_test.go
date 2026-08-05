@@ -60,18 +60,18 @@ func TestKVSCmd(t *testing.T) {
 	}{
 		{
 			name:    "resource not found",
-			cmd:     kvsCmd{serviceCmd: notFoundCmd},
+			cmd:     kvsCmd{ServiceCmd: notFoundCmd},
 			wantErr: true,
 		},
 		{
 			name:        "resource not ready",
-			cmd:         kvsCmd{serviceCmd: notReadyCmd},
+			cmd:         kvsCmd{ServiceCmd: notReadyCmd},
 			wantErr:     true,
 			errContains: "not ready",
 		},
 		{
 			name: "cidr already present skips update",
-			cmd:  kvsCmd{serviceCmd: alreadyPresentCmd},
+			cmd:  kvsCmd{ServiceCmd: alreadyPresentCmd},
 			cap:  alreadyCap,
 			check: func(t *testing.T, cmd *exec.Cmd) {
 				t.Helper()
@@ -82,18 +82,18 @@ func TestKVSCmd(t *testing.T) {
 		},
 		{
 			name:       "new cidr triggers update",
-			cmd:        kvsCmd{serviceCmd: newCidrCmd},
+			cmd:        kvsCmd{ServiceCmd: newCidrCmd},
 			wantUpdate: true,
 		},
 		{
 			name:        "public networking disabled returns error",
-			cmd:         kvsCmd{serviceCmd: pubNetDisabledCmd},
+			cmd:         kvsCmd{ServiceCmd: pubNetDisabledCmd},
 			wantErr:     true,
 			errContains: "networking is disabled",
 		},
 		{
 			name: "token passed securely via env",
-			cmd:  kvsCmd{serviceCmd: tokenCmd},
+			cmd:  kvsCmd{ServiceCmd: tokenCmd},
 			cap:  tokenCap,
 			check: func(t *testing.T, cmd *exec.Cmd) {
 				t.Helper()

@@ -15,7 +15,7 @@ import (
 )
 
 type bucketCmd struct {
-	resourceCmd
+	ResourceCmd
 	PrintPermissions       bool `help:"Print the Bucket's permission grants." xor:"print"`
 	PrintLifecyclePolicies bool `help:"Print the Bucket's lifecycle policies." xor:"print"`
 	PrintCORS              bool `help:"Print the Bucket's CORS config." xor:"print"`

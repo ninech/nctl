@@ -20,7 +20,7 @@ import (
 )
 
 type mySQLCmd struct {
-	resourceCmd
+	ResourceCmd
 	Location              meta.LocationName                      `placeholder:"${mysql_location_default}" help:"Where the MySQL instance is created. Available locations are: ${mysql_location_options}"`
 	MachineType           string                                 `placeholder:"${mysql_machine_default}" help:"Sizing for a particular MySQL instance. Available types: ${mysql_machine_types}"`
 	AllowedCidrs          []meta.IPv4CIDR                        `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the instance."`

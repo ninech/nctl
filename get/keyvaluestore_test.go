@@ -91,7 +91,7 @@ func TestKeyValueStore(t *testing.T) {
 					memSize: kvsMem("2G"),
 				},
 			},
-			get:         keyValueStoreCmd{resourceCmd: resourceCmd{Name: "test1"}},
+			get:         keyValueStoreCmd{ResourceCmd: ResourceCmd{Name: "test1"}},
 			out:         full,
 			wantContain: []string{"test1", "1G"},
 			wantLines:   2, // header + result
@@ -135,7 +135,7 @@ func TestKeyValueStore(t *testing.T) {
 					memSize: kvsMem("2G"),
 				},
 			},
-			get:         keyValueStoreCmd{resourceCmd: resourceCmd{Name: "test2"}, PrintToken: true},
+			get:         keyValueStoreCmd{ResourceCmd: ResourceCmd{Name: "test2"}, PrintToken: true},
 			out:         full,
 			wantContain: []string{"test2-topsecret"},
 			wantLines:   1, // print token does not print any header line

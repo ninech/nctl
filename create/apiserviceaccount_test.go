@@ -20,7 +20,7 @@ func TestAPIServiceAccount(t *testing.T) {
 	}{
 		"no org access": {
 			cmd: apiServiceAccountCmd{
-				resourceCmd: resourceCmd{Name: "no-org-access"},
+				ResourceCmd: ResourceCmd{Name: "no-org-access"},
 			},
 			checkAPIServiceAccount: func(t *testing.T, cmd apiServiceAccountCmd, asa *iam.APIServiceAccount) {
 				is := require.New(t)
@@ -29,7 +29,7 @@ func TestAPIServiceAccount(t *testing.T) {
 		},
 		"org access": {
 			cmd: apiServiceAccountCmd{
-				resourceCmd:        resourceCmd{Name: "org-access"},
+				ResourceCmd:        ResourceCmd{Name: "org-access"},
 				OrganizationAccess: true,
 			},
 			checkAPIServiceAccount: func(t *testing.T, cmd apiServiceAccountCmd, asa *iam.APIServiceAccount) {

@@ -36,7 +36,7 @@ func TestProject(t *testing.T) {
 		"all fields update": {
 			orig: existingProject,
 			cmd: projectCmd{
-				resourceCmd: resourceCmd{Name: projectName},
+				ResourceCmd: ResourceCmd{Name: projectName},
 				DisplayName: new("some display name"),
 			},
 			checkProject: func(t *testing.T, cmd projectCmd, orig, updated *management.Project) {

@@ -78,6 +78,17 @@ func TestReader_Read(t *testing.T) {
 	is.Equal("hello", string(buf))
 }
 
+func TestReader_ReadZeroValue(t *testing.T) {
+	t.Parallel()
+	is := require.New(t)
+
+	buf := make([]byte, 5)
+	n, err := Reader{}.Read(buf)
+
+	is.ErrorIs(err, io.EOF)
+	is.Zero(n)
+}
+
 func TestReader_ImplementsIOReader(t *testing.T) {
 	t.Parallel()
 

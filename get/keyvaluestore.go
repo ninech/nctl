@@ -11,7 +11,7 @@ import (
 )
 
 type keyValueStoreCmd struct {
-	resourceCmd
+	ResourceCmd
 	PrintToken  bool `help:"Print the bearer token of the Account. Requires name to be set." xor:"print"`
 	PrintCACert bool `help:"Print the ca certificate. Requires name to be set." xor:"print"`
 }

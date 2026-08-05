@@ -9,7 +9,7 @@ import (
 )
 
 type postgresCmd struct {
-	resourceCmd
+	ResourceCmd
 }
 
 func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client) error {

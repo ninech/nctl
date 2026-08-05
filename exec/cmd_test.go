@@ -38,19 +38,19 @@ func testSecret(name, namespace, user, password string) *corev1.Secret {
 // When cidrs is non-nil those CIDRs are used; when nil the IP detection is
 // triggered only for instance resources (which is safe to use in tests if the
 // connector returns nil from AllowedCIDRs).
-func testDatabaseCmd(name string, cidrs *[]meta.IPv4CIDR) (*capturingCmd, serviceCmd) {
+func testDatabaseCmd(name string, cidrs *[]meta.IPv4CIDR) (*capturingCmd, ServiceCmd) {
 	return testDatabaseCmdConfirmed(name, cidrs, false)
 }
 
 // testDatabaseCmdConfirmed is like testDatabaseCmd but pre-seeds the reader
 // with "y\n" so that confirmation prompts are auto-accepted.
-func testDatabaseCmdConfirmed(name string, cidrs *[]meta.IPv4CIDR, confirmed bool) (*capturingCmd, serviceCmd) {
+func testDatabaseCmdConfirmed(name string, cidrs *[]meta.IPv4CIDR, confirmed bool) (*capturingCmd, ServiceCmd) {
 	var reader io.Reader = &bytes.Buffer{}
 	if confirmed {
 		reader = strings.NewReader("y\n")
 	}
 	cap := &capturingCmd{}
-	cmd := serviceCmd{
+	cmd := ServiceCmd{
 		resourceCmd:  resourceCmd{Name: name},
 		Writer:       format.NewWriter(&bytes.Buffer{}),
 		Reader:       format.NewReader(reader),

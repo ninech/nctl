@@ -21,7 +21,7 @@ import (
 )
 
 type applicationsCmd struct {
-	resourceCmd
+	ResourceCmd
 	BasicAuthCredentials bool `help:"Show the basic auth credentials of the application."`
 	DNS                  bool `help:"Show the DNS details for custom hosts."`
 }

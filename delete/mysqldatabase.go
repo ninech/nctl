@@ -11,7 +11,7 @@ import (
 )
 
 type mysqlDatabaseCmd struct {
-	resourceCmd
+	ResourceCmd
 }
 
 func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error {

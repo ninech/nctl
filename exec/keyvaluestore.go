@@ -15,7 +15,7 @@ import (
 const kvsPort = "6379"
 
 type kvsCmd struct {
-	serviceCmd
+	ServiceCmd
 }
 
 // Help displays usage examples for the keyvaluestore exec command.
@@ -39,7 +39,7 @@ func (cmd *kvsCmd) Run(ctx context.Context, client *api.Client) error {
 	if err := client.Get(ctx, client.Name(cmd.Name), kvs); err != nil {
 		return fmt.Errorf("getting keyvaluestore %q: %w", cmd.Name, err)
 	}
-	return connectAndExec(ctx, client, kvs, kvsConnector{}, cmd.serviceCmd)
+	return connectAndExec(ctx, client, kvs, kvsConnector{}, cmd.ServiceCmd)
 }
 
 // kvsConnector implements ServiceConnector for storage.KeyValueStore instances.

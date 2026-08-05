@@ -12,7 +12,7 @@ import (
 )
 
 type postgresDatabaseCmd struct {
-	serviceCmd
+	ServiceCmd
 }
 
 // Help displays usage examples for the postgresdatabase exec command.
@@ -37,7 +37,7 @@ func (cmd *postgresDatabaseCmd) Run(ctx context.Context, client *api.Client) err
 	if err := client.Get(ctx, client.Name(cmd.Name), db); err != nil {
 		return fmt.Errorf("getting postgresdatabase %q: %w", cmd.Name, err)
 	}
-	return connectAndExec(ctx, client, db, postgresDatabaseConnector{}, cmd.serviceCmd)
+	return connectAndExec(ctx, client, db, postgresDatabaseConnector{}, cmd.ServiceCmd)
 }
 
 // postgresDatabaseConnector implements cmdExecutor for storage.PostgresDatabase resources.

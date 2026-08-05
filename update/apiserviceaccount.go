@@ -11,7 +11,7 @@ import (
 )
 
 type apiServiceAccountCmd struct {
-	resourceCmd
+	ResourceCmd
 	OrganizationAccess *bool `help:"When enabled, this service account has access to all projects in the organization. Only valid for service accounts in the organization project."`
 }
 

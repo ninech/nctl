@@ -9,7 +9,7 @@ import (
 )
 
 type grafanaCmd struct {
-	resourceCmd
+	ResourceCmd
 }
 
 func (cmd *grafanaCmd) Run(ctx context.Context, client *api.Client) error {

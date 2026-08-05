@@ -9,7 +9,7 @@ import (
 )
 
 type mySQLCmd struct {
-	resourceCmd
+	ResourceCmd
 }
 
 func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {

@@ -10,7 +10,7 @@ import (
 
 type applicationCmd struct {
 	resourceCmd
-	logsCmd
+	LogsCmd
 	Type appLogType `short:"t" help:"Which type of app logs to output. ${enum}" enum:"all,app,build,worker_job,deploy_job,scheduled_job" default:"all"`
 }
 
@@ -22,7 +22,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		return err
 	}
 
-	return cmd.logsCmd.Run(ctx, client, buildQuery(append(
+	return cmd.LogsCmd.Run(ctx, client, buildQuery(append(
 		cmd.Type.queryExpressions(),
 		inProject(client.Project),
 		queryExpr(opEquals, apps.LogLabelApplication, cmd.Name))...),

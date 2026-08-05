@@ -12,7 +12,7 @@ import (
 
 type buildCmd struct {
 	resourceCmd
-	logsCmd
+	LogsCmd
 	ApplicationName string `short:"a" help:"Name of the application to get build logs for."`
 }
 
@@ -39,7 +39,7 @@ func (cmd *buildCmd) Run(ctx context.Context, client *api.Client) error {
 		query = BuildsOfAppQuery(cmd.ApplicationName, client.Project)
 	}
 
-	return cmd.logsCmd.Run(ctx, client, query, apps.LogLabelBuild)
+	return cmd.LogsCmd.Run(ctx, client, query, apps.LogLabelBuild)
 }
 
 func BuildQuery(name, project string) string {

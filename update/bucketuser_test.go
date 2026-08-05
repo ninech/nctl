@@ -28,7 +28,7 @@ func TestBucketUser(t *testing.T) {
 	}
 
 	out := &bytes.Buffer{}
-	cmd := bucketUserCmd{resourceCmd{Writer: format.NewWriter(out), Name: created.Name}, new(true)}
+	cmd := bucketUserCmd{ResourceCmd{Writer: format.NewWriter(out), Name: created.Name}, new(true)}
 	updated := &storage.BucketUser{}
 	if err := cmd.Run(t.Context(), apiClient); err != nil {
 		t.Errorf("did not expect err got : %v", err)

@@ -9,7 +9,7 @@ import (
 )
 
 type cloudVMCmd struct {
-	resourceCmd
+	ResourceCmd
 }
 
 func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {

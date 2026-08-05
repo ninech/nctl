@@ -11,7 +11,7 @@ import (
 )
 
 type apiServiceAccountsCmd struct {
-	resourceCmd
+	ResourceCmd
 	PrintCredentials  bool `help:"Print all credentials of the Account. Requires name to be set." xor:"print"`
 	PrintToken        bool `help:"Print the bearer token of the Account. Requires name to be set. Only valid for v1 service accounts." xor:"print"`
 	PrintKubeconfig   bool `help:"Print the kubeconfig of the Account. Requires name to be set. Only valid for v1 service accounts." xor:"print"`

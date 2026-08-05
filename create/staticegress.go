@@ -15,7 +15,7 @@ import (
 )
 
 type staticEgressCmd struct {
-	resourceCmd
+	ResourceCmd
 	Application string `help:"Name of the target Application." xor:"target" required:""`
 	Cluster     string `help:"Name of the target KubernetesCluster (NKE/vCluster)." xor:"target" required:""`
 	Disabled    bool   `help:"Create the static egress in disabled state." default:"false"`

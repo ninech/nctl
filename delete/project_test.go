@@ -42,7 +42,7 @@ func TestProject(t *testing.T) {
 			t.Parallel()
 			out := &bytes.Buffer{}
 			cmd := projectCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Writer: format.NewWriter(out),
 					Force:  true,
 					Wait:   false,
@@ -96,7 +96,7 @@ func TestProjectsConfigErrors(t *testing.T) {
 	ctx := t.Context()
 	apiClient := test.SetupClient(t)
 	cmd := projectCmd{
-		resourceCmd: resourceCmd{
+		ResourceCmd: ResourceCmd{
 			Force: true,
 			Wait:  false,
 			Name:  "test",

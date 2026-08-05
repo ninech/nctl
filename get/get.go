@@ -56,7 +56,12 @@ type output struct {
 	tabWriter     *tabwriter.Writer
 }
 
-type resourceCmd struct {
+// ResourceCmd is the shared base for the get sub-commands that take a single
+// resource name.
+//
+// It has to be exported so that Kong initializes the embedded
+// [format.Writer], see [format.Writer.BeforeApply].
+type ResourceCmd struct {
 	format.Writer `kong:"-"`
 	Name          string `arg:"" completion-predictor:"resource_name" help:"Name of the resource to get. If omitted all in the project will be listed." default:""`
 }
@@ -203,7 +208,7 @@ func connectionSecret(ctx context.Context, client *api.Client, key string, mg re
 	return string(content), nil
 }
 
-func (cmd *resourceCmd) printSecret(
+func (cmd *ResourceCmd) printSecret(
 	ctx context.Context,
 	client *api.Client,
 	mg resource.Managed,
@@ -222,7 +227,7 @@ func (cmd *resourceCmd) printSecret(
 	return nil
 }
 
-func (cmd *resourceCmd) printCredentials(
+func (cmd *ResourceCmd) printCredentials(
 	ctx context.Context,
 	client *api.Client,
 	mg resource.Managed,

@@ -9,7 +9,7 @@ import (
 )
 
 type keyValueStoreCmd struct {
-	resourceCmd
+	ResourceCmd
 }
 
 func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client) error {

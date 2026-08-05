@@ -12,7 +12,7 @@ import (
 )
 
 type clustersCmd struct {
-	resourceCmd
+	ResourceCmd
 }
 
 func (cmd *clustersCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {

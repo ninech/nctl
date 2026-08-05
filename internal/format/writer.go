@@ -28,7 +28,22 @@ func (w *Writer) writer() io.Writer {
 	return w.Writer
 }
 
+// Write implements [io.Writer]. It shadows the promoted method of the embedded
+// [io.Writer] so that writing to an uninitialized Writer discards the output
+// instead of panicking. The receiver is a value so that Writer keeps
+// implementing [io.Writer] when passed around by value.
+func (w Writer) Write(p []byte) (int, error) {
+	return w.writer().Write(p)
+}
+
 // BeforeApply ensures that Kong initializes the writer.
+//
+// Kong discovers hook methods by descending into the embedded fields of the
+// selected command, and it only descends into fields that are exported. A
+// Writer embedded in an unexported base command struct is therefore never
+// initialized, and every message printed through it is silently discarded.
+// Command structs that embed a Writer, and every struct that embeds those in
+// turn, must consequently be exported.
 func (w *Writer) BeforeApply(writer io.Writer) error {
 	if w != nil && writer != nil {
 		w.Writer = writer

@@ -37,7 +37,7 @@ const DefaultReplicas = 2
 // note: when adding/changing fields here also make sure to carry it over to
 // update/application.go.
 type applicationCmd struct {
-	resourceCmd
+	ResourceCmd
 	Git                      gitConfig         `embed:"" prefix:"git-"`
 	Size                     *string           `help:"Size of the application (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
 	Port                     *int32            `help:"Port the application is listening on (defaults to ${app_default_port})." placeholder:"${app_default_port}"`

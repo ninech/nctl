@@ -54,18 +54,18 @@ func TestPostgresCmd(t *testing.T) {
 	}{
 		{
 			name:    "resource not found",
-			cmd:     postgresCmd{serviceCmd: notFoundCmd},
+			cmd:     postgresCmd{ServiceCmd: notFoundCmd},
 			wantErr: true,
 		},
 		{
 			name:        "resource not ready",
-			cmd:         postgresCmd{serviceCmd: notReadyCmd},
+			cmd:         postgresCmd{ServiceCmd: notReadyCmd},
 			wantErr:     true,
 			errContains: "not ready",
 		},
 		{
 			name: "cidr already present skips update",
-			cmd:  postgresCmd{serviceCmd: alreadyPresentCmd},
+			cmd:  postgresCmd{ServiceCmd: alreadyPresentCmd},
 			cap:  alreadyCap,
 			check: func(t *testing.T, cmd *exec.Cmd) {
 				t.Helper()
@@ -76,7 +76,7 @@ func TestPostgresCmd(t *testing.T) {
 		},
 		{
 			name:       "new cidr triggers update",
-			cmd:        postgresCmd{serviceCmd: newCidrCmd},
+			cmd:        postgresCmd{ServiceCmd: newCidrCmd},
 			cap:        newCidrCap,
 			wantUpdate: true,
 			check: func(t *testing.T, cmd *exec.Cmd) {
@@ -88,7 +88,7 @@ func TestPostgresCmd(t *testing.T) {
 		},
 		{
 			name: "credentials passed securely",
-			cmd:  postgresCmd{serviceCmd: credsCmd},
+			cmd:  postgresCmd{ServiceCmd: credsCmd},
 			cap:  credsCap,
 			check: func(t *testing.T, cmd *exec.Cmd) {
 				t.Helper()
@@ -106,7 +106,7 @@ func TestPostgresCmd(t *testing.T) {
 		},
 		{
 			name: "custom database appears in connection string",
-			cmd:  postgresCmd{serviceCmd: dbCmd, Database: "mydb"},
+			cmd:  postgresCmd{ServiceCmd: dbCmd, Database: "mydb"},
 			cap:  dbCap,
 			check: func(t *testing.T, cmd *exec.Cmd) {
 				t.Helper()

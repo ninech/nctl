@@ -35,7 +35,11 @@ type Cmd struct {
 	Grafana             grafanaCmd           `cmd:"" group:"delete-observability" name:"grafana" help:"Delete a Grafana instance."`
 }
 
-type resourceCmd struct {
+// ResourceCmd is the shared base for the delete sub-commands.
+//
+// It has to be exported so that Kong initializes the embedded
+// [format.Writer], see [format.Writer.BeforeApply].
+type ResourceCmd struct {
 	format.Writer `kong:"-"`
 	format.Reader `kong:"-"`
 	Name          string        `arg:"" completion-predictor:"resource_name" help:"Name of the resource to delete."`
@@ -46,7 +50,7 @@ type resourceCmd struct {
 
 // BeforeApply initializes Writer and Reader from Kong's bound io.Writer and io.Reader.
 // Because Kong wont apply hooks on embedded structs.
-func (cmd *resourceCmd) BeforeApply(writer io.Writer, reader io.Reader) error {
+func (cmd *ResourceCmd) BeforeApply(writer io.Writer, reader io.Reader) error {
 	return errors.Join(
 		cmd.Writer.BeforeApply(writer),
 		cmd.Reader.BeforeApply(reader),
@@ -72,7 +76,7 @@ type deleter struct {
 // deleterOption allows to set options for the deletion
 type deleterOption func(*deleter)
 
-func (cmd *resourceCmd) newDeleter(
+func (cmd *ResourceCmd) newDeleter(
 	mg resource.Managed,
 	kind string,
 	opts ...deleterOption,

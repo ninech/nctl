@@ -28,7 +28,7 @@ func TestApplication(t *testing.T) {
 		"same project": {
 			source: newApp("source", apps.ApplicationSpec{}),
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name:       "source",
 					TargetName: "target",
 				},
@@ -37,7 +37,7 @@ func TestApplication(t *testing.T) {
 		"to different project": {
 			source: newApp("source", apps.ApplicationSpec{}),
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name:          "source",
 					TargetName:    "target",
 					TargetProject: "project-2",
@@ -51,7 +51,7 @@ func TestApplication(t *testing.T) {
 				},
 			}),
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name:       "source",
 					TargetName: "target",
 				},
@@ -65,7 +65,7 @@ func TestApplication(t *testing.T) {
 			}),
 			cmd: applicationCmd{
 				CopyHosts: true,
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name:       "source",
 					TargetName: "target",
 				},
@@ -79,7 +79,7 @@ func TestApplication(t *testing.T) {
 				},
 			}),
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name:       "source",
 					TargetName: "target",
 				},
@@ -88,7 +88,7 @@ func TestApplication(t *testing.T) {
 		"source does not exist": {
 			source: newApp("source", apps.ApplicationSpec{}),
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name:       "does-not-exist",
 					TargetName: "target",
 				},
@@ -99,7 +99,7 @@ func TestApplication(t *testing.T) {
 			source: newApp("source", apps.ApplicationSpec{}),
 			cmd: applicationCmd{
 				Start: true,
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name:       "source",
 					TargetName: "target",
 				},
@@ -122,7 +122,7 @@ func TestApplication(t *testing.T) {
 				Data:       map[string][]byte{"foo": []byte("bar")},
 			},
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name:       "source",
 					TargetName: "target",
 				},
@@ -131,7 +131,7 @@ func TestApplication(t *testing.T) {
 		"app with static egress": {
 			source: newApp("source", apps.ApplicationSpec{}),
 			cmd: applicationCmd{
-				resourceCmd: resourceCmd{
+				ResourceCmd: ResourceCmd{
 					Name:       "source",
 					TargetName: "target",
 				},

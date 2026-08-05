@@ -11,7 +11,7 @@ import (
 )
 
 type postgresDatabaseCmd struct {
-	resourceCmd
+	ResourceCmd
 	BackupSchedule *storage.DatabaseBackupScheduleCalendar `help:"Backup schedule for the PostgreSQL database. Available schedules: ${postgresdatabase_backupschedule_options}"`
 }
 

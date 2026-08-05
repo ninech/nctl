@@ -10,7 +10,7 @@ import (
 )
 
 type serviceConnectionCmd struct {
-	resourceCmd
+	ResourceCmd
 }
 
 func (cmd *serviceConnectionCmd) Run(ctx context.Context, client *api.Client) error {

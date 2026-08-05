@@ -16,7 +16,7 @@ func TestMySQL(t *testing.T) {
 	t.Parallel()
 	out := &bytes.Buffer{}
 	cmd := mySQLCmd{
-		resourceCmd: resourceCmd{
+		ResourceCmd: ResourceCmd{
 			Writer:      format.NewWriter(out),
 			Name:        "test",
 			Force:       true,

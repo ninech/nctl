@@ -81,75 +81,16 @@ func main() {
 	defer cancel()
 	setupSignalHandler(ctx, cancel)
 
-	kongVars, err := kongVariables()
+	cmd := &rootCommand{}
+	parser, err := newParser(ctx, cmd, writer, reader)
 	if err != nil {
 		fmt.Fprintln(writer, err)
 		os.Exit(1)
 	}
-	cmd := &rootCommand{}
-	parser := kong.Must(
-		cmd,
-		kong.Name(cli.Name),
-		kong.Description(
-			"Interact with Nine API resources. See https://docs.nineapis.ch for the full API docs.",
-		),
-		kong.Groups{
-			"verbs": "Resource Management Commands",
-			"utils": "Utility Commands",
-
-			"get-general": "General",
-			"get-access":  "Project & Access",
-			"get-infra":   "Infrastructure",
-			"get-apps":    "Applications",
-			"get-storage": "Databases & Object Storage",
-			"get-network": "Networking",
-
-			"create-general": "General",
-			"create-access":  "Project & Access",
-			"create-infra":   "Infrastructure",
-			"create-apps":    "Applications",
-			"create-storage": "Databases & Object Storage",
-			"create-network": "Networking",
-
-			"update-access":  "Project & Access",
-			"update-infra":   "Infrastructure",
-			"update-apps":    "Applications",
-			"update-storage": "Databases & Object Storage",
-			"update-network": "Networking",
-
-			"edit-access":  "Project & Access",
-			"edit-infra":   "Infrastructure",
-			"edit-apps":    "Applications",
-			"edit-storage": "Databases & Object Storage",
-
-			"delete-general": "General",
-			"delete-access":  "Project & Access",
-			"delete-infra":   "Infrastructure",
-			"delete-apps":    "Applications",
-			"delete-storage": "Databases & Object Storage",
-			"delete-network": "Networking",
-		},
-		kong.ConfigureHelp(kong.HelpOptions{
-			Compact:             true,
-			NoExpandSubcommands: true,
-		}),
-		kong.UsageOnError(),
-		kong.PostBuild(format.InterpolateFlagPlaceholders(kongVars)),
-		kongVars,
-		kong.BindTo(ctx, (*context.Context)(nil)),
-		kong.BindTo(writer, (*io.Writer)(nil)),
-		kong.BindTo(reader, (*io.Reader)(nil)),
-	)
-
-	predictors := append([]completion.Option{
-		completion.WithPredictor("file", complete.PredictFiles("*")),
-	}, clientPredictors(ctx)...)
-	completion.Register(parser, predictors...)
 
 	kongCtx, err := parser.Parse(os.Args[1:])
 	if err != nil {
-		var parseErr *kong.ParseError
-		if errors.As(err, &parseErr) {
+		if parseErr, ok := errors.AsType[*kong.ParseError](err); ok {
 			// do not error on missing command/argument.
 			// Print Usage + friendly message instead.
 			if parseErr.Context.Error == nil {
@@ -218,6 +159,80 @@ func main() {
 	}
 }
 
+// newParser builds the Kong parser for cmd. The given writer and reader are
+// bound as [io.Writer] and [io.Reader] so that commands can print output and
+// prompt for input.
+func newParser(ctx context.Context, cmd *rootCommand, w io.Writer, r io.Reader) (*kong.Kong, error) {
+	kongVars, err := kongVariables()
+	if err != nil {
+		return nil, err
+	}
+
+	parser, err := kong.New(
+		cmd,
+		kong.Name(cli.Name),
+		kong.Description(
+			"Interact with Nine API resources. See https://docs.nineapis.ch for the full API docs.",
+		),
+		kong.Groups{
+			"verbs": "Resource Management Commands",
+			"utils": "Utility Commands",
+
+			"get-general": "General",
+			"get-access":  "Project & Access",
+			"get-infra":   "Infrastructure",
+			"get-apps":    "Applications",
+			"get-storage": "Databases & Object Storage",
+			"get-network": "Networking",
+
+			"create-general": "General",
+			"create-access":  "Project & Access",
+			"create-infra":   "Infrastructure",
+			"create-apps":    "Applications",
+			"create-storage": "Databases & Object Storage",
+			"create-network": "Networking",
+
+			"update-access":  "Project & Access",
+			"update-infra":   "Infrastructure",
+			"update-apps":    "Applications",
+			"update-storage": "Databases & Object Storage",
+			"update-network": "Networking",
+
+			"edit-access":  "Project & Access",
+			"edit-infra":   "Infrastructure",
+			"edit-apps":    "Applications",
+			"edit-storage": "Databases & Object Storage",
+
+			"delete-general": "General",
+			"delete-access":  "Project & Access",
+			"delete-infra":   "Infrastructure",
+			"delete-apps":    "Applications",
+			"delete-storage": "Databases & Object Storage",
+			"delete-network": "Networking",
+		},
+		kong.ConfigureHelp(kong.HelpOptions{
+			Compact:             true,
+			NoExpandSubcommands: true,
+		}),
+		kong.UsageOnError(),
+		kong.PostBuild(format.InterpolateFlagPlaceholders(kongVars)),
+		kongVars,
+		kong.BindTo(ctx, (*context.Context)(nil)),
+		kong.BindTo(w, (*io.Writer)(nil)),
+		kong.BindTo(r, (*io.Reader)(nil)),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	predictors := append([]completion.Option{
+		completion.WithPredictor("file", complete.PredictFiles("*")),
+	}, clientPredictors(ctx)...)
+	completion.Register(parser, predictors...)
+
+	return parser, nil
+}
+
 func clientPredictors(ctx context.Context) []completion.Option {
 	// complete needs all used predictors to be defined, so we just use
 	// [complete.PredictNothing] for those that would require an API client.
@@ -242,8 +257,9 @@ func clientPredictors(ctx context.Context) []completion.Option {
 
 	return []completion.Option{
 		completion.WithPredictor("resource_name", predictor.NewResourceName(client)),
-		completion.WithPredictor("project_name", predictor.NewResourceNameWithKind(client,
-			management.SchemeGroupVersion.WithKind(reflect.TypeFor[management.ProjectList]().Name())),
+		completion.WithPredictor(
+			"project_name", predictor.NewResourceNameWithKind(client,
+				management.SchemeGroupVersion.WithKind(reflect.TypeFor[management.ProjectList]().Name())),
 		),
 		completion.WithPredictor("postgres_databases", predictor.NewInstanceDatabases(client, storage.PostgresGroupVersionKind)),
 		completion.WithPredictor("mysql_databases", predictor.NewInstanceDatabases(client, storage.MySQLGroupVersionKind)),

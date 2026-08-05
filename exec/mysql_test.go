@@ -61,18 +61,18 @@ func TestMySQLCmd(t *testing.T) {
 	}{
 		{
 			name:    "resource not found",
-			cmd:     mysqlCmd{serviceCmd: notFoundCmd},
+			cmd:     mysqlCmd{ServiceCmd: notFoundCmd},
 			wantErr: true,
 		},
 		{
 			name:        "resource not ready",
-			cmd:         mysqlCmd{serviceCmd: notReadyCmd},
+			cmd:         mysqlCmd{ServiceCmd: notReadyCmd},
 			wantErr:     true,
 			errContains: "not ready",
 		},
 		{
 			name: "cidr already present skips update",
-			cmd:  mysqlCmd{serviceCmd: alreadyPresentCmd},
+			cmd:  mysqlCmd{ServiceCmd: alreadyPresentCmd},
 			cap:  alreadyCap,
 			check: func(t *testing.T, cmd *exec.Cmd) {
 				t.Helper()
@@ -83,12 +83,12 @@ func TestMySQLCmd(t *testing.T) {
 		},
 		{
 			name:       "new cidr triggers update",
-			cmd:        mysqlCmd{serviceCmd: newCidrCmd},
+			cmd:        mysqlCmd{ServiceCmd: newCidrCmd},
 			wantUpdate: true,
 		},
 		{
 			name: "credentials passed securely",
-			cmd:  mysqlCmd{serviceCmd: credsCmd},
+			cmd:  mysqlCmd{ServiceCmd: credsCmd},
 			cap:  credsCap,
 			check: func(t *testing.T, cmd *exec.Cmd) {
 				t.Helper()
@@ -106,7 +106,7 @@ func TestMySQLCmd(t *testing.T) {
 		},
 		{
 			name: "custom database appears in args",
-			cmd:  mysqlCmd{serviceCmd: dbCmd, Database: "mydb"},
+			cmd:  mysqlCmd{ServiceCmd: dbCmd, Database: "mydb"},
 			cap:  dbCap,
 			check: func(t *testing.T, cmd *exec.Cmd) {
 				t.Helper()
@@ -117,7 +117,7 @@ func TestMySQLCmd(t *testing.T) {
 		},
 		{
 			name:    "ssl mode is VERIFY_CA when CA cert is present",
-			cmd:     mysqlCmd{serviceCmd: sslCmd},
+			cmd:     mysqlCmd{ServiceCmd: sslCmd},
 			cap:     sslCap,
 			objects: []runtimeclient.Object{readyWithCA, secretWithCA},
 			check: func(t *testing.T, cmd *exec.Cmd) {

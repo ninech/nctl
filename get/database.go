@@ -8,15 +8,20 @@ import (
 	"github.com/ninech/nctl/internal/format"
 )
 
-type databaseCmd struct {
-	resourceCmd
+// DatabaseCmd is the shared base for the get sub-commands of database
+// resources.
+//
+// It has to be exported so that Kong initializes the embedded
+// [format.Writer], see [format.Writer.BeforeApply].
+type DatabaseCmd struct {
+	ResourceCmd
 	PrintPassword         bool `help:"Print the password of the database. Requires name to be set." xor:"print"`
 	PrintUser             bool `help:"Print the database name and user of the database. Requires name to be set." xor:"print" aliases:"print-database-user"`
 	PrintConnectionString bool `help:"Print the connection string of the database. Requires name to be set." xor:"print"`
 	PrintCACert           bool `help:"Print the ca certificate. Requires name to be set." xor:"print"`
 }
 
-func (cmd *databaseCmd) run(ctx context.Context, client *api.Client, get *Cmd,
+func (cmd *DatabaseCmd) run(ctx context.Context, client *api.Client, get *Cmd,
 	databaseResources resource.ManagedList, databaseKind string,
 	connectionString func(resource.Managed, map[string][]byte) (string, error),
 	printList func(resource.ManagedList, *Cmd, bool) error,

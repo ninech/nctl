@@ -20,7 +20,7 @@ func TestBucketUser(t *testing.T) {
 	}{
 		"create": {
 			cmd: bucketUserCmd{
-				resourceCmd: resourceCmd{Name: "create"},
+				ResourceCmd: ResourceCmd{Name: "create"},
 				Location:    "nine-es34",
 			},
 			checkBucketUser: func(t *testing.T, cmd bucketUserCmd, bu *storage.BucketUser) {

@@ -18,7 +18,7 @@ import (
 )
 
 type applicationCmd struct {
-	resourceCmd
+	ResourceCmd
 	Start              bool `help:"Automatically start copied app."`
 	CopyHosts          bool `help:"Also copy hosts of the old app."`
 	staticEgressCopied bool

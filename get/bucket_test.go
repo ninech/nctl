@@ -69,7 +69,7 @@ func TestBucketGet(t *testing.T) {
 				{name: "b1", project: test.DefaultProject, location: meta.LocationNineES34},
 			},
 			getCmd: bucketCmd{
-				resourceCmd:      resourceCmd{Name: "b1"},
+				ResourceCmd:      ResourceCmd{Name: "b1"},
 				PrintPermissions: true,
 			},
 			out:         full,
@@ -92,7 +92,7 @@ func TestBucketGet(t *testing.T) {
 				},
 			},
 			getCmd: bucketCmd{
-				resourceCmd:      resourceCmd{Name: "b1"},
+				ResourceCmd:      ResourceCmd{Name: "b1"},
 				PrintPermissions: true,
 			},
 			out:         full,
@@ -105,7 +105,7 @@ func TestBucketGet(t *testing.T) {
 				{name: "b1", project: test.DefaultProject, location: meta.LocationNineES34},
 			},
 			getCmd: bucketCmd{
-				resourceCmd:            resourceCmd{Name: "b1"},
+				ResourceCmd:            ResourceCmd{Name: "b1"},
 				PrintLifecyclePolicies: true,
 			},
 			out:         full,
@@ -127,7 +127,7 @@ func TestBucketGet(t *testing.T) {
 				},
 			},
 			getCmd: bucketCmd{
-				resourceCmd:            resourceCmd{Name: "b1"},
+				ResourceCmd:            ResourceCmd{Name: "b1"},
 				PrintLifecyclePolicies: true,
 			},
 			out:         full,
@@ -140,7 +140,7 @@ func TestBucketGet(t *testing.T) {
 				{name: "b1", project: test.DefaultProject, location: meta.LocationNineES34},
 			},
 			getCmd: bucketCmd{
-				resourceCmd: resourceCmd{Name: "b1"},
+				ResourceCmd: ResourceCmd{Name: "b1"},
 				PrintCORS:   true,
 			},
 			out:         full,
@@ -165,7 +165,7 @@ func TestBucketGet(t *testing.T) {
 				},
 			},
 			getCmd: bucketCmd{
-				resourceCmd: resourceCmd{Name: "b1"},
+				ResourceCmd: ResourceCmd{Name: "b1"},
 				PrintCORS:   true,
 			},
 			out:         full,
@@ -178,7 +178,7 @@ func TestBucketGet(t *testing.T) {
 				{name: "b1", project: test.DefaultProject, location: meta.LocationNineES34},
 			},
 			getCmd: bucketCmd{
-				resourceCmd:          resourceCmd{Name: "b1"},
+				ResourceCmd:          ResourceCmd{Name: "b1"},
 				PrintCustomHostnames: true,
 			},
 			out:         full,
@@ -212,7 +212,7 @@ func TestBucketGet(t *testing.T) {
 				},
 			},
 			getCmd: bucketCmd{
-				resourceCmd:          resourceCmd{Name: "b1"},
+				ResourceCmd:          ResourceCmd{Name: "b1"},
 				PrintCustomHostnames: true,
 			},
 			out: full,
