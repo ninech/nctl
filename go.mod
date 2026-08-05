@@ -20,7 +20,7 @@ require (
 	github.com/grafana/dskit v0.0.0-20250917065751-798f5a8fa154
 	github.com/grafana/loki/v3 v3.6.5
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/int128/kubelogin v1.36.2
+	github.com/int128/kubelogin v1.36.3
 	github.com/jotaen/kong-completion v0.0.14
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 	github.com/lucasepe/codename v0.2.1-0.20230220151621-5e31bf1e775f
@@ -99,7 +99,7 @@ require (
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
-	github.com/coreos/go-oidc/v3 v3.18.0 // indirect
+	github.com/coreos/go-oidc/v3 v3.20.0 // indirect
 	github.com/coreos/go-semver v0.3.1 // indirect
 	github.com/coreos/go-systemd/v22 v22.7.0 // indirect
 	github.com/danieljoos/wincred v1.2.3 // indirect
