@@ -26,8 +26,8 @@ type mysqlCmd struct {
 
 // Help displays usage examples for the mysql exec command.
 func (cmd mysqlCmd) Help() string {
-	return `Examples:
-  # Connect to a MySQL instance interactively
+	return fmt.Sprintf(`Examples:
+  # Connect to a MySQL instance interactively as the %s user
   nctl exec mysql myinstance
 
   # Connect to a specific database
@@ -38,7 +38,7 @@ func (cmd mysqlCmd) Help() string {
 
   # Pass extra flags to mysql (after --)
   nctl exec mysql myinstance -- --batch
-`
+`, storage.MySQLUser)
 }
 
 func (cmd *mysqlCmd) Run(ctx context.Context, client *api.Client) error {
