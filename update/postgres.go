@@ -3,24 +3,21 @@ package update
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/create"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type postgresCmd struct {
 	ResourceCmd
-	MachineType      *string          `placeholder:"${postgres_machine_default}" help:"Defines the sizing for a particular PostgreSQL instance. Available types: ${postgres_machine_types}"`
-	AllowedCidrs     *[]meta.IPv4CIDR `placeholder:"203.0.113.1/32" help:"Specifies the IP addresses allowed to connect to the instance."`
-	SSHKeys          []storage.SSHKey `help:"SSH public keys allowed to connect to the database server in order to up-/download and directly restore database backups."`
-	SSHKeysFile      *os.File         `completion-predictor:"file" help:"Path to a file containing a list of SSH public keys (see above), separated by newlines. Lines prefixed with # are ignored."`
-	KeepDailyBackups *int             `placeholder:"${postgres_backup_retention_days}" help:"Number of daily database backups to keep. Note that setting this to 0, backup will be disabled and existing dumps deleted immediately."`
+	MachineType          *string          `placeholder:"${postgres_machine_default}" help:"Defines the sizing for a particular PostgreSQL instance. Available types: ${postgres_machine_types}"`
+	AllowedCidrs         *[]meta.IPv4CIDR `placeholder:"203.0.113.1/32" help:"Specifies the IP addresses allowed to connect to the instance."`
+	DatabaseSSHKeysFlags `set:"ssh_keys_purpose=allowed to connect to the database server in order to up-/download and directly restore database backups"`
+	KeepDailyBackups     *int `placeholder:"${postgres_backup_retention_days}" help:"Number of daily database backups to keep. Note that setting this to 0, backup will be disabled and existing dumps deleted immediately."`
 }
 
 func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client) error {
@@ -37,34 +34,29 @@ func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client) error {
 			return fmt.Errorf("resource is of type %T, expected %T", current, storage.Postgres{})
 		}
 
-		if cmd.SSHKeysFile != nil {
-			defer cmd.SSHKeysFile.Close()
-
-			keys, err := create.ParseSSHKeys(cmd.SSHKeysFile)
-			if err != nil {
-				return err
-			}
-			cmd.SSHKeys = keys
-		}
-
-		cmd.applyUpdates(postgres)
-		return nil
+		return cmd.applyUpdates(postgres)
 	})
 
 	return upd.Update(ctx)
 }
 
-func (cmd *postgresCmd) applyUpdates(postgres *storage.Postgres) {
+func (cmd *postgresCmd) applyUpdates(postgres *storage.Postgres) error {
 	if cmd.MachineType != nil {
 		postgres.Spec.ForProvider.MachineType = infra.NewMachineType(*cmd.MachineType)
 	}
 	if cmd.AllowedCidrs != nil {
 		postgres.Spec.ForProvider.AllowedCIDRs = *cmd.AllowedCidrs
 	}
-	if cmd.SSHKeys != nil {
-		postgres.Spec.ForProvider.SSHKeys = cmd.SSHKeys
+	if cmd.SSHKeysSet() {
+		sshKeys, err := cmd.StorageKeys(&cmd.Writer)
+		if err != nil {
+			return err
+		}
+		postgres.Spec.ForProvider.SSHKeys = sshKeys
 	}
 	if cmd.KeepDailyBackups != nil {
 		postgres.Spec.ForProvider.KeepDailyBackups = cmd.KeepDailyBackups
 	}
+
+	return nil
 }

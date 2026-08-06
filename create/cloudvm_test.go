@@ -111,10 +111,11 @@ func writeKeyFile(t *testing.T, name, content string) string {
 	return path
 }
 
-// TestCloudVMPublicKeys asserts that --public-keys and --public-keys-from-files
+// TestCloudVMPublicKeys asserts that --ssh-keys and --ssh-keys-from-files
 // complement each other. Keys given via files used to replace the inline ones.
-// It also covers that a file may hold more than one key and that the keys are
-// validated no matter which of the two flags they come from.
+// It also covers that a file may hold more than one key, that the keys are
+// validated no matter which of the flags they come from, and that the
+// deprecated --public-keys and --public-keys-from-files still contribute.
 func TestCloudVMPublicKeys(t *testing.T) {
 	t.Parallel()
 
@@ -131,6 +132,8 @@ func TestCloudVMPublicKeys(t *testing.T) {
 		trailingFile = writeKeyFile(t, "trailing.pub", "  "+fileKey+"  \n\n")
 	)
 
+	const deprecationWarning = "--public-keys and --public-keys-from-files are deprecated, use --ssh-keys and --ssh-keys-from-files instead"
+
 	tests := map[string]struct {
 		args     []string
 		want     []string
@@ -138,49 +141,76 @@ func TestCloudVMPublicKeys(t *testing.T) {
 		wantErr  string
 	}{
 		"none":   {args: nil, want: nil},
-		"inline": {args: []string{`--public-keys=` + inlineKey}, want: []string{inlineKey}},
-		"file":   {args: []string{`--public-keys-from-files=` + keyFile}, want: []string{fileKey}},
+		"inline": {args: []string{`--ssh-keys=` + inlineKey}, want: []string{inlineKey}},
+		"file":   {args: []string{`--ssh-keys-from-files=` + keyFile}, want: []string{fileKey}},
 		"both": {
-			args: []string{`--public-keys=` + inlineKey, `--public-keys-from-files=` + keyFile},
+			args: []string{`--ssh-keys=` + inlineKey, `--ssh-keys-from-files=` + keyFile},
 			want: []string{inlineKey, fileKey},
 		},
 		"multiple files": {
-			args: []string{`--public-keys-from-files=` + keyFile, `--public-keys-from-files=` + trailingFile},
+			args: []string{`--ssh-keys-from-files=` + keyFile, `--ssh-keys-from-files=` + trailingFile},
 			want: []string{fileKey, fileKey},
 		},
 		"multiple keys in one file": {
-			args: []string{`--public-keys-from-files=` + twoKeysFile},
+			args: []string{`--ssh-keys-from-files=` + twoKeysFile},
 			want: []string{fileKey, inlineKey},
 		},
 		"whitespace is trimmed": {
-			args: []string{`--public-keys-from-files=` + trailingFile},
+			args: []string{`--ssh-keys-from-files=` + trailingFile},
 			want: []string{fileKey},
 		},
 		// a file may hold nothing but comments, that is only worth a warning as
 		// long as at least one key is configured somewhere.
 		"file without keys": {
-			args:     []string{`--public-keys=` + inlineKey, `--public-keys-from-files=` + emptyFile},
+			args:     []string{`--ssh-keys=` + inlineKey, `--ssh-keys-from-files=` + emptyFile},
 			want:     []string{inlineKey},
 			wantWarn: `no SSH public key found in "` + emptyFile + `"`,
 		},
 		"inline without keys": {
-			args:     []string{`--public-keys=# a comment`, `--public-keys-from-files=` + keyFile},
+			args:     []string{`--ssh-keys=# a comment`, `--ssh-keys-from-files=` + keyFile},
 			want:     []string{fileKey},
-			wantWarn: "no SSH public key found in --public-keys",
+			wantWarn: "no SSH public key found in --ssh-keys",
 		},
 		"file with an invalid key": {
-			args: []string{`--public-keys-from-files=` + invalidFile}, wantErr: "invalid SSH public key on line 1",
+			args: []string{`--ssh-keys-from-files=` + invalidFile}, wantErr: "invalid SSH public key on line 1",
 		},
 		"invalid inline key": {
-			args: []string{`--public-keys=not a key`}, wantErr: "error reading --public-keys: invalid SSH public key on line 1",
+			args: []string{`--ssh-keys=not a key`}, wantErr: "error reading --ssh-keys: invalid SSH public key on line 1",
 		},
 		"multiple inline keys": {
-			args: []string{`--public-keys=` + inlineKey, `--public-keys=` + fileKey},
+			args: []string{`--ssh-keys=` + inlineKey, `--ssh-keys=` + fileKey},
 			want: []string{inlineKey, fileKey},
 		},
+		// commas separate the options of an authorized_keys line, they must not
+		// be mistaken for a separator between keys.
+		"inline key with options": {
+			args: []string{`--ssh-keys=restrict,pty ` + inlineKey},
+			want: []string{`restrict,pty ` + inlineKey},
+		},
 		"reports the offending inline key": {
-			args:    []string{`--public-keys=` + inlineKey, `--public-keys=not a key`},
-			wantErr: "error reading --public-keys: invalid SSH public key on line 2",
+			args:    []string{`--ssh-keys=` + inlineKey, `--ssh-keys=not a key`},
+			wantErr: "error reading --ssh-keys: invalid SSH public key on line 2",
+		},
+		// the deprecated flags keep working, they are merged after the keys of
+		// the flags which replace them.
+		"deprecated inline": {
+			args:     []string{`--public-keys=` + inlineKey},
+			want:     []string{inlineKey},
+			wantWarn: deprecationWarning,
+		},
+		"deprecated file": {
+			args:     []string{`--public-keys-from-files=` + keyFile},
+			want:     []string{fileKey},
+			wantWarn: deprecationWarning,
+		},
+		"deprecated and current": {
+			args:     []string{`--public-keys=` + fileKey, `--ssh-keys=` + inlineKey},
+			want:     []string{inlineKey, fileKey},
+			wantWarn: deprecationWarning,
+		},
+		"invalid deprecated inline key": {
+			args:    []string{`--public-keys=not a key`},
+			wantErr: "error reading --public-keys: invalid SSH public key on line 1",
 		},
 	}
 	for name, tt := range tests {
@@ -231,7 +261,7 @@ func TestCloudVMFileFlagsRegression(t *testing.T) {
 
 		cmd := parseCloudVM(t, `test-cloudvm`)
 		is.Nil(cmd.CloudConfigFromFile)
-		is.Empty(cmd.PublicKeysFromFiles)
+		is.Empty(cmd.SSHKeysFromFiles)
 
 		cloudVM, err := cmd.newCloudVM("default")
 		is.NoError(err)
@@ -250,14 +280,14 @@ func TestCloudVMFileFlagsRegression(t *testing.T) {
 
 		cmd := parseCloudVM(t, `test-cloudvm`,
 			`--cloud-config-from-file=`+cloudConfig,
-			`--public-keys-from-files=`+writeKeyFile(t, "a.pub", testPublicKeyA),
-			`--public-keys-from-files=`+writeKeyFile(t, "b.pub", testPublicKeyB),
+			`--ssh-keys-from-files=`+writeKeyFile(t, "a.pub", testPublicKeyA),
+			`--ssh-keys-from-files=`+writeKeyFile(t, "b.pub", testPublicKeyB),
 		)
 
 		// every repeated occurrence of the flag has to be decoded, not just
 		// the first one.
-		is.Len(cmd.PublicKeysFromFiles, 2)
-		is.NotContains(cmd.PublicKeysFromFiles, nil)
+		is.Len(cmd.SSHKeysFromFiles, 2)
+		is.NotContains(cmd.SSHKeysFromFiles, nil)
 
 		cloudVM, err := cmd.newCloudVM("default")
 		is.NoError(err)

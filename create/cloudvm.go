@@ -28,10 +28,12 @@ type cloudVMCmd struct {
 	OS                  infrastructure.OperatingSystem          `default:"" help:"Operating system to use to boot the VM. Available options: ${cloudvm_os_flavors}"`
 	BootDiskSize        *resource.Quantity                      `default:"20Gi" help:"Configures the size of the boot disk."`
 	Disks               map[string]resource.Quantity            `default:"" help:"Additional disks to mount to the machine."`
-	PublicKeys          []string                                `default:"" help:"SSH public keys to connect to the CloudVM as root. The keys are expected to be in SSH format as defined in RFC4253. Immutable after creation."`
-	PublicKeysFromFiles []*os.File                              `completion-predictor:"file" help:"SSH public key files to connect to the VM as root. The keys are expected to be in SSH format as defined in RFC4253. Immutable after creation."`
-	CloudConfig         string                                  `default:"" help:"Pass custom cloud config data (https://cloudinit.readthedocs.io/en/latest/topics/format.html#cloud-config-data) to the cloud VM. If a CloudConfig is passed, the PublicKey parameter is ignored. Immutable after creation."`
-	CloudConfigFromFile *os.File                                `completion-predictor:"file" help:"Pass custom cloud config data (https://cloudinit.readthedocs.io/en/latest/topics/format.html#cloud-config-data) from a file. Takes precedence. If a CloudConfig is passed, the PublicKey parameter is ignored. Immutable after creation."`
+	SSHKeysFlags        `set:"ssh_keys_purpose=to connect to the CloudVM as root. Immutable after creation"`
+	CloudConfig         string   `default:"" help:"Pass custom cloud config data (https://cloudinit.readthedocs.io/en/latest/topics/format.html#cloud-config-data) to the cloud VM. If a cloud config is passed, --ssh-keys and --ssh-keys-from-files are ignored. Immutable after creation."`
+	CloudConfigFromFile *os.File `completion-predictor:"file" help:"Pass custom cloud config data (https://cloudinit.readthedocs.io/en/latest/topics/format.html#cloud-config-data) from a file. Takes precedence over --cloud-config. If a cloud config is passed, --ssh-keys and --ssh-keys-from-files are ignored. Immutable after creation."`
+
+	// Deprecated Flags
+	DeprecatedKeysFlags `prefix:"public-"`
 }
 
 func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {
@@ -126,35 +128,21 @@ func (cmd *cloudVMCmd) newCloudVM(namespace string) (*infrastructure.CloudVirtua
 	return cloudVM, nil
 }
 
-// publicKeys returns the validated SSH public keys of both --public-keys and
+// publicKeys returns the validated SSH public keys of --ssh-keys and
+// --ssh-keys-from-files, followed by those of the deprecated --public-keys and
 // --public-keys-from-files, in that order.
-// A source which holds no key at all is not an error,
-// but it is warned about as it is most likely not what the user intended.
 func (cmd *cloudVMCmd) publicKeys() ([]string, error) {
-	keys, err := ParseAuthorizedKeys(strings.NewReader(strings.Join(cmd.PublicKeys, "\n")))
+	keys, err := cmd.SSHKeysFlags.Keys(&cmd.Writer, "")
 	if err != nil {
-		return nil, fmt.Errorf("error reading --public-keys: %w", err)
-	}
-	if len(cmd.PublicKeys) != 0 && len(keys) == 0 {
-		cmd.Warningf("no SSH public key found in --public-keys")
+		return nil, err
 	}
 
-	for _, file := range cmd.PublicKeysFromFiles {
-		if file == nil {
-			continue
-		}
-
-		fileKeys, err := ParseAuthorizedKeys(file)
-		if err != nil {
-			return nil, fmt.Errorf("error reading public keys file %q: %w", file.Name(), err)
-		}
-		if len(fileKeys) == 0 {
-			cmd.Warningf("no SSH public key found in %q", file.Name())
-		}
-		keys = append(keys, fileKeys...)
+	deprecated, err := cmd.DeprecatedKeysFlags.Keys(&cmd.Writer, "public-", "")
+	if err != nil {
+		return nil, err
 	}
 
-	return keys, nil
+	return append(keys, deprecated...), nil
 }
 
 // CloudVMKongVars returns all variables which are used in the application

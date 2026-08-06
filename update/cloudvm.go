@@ -3,8 +3,6 @@ package update
 import (
 	"context"
 	"fmt"
-	"os"
-	"strings"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
@@ -17,18 +15,20 @@ import (
 
 type cloudVMCmd struct {
 	ResourceCmd
-	MachineType               string            `placeholder:"nine-standard-1" help:"Defines the sizing for a particular CloudVM."`
-	Hostname                  string            `placeholder:"" help:"Configures the hostname explicitly. If unset, the name of the resource will be used as the hostname. This does not affect the DNS name."`
-	ReverseDNS                string            `placeholder:"" help:"Allows to set the reverse DNS of the CloudVM."`
-	OS                        string            `placeholder:"ubuntu22.04" help:"OS which should be used to boot the VM."`
-	BootDiskSize              string            `placeholder:"20Gi" help:"Configures the size of the boot disk."`
-	Disks                     map[string]string `placeholder:"{}" help:"Additional disks to mount to the machine."`
-	On                        *bool             `help:"Turns the CloudVM on."`
-	Off                       *bool             `help:"Turns the CloudVM off immediately."`
-	Shutdown                  *bool             `help:"Shuts down the CloudVM via ACPI."`
-	BootRescue                *bool             `help:"Boot CloudVM into a live rescue environment."`
-	RescuePublicKeys          *[]string         `placeholder:"ssh-ed25519" help:"SSH public keys that can be used to connect to the CloudVM while booted into rescue. The keys are expected to be in SSH format as defined in RFC4253. Pass the flag without a value to remove all configured keys."`
-	RescuePublicKeysFromFiles []*os.File        `placeholder:"~/.ssh/id_ed25519.pub" completion-predictor:"file" help:"SSH public key files that can be used to connect to the CloudVM while booted into rescue. The keys are expected to be in SSH format as defined in RFC4253."`
+	MachineType          string            `placeholder:"nine-standard-1" help:"Defines the sizing for a particular CloudVM."`
+	Hostname             string            `placeholder:"" help:"Configures the hostname explicitly. If unset, the name of the resource will be used as the hostname. This does not affect the DNS name."`
+	ReverseDNS           string            `placeholder:"" help:"Allows to set the reverse DNS of the CloudVM."`
+	OS                   string            `placeholder:"ubuntu22.04" help:"OS which should be used to boot the VM."`
+	BootDiskSize         string            `placeholder:"20Gi" help:"Configures the size of the boot disk."`
+	Disks                map[string]string `placeholder:"{}" help:"Additional disks to mount to the machine."`
+	On                   *bool             `help:"Turns the CloudVM on."`
+	Off                  *bool             `help:"Turns the CloudVM off immediately."`
+	Shutdown             *bool             `help:"Shuts down the CloudVM via ACPI."`
+	BootRescue           *bool             `help:"Boot CloudVM into a live rescue environment."`
+	OptionalSSHKeysFlags `prefix:"rescue-" set:"ssh_keys_purpose=that can be used to connect to the CloudVM while booted into rescue"`
+
+	// Deprecated Flags
+	create.DeprecatedKeysFlags `prefix:"rescue-public-"`
 }
 
 func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {
@@ -130,47 +130,26 @@ func (cmd *cloudVMCmd) applyUpdates(cloudVM *infrastructure.CloudVirtualMachine)
 	return nil
 }
 
-// rescuePublicKeys returns the validated SSH public keys of both
+// rescuePublicKeys returns the validated SSH public keys of --rescue-ssh-keys
+// and --rescue-ssh-keys-from-files, followed by those of the deprecated
 // --rescue-public-keys and --rescue-public-keys-from-files, in that order.
 //
 // set reports whether one of the flags was passed at all. If it is false the
 // keys which are already configured have to be kept, while no keys and set
 // asks for the configured keys to be removed, which is what passing
-// --rescue-public-keys without a value does.
-//
-// A source which holds no key at all is not an error, but it is warned about as
-// it is most likely not what the user intended.
+// --rescue-ssh-keys an empty value does.
 func (cmd *cloudVMCmd) rescuePublicKeys() (keys []string, set bool, err error) {
-	if cmd.RescuePublicKeys != nil {
-		set = true
-
-		inline, err := create.ParseAuthorizedKeys(strings.NewReader(strings.Join(*cmd.RescuePublicKeys, "\n")))
-		if err != nil {
-			return nil, false, fmt.Errorf("error reading --rescue-public-keys: %w", err)
-		}
-		// an empty value is how the keys are removed, only a value which holds
-		// nothing but comments is worth warning about.
-		if len(*cmd.RescuePublicKeys) != 0 && len(inline) == 0 {
-			cmd.Warningf("no SSH public key found in --rescue-public-keys")
-		}
-		keys = append(keys, inline...)
+	keys, err = cmd.OptionalSSHKeysFlags.Keys(&cmd.Writer, "rescue-")
+	if err != nil {
+		return nil, false, err
 	}
 
-	for _, file := range cmd.RescuePublicKeysFromFiles {
-		if file == nil {
-			continue
-		}
-		set = true
-
-		fileKeys, err := create.ParseAuthorizedKeys(file)
-		if err != nil {
-			return nil, false, fmt.Errorf("error reading public keys file %q: %w", file.Name(), err)
-		}
-		if len(fileKeys) == 0 {
-			cmd.Warningf("no SSH public key found in %q", file.Name())
-		}
-		keys = append(keys, fileKeys...)
+	deprecated, err := cmd.DeprecatedKeysFlags.Keys(&cmd.Writer, "rescue-public-", "rescue-")
+	if err != nil {
+		return nil, false, err
 	}
 
-	return keys, set, nil
+	set = cmd.SSHKeysSet() || cmd.Set()
+
+	return append(keys, deprecated...), set, nil
 }

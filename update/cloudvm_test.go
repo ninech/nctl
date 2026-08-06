@@ -134,10 +134,11 @@ func writeKeyFile(t *testing.T, name, content string) string {
 	return path
 }
 
-// TestCloudVMRescuePublicKeys asserts that --rescue-public-keys and
-// --rescue-public-keys-from-files complement each other and that the keys are
-// validated no matter which of the two flags they come from. Inline keys used
-// to be ignored entirely.
+// TestCloudVMRescuePublicKeys asserts that --rescue-ssh-keys and
+// --rescue-ssh-keys-from-files complement each other and that the keys are
+// validated no matter which of the flags they come from. Inline keys used to be
+// ignored entirely. It also covers that the deprecated --rescue-public-keys and
+// --rescue-public-keys-from-files still contribute.
 func TestCloudVMRescuePublicKeys(t *testing.T) {
 	t.Parallel()
 
@@ -149,6 +150,8 @@ func TestCloudVMRescuePublicKeys(t *testing.T) {
 		trailingFile = writeKeyFile(t, "trailing.pub", "  "+testPublicKeyB+"  \n\n")
 	)
 
+	const deprecationWarning = "--rescue-public-keys and --rescue-public-keys-from-files are deprecated, use --rescue-ssh-keys and --rescue-ssh-keys-from-files instead"
+
 	tests := map[string]struct {
 		args     []string
 		rescue   *infrastructure.CloudVirtualMachineRescue
@@ -158,29 +161,33 @@ func TestCloudVMRescuePublicKeys(t *testing.T) {
 	}{
 		"none": {args: nil},
 		"inline": {
-			args: []string{`--rescue-public-keys=` + testPublicKeyA},
+			args: []string{`--rescue-ssh-keys=` + testPublicKeyA},
 			want: &infrastructure.CloudVirtualMachineRescue{PublicKeys: []string{testPublicKeyA}},
 		},
 		"file": {
-			args: []string{`--rescue-public-keys-from-files=` + keyFile},
+			args: []string{`--rescue-ssh-keys-from-files=` + keyFile},
 			want: &infrastructure.CloudVirtualMachineRescue{PublicKeys: []string{testPublicKeyB}},
 		},
 		"both": {
-			args: []string{`--rescue-public-keys=` + testPublicKeyA, `--rescue-public-keys-from-files=` + keyFile},
+			args: []string{`--rescue-ssh-keys=` + testPublicKeyA, `--rescue-ssh-keys-from-files=` + keyFile},
+			want: &infrastructure.CloudVirtualMachineRescue{PublicKeys: []string{testPublicKeyA, testPublicKeyB}},
+		},
+		"multiple inline keys": {
+			args: []string{`--rescue-ssh-keys=` + testPublicKeyA, `--rescue-ssh-keys=` + testPublicKeyB},
 			want: &infrastructure.CloudVirtualMachineRescue{PublicKeys: []string{testPublicKeyA, testPublicKeyB}},
 		},
 		"multiple files": {
-			args: []string{`--rescue-public-keys-from-files=` + keyFile, `--rescue-public-keys-from-files=` + trailingFile},
+			args: []string{`--rescue-ssh-keys-from-files=` + keyFile, `--rescue-ssh-keys-from-files=` + trailingFile},
 			want: &infrastructure.CloudVirtualMachineRescue{PublicKeys: []string{testPublicKeyB, testPublicKeyB}},
 		},
 		"multiple keys in one file": {
-			args: []string{`--rescue-public-keys-from-files=` + twoKeysFile},
+			args: []string{`--rescue-ssh-keys-from-files=` + twoKeysFile},
 			want: &infrastructure.CloudVirtualMachineRescue{PublicKeys: []string{testPublicKeyB, testPublicKeyA}},
 		},
 		// the keys replace the ones which are already set, while everything
 		// else about the rescue configuration is kept.
 		"replaces existing keys": {
-			args:   []string{`--rescue-public-keys=` + testPublicKeyA},
+			args:   []string{`--rescue-ssh-keys=` + testPublicKeyA},
 			rescue: &infrastructure.CloudVirtualMachineRescue{Enabled: true, PublicKeys: []string{testPublicKeyB}},
 			want:   &infrastructure.CloudVirtualMachineRescue{Enabled: true, PublicKeys: []string{testPublicKeyA}},
 		},
@@ -192,39 +199,73 @@ func TestCloudVMRescuePublicKeys(t *testing.T) {
 		// passing the flag without a value is how the keys are removed, the
 		// rest of the rescue configuration is kept.
 		"clears existing keys": {
-			args:   []string{`--rescue-public-keys=`},
+			args:   []string{`--rescue-ssh-keys=`},
 			rescue: &infrastructure.CloudVirtualMachineRescue{Enabled: true, PublicKeys: []string{testPublicKeyB}},
 			want:   &infrastructure.CloudVirtualMachineRescue{Enabled: true},
 		},
 		// nothing to remove, the rescue configuration must not be allocated
 		// just to hold no keys.
 		"clears keys of an unconfigured rescue": {
-			args: []string{`--rescue-public-keys=`},
+			args: []string{`--rescue-ssh-keys=`},
 			want: nil,
 		},
 		"clears before adding": {
-			args:   []string{`--rescue-public-keys=`, `--rescue-public-keys-from-files=` + keyFile},
+			args:   []string{`--rescue-ssh-keys=`, `--rescue-ssh-keys-from-files=` + keyFile},
 			rescue: &infrastructure.CloudVirtualMachineRescue{Enabled: true, PublicKeys: []string{testPublicKeyA}},
 			want:   &infrastructure.CloudVirtualMachineRescue{Enabled: true, PublicKeys: []string{testPublicKeyB}},
 		},
 		// a source may hold nothing but comments, that is only worth a warning.
 		"file without keys": {
-			args:     []string{`--rescue-public-keys=` + testPublicKeyA, `--rescue-public-keys-from-files=` + emptyFile},
+			args:     []string{`--rescue-ssh-keys=` + testPublicKeyA, `--rescue-ssh-keys-from-files=` + emptyFile},
 			want:     &infrastructure.CloudVirtualMachineRescue{PublicKeys: []string{testPublicKeyA}},
 			wantWarn: `no SSH public key found in "` + emptyFile + `"`,
 		},
 		"inline without keys": {
-			args:     []string{`--rescue-public-keys=# a comment`, `--rescue-public-keys-from-files=` + keyFile},
+			args:     []string{`--rescue-ssh-keys=# a comment`, `--rescue-ssh-keys-from-files=` + keyFile},
 			want:     &infrastructure.CloudVirtualMachineRescue{PublicKeys: []string{testPublicKeyB}},
-			wantWarn: "no SSH public key found in --rescue-public-keys",
+			wantWarn: "no SSH public key found in --rescue-ssh-keys",
 		},
 		"invalid inline key": {
+			args:    []string{`--rescue-ssh-keys=not a key`},
+			wantErr: "error reading --rescue-ssh-keys: invalid SSH public key on line 1",
+		},
+		"file with an invalid key": {
+			args:    []string{`--rescue-ssh-keys-from-files=` + invalidFile},
+			wantErr: "invalid SSH public key on line 1",
+		},
+		// the deprecated flags keep working, they are merged after the keys of
+		// the flags which replace them.
+		"deprecated inline": {
+			args:     []string{`--rescue-public-keys=` + testPublicKeyA},
+			want:     &infrastructure.CloudVirtualMachineRescue{PublicKeys: []string{testPublicKeyA}},
+			wantWarn: deprecationWarning,
+		},
+		"deprecated file": {
+			args:     []string{`--rescue-public-keys-from-files=` + keyFile},
+			want:     &infrastructure.CloudVirtualMachineRescue{PublicKeys: []string{testPublicKeyB}},
+			wantWarn: deprecationWarning,
+		},
+		"deprecated and current": {
+			args:     []string{`--rescue-public-keys=` + testPublicKeyB, `--rescue-ssh-keys=` + testPublicKeyA},
+			want:     &infrastructure.CloudVirtualMachineRescue{PublicKeys: []string{testPublicKeyA, testPublicKeyB}},
+			wantWarn: deprecationWarning,
+		},
+		// the deprecated flags never gained the ability to clear the keys,
+		// passing one without a value keeps what is configured.
+		"deprecated inline without a value keeps existing keys": {
+			args:   []string{`--rescue-public-keys=`},
+			rescue: &infrastructure.CloudVirtualMachineRescue{Enabled: true, PublicKeys: []string{testPublicKeyB}},
+			want:   &infrastructure.CloudVirtualMachineRescue{Enabled: true, PublicKeys: []string{testPublicKeyB}},
+		},
+		"invalid deprecated inline key": {
 			args:    []string{`--rescue-public-keys=not a key`},
 			wantErr: "error reading --rescue-public-keys: invalid SSH public key on line 1",
 		},
-		"file with an invalid key": {
-			args:    []string{`--rescue-public-keys-from-files=` + invalidFile},
-			wantErr: "invalid SSH public key on line 1",
+		// commas separate the options of an authorized_keys line, they must not
+		// be mistaken for a separator between keys.
+		"inline key with options": {
+			args: []string{`--rescue-ssh-keys=restrict,pty ` + testPublicKeyA},
+			want: &infrastructure.CloudVirtualMachineRescue{PublicKeys: []string{`restrict,pty ` + testPublicKeyA}},
 		},
 	}
 	for name, tt := range tests {

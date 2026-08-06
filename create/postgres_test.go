@@ -48,9 +48,11 @@ func TestPostgres(t *testing.T) {
 			want:   storage.PostgresParameters{MachineType: storage.PostgresMachineTypeDefault},
 		},
 		{
-			name:   "sshKeys",
-			create: postgresCmd{SSHKeys: []storage.SSHKey{"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJGG5/nnivrW4zLD4ANLclVT3y68GAg6NOA3HpzFLo5e test@test"}},
-			want:   storage.PostgresParameters{SSHKeys: []storage.SSHKey{"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJGG5/nnivrW4zLD4ANLclVT3y68GAg6NOA3HpzFLo5e test@test"}},
+			name: "sshKeys",
+			create: postgresCmd{DatabaseSSHKeysFlags: DatabaseSSHKeysFlags{
+				SSHKeysFlags: SSHKeysFlags{SSHKeys: []string{testPublicKeyA}},
+			}},
+			want: storage.PostgresParameters{SSHKeys: []storage.SSHKey{testPublicKeyA}},
 		},
 		{
 			name:   "allowedCIDRs",
