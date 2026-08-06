@@ -3,7 +3,6 @@ package create
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,27 +19,19 @@ import (
 
 type postgresCmd struct {
 	ResourceCmd
-	Location         meta.LocationName       `placeholder:"${postgres_location_default}" help:"Where the PostgreSQL instance is created. Available locations are: ${postgres_location_options}"`
-	MachineType      string                  `placeholder:"${postgres_machine_default}" help:"Defines the sizing for a particular PostgreSQL instance. Available types: ${postgres_machine_types}"`
-	AllowedCidrs     []meta.IPv4CIDR         `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the instance."`
-	SSHKeys          []storage.SSHKey        `help:"SSH public keys allowed to connect to the database server in order to up-/download and directly restore database backups."`
-	SSHKeysFile      *os.File                `completion-predictor:"file" help:"Path to a file containing a list of SSH public keys (see above), separated by newlines. Lines prefixed with # are ignored."`
-	PostgresVersion  storage.PostgresVersion `placeholder:"${postgres_version_default}" help:"Release version with which the PostgreSQL instance is created. Available versions: ${postgres_versions}"`
-	KeepDailyBackups *int                    `placeholder:"${postgres_backup_retention_days}" help:"Number of daily database backups to keep. Note that setting this to 0, backup will be disabled and existing dumps deleted immediately."`
+	Location             meta.LocationName `placeholder:"${postgres_location_default}" help:"Where the PostgreSQL instance is created. Available locations are: ${postgres_location_options}"`
+	MachineType          string            `placeholder:"${postgres_machine_default}" help:"Defines the sizing for a particular PostgreSQL instance. Available types: ${postgres_machine_types}"`
+	AllowedCidrs         []meta.IPv4CIDR   `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the instance."`
+	DatabaseSSHKeysFlags `set:"ssh_keys_purpose=allowed to connect to the database server in order to up-/download and directly restore database backups"`
+	PostgresVersion      storage.PostgresVersion `placeholder:"${postgres_version_default}" help:"Release version with which the PostgreSQL instance is created. Available versions: ${postgres_versions}"`
+	KeepDailyBackups     *int                    `placeholder:"${postgres_backup_retention_days}" help:"Number of daily database backups to keep. Note that setting this to 0, backup will be disabled and existing dumps deleted immediately."`
 }
 
 func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client) error {
-	if cmd.SSHKeysFile != nil {
-		defer cmd.SSHKeysFile.Close()
-
-		keys, err := ParseSSHKeys(cmd.SSHKeysFile)
-		if err != nil {
-			return err
-		}
-		cmd.SSHKeys = keys
+	postgres, err := cmd.newPostgres(client.Project)
+	if err != nil {
+		return err
 	}
-
-	postgres := cmd.newPostgres(client.Project)
 
 	c := cmd.newCreator(client, postgres, storage.PostgresKind)
 	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
@@ -66,8 +57,13 @@ func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client) error {
 	})
 }
 
-func (cmd *postgresCmd) newPostgres(namespace string) *storage.Postgres {
+func (cmd *postgresCmd) newPostgres(namespace string) (*storage.Postgres, error) {
 	name := getName(cmd.Name)
+
+	sshKeys, err := cmd.StorageKeys(&cmd.Writer)
+	if err != nil {
+		return nil, err
+	}
 
 	postgres := &storage.Postgres{
 		ObjectMeta: metav1.ObjectMeta{
@@ -84,8 +80,8 @@ func (cmd *postgresCmd) newPostgres(namespace string) *storage.Postgres {
 			ForProvider: storage.PostgresParameters{
 				Location:         cmd.Location,
 				MachineType:      infra.NewMachineType(cmd.MachineType),
-				AllowedCIDRs:     []meta.IPv4CIDR{},  // avoid missing parameter error
-				SSHKeys:          []storage.SSHKey{}, // avoid missing parameter error
+				AllowedCIDRs:     []meta.IPv4CIDR{}, // avoid missing parameter error
+				SSHKeys:          sshKeys,
 				Version:          cmd.PostgresVersion,
 				KeepDailyBackups: cmd.KeepDailyBackups,
 			},
@@ -95,11 +91,8 @@ func (cmd *postgresCmd) newPostgres(namespace string) *storage.Postgres {
 	if cmd.AllowedCidrs != nil {
 		postgres.Spec.ForProvider.AllowedCIDRs = cmd.AllowedCidrs
 	}
-	if cmd.SSHKeys != nil {
-		postgres.Spec.ForProvider.SSHKeys = cmd.SSHKeys
-	}
 
-	return postgres
+	return postgres, nil
 }
 
 // PostgresKongVars returns all variables which are used in the Postgres

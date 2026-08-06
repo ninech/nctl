@@ -55,9 +55,11 @@ func TestMySQL(t *testing.T) {
 			want:   storage.MySQLParameters{SQLMode: &[]storage.MySQLMode{"ALLOW_INVALID_DATES", "STRICT_TRANS_TABLES"}},
 		},
 		{
-			name:   "sshKeys",
-			update: mySQLCmd{SSHKeys: []storage.SSHKey{"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJGG5/nnivrW4zLD4ANLclVT3y68GAg6NOA3HpzFLo5e test@test"}},
-			want:   storage.MySQLParameters{SSHKeys: []storage.SSHKey{"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJGG5/nnivrW4zLD4ANLclVT3y68GAg6NOA3HpzFLo5e test@test"}},
+			name: "sshKeys",
+			update: mySQLCmd{DatabaseSSHKeysFlags: DatabaseSSHKeysFlags{
+				OptionalSSHKeysFlags: OptionalSSHKeysFlags{SSHKeys: []string{testPublicKeyA}},
+			}},
+			want: storage.MySQLParameters{SSHKeys: []storage.SSHKey{testPublicKeyA}},
 		},
 		{
 			name:   "characterSet",

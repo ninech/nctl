@@ -1,10 +1,8 @@
 package create
 
 import (
-	"bufio"
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,11 +19,10 @@ import (
 
 type mySQLCmd struct {
 	ResourceCmd
-	Location              meta.LocationName                      `placeholder:"${mysql_location_default}" help:"Where the MySQL instance is created. Available locations are: ${mysql_location_options}"`
-	MachineType           string                                 `placeholder:"${mysql_machine_default}" help:"Sizing for a particular MySQL instance. Available types: ${mysql_machine_types}"`
-	AllowedCidrs          []meta.IPv4CIDR                        `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the instance."`
-	SSHKeys               []storage.SSHKey                       `help:"SSH public keys allowed to connect to the database server in order to up-/download and directly restore database backups."`
-	SSHKeysFile           *os.File                               `completion-predictor:"file" help:"Path to a file containing a list of SSH public keys (see above), separated by newlines. Lines prefixed with # are ignored."`
+	Location              meta.LocationName `placeholder:"${mysql_location_default}" help:"Where the MySQL instance is created. Available locations are: ${mysql_location_options}"`
+	MachineType           string            `placeholder:"${mysql_machine_default}" help:"Sizing for a particular MySQL instance. Available types: ${mysql_machine_types}"`
+	AllowedCidrs          []meta.IPv4CIDR   `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the instance."`
+	DatabaseSSHKeysFlags  `set:"ssh_keys_purpose=allowed to connect to the database server in order to up-/download and directly restore database backups"`
 	SQLMode               *[]storage.MySQLMode                   `placeholder:"\"MODE1, MODE2, ...\"" help:"Configures the sql_mode setting. Modes affect the SQL syntax MySQL supports and the data validation checks it performs. Defaults to: ${mysql_mode}"`
 	CharacterSetName      string                                 `placeholder:"${mysql_charset}" help:"Configures the character_set_server variable."`
 	CharacterSetCollation string                                 `placeholder:"${mysql_collation}" help:"Configures the collation_server variable."`
@@ -36,17 +33,10 @@ type mySQLCmd struct {
 }
 
 func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
-	if cmd.SSHKeysFile != nil {
-		defer cmd.SSHKeysFile.Close()
-
-		keys, err := ParseSSHKeys(cmd.SSHKeysFile)
-		if err != nil {
-			return err
-		}
-		cmd.SSHKeys = keys
+	mysql, err := cmd.newMySQL(client.Project)
+	if err != nil {
+		return err
 	}
-
-	mysql := cmd.newMySQL(client.Project)
 
 	c := cmd.newCreator(client, mysql, storage.MySQLKind)
 	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
@@ -72,8 +62,13 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
 	})
 }
 
-func (cmd *mySQLCmd) newMySQL(namespace string) *storage.MySQL {
+func (cmd *mySQLCmd) newMySQL(namespace string) (*storage.MySQL, error) {
 	name := getName(cmd.Name)
+
+	sshKeys, err := cmd.StorageKeys(&cmd.Writer)
+	if err != nil {
+		return nil, err
+	}
 
 	mySQL := &storage.MySQL{
 		ObjectMeta: metav1.ObjectMeta{
@@ -90,8 +85,8 @@ func (cmd *mySQLCmd) newMySQL(namespace string) *storage.MySQL {
 			ForProvider: storage.MySQLParameters{
 				Location:     cmd.Location,
 				MachineType:  infra.NewMachineType(cmd.MachineType),
-				AllowedCIDRs: []meta.IPv4CIDR{},  // avoid missing parameter error
-				SSHKeys:      []storage.SSHKey{}, // avoid missing parameter error
+				AllowedCIDRs: []meta.IPv4CIDR{}, // avoid missing parameter error
+				SSHKeys:      sshKeys,
 				SQLMode:      cmd.SQLMode,
 				CharacterSet: storage.MySQLCharacterSet{
 					Name:      cmd.CharacterSetName,
@@ -108,11 +103,8 @@ func (cmd *mySQLCmd) newMySQL(namespace string) *storage.MySQL {
 	if cmd.AllowedCidrs != nil {
 		mySQL.Spec.ForProvider.AllowedCIDRs = cmd.AllowedCidrs
 	}
-	if cmd.SSHKeys != nil {
-		mySQL.Spec.ForProvider.SSHKeys = cmd.SSHKeys
-	}
 
-	return mySQL
+	return mySQL, nil
 }
 
 // MySQLKongVars returns all variables which are used in the MySQL
@@ -132,25 +124,4 @@ func MySQLKongVars() kong.Vars {
 	result["mysql_transaction_isolation"] = string(storage.MySQLTransactionIsolationDefault)
 	result["mysql_backup_retention_days"] = fmt.Sprintf("%d", storage.MySQLBackupRetentionDaysDefault)
 	return result
-}
-
-// ParseSSHKeys parses the SSH keys from the given file.
-func ParseSSHKeys(file *os.File) ([]storage.SSHKey, error) {
-	keys := []storage.SSHKey{}
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-
-		keys = append(keys, storage.SSHKey(scanner.Text()))
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("error reading SSH keys file: %w", err)
-	}
-
-	return keys, nil
 }
