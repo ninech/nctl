@@ -1,6 +1,7 @@
 package create
 
 import (
+	"bytes"
 	"io"
 	"os"
 	"path/filepath"
@@ -11,6 +12,7 @@ import (
 	"github.com/alecthomas/kong"
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -98,22 +100,42 @@ func parseCloudVM(t *testing.T, args ...string) *cloudVMCmd {
 	return cmd
 }
 
+// writeKeyFile writes content to a file in a fresh temporary directory and
+// returns its path.
+func writeKeyFile(t *testing.T, name, content string) string {
+	t.Helper()
+
+	path := filepath.Join(t.TempDir(), name)
+	require.NoError(t, os.WriteFile(path, []byte(content), 0o600))
+
+	return path
+}
+
 // TestCloudVMPublicKeys asserts that --public-keys and --public-keys-from-files
 // complement each other. Keys given via files used to replace the inline ones.
+// It also covers that a file may hold more than one key and that the keys are
+// validated no matter which of the two flags they come from.
 func TestCloudVMPublicKeys(t *testing.T) {
 	t.Parallel()
 
 	const (
-		inlineKey = "ssh-ed25519 AAAAC3Nzinline inline"
-		fileKey   = "ssh-ed25519 AAAAC3Nzfile file"
+		inlineKey = testPublicKeyA
+		fileKey   = testPublicKeyB
 	)
 
-	keyFile := filepath.Join(t.TempDir(), "id_ed25519.pub")
-	require.NoError(t, os.WriteFile(keyFile, []byte(fileKey), 0o600))
+	var (
+		keyFile      = writeKeyFile(t, "id_ed25519.pub", fileKey+"\n")
+		twoKeysFile  = writeKeyFile(t, "authorized_keys", "# my keys\n"+fileKey+"\n\n"+inlineKey+"\n")
+		emptyFile    = writeKeyFile(t, "empty.pub", "# no keys in here\n")
+		invalidFile  = writeKeyFile(t, "invalid.pub", "not a key\n")
+		trailingFile = writeKeyFile(t, "trailing.pub", "  "+fileKey+"  \n\n")
+	)
 
 	tests := map[string]struct {
-		args []string
-		want []string
+		args     []string
+		want     []string
+		wantWarn string
+		wantErr  string
 	}{
 		"none":   {args: nil, want: nil},
 		"inline": {args: []string{`--public-keys=` + inlineKey}, want: []string{inlineKey}},
@@ -122,6 +144,44 @@ func TestCloudVMPublicKeys(t *testing.T) {
 			args: []string{`--public-keys=` + inlineKey, `--public-keys-from-files=` + keyFile},
 			want: []string{inlineKey, fileKey},
 		},
+		"multiple files": {
+			args: []string{`--public-keys-from-files=` + keyFile, `--public-keys-from-files=` + trailingFile},
+			want: []string{fileKey, fileKey},
+		},
+		"multiple keys in one file": {
+			args: []string{`--public-keys-from-files=` + twoKeysFile},
+			want: []string{fileKey, inlineKey},
+		},
+		"whitespace is trimmed": {
+			args: []string{`--public-keys-from-files=` + trailingFile},
+			want: []string{fileKey},
+		},
+		// a file may hold nothing but comments, that is only worth a warning as
+		// long as at least one key is configured somewhere.
+		"file without keys": {
+			args:     []string{`--public-keys=` + inlineKey, `--public-keys-from-files=` + emptyFile},
+			want:     []string{inlineKey},
+			wantWarn: `no SSH public key found in "` + emptyFile + `"`,
+		},
+		"inline without keys": {
+			args:     []string{`--public-keys=# a comment`, `--public-keys-from-files=` + keyFile},
+			want:     []string{fileKey},
+			wantWarn: "no SSH public key found in --public-keys",
+		},
+		"file with an invalid key": {
+			args: []string{`--public-keys-from-files=` + invalidFile}, wantErr: "invalid SSH public key on line 1",
+		},
+		"invalid inline key": {
+			args: []string{`--public-keys=not a key`}, wantErr: "error reading --public-keys: invalid SSH public key on line 1",
+		},
+		"multiple inline keys": {
+			args: []string{`--public-keys=` + inlineKey, `--public-keys=` + fileKey},
+			want: []string{inlineKey, fileKey},
+		},
+		"reports the offending inline key": {
+			args:    []string{`--public-keys=` + inlineKey, `--public-keys=not a key`},
+			wantErr: "error reading --public-keys: invalid SSH public key on line 2",
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -129,9 +189,23 @@ func TestCloudVMPublicKeys(t *testing.T) {
 
 			is := require.New(t)
 
-			cloudVM, err := parseCloudVM(t, append([]string{`test-cloudvm`}, tt.args...)...).newCloudVM("default")
+			out := &bytes.Buffer{}
+			cmd := parseCloudVM(t, append([]string{`test-cloudvm`}, tt.args...)...)
+			cmd.Writer = format.NewWriter(out)
+
+			cloudVM, err := cmd.newCloudVM("default")
+			if tt.wantErr != "" {
+				is.ErrorContains(err, tt.wantErr)
+				return
+			}
+
 			is.NoError(err)
 			is.Equal(tt.want, cloudVM.Spec.ForProvider.PublicKeys)
+			if tt.wantWarn == "" {
+				is.Empty(out.String())
+			} else {
+				is.Contains(out.String(), tt.wantWarn)
+			}
 		})
 	}
 }
@@ -144,6 +218,9 @@ func TestCloudVMPublicKeys(t *testing.T) {
 // the current working directory and open it, so the flag is never nil and the
 // nil checks in newCloudVM do not guard anything. The file backed flags must
 // therefore stay unset when they are not passed.
+//
+// The same `default:""` also made Kong decode every occurrence of a repeated
+// file flag after the first one to nil, silently dropping those files.
 func TestCloudVMFileFlagsRegression(t *testing.T) {
 	t.Parallel()
 
@@ -170,18 +247,21 @@ func TestCloudVMFileFlagsRegression(t *testing.T) {
 		dir := t.TempDir()
 		cloudConfig := filepath.Join(dir, "cloud-config.yaml")
 		is.NoError(os.WriteFile(cloudConfig, []byte("#cloud-config\n"), 0o600))
-		publicKey := filepath.Join(dir, "id_ed25519.pub")
-		is.NoError(os.WriteFile(publicKey, []byte("ssh-ed25519 AAAAC3Nz test\n"), 0o600))
 
 		cmd := parseCloudVM(t, `test-cloudvm`,
 			`--cloud-config-from-file=`+cloudConfig,
-			`--public-keys-from-files=`+publicKey,
+			`--public-keys-from-files=`+writeKeyFile(t, "a.pub", testPublicKeyA),
+			`--public-keys-from-files=`+writeKeyFile(t, "b.pub", testPublicKeyB),
 		)
+
+		// every repeated occurrence of the flag has to be decoded, not just
+		// the first one.
+		is.Len(cmd.PublicKeysFromFiles, 2)
+		is.NotContains(cmd.PublicKeysFromFiles, nil)
 
 		cloudVM, err := cmd.newCloudVM("default")
 		is.NoError(err)
 		is.Contains(cloudVM.Spec.ForProvider.CloudConfig, "#cloud-config")
-		is.Len(cloudVM.Spec.ForProvider.PublicKeys, 1)
-		is.Contains(cloudVM.Spec.ForProvider.PublicKeys[0], "ssh-ed25519 AAAAC3Nz test")
+		is.Equal([]string{testPublicKeyA, testPublicKeyB}, cloudVM.Spec.ForProvider.PublicKeys)
 	})
 }
