@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/alecthomas/kong"
@@ -61,8 +62,7 @@ func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {
 			}
 			return false, nil
 		},
-	},
-	); err != nil {
+	}); err != nil {
 		return err
 	}
 
@@ -73,6 +73,19 @@ func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {
 
 func (cmd *cloudVMCmd) newCloudVM(namespace string) (*infrastructure.CloudVirtualMachine, error) {
 	name := getName(cmd.Name)
+
+	publicKeys := slices.Clone(cmd.PublicKeys)
+	for _, file := range cmd.PublicKeysFromFiles {
+		if file == nil {
+			continue
+		}
+
+		b, err := io.ReadAll(file)
+		if err != nil {
+			return nil, fmt.Errorf("error reading public keys file: %w", err)
+		}
+		publicKeys = append(publicKeys, string(b))
+	}
 
 	cloudVM := &infrastructure.CloudVirtualMachine{
 		ObjectMeta: metav1.ObjectMeta{
@@ -92,28 +105,11 @@ func (cmd *cloudVMCmd) newCloudVM(namespace string) (*infrastructure.CloudVirtua
 				Hostname:    cmd.Hostname,
 				PowerState:  cmd.PowerState,
 				OS:          infrastructure.CloudVirtualMachineOS(cmd.OS),
-				PublicKeys:  cmd.PublicKeys,
+				PublicKeys:  publicKeys,
 				CloudConfig: cmd.CloudConfig,
 				ReverseDNS:  cmd.ReverseDNS,
 			},
 		},
-	}
-
-	if len(cmd.PublicKeysFromFiles) != 0 {
-		cloudVM.Spec.ForProvider.PublicKeys = cmd.PublicKeys
-		var keys []string
-		for _, file := range cmd.PublicKeysFromFiles {
-			if file == nil {
-				continue
-			}
-
-			b, err := io.ReadAll(file)
-			if err != nil {
-				return nil, fmt.Errorf("error reading public keys file: %w", err)
-			}
-			keys = append(keys, string(b))
-		}
-		cloudVM.Spec.ForProvider.PublicKeys = keys
 	}
 
 	if cmd.CloudConfigFromFile != nil {
