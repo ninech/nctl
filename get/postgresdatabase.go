@@ -66,15 +66,16 @@ func (cmd *postgresDatabaseCmd) connectionString(mg resource.Managed, secrets ma
 	}
 
 	for user, pw := range secrets {
-		return PostgresConnectionString(my.Status.AtProvider.FQDN, user, user, pw).String(), nil
+		return postgresConnectionString(my.Status.AtProvider.FQDN, user, user, pw), nil
 	}
 
 	return "", nil
 }
 
-// PostgresConnectionString according to the PostgreSQL documentation:
+// postgresConnectionString according to the PostgreSQL documentation:
 // https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING
-func PostgresConnectionString(fqdn, user, db string, pw []byte) *url.URL {
+// sslmode is require as there is no CA cert on disk to verify against.
+func postgresConnectionString(fqdn, user, db string, pw []byte) string {
 	q := url.Values{}
 	q.Set("sslmode", "require")
 
@@ -86,5 +87,5 @@ func PostgresConnectionString(fqdn, user, db string, pw []byte) *url.URL {
 		RawQuery: q.Encode(),
 	}
 
-	return u
+	return u.String()
 }
