@@ -20,7 +20,7 @@ import (
 type mySQLCmd struct {
 	ResourceCmd
 	Location              meta.LocationName `placeholder:"${mysql_location_default}" help:"Where the MySQL instance is created. Available locations are: ${mysql_location_options}"`
-	MachineType           string            `placeholder:"${mysql_machine_default}" help:"Sizing for a particular MySQL instance. Available types: ${mysql_machine_types}"`
+	MachineType           string            `placeholder:"${mysql_machine_default}" help:"Defines the sizing for a particular MySQL instance. Available types: ${mysql_machine_types}"`
 	AllowedCidrs          []meta.IPv4CIDR   `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the instance."`
 	DatabaseSSHKeysFlags  `set:"ssh_keys_purpose=allowed to connect to the database server in order to up-/download and directly restore database backups"`
 	MysqlVersion          storage.MySQLVersion                   `placeholder:"${mysql_version_default}" help:"Release version with which the MySQL instance is created. Available versions: ${mysql_versions}"`
