@@ -27,7 +27,7 @@ type cloudVMCmd struct {
 	Off                       *bool             `help:"Turns the CloudVM off immediately."`
 	Shutdown                  *bool             `help:"Shuts down the CloudVM via ACPI."`
 	BootRescue                *bool             `help:"Boot CloudVM into a live rescue environment."`
-	RescuePublicKeys          []string          `placeholder:"ssh-ed25519" help:"SSH public keys that can be used to connect to the CloudVM while booted into rescue. The keys are expected to be in SSH format as defined in RFC4253."`
+	RescuePublicKeys          *[]string         `placeholder:"ssh-ed25519" help:"SSH public keys that can be used to connect to the CloudVM while booted into rescue. The keys are expected to be in SSH format as defined in RFC4253. Pass the flag without a value to remove all configured keys."`
 	RescuePublicKeysFromFiles []*os.File        `placeholder:"~/.ssh/id_ed25519.pub" completion-predictor:"file" help:"SSH public key files that can be used to connect to the CloudVM while booted into rescue. The keys are expected to be in SSH format as defined in RFC4253."`
 }
 
@@ -110,11 +110,13 @@ func (cmd *cloudVMCmd) applyUpdates(cloudVM *infrastructure.CloudVirtualMachine)
 		}
 	}
 
-	rescuePublicKeys, err := cmd.rescuePublicKeys()
+	rescuePublicKeys, setRescuePublicKeys, err := cmd.rescuePublicKeys()
 	if err != nil {
 		return err
 	}
-	if len(rescuePublicKeys) != 0 {
+	// there is nothing to remove as long as rescue was never configured, only
+	// allocate it if there are keys to set.
+	if setRescuePublicKeys && (cloudVM.Spec.ForProvider.Rescue != nil || len(rescuePublicKeys) != 0) {
 		if cloudVM.Spec.ForProvider.Rescue == nil {
 			cloudVM.Spec.ForProvider.Rescue = &infrastructure.CloudVirtualMachineRescue{}
 		}
@@ -130,25 +132,39 @@ func (cmd *cloudVMCmd) applyUpdates(cloudVM *infrastructure.CloudVirtualMachine)
 
 // rescuePublicKeys returns the validated SSH public keys of both
 // --rescue-public-keys and --rescue-public-keys-from-files, in that order.
-// A source which holds no key at all is not an error,
-// but it is warned about as it is most likely not what the user intended.
-func (cmd *cloudVMCmd) rescuePublicKeys() ([]string, error) {
-	keys, err := create.ParseAuthorizedKeys(strings.NewReader(strings.Join(cmd.RescuePublicKeys, "\n")))
-	if err != nil {
-		return nil, fmt.Errorf("error reading --rescue-public-keys: %w", err)
-	}
-	if len(cmd.RescuePublicKeys) != 0 && len(keys) == 0 {
-		cmd.Warningf("no SSH public key found in --rescue-public-keys")
+//
+// set reports whether one of the flags was passed at all. If it is false the
+// keys which are already configured have to be kept, while no keys and set
+// asks for the configured keys to be removed, which is what passing
+// --rescue-public-keys without a value does.
+//
+// A source which holds no key at all is not an error, but it is warned about as
+// it is most likely not what the user intended.
+func (cmd *cloudVMCmd) rescuePublicKeys() (keys []string, set bool, err error) {
+	if cmd.RescuePublicKeys != nil {
+		set = true
+
+		inline, err := create.ParseAuthorizedKeys(strings.NewReader(strings.Join(*cmd.RescuePublicKeys, "\n")))
+		if err != nil {
+			return nil, false, fmt.Errorf("error reading --rescue-public-keys: %w", err)
+		}
+		// an empty value is how the keys are removed, only a value which holds
+		// nothing but comments is worth warning about.
+		if len(*cmd.RescuePublicKeys) != 0 && len(inline) == 0 {
+			cmd.Warningf("no SSH public key found in --rescue-public-keys")
+		}
+		keys = append(keys, inline...)
 	}
 
 	for _, file := range cmd.RescuePublicKeysFromFiles {
 		if file == nil {
 			continue
 		}
+		set = true
 
 		fileKeys, err := create.ParseAuthorizedKeys(file)
 		if err != nil {
-			return nil, fmt.Errorf("error reading public keys file %q: %w", file.Name(), err)
+			return nil, false, fmt.Errorf("error reading public keys file %q: %w", file.Name(), err)
 		}
 		if len(fileKeys) == 0 {
 			cmd.Warningf("no SSH public key found in %q", file.Name())
@@ -156,5 +172,5 @@ func (cmd *cloudVMCmd) rescuePublicKeys() ([]string, error) {
 		keys = append(keys, fileKeys...)
 	}
 
-	return keys, nil
+	return keys, set, nil
 }

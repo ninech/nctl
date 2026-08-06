@@ -185,6 +185,24 @@ func TestCloudVMRescuePublicKeys(t *testing.T) {
 			rescue: &infrastructure.CloudVirtualMachineRescue{Enabled: true, PublicKeys: []string{testPublicKeyB}},
 			want:   &infrastructure.CloudVirtualMachineRescue{Enabled: true, PublicKeys: []string{testPublicKeyB}},
 		},
+		// passing the flag without a value is how the keys are removed, the
+		// rest of the rescue configuration is kept.
+		"clears existing keys": {
+			args:   []string{`--rescue-public-keys=`},
+			rescue: &infrastructure.CloudVirtualMachineRescue{Enabled: true, PublicKeys: []string{testPublicKeyB}},
+			want:   &infrastructure.CloudVirtualMachineRescue{Enabled: true},
+		},
+		// nothing to remove, the rescue configuration must not be allocated
+		// just to hold no keys.
+		"clears keys of an unconfigured rescue": {
+			args: []string{`--rescue-public-keys=`},
+			want: nil,
+		},
+		"clears before adding": {
+			args:   []string{`--rescue-public-keys=`, `--rescue-public-keys-from-files=` + keyFile},
+			rescue: &infrastructure.CloudVirtualMachineRescue{Enabled: true, PublicKeys: []string{testPublicKeyA}},
+			want:   &infrastructure.CloudVirtualMachineRescue{Enabled: true, PublicKeys: []string{testPublicKeyB}},
+		},
 		// a source may hold nothing but comments, that is only worth a warning.
 		"file without keys": {
 			args:     []string{`--rescue-public-keys=` + testPublicKeyA, `--rescue-public-keys-from-files=` + emptyFile},
