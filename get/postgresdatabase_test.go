@@ -56,7 +56,7 @@ func TestPostgresDatabase(t *testing.T) {
 				},
 			},
 			get:         postgresDatabaseCmd{DatabaseCmd: DatabaseCmd{ResourceCmd: ResourceCmd{Name: "test1"}, PrintConnectionString: true}},
-			wantContain: []string{"postgres://", "foo_bar", "topsecret"},
+			wantContain: []string{"postgres://", "foo_bar", "topsecret", "sslmode=require"},
 			wantLines:   1,
 		},
 	}
