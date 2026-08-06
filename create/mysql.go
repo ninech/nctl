@@ -117,7 +117,6 @@ func MySQLKongVars() kong.Vars {
 	result["mysql_machine_default"] = storage.MySQLMachineTypeDefault.String()
 	result["mysql_location_options"] = strings.Join(stringSlice(storage.MySQLLocationOptions), ", ")
 	result["mysql_location_default"] = string(storage.MySQLLocationDefault)
-	result["mysql_user"] = string(storage.MySQLUser)
 	result["mysql_version_default"] = string(storage.MySQLVersionDefault)
 	result["mysql_versions"] = strings.Join(stringSlice(storage.MySQLVersions), ", ")
 	result["mysql_mode"] = strings.Join(storage.MySQLModeDefault, ", ")
@@ -127,5 +126,6 @@ func MySQLKongVars() kong.Vars {
 	result["mysql_min_word_length"] = fmt.Sprintf("%d", storage.MySQLMinWordLengthDefault)
 	result["mysql_transaction_isolation"] = string(storage.MySQLTransactionIsolationDefault)
 	result["mysql_backup_retention_days"] = fmt.Sprintf("%d", storage.MySQLBackupRetentionDaysDefault)
+
 	return result
 }
