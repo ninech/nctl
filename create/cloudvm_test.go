@@ -98,6 +98,44 @@ func parseCloudVM(t *testing.T, args ...string) *cloudVMCmd {
 	return cmd
 }
 
+// TestCloudVMPublicKeys asserts that --public-keys and --public-keys-from-files
+// complement each other. Keys given via files used to replace the inline ones.
+func TestCloudVMPublicKeys(t *testing.T) {
+	t.Parallel()
+
+	const (
+		inlineKey = "ssh-ed25519 AAAAC3Nzinline inline"
+		fileKey   = "ssh-ed25519 AAAAC3Nzfile file"
+	)
+
+	keyFile := filepath.Join(t.TempDir(), "id_ed25519.pub")
+	require.NoError(t, os.WriteFile(keyFile, []byte(fileKey), 0o600))
+
+	tests := map[string]struct {
+		args []string
+		want []string
+	}{
+		"none":   {args: nil, want: nil},
+		"inline": {args: []string{`--public-keys=` + inlineKey}, want: []string{inlineKey}},
+		"file":   {args: []string{`--public-keys-from-files=` + keyFile}, want: []string{fileKey}},
+		"both": {
+			args: []string{`--public-keys=` + inlineKey, `--public-keys-from-files=` + keyFile},
+			want: []string{inlineKey, fileKey},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			is := require.New(t)
+
+			cloudVM, err := parseCloudVM(t, append([]string{`test-cloudvm`}, tt.args...)...).newCloudVM("default")
+			is.NoError(err)
+			is.Equal(tt.want, cloudVM.Spec.ForProvider.PublicKeys)
+		})
+	}
+}
+
 // TestCloudVMFileFlagsRegression is a regression test for `create cloudvm`
 // failing with "error reading cloudconfig file: read <cwd>: is a directory" on
 // every invocation that did not pass --cloud-config-from-file.
