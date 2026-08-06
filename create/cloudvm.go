@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"slices"
 	"strings"
 
 	"github.com/alecthomas/kong"
@@ -30,7 +29,7 @@ type cloudVMCmd struct {
 	BootDiskSize        *resource.Quantity                      `default:"20Gi" help:"Configures the size of the boot disk."`
 	Disks               map[string]resource.Quantity            `default:"" help:"Additional disks to mount to the machine."`
 	PublicKeys          []string                                `default:"" help:"SSH public keys to connect to the CloudVM as root. The keys are expected to be in SSH format as defined in RFC4253. Immutable after creation."`
-	PublicKeysFromFiles []*os.File                              `default:"" completion-predictor:"file" help:"SSH public key files to connect to the VM as root. The keys are expected to be in SSH format as defined in RFC4253. Immutable after creation."`
+	PublicKeysFromFiles []*os.File                              `completion-predictor:"file" help:"SSH public key files to connect to the VM as root. The keys are expected to be in SSH format as defined in RFC4253. Immutable after creation."`
 	CloudConfig         string                                  `default:"" help:"Pass custom cloud config data (https://cloudinit.readthedocs.io/en/latest/topics/format.html#cloud-config-data) to the cloud VM. If a CloudConfig is passed, the PublicKey parameter is ignored. Immutable after creation."`
 	CloudConfigFromFile *os.File                                `completion-predictor:"file" help:"Pass custom cloud config data (https://cloudinit.readthedocs.io/en/latest/topics/format.html#cloud-config-data) from a file. Takes precedence. If a CloudConfig is passed, the PublicKey parameter is ignored. Immutable after creation."`
 }
@@ -74,17 +73,9 @@ func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {
 func (cmd *cloudVMCmd) newCloudVM(namespace string) (*infrastructure.CloudVirtualMachine, error) {
 	name := getName(cmd.Name)
 
-	publicKeys := slices.Clone(cmd.PublicKeys)
-	for _, file := range cmd.PublicKeysFromFiles {
-		if file == nil {
-			continue
-		}
-
-		b, err := io.ReadAll(file)
-		if err != nil {
-			return nil, fmt.Errorf("error reading public keys file: %w", err)
-		}
-		publicKeys = append(publicKeys, string(b))
+	publicKeys, err := cmd.publicKeys()
+	if err != nil {
+		return nil, err
 	}
 
 	cloudVM := &infrastructure.CloudVirtualMachine{
@@ -133,6 +124,37 @@ func (cmd *cloudVMCmd) newCloudVM(namespace string) (*infrastructure.CloudVirtua
 	}
 
 	return cloudVM, nil
+}
+
+// publicKeys returns the validated SSH public keys of both --public-keys and
+// --public-keys-from-files, in that order.
+// A source which holds no key at all is not an error,
+// but it is warned about as it is most likely not what the user intended.
+func (cmd *cloudVMCmd) publicKeys() ([]string, error) {
+	keys, err := ParseAuthorizedKeys(strings.NewReader(strings.Join(cmd.PublicKeys, "\n")))
+	if err != nil {
+		return nil, fmt.Errorf("error reading --public-keys: %w", err)
+	}
+	if len(cmd.PublicKeys) != 0 && len(keys) == 0 {
+		cmd.Warningf("no SSH public key found in --public-keys")
+	}
+
+	for _, file := range cmd.PublicKeysFromFiles {
+		if file == nil {
+			continue
+		}
+
+		fileKeys, err := ParseAuthorizedKeys(file)
+		if err != nil {
+			return nil, fmt.Errorf("error reading public keys file %q: %w", file.Name(), err)
+		}
+		if len(fileKeys) == 0 {
+			cmd.Warningf("no SSH public key found in %q", file.Name())
+		}
+		keys = append(keys, fileKeys...)
+	}
+
+	return keys, nil
 }
 
 // CloudVMKongVars returns all variables which are used in the application

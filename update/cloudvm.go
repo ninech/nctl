@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/create"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	res "k8s.io/apimachinery/pkg/api/resource"
@@ -26,7 +28,7 @@ type cloudVMCmd struct {
 	Shutdown                  *bool             `help:"Shuts down the CloudVM via ACPI."`
 	BootRescue                *bool             `help:"Boot CloudVM into a live rescue environment."`
 	RescuePublicKeys          []string          `placeholder:"ssh-ed25519" help:"SSH public keys that can be used to connect to the CloudVM while booted into rescue. The keys are expected to be in SSH format as defined in RFC4253."`
-	RescuePublicKeysFromFiles []string          `placeholder:"~/.ssh/id_ed25519.pub" completion-predictor:"file" help:"SSH public key files that can be used to connect to the CloudVM while booted into rescue. The keys are expected to be in SSH format as defined in RFC4253."`
+	RescuePublicKeysFromFiles []*os.File        `placeholder:"~/.ssh/id_ed25519.pub" completion-predictor:"file" help:"SSH public key files that can be used to connect to the CloudVM while booted into rescue. The keys are expected to be in SSH format as defined in RFC4253."`
 }
 
 func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {
@@ -108,20 +110,15 @@ func (cmd *cloudVMCmd) applyUpdates(cloudVM *infrastructure.CloudVirtualMachine)
 		}
 	}
 
-	if len(cmd.RescuePublicKeysFromFiles) != 0 {
-		var keys []string
-		for _, file := range cmd.RescuePublicKeysFromFiles {
-			b, err := os.ReadFile(file)
-			if err != nil {
-				return fmt.Errorf("error reading public key file %q: %w", cmd.RescuePublicKeysFromFiles, err)
-			}
-			keys = append(keys, string(b))
-		}
+	rescuePublicKeys, err := cmd.rescuePublicKeys()
+	if err != nil {
+		return err
+	}
+	if len(rescuePublicKeys) != 0 {
 		if cloudVM.Spec.ForProvider.Rescue == nil {
-			cloudVM.Spec.ForProvider.Rescue = &infrastructure.CloudVirtualMachineRescue{PublicKeys: keys}
-		} else {
-			cloudVM.Spec.ForProvider.Rescue.PublicKeys = keys
+			cloudVM.Spec.ForProvider.Rescue = &infrastructure.CloudVirtualMachineRescue{}
 		}
+		cloudVM.Spec.ForProvider.Rescue.PublicKeys = rescuePublicKeys
 	}
 
 	if cmd.ReverseDNS != "" {
@@ -129,4 +126,35 @@ func (cmd *cloudVMCmd) applyUpdates(cloudVM *infrastructure.CloudVirtualMachine)
 	}
 
 	return nil
+}
+
+// rescuePublicKeys returns the validated SSH public keys of both
+// --rescue-public-keys and --rescue-public-keys-from-files, in that order.
+// A source which holds no key at all is not an error,
+// but it is warned about as it is most likely not what the user intended.
+func (cmd *cloudVMCmd) rescuePublicKeys() ([]string, error) {
+	keys, err := create.ParseAuthorizedKeys(strings.NewReader(strings.Join(cmd.RescuePublicKeys, "\n")))
+	if err != nil {
+		return nil, fmt.Errorf("error reading --rescue-public-keys: %w", err)
+	}
+	if len(cmd.RescuePublicKeys) != 0 && len(keys) == 0 {
+		cmd.Warningf("no SSH public key found in --rescue-public-keys")
+	}
+
+	for _, file := range cmd.RescuePublicKeysFromFiles {
+		if file == nil {
+			continue
+		}
+
+		fileKeys, err := create.ParseAuthorizedKeys(file)
+		if err != nil {
+			return nil, fmt.Errorf("error reading public keys file %q: %w", file.Name(), err)
+		}
+		if len(fileKeys) == 0 {
+			cmd.Warningf("no SSH public key found in %q", file.Name())
+		}
+		keys = append(keys, fileKeys...)
+	}
+
+	return keys, nil
 }
