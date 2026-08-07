@@ -5,7 +5,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"reflect"
+	"slices"
 
 	"github.com/alecthomas/kong"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
@@ -54,31 +56,65 @@ func (cmd *ResourceCmd) BeforeApply(writer io.Writer) error {
 	return cmd.Writer.BeforeApply(writer)
 }
 
+// nonMutatingTag marks a flag which can never change the resource it is passed
+// to, such as a flag only influencing how nctl itself behaves.
+const nonMutatingTag = "nonmutating"
+
 // AfterApply records whether the invocation carried any update flag, so that
 // [updater.Update] can tell "the user asked for nothing" apart from "the user
 // asked for a state the resource is already in".
 func (cmd *ResourceCmd) AfterApply(kctx *kong.Context) error {
 	// Kong descends into embedded structs when dispatching hooks, so this runs for
 	// every update sub-command embedding [ResourceCmd] without per-command code.
-	// Only the flags of the selected command are inspected: [kong.Context.Flags]
-	// accumulates the flags of every node on the path and would therefore always
-	// report the persistent flags such as --project.
 	node := kctx.Selected()
 	if node == nil {
 		return nil
 	}
 
-	for _, flag := range node.Flags {
-		// Flags carrying a default are skipped. Kong marks a value as set once it has
-		// been assigned by any mechanism, including the default itself, so a defaulted
-		// flag is indistinguishable from one the user passed.
-		if flag.Set && !flag.HasDefault {
-			cmd.flagsProvided = true
-			break
+	// Kong appends a path element for every flag it matches while parsing. This is
+	// the only reliable signal that a value came from the command line, as
+	// [kong.Flag.Set] is also true for a flag which merely received its default.
+	passed := make(map[*kong.Flag]struct{}, len(kctx.Path))
+	for _, path := range kctx.Path {
+		if path.Flag != nil {
+			passed[path.Flag] = struct{}{}
 		}
 	}
 
+	// Only the flags of the selected command are inspected: both kctx.Path and
+	// [kong.Context.Flags] accumulate the flags of every node on the path and
+	// would therefore always report the persistent flags such as --project.
+	for _, flag := range node.Flags {
+		if nonMutating(flag) {
+			continue
+		}
+
+		_, ok := passed[flag]
+		if !ok && !envSet(flag.Envs) {
+			continue
+		}
+
+		cmd.flagsProvided = true
+		break
+	}
+
 	return nil
+}
+
+// nonMutating reports whether the flag is marked with [nonMutatingTag].
+func nonMutating(flag *kong.Flag) bool {
+	return flag.Tag != nil && flag.Tag.Has(nonMutatingTag)
+}
+
+// envSet reports whether any of the given environment variables is present. It
+// mirrors how Kong decides to take a flag value from the environment, which it
+// does while resetting the flags to their initial value and which therefore
+// leaves no trace in [kong.Context.Path].
+func envSet(envs []string) bool {
+	return slices.ContainsFunc(envs, func(env string) bool {
+		_, ok := os.LookupEnv(env)
+		return ok
+	})
 }
 
 type updater struct {

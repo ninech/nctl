@@ -59,9 +59,9 @@ type applicationCmd struct {
 	RetryRelease             *bool           `help:"Retries release for the application." placeholder:"false"`
 	RetryBuild               *bool           `help:"Retries build for the application if set to true." placeholder:"false"`
 	Pause                    *bool           `negatable:"" help:"Pause or unpause the application. Pausing stops all costs."`
-	GitInformationServiceURL string          `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
-	SkipRepoAccessCheck      bool            `help:"Skip the git repository access check." default:"false"`
-	Debug                    bool            `help:"Enable debug messages." default:"false"`
+	GitInformationServiceURL string          `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:"" nonmutating:""`
+	SkipRepoAccessCheck      bool            `help:"Skip the git repository access check." nonmutating:""`
+	Debug                    bool            `help:"Enable debug messages." nonmutating:""`
 	Language                 *string         `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static,"`
 	DockerfileBuild          dockerfileBuild `embed:""`
 	BuildpackStack           *string         `help:"${app_buildpack_stack_help} Possible values: ${enum}" enum:"paketo,heroku,"`

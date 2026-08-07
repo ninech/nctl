@@ -21,7 +21,7 @@ type bucketCmd struct {
 	DeletePermissions      []string `sep:";" placeholder:"${bucket_permissions_example}" help:"Permissions which are to be deleted (repeatable: ROLE=USER[,USER...];ROLE=USER[,USER...). Available roles are: ${bucket_role_options}"`
 	LifecyclePolicy        []string `placeholder:"${bucket_lifecycle_policy_example}" help:"LifecyclePolicies allows to define automatic expiry (deletion) of objects using certain rules (repeatable: pass this flag once per policy)."`
 	DeleteLifecyclePolicy  []string `placeholder:"${bucket_lifecycle_policy_delete_example}" help:"LifecyclePolicies which are to be deleted (repeatable: pass this flag once per policy)."`
-	ClearLifecyclePolicies bool     `help:"Remove all lifecycle policies (can be combined with other updates to clear everything before adding new items)." default:"false"`
+	ClearLifecyclePolicies bool     `help:"Remove all lifecycle policies (can be combined with other updates to clear everything before adding new items)."`
 	CORS                   []string `sep:";" placeholder:"${bucket_cors_example}" help:"CORS settings for this bucket (repeatable: origins=ORIGIN[,ORIGIN...];allowed-headers=HEADER[,HEADER...];response-headers=HEADER[,HEADER...];max-age=SECONDS)."`
 	DeleteCORS             []string `sep:";" placeholder:"${bucket_cors_delete_example}" help:"CORS settings which are to be deleted (repeatable: origins=ORIGIN[,ORIGIN...];allowed-headers=HEADER[,HEADER...];response-headers=HEADER[,HEADER...])."`
 	CustomHostnames        []string `placeholder:"${bucket_custom_hostnames_example}" help:"CustomHostnames are DNS entries under which the bucket should be accessible. This can be used to serve public objects via an own domain name. (repeatable: HOST[,HOST...])."`
