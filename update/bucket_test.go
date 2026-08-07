@@ -343,8 +343,9 @@ func TestBucket(t *testing.T) {
 				return &p
 			}(),
 		},
+		// The flags cancel each other out, leaving the spec untouched. Flags
+		// were given, so this is a no-op update rather than a usage error.
 		"lifecycle-policy-no-op": {
-			wantErr: true,
 			flags: []string{
 				"--lifecycle-policy=prefix=tmp/;expire-after-days=7;is-live=true",
 				"--delete-lifecycle-policy=prefix=tmp/",

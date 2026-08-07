@@ -7,6 +7,7 @@ import (
 	"io"
 	"reflect"
 
+	"github.com/alecthomas/kong"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
@@ -42,6 +43,10 @@ type Cmd struct {
 type ResourceCmd struct {
 	format.Writer `kong:"-"`
 	Name          string `arg:"" completion-predictor:"resource_name" help:"Name of the resource to update."`
+
+	// flagsProvided reports whether the invocation carried at least one flag
+	// that can change the resource. It is set by AfterApply.
+	flagsProvided bool
 }
 
 // BeforeApply initializes Writer from Kong's bound [io.Writer].
@@ -49,13 +54,41 @@ func (cmd *ResourceCmd) BeforeApply(writer io.Writer) error {
 	return cmd.Writer.BeforeApply(writer)
 }
 
+// AfterApply records whether the invocation carried any update flag, so that
+// [updater.Update] can tell "the user asked for nothing" apart from "the user
+// asked for a state the resource is already in".
+func (cmd *ResourceCmd) AfterApply(kctx *kong.Context) error {
+	// Kong descends into embedded structs when dispatching hooks, so this runs for
+	// every update sub-command embedding [ResourceCmd] without per-command code.
+	// Only the flags of the selected command are inspected: [kong.Context.Flags]
+	// accumulates the flags of every node on the path and would therefore always
+	// report the persistent flags such as --project.
+	node := kctx.Selected()
+	if node == nil {
+		return nil
+	}
+
+	for _, flag := range node.Flags {
+		// Flags carrying a default are skipped. Kong marks a value as set once it has
+		// been assigned by any mechanism, including the default itself, so a defaulted
+		// flag is indistinguishable from one the user passed.
+		if flag.Set && !flag.HasDefault {
+			cmd.flagsProvided = true
+			break
+		}
+	}
+
+	return nil
+}
+
 type updater struct {
 	format.Writer
-	mg          resource.Managed
-	client      *api.Client
-	kind        string
-	updateFunc  updateFunc
-	forceUpdate bool
+	mg            resource.Managed
+	client        *api.Client
+	kind          string
+	updateFunc    updateFunc
+	forceUpdate   bool
+	flagsProvided bool
 }
 
 type updateFunc func(current resource.Managed) error
@@ -66,7 +99,14 @@ func (cmd *ResourceCmd) newUpdater(
 	kind string,
 	f updateFunc,
 ) *updater {
-	return &updater{Writer: cmd.Writer, client: client, mg: mg, kind: kind, updateFunc: f}
+	return &updater{
+		Writer:        cmd.Writer,
+		client:        client,
+		mg:            mg,
+		kind:          kind,
+		updateFunc:    f,
+		flagsProvided: cmd.flagsProvided,
+	}
 }
 
 func (u *updater) Update(ctx context.Context) error {
@@ -88,9 +128,15 @@ func (u *updater) Update(ctx context.Context) error {
 		return err
 	}
 	if !changed && !u.forceUpdate {
-		return cli.ErrorWithContext(fmt.Errorf("no changes detected")).
-			WithExitCode(cli.ExitUsageError).
-			WithSuggestions("use --help to see available flags")
+
+		if !u.flagsProvided {
+			return cli.ErrorWithContext(fmt.Errorf("no flags provided")).
+				WithExitCode(cli.ExitUsageError).
+				WithSuggestions("use --help to see available flags")
+		}
+
+		u.Infof("", "no changes made to %s %q", u.kind, u.mg.GetName())
+		return nil
 	}
 
 	if err := u.client.Update(ctx, u.mg); err != nil {
