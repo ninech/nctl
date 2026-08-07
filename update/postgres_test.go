@@ -15,15 +15,14 @@ func TestPostgres(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
-		create  storage.PostgresParameters
-		update  postgresCmd
-		want    storage.PostgresParameters
-		wantErr bool
+		name   string
+		create storage.PostgresParameters
+		update postgresCmd
+		want   storage.PostgresParameters
 	}{
+		// Nothing to update leaves the instance as it is.
 		{
-			name:    "simple",
-			wantErr: true,
+			name: "simple",
 		},
 		{
 			name:   "increase-machineType",
@@ -93,8 +92,8 @@ func TestPostgres(t *testing.T) {
 			}
 
 			updated := &storage.Postgres{}
-			if err := tt.update.Run(t.Context(), apiClient); (err != nil) != tt.wantErr {
-				t.Errorf("postgresCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
+			if err := tt.update.Run(t.Context(), apiClient); err != nil {
+				t.Errorf("postgresCmd.Run() error = %v", err)
 			}
 			if err := apiClient.Get(t.Context(), api.ObjectName(created), updated); err != nil {
 				t.Fatalf("expected postgres to exist, got: %s", err)

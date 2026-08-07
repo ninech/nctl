@@ -34,7 +34,9 @@ func TestStaticEgress(t *testing.T) {
 		update     staticEgressCmd
 		want       networking.StaticEgressParameters
 		targetName string
-		wantErr    bool
+		// wantUnchanged expects the update to be a no-op, which succeeds
+		// without writing the static egress.
+		wantUnchanged bool
 	}{
 		{
 			name: "empty update",
@@ -46,7 +48,7 @@ func TestStaticEgress(t *testing.T) {
 			want: networking.StaticEgressParameters{
 				Target: appTarget,
 			},
-			wantErr: true,
+			wantUnchanged: true,
 		},
 		{
 			name: "enable disabled",
@@ -126,8 +128,8 @@ func TestStaticEgress(t *testing.T) {
 			}
 
 			updated := &networking.StaticEgress{}
-			if err := tt.update.Run(t.Context(), apiClient); (err != nil) != tt.wantErr {
-				t.Errorf("staticEgressCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
+			if err := tt.update.Run(t.Context(), apiClient); err != nil {
+				t.Errorf("staticEgressCmd.Run() error = %v", err)
 			}
 			if err := apiClient.Get(t.Context(), api.ObjectName(created), updated); err != nil {
 				t.Fatalf("expected static egress to exist, got: %s", err)
@@ -137,13 +139,15 @@ func TestStaticEgress(t *testing.T) {
 				t.Fatalf("expected staticEgress.Spec.ForProvider = %v, got: %v", tt.want, updated.Spec.ForProvider)
 			}
 
-			if !tt.wantErr {
-				if !strings.Contains(out.String(), "updated") {
-					t.Fatalf("expected output to contain 'updated', got: %s", out.String())
-				}
-				if !strings.Contains(out.String(), tt.update.Name) {
-					t.Fatalf("expected output to contain %s, got: %s", tt.update.Name, out.String())
-				}
+			wantOutput := "updated"
+			if tt.wantUnchanged {
+				wantOutput = "no changes made"
+			}
+			if !strings.Contains(out.String(), wantOutput) {
+				t.Fatalf("expected output to contain %q, got: %s", wantOutput, out.String())
+			}
+			if !strings.Contains(out.String(), tt.update.Name) {
+				t.Fatalf("expected output to contain %s, got: %s", tt.update.Name, out.String())
 			}
 		})
 	}

@@ -814,8 +814,8 @@ func TestBucketNoFlagsDoesNotUpdate(t *testing.T) {
 	)
 
 	cmd := bucketCmd{ResourceCmd: ResourceCmd{Name: name}}
-	err := cmd.Run(t.Context(), apiClient)
-	is.Error(err)
+	// Nothing to change is not an error, it just must not write the bucket.
+	is.NoError(cmd.Run(t.Context(), apiClient))
 
 	updated := &storage.Bucket{}
 	is.NoError(apiClient.Get(

@@ -17,15 +17,17 @@ func TestCloudVM(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
-		create  infrastructure.CloudVirtualMachineParameters
-		update  cloudVMCmd
-		want    infrastructure.CloudVirtualMachineParameters
-		wantErr bool
+		name   string
+		create infrastructure.CloudVirtualMachineParameters
+		update cloudVMCmd
+		want   infrastructure.CloudVirtualMachineParameters
+		// wantUnchanged expects the update to be a no-op, which succeeds
+		// without writing the machine.
+		wantUnchanged bool
 	}{
 		{
-			name:    "simple",
-			wantErr: true,
+			name:          "simple",
+			wantUnchanged: true,
 		},
 		{
 			name:   "hostname",
@@ -73,8 +75,8 @@ func TestCloudVM(t *testing.T) {
 			}
 
 			updated := &infrastructure.CloudVirtualMachine{ObjectMeta: metav1.ObjectMeta{Name: created.Name, Namespace: created.Namespace}}
-			if err := tt.update.Run(t.Context(), apiClient); (err != nil) != tt.wantErr {
-				t.Errorf("cloudVMCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
+			if err := tt.update.Run(t.Context(), apiClient); err != nil {
+				t.Errorf("cloudVMCmd.Run() error = %v", err)
 			}
 			if err := apiClient.Get(t.Context(), api.ObjectName(updated), updated); err != nil {
 				t.Fatalf("expected cloudvm to exist, got: %s", err)
@@ -84,13 +86,15 @@ func TestCloudVM(t *testing.T) {
 				t.Fatalf("expected CloudVirtualMachine.Spec.ForProvider = %v, got: %v", updated.Spec.ForProvider, tt.want)
 			}
 
-			if !tt.wantErr {
-				if !strings.Contains(out.String(), "updated") {
-					t.Errorf("expected output to contain 'updated', got: %s", out.String())
-				}
-				if !strings.Contains(out.String(), tt.update.Name) {
-					t.Errorf("expected output to contain %q, got: %s", tt.update.Name, out.String())
-				}
+			wantOutput := "updated"
+			if tt.wantUnchanged {
+				wantOutput = "no changes made"
+			}
+			if !strings.Contains(out.String(), wantOutput) {
+				t.Errorf("expected output to contain %q, got: %s", wantOutput, out.String())
+			}
+			if !strings.Contains(out.String(), tt.update.Name) {
+				t.Errorf("expected output to contain %q, got: %s", tt.update.Name, out.String())
 			}
 		})
 	}

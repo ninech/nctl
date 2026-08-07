@@ -16,15 +16,14 @@ func TestKeyValueStore(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
-		create  storage.KeyValueStoreParameters
-		update  keyValueStoreCmd
-		want    storage.KeyValueStoreParameters
-		wantErr bool
+		name   string
+		create storage.KeyValueStoreParameters
+		update keyValueStoreCmd
+		want   storage.KeyValueStoreParameters
 	}{
+		// Nothing to update leaves the instance as it is.
 		{
-			name:    "simple",
-			wantErr: true,
+			name: "simple",
 		},
 		{
 			name:   "memorySize upgrade",
@@ -141,8 +140,8 @@ func TestKeyValueStore(t *testing.T) {
 			}
 
 			updated := &storage.KeyValueStore{}
-			if err := tt.update.Run(t.Context(), apiClient); (err != nil) != tt.wantErr {
-				t.Errorf("keyValueStoreCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
+			if err := tt.update.Run(t.Context(), apiClient); err != nil {
+				t.Errorf("keyValueStoreCmd.Run() error = %v", err)
 			}
 			if err := apiClient.Get(t.Context(), api.ObjectName(created), updated); err != nil {
 				t.Fatalf("expected keyvaluestore to exist, got: %s", err)
