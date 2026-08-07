@@ -16,20 +16,22 @@ func TestGrafana(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
-		create  observability.GrafanaParameters
-		update  grafanaCmd
-		want    observability.GrafanaParameters
-		wantErr bool
+		name   string
+		create observability.GrafanaParameters
+		update grafanaCmd
+		want   observability.GrafanaParameters
+		// wantUnchanged expects the update to be a no-op, which succeeds
+		// without writing the instance.
+		wantUnchanged bool
 	}{
 		{
-			name:    "simple",
-			wantErr: true,
+			name:          "simple",
+			wantUnchanged: true,
 		},
 		{
-			name:    "empty update",
-			update:  grafanaCmd{},
-			wantErr: true,
+			name:          "empty update",
+			update:        grafanaCmd{},
+			wantUnchanged: true,
 		},
 		{
 			name:   "enable admin access",
@@ -74,8 +76,8 @@ func TestGrafana(t *testing.T) {
 			}
 
 			updated := &observability.Grafana{}
-			if err := tt.update.Run(t.Context(), apiClient); (err != nil) != tt.wantErr {
-				t.Errorf("grafanaCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
+			if err := tt.update.Run(t.Context(), apiClient); err != nil {
+				t.Errorf("grafanaCmd.Run() error = %v", err)
 			}
 			if err := apiClient.Get(t.Context(), api.ObjectName(created), updated); err != nil {
 				t.Fatalf("expected grafana to exist, got: %s", err)
@@ -85,13 +87,15 @@ func TestGrafana(t *testing.T) {
 				t.Fatalf("expected grafana.Spec.ForProvider = %v, got: %v", tt.want, updated.Spec.ForProvider)
 			}
 
-			if !tt.wantErr {
-				if !strings.Contains(out.String(), "updated") {
-					t.Fatalf("expected output to contain 'updated', got: %s", out.String())
-				}
-				if !strings.Contains(out.String(), tt.update.Name) {
-					t.Fatalf("expected output to contain %s, got: %s", tt.update.Name, out.String())
-				}
+			wantOutput := "updated"
+			if tt.wantUnchanged {
+				wantOutput = "no changes made"
+			}
+			if !strings.Contains(out.String(), wantOutput) {
+				t.Fatalf("expected output to contain %q, got: %s", wantOutput, out.String())
+			}
+			if !strings.Contains(out.String(), tt.update.Name) {
+				t.Fatalf("expected output to contain %s, got: %s", tt.update.Name, out.String())
 			}
 		})
 	}

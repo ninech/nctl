@@ -16,21 +16,19 @@ func TestMySQL(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
-		create  storage.MySQLParameters
-		update  mySQLCmd
-		want    storage.MySQLParameters
-		wantErr bool
+		name   string
+		create storage.MySQLParameters
+		update mySQLCmd
+		want   storage.MySQLParameters
 	}{
+		// Nothing to update leaves the instance as it is.
 		{
-			name:    "simple",
-			wantErr: true,
+			name: "simple",
 		},
 		{
-			name:    "no-flags-with-machinetype",
-			create:  storage.MySQLParameters{MachineType: infra.MachineTypeNineDBM},
-			want:    storage.MySQLParameters{MachineType: infra.MachineTypeNineDBM},
-			wantErr: true,
+			name:   "no-flags-with-machinetype",
+			create: storage.MySQLParameters{MachineType: infra.MachineTypeNineDBM},
+			want:   storage.MySQLParameters{MachineType: infra.MachineTypeNineDBM},
 		},
 		{
 			name:   "increase-machineType",
@@ -120,8 +118,8 @@ func TestMySQL(t *testing.T) {
 			}
 
 			updated := &storage.MySQL{}
-			if err := tt.update.Run(t.Context(), apiClient); (err != nil) != tt.wantErr {
-				t.Errorf("mySQLCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
+			if err := tt.update.Run(t.Context(), apiClient); err != nil {
+				t.Errorf("mySQLCmd.Run() error = %v", err)
 			}
 			if err := apiClient.Get(t.Context(), api.ObjectName(created), updated); err != nil {
 				t.Fatalf("expected mysql to exist, got: %s", err)

@@ -17,20 +17,22 @@ func TestMySQLDatabase(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
-		create  storage.MySQLDatabaseParameters
-		update  mysqlDatabaseCmd
-		want    storage.MySQLDatabaseParameters
-		wantErr bool
+		name   string
+		create storage.MySQLDatabaseParameters
+		update mysqlDatabaseCmd
+		want   storage.MySQLDatabaseParameters
+		// wantUnchanged expects the update to be a no-op, which succeeds
+		// without writing the database.
+		wantUnchanged bool
 	}{
 		{
-			name:    "simple",
-			wantErr: true,
+			name:          "simple",
+			wantUnchanged: true,
 		},
 		{
-			name:    "empty-update",
-			update:  mysqlDatabaseCmd{},
-			wantErr: true,
+			name:          "empty-update",
+			update:        mysqlDatabaseCmd{},
+			wantUnchanged: true,
 		},
 		{
 			name:   "update-backup-schedule",
@@ -59,8 +61,8 @@ func TestMySQLDatabase(t *testing.T) {
 			}
 
 			updated := &storage.MySQLDatabase{}
-			if err := tt.update.Run(t.Context(), apiClient); (err != nil) != tt.wantErr {
-				t.Errorf("mysqlDatabaseCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
+			if err := tt.update.Run(t.Context(), apiClient); err != nil {
+				t.Errorf("mysqlDatabaseCmd.Run() error = %v", err)
 			}
 			if err := apiClient.Get(t.Context(), api.ObjectName(created), updated); err != nil {
 				t.Fatalf("expected mysqldatabase to exist, got: %s", err)
@@ -70,13 +72,15 @@ func TestMySQLDatabase(t *testing.T) {
 				t.Fatalf("expected mysqlDatabase.Spec.ForProvider = %v, got: %v", updated.Spec.ForProvider, tt.want)
 			}
 
-			if !tt.wantErr {
-				if !strings.Contains(out.String(), "updated") {
-					t.Fatalf("expected output to contain 'updated', got: %s", out.String())
-				}
-				if !strings.Contains(out.String(), tt.update.Name) {
-					t.Fatalf("expected output to contain %s, got: %s", tt.update.Name, out.String())
-				}
+			wantOutput := "updated"
+			if tt.wantUnchanged {
+				wantOutput = "no changes made"
+			}
+			if !strings.Contains(out.String(), wantOutput) {
+				t.Fatalf("expected output to contain %q, got: %s", wantOutput, out.String())
+			}
+			if !strings.Contains(out.String(), tt.update.Name) {
+				t.Fatalf("expected output to contain %s, got: %s", tt.update.Name, out.String())
 			}
 		})
 	}

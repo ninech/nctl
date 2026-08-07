@@ -17,20 +17,22 @@ func TestPostgresDatabase(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
-		create  storage.PostgresDatabaseParameters
-		update  postgresDatabaseCmd
-		want    storage.PostgresDatabaseParameters
-		wantErr bool
+		name   string
+		create storage.PostgresDatabaseParameters
+		update postgresDatabaseCmd
+		want   storage.PostgresDatabaseParameters
+		// wantUnchanged expects the update to be a no-op, which succeeds
+		// without writing the database.
+		wantUnchanged bool
 	}{
 		{
-			name:    "simple",
-			wantErr: true,
+			name:          "simple",
+			wantUnchanged: true,
 		},
 		{
-			name:    "empty-update",
-			update:  postgresDatabaseCmd{},
-			wantErr: true,
+			name:          "empty-update",
+			update:        postgresDatabaseCmd{},
+			wantUnchanged: true,
 		},
 		{
 			name:   "update-backup-schedule",
@@ -59,8 +61,8 @@ func TestPostgresDatabase(t *testing.T) {
 			}
 
 			updated := &storage.PostgresDatabase{}
-			if err := tt.update.Run(t.Context(), apiClient); (err != nil) != tt.wantErr {
-				t.Errorf("postgresDatabaseCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
+			if err := tt.update.Run(t.Context(), apiClient); err != nil {
+				t.Errorf("postgresDatabaseCmd.Run() error = %v", err)
 			}
 			if err := apiClient.Get(t.Context(), api.ObjectName(created), updated); err != nil {
 				t.Fatalf("expected postgresdatabase to exist, got: %s", err)
@@ -70,13 +72,15 @@ func TestPostgresDatabase(t *testing.T) {
 				t.Fatalf("expected postgresDatabase.Spec.ForProvider = %v, got: %v", updated.Spec.ForProvider, tt.want)
 			}
 
-			if !tt.wantErr {
-				if !strings.Contains(out.String(), "updated") {
-					t.Fatalf("expected output to contain 'updated', got: %s", out.String())
-				}
-				if !strings.Contains(out.String(), tt.update.Name) {
-					t.Fatalf("expected output to contain %s, got: %s", tt.update.Name, out.String())
-				}
+			wantOutput := "updated"
+			if tt.wantUnchanged {
+				wantOutput = "no changes made"
+			}
+			if !strings.Contains(out.String(), wantOutput) {
+				t.Fatalf("expected output to contain %q, got: %s", wantOutput, out.String())
+			}
+			if !strings.Contains(out.String(), tt.update.Name) {
+				t.Fatalf("expected output to contain %s, got: %s", tt.update.Name, out.String())
 			}
 		})
 	}
