@@ -1,6 +1,6 @@
 module github.com/ninech/nctl
 
-go 1.26.5
+go 1.26.6
 
 // Will need to be kept in sync with the replace directive in https://github.com/grafana/loki/blob/v3.7.5/go.mod#L518.
 replace github.com/hashicorp/memberlist => github.com/grafana/memberlist v0.3.1-0.20251126142931-6f9f62ab6f86
@@ -30,7 +30,7 @@ require (
 	github.com/mattn/go-isatty v0.0.24
 	github.com/moby/moby v28.5.2+incompatible
 	github.com/moby/term v0.5.2
-	github.com/ninech/apis v0.0.0-20260810052815-d653b4ef6912
+	github.com/ninech/apis v0.0.0-20260819082942-9936433be6d4
 	github.com/posener/complete v1.2.3
 	github.com/prometheus/common v0.70.1
 	github.com/stretchr/testify v1.11.1
