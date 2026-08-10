@@ -137,7 +137,7 @@ func printItems(items []*unstructured.Unstructured, get Cmd, header bool) error 
 	get.AllProjects = true
 
 	if header {
-		get.writeHeader("NAME", "KIND", "GROUP")
+		get.writeHeader("NAME", "KIND", "GROUP", "LOCATION")
 	}
 	for _, item := range items {
 		get.writeTabRow(
@@ -145,10 +145,21 @@ func printItems(items []*unstructured.Unstructured, get Cmd, header bool) error 
 			item.GetName(),
 			item.GroupVersionKind().Kind,
 			item.GroupVersionKind().Group,
+			location(item),
 		)
 	}
 
 	return get.tabWriter.Flush()
+}
+
+// location returns the location of item, for ones that have one.
+func location(item *unstructured.Unstructured) string {
+	loc, found, err := unstructured.NestedString(item.Object, "spec", "forProvider", "location")
+	if err != nil || !found || loc == "" {
+		return noneText
+	}
+
+	return loc
 }
 
 func filteredListTypes(s *runtime.Scheme, kinds []string) ([]schema.GroupVersionKind, error) {
