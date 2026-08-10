@@ -163,7 +163,7 @@ func (out *output) writeTabRow(project string, row ...string) {
 }
 
 func (out *output) notFound(kind, project string) error {
-	if out.Format == jsonOut {
+	if out.Format == jsonOut || out.Format == yamlOut {
 		out.Printf("[]")
 		return nil
 	}
