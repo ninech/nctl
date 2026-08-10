@@ -14,6 +14,7 @@ import (
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/lucasepe/codename"
+	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
@@ -141,6 +142,42 @@ func (c *creator) createResource(ctx context.Context) error {
 
 	c.Successf("🏗", "created %s %q in project %q", c.kind, c.mg.GetName(), c.mg.GetNamespace())
 	return nil
+}
+
+// createResourceInLocation creates the resource and retries once in another
+// location if the API server rejects the one it has. requested is the location
+// the user asked for, setLocation applies the fallback.
+func (c *creator) createResourceInLocation(
+	ctx context.Context,
+	requested meta.LocationName,
+	setLocation func(meta.LocationName),
+) error {
+	err := c.createResource(ctx)
+	if err == nil {
+		return nil
+	}
+
+	// the user picked the location and it cannot be changed afterwards, so
+	// never create the resource somewhere else.
+	if requested != "" {
+		return err
+	}
+
+	// the API server returns them sorted, so the fallback is stable.
+	locations := availableLocations(err)
+	if len(locations) == 0 {
+		return err
+	}
+	fallback := locations[0]
+
+	c.Warningf(
+		"the default location does not currently accept new %s resources, creating in %q instead. "+
+			"The location cannot be changed later, pass --location to choose a different one.",
+		c.kind, fallback,
+	)
+	setLocation(fallback)
+
+	return c.createResource(ctx)
 }
 
 func (c *creator) wait(ctx context.Context, stages ...waitStage) error {

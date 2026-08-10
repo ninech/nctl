@@ -43,7 +43,9 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
 	ctx, cancel := context.WithTimeout(ctx, cmd.WaitTimeout)
 	defer cancel()
 
-	if err := c.createResource(ctx); err != nil {
+	if err := c.createResourceInLocation(ctx, cmd.Location, func(location meta.LocationName) {
+		mysql.Spec.ForProvider.Location = location
+	}); err != nil {
 		return err
 	}
 
