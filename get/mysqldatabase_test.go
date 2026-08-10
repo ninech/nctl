@@ -57,7 +57,7 @@ func TestMySQLDatabase(t *testing.T) {
 				},
 			},
 			get:         mysqlDatabaseCmd{DatabaseCmd: DatabaseCmd{ResourceCmd: ResourceCmd{Name: "test1"}, PrintConnectionString: true}},
-			wantContain: []string{"mysql://", "foo_bar", "topsecret"},
+			wantContain: []string{"mysql://", "foo_bar", "topsecret", "ssl-mode=REQUIRED"},
 			wantLines:   1,
 		},
 	}

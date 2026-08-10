@@ -105,7 +105,6 @@ func PostgresKongVars() kong.Vars {
 	result["postgres_location_default"] = string(storage.PostgresLocationDefault)
 	result["postgres_version_default"] = string(storage.PostgresVersionDefault)
 	result["postgres_versions"] = strings.Join(stringSlice(storage.PostgresVersions), ", ")
-	result["postgres_user"] = storage.PostgresUser
 	result["postgres_backup_retention_days"] = fmt.Sprintf("%d", storage.PostgresBackupRetentionDaysDefault)
 
 	return result

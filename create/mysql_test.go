@@ -55,6 +55,11 @@ func TestMySQL(t *testing.T) {
 			want: storage.MySQLParameters{SSHKeys: []storage.SSHKey{testPublicKeyA}},
 		},
 		{
+			name:   "version",
+			create: mySQLCmd{MysqlVersion: storage.MySQLVersionDefault},
+			want:   storage.MySQLParameters{Version: storage.MySQLVersionDefault},
+		},
+		{
 			name:   "sqlMode",
 			create: mySQLCmd{SQLMode: &[]storage.MySQLMode{"ONLY_FULL_GROUP_BY"}},
 			want:   storage.MySQLParameters{SQLMode: &[]storage.MySQLMode{"ONLY_FULL_GROUP_BY"}},

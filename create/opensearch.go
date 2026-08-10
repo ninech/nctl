@@ -70,7 +70,7 @@ func OpenSearchKongVars() kong.Vars {
 	result["opensearch_location_default"] = string(storage.OpenSearchLocationDefault)
 	result["opensearch_version_default"] = string(storage.OpenSearchVersionDefault)
 	result["opensearch_versions"] = strings.Join(stringSlice(storage.OpenSearchVersions), ", ")
-	result["opensearch_user"] = string(storage.OpenSearchUser)
+
 	return result
 }
 

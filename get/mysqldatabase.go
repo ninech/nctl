@@ -75,12 +75,17 @@ func (cmd *mysqlDatabaseCmd) connectionString(mg resource.Managed, secrets map[s
 
 // mySQLConnectionString according to the MySQL documentation:
 // https://dev.mysql.com/doc/refman/8.4/en/connecting-using-uri-or-key-value-pairs.html#connecting-using-uri
+// ssl-mode is REQUIRED as there is no CA cert on disk to verify against.
 func mySQLConnectionString(fqdn, user, db string, pw []byte) string {
+	q := url.Values{}
+	q.Set("ssl-mode", "REQUIRED")
+
 	u := &url.URL{
-		Scheme: "mysql",
-		Host:   fqdn,
-		User:   url.UserPassword(user, string(pw)),
-		Path:   db,
+		Scheme:   "mysql",
+		Host:     fqdn,
+		User:     url.UserPassword(user, string(pw)),
+		Path:     db,
+		RawQuery: q.Encode(),
 	}
 
 	return u.String()

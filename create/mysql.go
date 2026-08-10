@@ -20,9 +20,10 @@ import (
 type mySQLCmd struct {
 	ResourceCmd
 	Location              meta.LocationName `placeholder:"${mysql_location_default}" help:"Where the MySQL instance is created. Available locations are: ${mysql_location_options}"`
-	MachineType           string            `placeholder:"${mysql_machine_default}" help:"Sizing for a particular MySQL instance. Available types: ${mysql_machine_types}"`
+	MachineType           string            `placeholder:"${mysql_machine_default}" help:"Defines the sizing for a particular MySQL instance. Available types: ${mysql_machine_types}"`
 	AllowedCidrs          []meta.IPv4CIDR   `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the instance."`
 	DatabaseSSHKeysFlags  `set:"ssh_keys_purpose=allowed to connect to the database server in order to up-/download and directly restore database backups"`
+	MysqlVersion          storage.MySQLVersion                   `placeholder:"${mysql_version_default}" help:"Release version with which the MySQL instance is created. Available versions: ${mysql_versions}"`
 	SQLMode               *[]storage.MySQLMode                   `placeholder:"\"MODE1, MODE2, ...\"" help:"Configures the sql_mode setting. Modes affect the SQL syntax MySQL supports and the data validation checks it performs. Defaults to: ${mysql_mode}"`
 	CharacterSetName      string                                 `placeholder:"${mysql_charset}" help:"Configures the character_set_server variable."`
 	CharacterSetCollation string                                 `placeholder:"${mysql_collation}" help:"Configures the collation_server variable."`
@@ -87,6 +88,7 @@ func (cmd *mySQLCmd) newMySQL(namespace string) (*storage.MySQL, error) {
 				MachineType:  infra.NewMachineType(cmd.MachineType),
 				AllowedCIDRs: []meta.IPv4CIDR{}, // avoid missing parameter error
 				SSHKeys:      sshKeys,
+				Version:      cmd.MysqlVersion,
 				SQLMode:      cmd.SQLMode,
 				CharacterSet: storage.MySQLCharacterSet{
 					Name:      cmd.CharacterSetName,
@@ -115,7 +117,8 @@ func MySQLKongVars() kong.Vars {
 	result["mysql_machine_default"] = storage.MySQLMachineTypeDefault.String()
 	result["mysql_location_options"] = strings.Join(stringSlice(storage.MySQLLocationOptions), ", ")
 	result["mysql_location_default"] = string(storage.MySQLLocationDefault)
-	result["mysql_user"] = string(storage.MySQLUser)
+	result["mysql_version_default"] = string(storage.MySQLVersionDefault)
+	result["mysql_versions"] = strings.Join(stringSlice(storage.MySQLVersions), ", ")
 	result["mysql_mode"] = strings.Join(storage.MySQLModeDefault, ", ")
 	result["mysql_long_query_time"] = string(storage.MySQLLongQueryTimeDefault)
 	result["mysql_charset"] = string(storage.MySQLCharsetDefault)
@@ -123,5 +126,6 @@ func MySQLKongVars() kong.Vars {
 	result["mysql_min_word_length"] = fmt.Sprintf("%d", storage.MySQLMinWordLengthDefault)
 	result["mysql_transaction_isolation"] = string(storage.MySQLTransactionIsolationDefault)
 	result["mysql_backup_retention_days"] = fmt.Sprintf("%d", storage.MySQLBackupRetentionDaysDefault)
+
 	return result
 }

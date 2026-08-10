@@ -25,8 +25,8 @@ type postgresCmd struct {
 
 // Help displays usage examples for the postgres exec command.
 func (cmd postgresCmd) Help() string {
-	return `Examples:
-  # Connect to a PostgreSQL instance interactively
+	return fmt.Sprintf(`Examples:
+  # Connect to a PostgreSQL instance interactively as the %s user
   nctl exec postgres myinstance
 
   # Connect to a specific database
@@ -37,7 +37,7 @@ func (cmd postgresCmd) Help() string {
 
   # Pass extra flags to psql (after --)
   nctl exec postgres myinstance -- --no-pager
-`
+`, storage.PostgresUser)
 }
 
 func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client) error {
