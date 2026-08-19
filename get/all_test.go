@@ -39,9 +39,9 @@ func TestAllContent(t *testing.T) {
 			objects:      []client.Object{testApplication("banana", "dev"), testRelease("pear", "dev")},
 			outputFormat: full,
 			projectName:  "dev",
-			output: `PROJECT  NAME    KIND         GROUP
-dev      banana  Application  apps.nine.ch
-dev      pear    Release      apps.nine.ch
+			output: `PROJECT  NAME    KIND         GROUP         LOCATION
+dev      banana  Application  apps.nine.ch  <none>
+dev      pear    Release      apps.nine.ch  <none>
 `,
 		},
 		"all resources from one project, no header": {
@@ -49,8 +49,8 @@ dev      pear    Release      apps.nine.ch
 			objects:      []client.Object{testApplication("banana", "dev"), testRelease("pear", "dev")},
 			outputFormat: noHeader,
 			projectName:  "dev",
-			output: `dev  banana  Application  apps.nine.ch
-dev  pear    Release      apps.nine.ch
+			output: `dev  banana  Application  apps.nine.ch  <none>
+dev  pear    Release      apps.nine.ch  <none>
 `,
 		},
 		"all resources from one project, yaml format": {
@@ -142,12 +142,12 @@ dev  pear    Release      apps.nine.ch
 			},
 			outputFormat: full,
 			allProjects:  true,
-			output: `PROJECT  NAME    KIND               GROUP
-dev      banana  Application        apps.nine.ch
-dev      pear    Release            apps.nine.ch
-prod     orange  KubernetesCluster  infrastructure.nine.ch
-staging  apple   Application        apps.nine.ch
-staging  melon   Release            apps.nine.ch
+			output: `PROJECT  NAME    KIND               GROUP                   LOCATION
+dev      banana  Application        apps.nine.ch            <none>
+dev      pear    Release            apps.nine.ch            <none>
+prod     orange  KubernetesCluster  infrastructure.nine.ch  nine-cz42
+staging  apple   Application        apps.nine.ch            <none>
+staging  melon   Release            apps.nine.ch            <none>
 `,
 		},
 		"all projects, no headers format": {
@@ -159,11 +159,11 @@ staging  melon   Release            apps.nine.ch
 			},
 			outputFormat: noHeader,
 			allProjects:  true,
-			output: `dev      banana  Application        apps.nine.ch
-dev      pear    Release            apps.nine.ch
-prod     orange  KubernetesCluster  infrastructure.nine.ch
-staging  apple   Application        apps.nine.ch
-staging  melon   Release            apps.nine.ch
+			output: `dev      banana  Application        apps.nine.ch            <none>
+dev      pear    Release            apps.nine.ch            <none>
+prod     orange  KubernetesCluster  infrastructure.nine.ch  nine-cz42
+staging  apple   Application        apps.nine.ch            <none>
+staging  melon   Release            apps.nine.ch            <none>
 `,
 		},
 		"empty resources of a specific project, full format": {
@@ -198,12 +198,12 @@ staging  melon   Release            apps.nine.ch
 			},
 			outputFormat: noHeader,
 			allProjects:  true,
-			output: `dev      banana  Application        apps.nine.ch
-dev      pear    Release            apps.nine.ch
-prod     orange  KubernetesCluster  infrastructure.nine.ch
-staging  apple   Application        apps.nine.ch
-staging  cherry  Release            apps.nine.ch
-staging  melon   Release            apps.nine.ch
+			output: `dev      banana  Application        apps.nine.ch            <none>
+dev      pear    Release            apps.nine.ch            <none>
+prod     orange  KubernetesCluster  infrastructure.nine.ch  nine-cz42
+staging  apple   Application        apps.nine.ch            <none>
+staging  cherry  Release            apps.nine.ch            <none>
+staging  melon   Release            apps.nine.ch            <none>
 `,
 		},
 		"include nine resources, no headers format": {
@@ -223,13 +223,13 @@ staging  melon   Release            apps.nine.ch
 			outputFormat:         noHeader,
 			allProjects:          true,
 			includeNineResources: true,
-			output: `dev      banana  Application        apps.nine.ch
-dev      kiwi    Application        apps.nine.ch
-dev      pear    Release            apps.nine.ch
-prod     orange  KubernetesCluster  infrastructure.nine.ch
-staging  apple   Application        apps.nine.ch
-staging  cherry  Release            apps.nine.ch
-staging  melon   Release            apps.nine.ch
+			output: `dev      banana  Application        apps.nine.ch            <none>
+dev      kiwi    Application        apps.nine.ch            <none>
+dev      pear    Release            apps.nine.ch            <none>
+prod     orange  KubernetesCluster  infrastructure.nine.ch  nine-cz42
+staging  apple   Application        apps.nine.ch            <none>
+staging  cherry  Release            apps.nine.ch            <none>
+staging  melon   Release            apps.nine.ch            <none>
 `,
 		},
 		"only certain kind": {
@@ -242,9 +242,9 @@ staging  melon   Release            apps.nine.ch
 			outputFormat: full,
 			allProjects:  true,
 			kinds:        []string{"application"},
-			output: `PROJECT  NAME    KIND         GROUP
-dev      banana  Application  apps.nine.ch
-staging  apple   Application  apps.nine.ch
+			output: `PROJECT  NAME    KIND         GROUP         LOCATION
+dev      banana  Application  apps.nine.ch  <none>
+staging  apple   Application  apps.nine.ch  <none>
 `,
 		},
 		"multiple certain kinds, no header format": {
@@ -258,11 +258,11 @@ staging  apple   Application  apps.nine.ch
 			outputFormat: noHeader,
 			allProjects:  true,
 			kinds:        []string{"release", "kubernetescluster"},
-			output: `dev      dragonfruit  KubernetesCluster  infrastructure.nine.ch
-dev      pear         Release            apps.nine.ch
-prod     orange       KubernetesCluster  infrastructure.nine.ch
-staging  cherry       Release            apps.nine.ch
-staging  melon        Release            apps.nine.ch
+			output: `dev      dragonfruit  KubernetesCluster  infrastructure.nine.ch  nine-cz42
+dev      pear         Release            apps.nine.ch            <none>
+prod     orange       KubernetesCluster  infrastructure.nine.ch  nine-cz42
+staging  cherry       Release            apps.nine.ch            <none>
+staging  melon        Release            apps.nine.ch            <none>
 `,
 		},
 		"not known kind leads to an error": {
@@ -281,9 +281,9 @@ staging  melon        Release            apps.nine.ch
 			},
 			outputFormat: full,
 			allProjects:  true,
-			output: `PROJECT  NAME    KIND         GROUP
-dev      banana  Application  apps.nine.ch
-dev      pear    Release      apps.nine.ch
+			output: `PROJECT  NAME    KIND         GROUP         LOCATION
+dev      banana  Application  apps.nine.ch  <none>
+dev      pear    Release      apps.nine.ch  <none>
 `,
 		},
 	} {
@@ -370,7 +370,11 @@ func testCluster(name, project string) *infra.KubernetesCluster {
 			Kind:       infra.KubernetesClusterKind,
 			APIVersion: infra.SchemeGroupVersion.String(),
 		},
-		Spec: infra.KubernetesClusterSpec{},
+		Spec: infra.KubernetesClusterSpec{
+			ForProvider: infra.KubernetesClusterParameters{
+				Location: meta.LocationNineCZ42,
+			},
+		},
 	}
 }
 
