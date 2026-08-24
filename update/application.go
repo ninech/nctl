@@ -132,7 +132,7 @@ type scheduledJob struct {
 }
 
 func (job scheduledJob) changesGiven() bool {
-	return job.Command != nil || job.Size != nil || job.Schedule != nil || job.TimeZone != nil
+	return job.Command != nil || job.Size != nil || job.Schedule != nil || job.TimeZone != nil || job.Retries != nil || job.Timeout != nil
 }
 
 type dockerfileBuild struct {
@@ -492,10 +492,10 @@ func (job scheduledJob) applyUpdates(w format.Writer, cfg *apps.Config) {
 				cfg.ScheduledJobs[i].TimeZone = *job.TimeZone
 			}
 			if job.Retries != nil {
-				cfg.DeployJob.Retries = job.Retries
+				cfg.ScheduledJobs[i].Retries = job.Retries
 			}
 			if job.Timeout != nil {
-				cfg.DeployJob.Timeout = &metav1.Duration{Duration: *job.Timeout}
+				cfg.ScheduledJobs[i].Timeout = &metav1.Duration{Duration: *job.Timeout}
 			}
 			return
 		}
@@ -510,6 +510,15 @@ func (job scheduledJob) applyUpdates(w format.Writer, cfg *apps.Config) {
 	}
 	if job.TimeZone != nil {
 		newJob.TimeZone = *job.TimeZone
+	}
+	if job.Schedule != nil {
+		newJob.Schedule = *job.Schedule
+	}
+	if job.Retries != nil {
+		newJob.Retries = job.Retries
+	}
+	if job.Timeout != nil {
+		newJob.Timeout = &metav1.Duration{Duration: *job.Timeout}
 	}
 	cfg.ScheduledJobs = append(cfg.ScheduledJobs, newJob)
 }

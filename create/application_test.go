@@ -136,6 +136,35 @@ func TestCreateApplication(t *testing.T) {
 				is.Equal(*cmd.BasicAuth, *app.Spec.ForProvider.Config.EnableBasicAuth)
 			},
 		},
+		"with scheduled job": {
+			cmd: applicationCmd{
+				ResourceCmd: ResourceCmd{
+					Wait: false,
+					Name: "scheduled-job-app",
+				},
+				Size: new("mini"),
+				ScheduledJob: scheduledJob{
+					Name:     "nightly-backup",
+					Command:  "./backup.sh",
+					Schedule: "0 3 * * *",
+					TimeZone: new("Europe/Zurich"),
+					Retries:  2,
+					Timeout:  10 * time.Minute,
+				},
+				SkipRepoAccessCheck: true,
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				is := require.New(t)
+				is.Len(app.Spec.ForProvider.Config.ScheduledJobs, 1)
+				job := app.Spec.ForProvider.Config.ScheduledJobs[0]
+				is.Equal(cmd.ScheduledJob.Name, job.Name)
+				is.Equal(cmd.ScheduledJob.Command, job.Command)
+				is.Equal(cmd.ScheduledJob.Schedule, job.Schedule)
+				is.Equal(*cmd.ScheduledJob.TimeZone, job.TimeZone)
+				is.Equal(cmd.ScheduledJob.Retries, *job.Retries)
+				is.Equal(cmd.ScheduledJob.Timeout, job.Timeout.Duration)
+			},
+		},
 		"with user/pass git auth": {
 			cmd: applicationCmd{
 				Git: gitConfig{
