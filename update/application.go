@@ -49,22 +49,22 @@ type applicationCmd struct {
 	// structs. Due to the usage of kong these pointers will never be `nil`.
 	// So checking for `nil` values can not be used to find out if some of
 	// the struct fields have been set.
-	DeployJob                *deployJob      `embed:"" prefix:"deploy-job-"`
-	WorkerJob                *workerJob      `embed:"" prefix:"worker-job-"`
-	ScheduledJob             *scheduledJob   `embed:"" prefix:"scheduled-job-"`
-	DeleteWorkerJob          *string         `help:"Delete a worker job by name."`
-	DeleteScheduledJob       *string         `help:"Delete a scheduled job by name."`
+	DeployJob                *deployJob             `embed:"" prefix:"deploy-job-"`
+	WorkerJob                *workerJob             `embed:"" prefix:"worker-job-"`
+	ScheduledJob             *scheduledJob          `embed:"" prefix:"scheduled-job-"`
+	DeleteWorkerJob          *string                `help:"Delete a worker job by name."`
+	DeleteScheduledJob       *string                `help:"Delete a scheduled job by name."`
 	Service                  application.ServiceMap `help:"Service reference to add/update in the form name=kind/target-name."`
-	DeleteService            []string          `help:"Service reference names to remove."`
-	RetryRelease             *bool           `help:"Retries release for the application." placeholder:"false"`
-	RetryBuild               *bool           `help:"Retries build for the application if set to true." placeholder:"false"`
-	Pause                    *bool           `negatable:"" help:"Pause or unpause the application. Pausing stops all costs."`
-	GitInformationServiceURL string          `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
-	SkipRepoAccessCheck      bool            `help:"Skip the git repository access check." default:"false"`
-	Debug                    bool            `help:"Enable debug messages." default:"false"`
-	Language                 *string         `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static,"`
-	DockerfileBuild          dockerfileBuild `embed:""`
-	BuildpackStack           *string         `help:"${app_buildpack_stack_help} Possible values: ${enum}" enum:"paketo,heroku,"`
+	DeleteService            []string               `help:"Service reference names to remove."`
+	RetryRelease             *bool                  `help:"Retries release for the application." placeholder:"false"`
+	RetryBuild               *bool                  `help:"Retries build for the application if set to true." placeholder:"false"`
+	Pause                    *bool                  `negatable:"" help:"Pause or unpause the application. Pausing stops all costs."`
+	GitInformationServiceURL string                 `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
+	SkipRepoAccessCheck      bool                   `help:"Skip the git repository access check." default:"false"`
+	Debug                    bool                   `help:"Enable debug messages." default:"false"`
+	Language                 *string                `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static,"`
+	DockerfileBuild          dockerfileBuild        `embed:""`
+	BuildpackStack           *string                `help:"${app_buildpack_stack_help} Possible values: ${enum}" enum:"paketo,heroku,"`
 }
 
 type gitConfig struct {
@@ -126,12 +126,13 @@ type scheduledJob struct {
 	Name     *string        `help:"Name of the scheduled job job to add." placeholder:"scheduled-1"`
 	Size     *string        `help:"Size (resources) of the scheduled job (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
 	Schedule *string        `help:"Cron notation string for the scheduled job (defaults to \"* * * * *\")." placeholder:"\"* * * * *\""`
+	TimeZone *string        `help:"Time zone the schedule is evaluated in, e.g. \"Europe/Zurich\" (defaults to \"UTC\")." placeholder:"Europe/Zurich"`
 	Retries  *int32         `help:"How many times the job will be restarted on failure." placeholder:"${app_default_scheduled_job_retries}"`
 	Timeout  *time.Duration `help:"Timeout of the job." placeholder:"${app_default_scheduled_job_timeout}"`
 }
 
 func (job scheduledJob) changesGiven() bool {
-	return job.Command != nil || job.Size != nil || job.Schedule != nil
+	return job.Command != nil || job.Size != nil || job.Schedule != nil || job.TimeZone != nil
 }
 
 type dockerfileBuild struct {
@@ -487,6 +488,9 @@ func (job scheduledJob) applyUpdates(w format.Writer, cfg *apps.Config) {
 			if job.Schedule != nil {
 				cfg.ScheduledJobs[i].Schedule = *job.Schedule
 			}
+			if job.TimeZone != nil {
+				cfg.ScheduledJobs[i].TimeZone = *job.TimeZone
+			}
 			if job.Retries != nil {
 				cfg.DeployJob.Retries = job.Retries
 			}
@@ -503,6 +507,9 @@ func (job scheduledJob) applyUpdates(w format.Writer, cfg *apps.Config) {
 	}
 	if job.Size != nil {
 		newJob.Size = new(apps.ApplicationSize(*job.Size))
+	}
+	if job.TimeZone != nil {
+		newJob.TimeZone = *job.TimeZone
 	}
 	cfg.ScheduledJobs = append(cfg.ScheduledJobs, newJob)
 }

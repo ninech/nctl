@@ -94,6 +94,7 @@ type scheduledJob struct {
 	Name     string        `help:"Name of the scheduled job job to add." placeholder:"scheduled-1"`
 	Size     *string       `help:"Size (resources) of the scheduled job (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
 	Schedule string        `help:"Cron notation string for the scheduled job (defaults to \"* * * * *\")." placeholder:"\"* * * * *\""`
+	TimeZone *string       `help:"Time zone the schedule is evaluated in, e.g. \"Europe/Zurich\" (defaults to \"UTC\")." placeholder:"Europe/Zurich"`
 	Retries  int32         `default:"${app_default_scheduled_job_retries}" help:"How many times the job will be restarted on failure. Default is ${app_default_scheduled_job_retries} and maximum 5."`
 	Timeout  time.Duration `default:"${app_default_scheduled_job_timeout}" help:"Timeout of the job. Default is ${app_default_scheduled_job_timeout}, minimum is 1 minute and maximum is 30 minutes."`
 }
@@ -343,6 +344,9 @@ func (cmd *applicationCmd) config() apps.Config {
 		}
 		if cmd.ScheduledJob.Size != nil {
 			scheduledJob.Size = new(apps.ApplicationSize(*cmd.ScheduledJob.Size))
+		}
+		if cmd.ScheduledJob.TimeZone != nil {
+			scheduledJob.TimeZone = *cmd.ScheduledJob.TimeZone
 		}
 		config.ScheduledJobs = append(config.ScheduledJobs, scheduledJob)
 	}
