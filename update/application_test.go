@@ -490,6 +490,67 @@ func TestApplication(t *testing.T) {
 				is.Nil(updated.Spec.ForProvider.Config.DeployJob)
 			},
 		},
+		"add new scheduled job": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				ResourceCmd: ResourceCmd{
+					Name: existingApp.Name,
+				},
+				ScheduledJob: &scheduledJob{
+					Name:     new("nightly-backup"),
+					Command:  new("./backup.sh"),
+					Schedule: new("0 3 * * *"),
+					TimeZone: new("Europe/Zurich"),
+					Retries:  new(int32(2)),
+					Timeout:  ptr.To(10 * time.Minute),
+				},
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				is := require.New(t)
+				is.Len(updated.Spec.ForProvider.Config.ScheduledJobs, 1)
+				job := updated.Spec.ForProvider.Config.ScheduledJobs[0]
+				is.Equal(*cmd.ScheduledJob.Name, job.Name)
+				is.Equal(*cmd.ScheduledJob.Command, job.Command)
+				is.Equal(*cmd.ScheduledJob.Schedule, job.Schedule)
+				is.Equal(*cmd.ScheduledJob.TimeZone, job.TimeZone)
+				is.Equal(*cmd.ScheduledJob.Retries, *job.Retries)
+				is.Equal(*cmd.ScheduledJob.Timeout, job.Timeout.Duration)
+			},
+		},
+		"update existing scheduled job": {
+			orig: func() *apps.Application {
+				a := existingApp.DeepCopy()
+				a.Spec.ForProvider.Config.ScheduledJobs = []apps.ScheduledJob{
+					{
+						Job:      apps.Job{Name: "nightly-backup", Command: "./backup.sh"},
+						Schedule: "0 3 * * *",
+						FiniteJob: apps.FiniteJob{
+							Retries: new(int32(1)),
+							Timeout: &metav1.Duration{Duration: 5 * time.Minute},
+						},
+					},
+				}
+				return a
+			}(),
+			cmd: applicationCmd{
+				ResourceCmd: ResourceCmd{
+					Name: existingApp.Name,
+				},
+				ScheduledJob: &scheduledJob{
+					Name:    new("nightly-backup"),
+					Retries: new(int32(5)),
+					Timeout: ptr.To(20 * time.Minute),
+				},
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				is := require.New(t)
+				is.Len(updated.Spec.ForProvider.Config.ScheduledJobs, 1)
+				job := updated.Spec.ForProvider.Config.ScheduledJobs[0]
+				is.Equal(*cmd.ScheduledJob.Retries, *job.Retries)
+				is.Equal(*cmd.ScheduledJob.Timeout, job.Timeout.Duration)
+				is.Equal(orig.Spec.ForProvider.Config.DeployJob, updated.Spec.ForProvider.Config.DeployJob)
+			},
+		},
 		"retry release": {
 			orig: existingApp,
 			cmd: applicationCmd{
