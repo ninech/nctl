@@ -128,8 +128,7 @@ func TestErrorUnwrap(t *testing.T) {
 		t.Error("errors.Is should match the underlying error")
 	}
 
-	var cliErr *Error
-	if !errors.As(err, &cliErr) {
+	if _, ok := errors.AsType[*Error](err); !ok {
 		t.Error("errors.As should find *cli.Error")
 	}
 }
