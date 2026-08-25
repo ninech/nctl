@@ -171,17 +171,29 @@ func (c *Client) GetConnectionSecret(ctx context.Context, mg resource.Managed) (
 	return secret, nil
 }
 
+// Token returns a valid access token for the configured API, or an empty
+// string if none could be obtained. Errors are reported on stderr but
+// otherwise swallowed so existing callers keep working. Use TokenE when the
+// caller needs to react to the error (e.g. to avoid emitting a stale token).
 func (c *Client) Token(ctx context.Context) string {
-	if c.Config == nil {
-		return ""
-	}
-
-	token, err := GetTokenFromConfig(ctx, c.Config)
+	token, err := c.TokenE(ctx)
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "warning: could not get a valid access token: %s\n", err)
 		return ""
 	}
 
 	return token
+}
+
+// TokenE returns a valid access token for the configured API. Unlike Token it
+// returns the underlying error instead of swallowing it, so an expired token
+// surfaces as a clear, actionable error rather than an empty string.
+func (c *Client) TokenE(ctx context.Context) (string, error) {
+	if c.Config == nil {
+		return "", fmt.Errorf("client config is not set")
+	}
+
+	return GetTokenFromConfig(ctx, c.Config)
 }
 
 func (c *Client) DeploioRuntimeClient(ctx context.Context, scheme *runtime.Scheme) (runtimeclient.Client, error) {

@@ -18,7 +18,7 @@ type OIDCCmd struct {
 const OIDCCmdName = api.OIDCCmdName
 
 func (o *OIDCCmd) Run(ctx context.Context) error {
-	return api.GetToken(ctx, o.IssuerURL, o.ClientID, o.UsePKCE, os.Stdout)
+	return api.GetToken(ctx, o.IssuerURL, o.ClientID, o.UsePKCE, false, os.Stdout)
 }
 
 // execConfig returns an *clientcmdapi.ExecConfig that can be used to login to
