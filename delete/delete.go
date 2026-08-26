@@ -16,7 +16,7 @@ import (
 
 type Cmd struct {
 	FromFile            fromFile             `cmd:"" group:"delete-general" default:"withargs" name:"-f <file>" help:"Delete any resource from a yaml or json file."`
-	VCluster            vclusterCmd          `cmd:"" group:"delete-infra" name:"vcluster" help:"Delete a vcluster."`
+	VCluster            vclusterCmd          `cmd:"" group:"delete-infra" name:"vcluster" api-resource:"kubernetesclusters" help:"Delete a vcluster."`
 	APIServiceAccount   apiServiceAccountCmd `cmd:"" group:"delete-access" name:"apiserviceaccount" aliases:"asa" help:"Delete an API Service Account."`
 	Project             projectCmd           `cmd:"" group:"delete-access" name:"project" aliases:"proj" help:"Delete a Project."`
 	ProjectConfig       configCmd            `cmd:"" group:"delete-apps" name:"project-config" aliases:"config" help:"Delete a deplo.io Project Configuration."`
@@ -42,7 +42,7 @@ type Cmd struct {
 type ResourceCmd struct {
 	format.Writer `kong:"-"`
 	format.Reader `kong:"-"`
-	Name          string        `arg:"" completion-predictor:"resource_name" help:"Name of the resource to delete."`
+	Name          string        `arg:"" completion-predictor:"client:resource_name" help:"Name of the resource to delete."`
 	Force         bool          `default:"false" help:"Do not ask for confirmation of deletion."`
 	Wait          bool          `default:"true" help:"Wait until resource is fully deleted."`
 	WaitTimeout   time.Duration `default:"5m" help:"Duration to wait for the deletion. Only relevant if wait is set."`

@@ -12,7 +12,7 @@ import (
 
 type mysqlDatabaseCmd struct {
 	ResourceCmd
-	BackupSchedule *storage.DatabaseBackupScheduleCalendar `help:"Backup schedule for the MySQL database. Available schedules: ${mysqldatabase_backupschedule_options}"`
+	BackupSchedule *storage.DatabaseBackupScheduleCalendar `help:"Backup schedule for the MySQL database." completion-predictor:"apifield:mysqldatabase_backup_schedule"`
 }
 
 func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error {

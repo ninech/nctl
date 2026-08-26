@@ -32,8 +32,8 @@ type serviceConnectionCmd struct {
 	ResourceCmd
 	Source                   application.TypedReference `placeholder:"kind/name" help:"Source of the connection in the form kind/name. Allowed source kinds are: ${allowed_sources}." required:""`
 	Destination              application.TypedReference `placeholder:"kind/name" help:"Destination of the connection in the form kind/name. Must be in the same project as the service connection. Allowed destination kinds are: ${allowed_destinations}." required:""`
-	SourceNamespace          string                   `help:"Source namespace of the connection. Defaults to current project."`
-	KubernetesClusterOptions KubernetesClusterOptions `embed:"" prefix:"source-"`
+	SourceNamespace          string                     `help:"Source namespace of the connection. Defaults to current project."`
+	KubernetesClusterOptions KubernetesClusterOptions   `embed:"" prefix:"source-"`
 }
 
 // KubernetesClusterOptions contains options for a KubernetesCluster source.
@@ -84,7 +84,6 @@ func (ls *LabelSelector) UnmarshalText(text []byte) error {
 
 	return nil
 }
-
 
 func (cmd *serviceConnectionCmd) Run(ctx context.Context, client *api.Client) error {
 	sc, err := cmd.newServiceConnection(client.Project)

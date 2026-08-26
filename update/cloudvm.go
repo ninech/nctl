@@ -18,7 +18,7 @@ type cloudVMCmd struct {
 	MachineType          string            `placeholder:"nine-standard-1" help:"Defines the sizing for a particular CloudVM."`
 	Hostname             string            `placeholder:"" help:"Configures the hostname explicitly. If unset, the name of the resource will be used as the hostname. This does not affect the DNS name."`
 	ReverseDNS           string            `placeholder:"" help:"Allows to set the reverse DNS of the CloudVM."`
-	OS                   string            `placeholder:"ubuntu22.04" help:"OS which should be used to boot the VM."`
+	OS                   string            `placeholder:"ubuntu22.04" help:"OS which should be used to boot the VM." completion-predictor:"apifield:cloudvm_os"`
 	BootDiskSize         string            `placeholder:"20Gi" help:"Configures the size of the boot disk."`
 	Disks                map[string]string `placeholder:"{}" help:"Additional disks to mount to the machine."`
 	On                   *bool             `help:"Turns the CloudVM on."`

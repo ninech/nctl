@@ -12,5 +12,5 @@ type Cmd struct {
 }
 
 type resourceCmd struct {
-	Name string `arg:"" completion-predictor:"resource_name" help:"Name of the resource." required:""`
+	Name string `arg:"" completion-predictor:"client:resource_name" help:"Name of the resource." required:""`
 }

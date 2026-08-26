@@ -8,15 +8,11 @@ import (
 	"io"
 	"os"
 	"os/signal"
-	"reflect"
 	"runtime/debug"
 	"strings"
 	"syscall"
 
 	"github.com/alecthomas/kong"
-	completion "github.com/jotaen/kong-completion"
-	management "github.com/ninech/apis/management/v1alpha1"
-	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/apply"
 	"github.com/ninech/nctl/auth"
@@ -26,17 +22,17 @@ import (
 	"github.com/ninech/nctl/edit"
 	"github.com/ninech/nctl/exec"
 	"github.com/ninech/nctl/get"
+	"github.com/ninech/nctl/internal/apifield"
 	"github.com/ninech/nctl/internal/cli"
+	"github.com/ninech/nctl/internal/completion"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/logs"
-	"github.com/ninech/nctl/predictor"
 	"github.com/ninech/nctl/update"
-	"github.com/posener/complete"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 type flags struct {
-	Project        string           `help:"Limit commands to a specific project." short:"p" completion-predictor:"project_name"`
+	Project        string           `help:"Limit commands to a specific project." short:"p" completion-predictor:"client:project_name"`
 	APICluster     string           `help:"Context name of the API cluster." default:"${api_cluster}" env:"NCTL_API_CLUSTER" hidden:""`
 	LogAPIAddress  string           `help:"Address of the deplo.io logging API server." default:"https://logs.deplo.io" env:"NCTL_LOG_ADDR" hidden:""`
 	LogAPIInsecure bool             `help:"Don't verify TLS connection to the logging API server." hidden:"" default:"false" env:"NCTL_LOG_INSECURE"`
@@ -56,11 +52,11 @@ type rootCommand struct {
 	Edit   edit.Cmd   `cmd:"" help:"Edit supported resources interactively in your configured editor." group:"verbs"`
 
 	// Utility & interaction
-	Auth        auth.Cmd              `cmd:"" help:"Log in, switch organization or project context, and inspect your current session." group:"utils"`
-	Logs        logs.Cmd              `cmd:"" help:"Show logs for supported deplo.io resources such as applications and builds." group:"utils"`
-	Exec        exec.Cmd              `cmd:"" help:"Run a command or open a shell in a deplo.io application." group:"utils"`
-	Copy        copy.Cmd              `cmd:"" help:"Copy supported resources such as deplo.io applications." group:"utils"`
-	Completions completion.Completion `cmd:"" help:"Generate shell completion commands for your current shell." group:"utils"`
+	Auth        auth.Cmd       `cmd:"" help:"Log in, switch organization or project context, and inspect your current session." group:"utils"`
+	Logs        logs.Cmd       `cmd:"" help:"Show logs for supported deplo.io resources such as applications and builds." group:"utils"`
+	Exec        exec.Cmd       `cmd:"" help:"Run a command or open a shell in a deplo.io application." group:"utils"`
+	Copy        copy.Cmd       `cmd:"" help:"Copy supported resources such as deplo.io applications." group:"utils"`
+	Completions completion.Cmd `cmd:"" help:"Generate shell completion commands for your current shell." group:"utils"`
 }
 
 const (
@@ -216,6 +212,7 @@ func newParser(ctx context.Context, cmd *rootCommand, w io.Writer, r io.Reader) 
 		}),
 		kong.UsageOnError(),
 		kong.PostBuild(format.InterpolateFlagPlaceholders(kongVars)),
+		kong.PostBuild(apifield.Apply()),
 		kongVars,
 		kong.BindTo(ctx, (*context.Context)(nil)),
 		kong.BindTo(w, (*io.Writer)(nil)),
@@ -225,45 +222,14 @@ func newParser(ctx context.Context, cmd *rootCommand, w io.Writer, r io.Reader) 
 		return nil, err
 	}
 
-	predictors := append([]completion.Option{
-		completion.WithPredictor("file", complete.PredictFiles("*")),
-	}, clientPredictors(ctx)...)
-	completion.Register(parser, predictors...)
+	// Completion has to be registered before parsing, so cmd is still empty
+	// here. The predictors resolve the flags they need off the parser model
+	// and the command line being completed instead.
+	if err := completion.Register(ctx, parser); err != nil {
+		return nil, err
+	}
 
 	return parser, nil
-}
-
-func clientPredictors(ctx context.Context) []completion.Option {
-	// complete needs all used predictors to be defined, so we just use
-	// [complete.PredictNothing] for those that would require an API client.
-	nothing := []completion.Option{
-		completion.WithPredictor("resource_name", complete.PredictNothing),
-		completion.WithPredictor("project_name", complete.PredictNothing),
-		completion.WithPredictor("postgres_databases", complete.PredictNothing),
-		completion.WithPredictor("mysql_databases", complete.PredictNothing),
-	}
-
-	// During completion for commands that don't need an API client (auth,
-	// completions), this still attempts a kubeconfig read. The cost is
-	// negligible and the predictors are never invoked for those commands.
-	if os.Getenv("COMP_LINE") == "" {
-		return nothing
-	}
-
-	client, err := predictor.NewClient(ctx, defaultAPICluster)
-	if err != nil {
-		return nothing
-	}
-
-	return []completion.Option{
-		completion.WithPredictor("resource_name", predictor.NewResourceName(client)),
-		completion.WithPredictor(
-			"project_name", predictor.NewResourceNameWithKind(client,
-				management.SchemeGroupVersion.WithKind(reflect.TypeFor[management.ProjectList]().Name())),
-		),
-		completion.WithPredictor("postgres_databases", predictor.NewInstanceDatabases(client, storage.PostgresGroupVersionKind)),
-		completion.WithPredictor("mysql_databases", predictor.NewInstanceDatabases(client, storage.MySQLGroupVersionKind)),
-	}
 }
 
 // noAPIClientRequired returns true if the command does not need to (or can't)
@@ -310,17 +276,10 @@ func kongVariables() (kong.Vars, error) {
 	if err := merge(
 		result,
 		appCreateKongVars,
-		create.CloudVMKongVars(),
 		create.MySQLKongVars(),
-		create.MySQLDatabaseKongVars(),
-		create.PostgresKongVars(),
-		create.PostgresDatabaseKongVars(),
-		create.KeyValueStoreKongVars(),
-		create.OpenSearchKongVars(),
 		create.ServiceConnectionKongVars(),
 		create.BucketKongVars(),
 		update.BucketKongVars(),
-		create.BucketUserKongVars(),
 		auth.LoginKongVars(),
 		logs.KongVars(),
 	); err != nil {

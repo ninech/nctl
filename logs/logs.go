@@ -21,7 +21,7 @@ type Cmd struct {
 }
 
 type resourceCmd struct {
-	Name string `arg:"" completion-predictor:"resource_name" help:"Name of the resource." default:""`
+	Name string `arg:"" completion-predictor:"client:resource_name" help:"Name of the resource." default:""`
 }
 
 // LogsCmd is the shared base for the logs sub-commands.

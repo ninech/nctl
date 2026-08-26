@@ -14,9 +14,11 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
+var bucketRoles = []storage.BucketRole{storage.BucketRoleReader, storage.BucketRoleWriter}
+
 type bucketCmd struct {
 	ResourceCmd
-	Location   meta.LocationName `placeholder:"${bucket_location_default}" help:"Where the Bucket instance is created. Available locations are: ${bucket_location_options}" required:""`
+	Location   meta.LocationName `help:"Where the Bucket instance is created." required:"" completion-predictor:"apifield:bucket_location"`
 	PublicRead bool              `help:"Publicly readable objects." default:"false"`
 	PublicList bool              `help:"Publicly listable objects." default:"false"`
 	Versioning bool              `help:"Enable object versioning." default:"false"`
@@ -112,11 +114,7 @@ func (cmd *bucketCmd) newBucket(project string) (*storage.Bucket, error) {
 
 func BucketKongVars() kong.Vars {
 	result := make(kong.Vars)
-	result["bucket_location_default"] = string(storage.BucketUserLocationDefault)
-	result["bucket_location_options"] = strings.Join(stringSlice(storage.BucketLocationOptions), ", ")
-
-	roles := []storage.BucketRole{storage.BucketRoleReader, storage.BucketRoleWriter}
-	result["bucket_role_options"] = strings.Join(stringSlice(roles), ", ")
+	result["bucket_role_options"] = strings.Join(stringSlice(bucketRoles), ", ")
 	result["bucket_permissions_example"] = fmt.Sprintf("%s=frontend,analytics;%s=ingest", storage.BucketRoleReader, storage.BucketRoleWriter)
 	result["bucket_lifecycle_policy_example"] = "prefix=p/;expire-after-days=7;is-live=true"
 	result["bucket_cors_example"] = "origins=https://a.com,https://b.com;allowed-headers=Content-Type,Content-MD5;response-headers=ETag,Last-Modified;max-age=3600"

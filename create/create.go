@@ -349,15 +349,6 @@ func stringSlice[K ~string](elems []K) []string {
 	return s
 }
 
-// stringerSlice converts a slice of elements implementing [fmt.Stringer] to a slice of strings.
-func stringerSlice[T fmt.Stringer](slice []T) []string {
-	strings := make([]string, 0, len(slice))
-	for _, e := range slice {
-		strings = append(strings, e.String())
-	}
-	return strings
-}
-
 // ParseSSHKeys parses the SSH keys from the given file.
 func ParseSSHKeys(file *os.File) ([]storage.SSHKey, error) {
 	keys := []storage.SSHKey{}

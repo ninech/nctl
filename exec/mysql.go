@@ -21,7 +21,7 @@ const (
 
 type mysqlCmd struct {
 	ServiceCmd
-	Database string `name:"database" short:"d" completion-predictor:"mysql_databases" help:"Database name to connect to."`
+	Database string `name:"database" short:"d" completion-predictor:"client:mysql_databases" help:"Database name to connect to."`
 }
 
 // Help displays usage examples for the mysql exec command.

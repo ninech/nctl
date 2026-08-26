@@ -18,7 +18,7 @@ type OptionalSSHKeysFlags struct {
 	// apart the options of an authorized_keys line. Repeat the flag or separate
 	// the keys by newlines to pass more than one.
 	SSHKeys          []string   `sep:"none" placeholder:"ssh-ed25519 AAAA..." help:"SSH public keys ${ssh_keys_purpose=to connect to the resource}. The keys are expected to be in SSH format as defined in RFC4253. Repeat the flag to pass more than one key, pass it an empty value to remove all configured keys."`
-	SSHKeysFromFiles []*os.File `placeholder:"~/.ssh/id_ed25519.pub" completion-predictor:"file" help:"Files holding SSH public keys ${ssh_keys_purpose=to connect to the resource}. Empty lines and lines prefixed with # are ignored."`
+	SSHKeysFromFiles []*os.File `placeholder:"~/.ssh/id_ed25519.pub" completion-predictor:"local:file" help:"Files holding SSH public keys ${ssh_keys_purpose=to connect to the resource}. Empty lines and lines prefixed with # are ignored."`
 }
 
 // SSHKeysSet reports whether one of the flags was passed at all. If it is false
@@ -44,7 +44,7 @@ type DatabaseSSHKeysFlags struct {
 	OptionalSSHKeysFlags
 
 	// Deprecated Flags
-	SSHKeysFile *os.File `hidden:"" completion-predictor:"file" help:"Deprecated, use --ssh-keys-from-files instead."`
+	SSHKeysFile *os.File `hidden:"" completion-predictor:"local:file" help:"Deprecated, use --ssh-keys-from-files instead."`
 }
 
 // SSHKeysSet reports whether one of the flags was passed at all.
