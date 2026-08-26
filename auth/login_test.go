@@ -23,7 +23,7 @@ import (
 
 type fakeTokenGetter struct{}
 
-func (f *fakeTokenGetter) GetTokenString(ctx context.Context, issuerURL, clientID string, usePKCE bool) (string, error) {
+func (f *fakeTokenGetter) GetTokenString(ctx context.Context, issuerURL, clientID string, usePKCE, useDeviceCode bool) (string, error) {
 	return test.FakeJWTToken, nil
 }
 
@@ -78,6 +78,39 @@ func TestLoginCmd(t *testing.T) {
 	checkConfig(t, merged, 2, "existing")
 }
 
+func TestLoginCmdUseDeviceCode(t *testing.T) {
+	dir, err := os.MkdirTemp("", "nctl-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(dir)
+
+	kubeconfig := path.Join(dir, "test-kubeconfig.yaml")
+	os.Setenv(clientcmd.RecommendedConfigPathEnvVar, kubeconfig)
+
+	apiHost := "api.example.org"
+	cmd := &LoginCmd{
+		API: API{
+			URL: "https://" + apiHost,
+		},
+		IssuerURL:                   "https://auth.example.org",
+		ClientID:                    "some-client-id",
+		UseDeviceCode:               true,
+		ForceInteractiveEnvOverride: true,
+		tk:                          &fakeTokenGetter{},
+	}
+	require.NoError(t, cmd.Run(t.Context()))
+
+	b, err := os.ReadFile(kubeconfig)
+	require.NoError(t, err)
+
+	kc, err := clientcmd.Load(b)
+	require.NoError(t, err)
+
+	checkConfig(t, kc, 1, apiHost)
+	require.NotNil(t, kc.AuthInfos[apiHost].Exec, "expected kubeconfig to have execConfig")
+	require.Contains(t, kc.AuthInfos[apiHost].Exec.Args, api.UseDeviceCodeArg,
+		"expected exec args to request the device authorization grant so token refreshes keep using it")
+}
+
 func TestLoginClientCredentials(t *testing.T) {
 	apiHost := "api.example.org"
 	mockTokenServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -127,6 +160,20 @@ func TestLoginClientCredentials(t *testing.T) {
 			},
 			wantErr:        true,
 			wantErrMessage: `Post "http://localhost:99999": dial tcp: address 99999: invalid port`,
+		},
+		{
+			name: "use-device-code combined with client_id/secret is rejected",
+			cmd: &LoginCmd{
+				API: API{
+					URL:          "https://" + apiHost,
+					ClientID:     "foo",
+					ClientSecret: "bar",
+					TokenURL:     mockTokenServer.URL,
+				},
+				UseDeviceCode: true,
+			},
+			wantErr:        true,
+			wantErrMessage: "--use-device-code cannot be combined with --api-token or --api-client-id/--api-client-secret",
 		},
 	}
 	for _, tt := range tests {
@@ -218,6 +265,20 @@ func TestLoginStaticToken(t *testing.T) {
 			},
 			wantErr:        true,
 			wantErrMessage: ErrNonInteractiveEnvironmentEmptyToken,
+		},
+		{
+			name: "use-device-code combined with api-token is rejected",
+			cmd: &LoginCmd{
+				API: API{
+					URL: "https://" + apiHost, Token: test.FakeJWTToken,
+				},
+				Organization:                "test",
+				UseDeviceCode:               true,
+				ForceInteractiveEnvOverride: true,
+				tk:                          &fakeTokenGetter{},
+			},
+			wantErr:        true,
+			wantErrMessage: "--use-device-code cannot be combined with --api-token or --api-client-id/--api-client-secret",
 		},
 	}
 	for _, tt := range tests {

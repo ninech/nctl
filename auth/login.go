@@ -31,6 +31,7 @@ type LoginCmd struct {
 	Organization                string `help:"Name of your organization to use when providing an API client ID/secret." env:"NCTL_ORGANIZATION"`
 	IssuerURL                   string `help:"OIDC issuer URL of the API." default:"${issuer_url}" hidden:""`
 	ClientID                    string `help:"OIDC client ID of the API." default:"${client_id}" hidden:""`
+	UseDeviceCode               bool   `help:"Use the OAuth2 device authorization grant instead of opening a local browser. Useful when logging in from a machine without a browser, e.g. over SSH: visit the printed URL on any other device to approve the login."`
 	ForceInteractiveEnvOverride bool   `help:"Used for internal purposes only. Set to true to force interactive environment explicit override. Set to false to fall back to automatic interactivity detection." default:"false" hidden:""`
 	tk                          api.TokenGetter
 }
@@ -56,6 +57,10 @@ func (cmd *LoginCmd) Run(ctx context.Context) error {
 	command, err := os.Executable()
 	if err != nil {
 		return fmt.Errorf("can not identify executable path: %w", err)
+	}
+
+	if cmd.UseDeviceCode && (cmd.API.Token != "" || cmd.API.ClientID != "") {
+		return fmt.Errorf("--use-device-code cannot be combined with --api-token or --api-client-id/--api-client-secret")
 	}
 
 	if cmd.API.Token != "" {
@@ -102,7 +107,7 @@ func (cmd *LoginCmd) Run(ctx context.Context) error {
 
 	usePKCE := true
 
-	token, err := cmd.tokenGetter().GetTokenString(ctx, cmd.IssuerURL, cmd.ClientID, usePKCE)
+	token, err := cmd.tokenGetter().GetTokenString(ctx, cmd.IssuerURL, cmd.ClientID, usePKCE, cmd.UseDeviceCode)
 	if err != nil {
 		return err
 	}
@@ -123,7 +128,7 @@ func (cmd *LoginCmd) Run(ctx context.Context) error {
 		printAvailableOrgsString(cmd.Writer, org, userInfo.Orgs)
 	}
 
-	cfg, err := newAPIConfig(apiURL, issuerURL, command, cmd.ClientID, withOrganization(org))
+	cfg, err := newAPIConfig(apiURL, issuerURL, command, cmd.ClientID, withOrganization(org), withDeviceCode(cmd.UseDeviceCode))
 	if err != nil {
 		return err
 	}
@@ -154,11 +159,12 @@ func (cmd *LoginCmd) tokenGetter() api.TokenGetter {
 }
 
 type apiConfig struct {
-	name         string
-	token        string
-	api          API
-	caCert       []byte
-	organization string
+	name          string
+	token         string
+	api           API
+	caCert        []byte
+	organization  string
+	useDeviceCode bool
 }
 
 type apiConfigOption func(*apiConfig)
@@ -190,6 +196,16 @@ func useClientCredentials(api API) apiConfigOption {
 func withOrganization(organization string) apiConfigOption {
 	return func(ac *apiConfig) {
 		ac.organization = organization
+	}
+}
+
+// withDeviceCode configures the OIDC exec plugin written to the kubeconfig
+// to use the OAuth2 device authorization grant instead of opening a local
+// browser, so that subsequent token refreshes triggered by the exec plugin
+// keep using the same login method.
+func withDeviceCode(useDeviceCode bool) apiConfigOption {
+	return func(ac *apiConfig) {
+		ac.useDeviceCode = useDeviceCode
 	}
 }
 
@@ -242,7 +258,7 @@ func newAPIConfig(apiURL, issuerURL *url.URL, command, clientID string, opts ...
 	}
 
 	clientConfig.AuthInfos[cfg.name] = &clientcmdapi.AuthInfo{
-		Exec: execConfig(command, clientID, issuerURL),
+		Exec: execConfig(command, clientID, issuerURL, cfg.useDeviceCode),
 	}
 
 	return clientConfig, nil

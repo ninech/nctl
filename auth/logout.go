@@ -76,7 +76,7 @@ func (l *LogoutCmd) Run(ctx context.Context) error {
 		return fmt.Errorf("error creating request: %w", err)
 	}
 
-	token, err := l.tokenGetter().GetTokenString(ctx, l.IssuerURL, l.ClientID, false)
+	token, err := l.tokenGetter().GetTokenString(ctx, l.IssuerURL, l.ClientID, false, false)
 	if err != nil {
 		return fmt.Errorf("error getting token: %w", err)
 	}

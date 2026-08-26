@@ -25,6 +25,7 @@ import (
 	"github.com/int128/kubelogin/pkg/tokencache/repository"
 	"github.com/int128/kubelogin/pkg/usecases/authentication"
 	"github.com/int128/kubelogin/pkg/usecases/authentication/authcode"
+	"github.com/int128/kubelogin/pkg/usecases/authentication/devicecode"
 	"github.com/int128/kubelogin/pkg/usecases/authentication/ropc"
 	"github.com/int128/kubelogin/pkg/usecases/credentialplugin"
 	"golang.org/x/oauth2/clientcredentials"
@@ -41,6 +42,7 @@ const (
 	ClientSecretArg          = "--client-secret="
 	TokenURLArg              = "--token-url="
 	UsePKCEArg               = "--use-pkce"
+	UseDeviceCodeArg         = "--use-device-code"
 	CustomersPrefix          = "/Customers/"
 	ClientCredentialsCmdName = "client-credentials"
 	OIDCCmdName              = "oidc"
@@ -97,7 +99,7 @@ func GetTokenFromExecConfig(ctx context.Context, execConfig *api.ExecConfig) (st
 		return token.AccessToken, nil
 	case OIDCCmdName:
 		var issuerURL, clientID string
-		var usePKCE bool
+		var usePKCE, useDeviceCode bool
 		for _, arg := range execConfig.Args {
 			if after, ok := strings.CutPrefix(arg, IssuerURLArg); ok {
 				issuerURL = after
@@ -108,26 +110,29 @@ func GetTokenFromExecConfig(ctx context.Context, execConfig *api.ExecConfig) (st
 			if arg == UsePKCEArg {
 				usePKCE = true
 			}
+			if arg == UseDeviceCodeArg {
+				useDeviceCode = true
+			}
 		}
 		if issuerURL == "" || clientID == "" {
 			return "", fmt.Errorf("provided execConfig does not include expected args %s/%s", IssuerURLArg, ClientIDArg)
 		}
 		tk := DefaultTokenGetter{}
-		return tk.GetTokenString(ctx, issuerURL, clientID, usePKCE)
+		return tk.GetTokenString(ctx, issuerURL, clientID, usePKCE, useDeviceCode)
 	default:
 		return "", fmt.Errorf("unknown exec command provided: %s", command)
 	}
 }
 
 type TokenGetter interface {
-	GetTokenString(ctx context.Context, issuerURL, clientID string, usePKCE bool) (string, error)
+	GetTokenString(ctx context.Context, issuerURL, clientID string, usePKCE, useDeviceCode bool) (string, error)
 }
 
 type DefaultTokenGetter struct{}
 
-func (t *DefaultTokenGetter) GetTokenString(ctx context.Context, issuerURL, clientID string, usePKCE bool) (string, error) {
+func (t *DefaultTokenGetter) GetTokenString(ctx context.Context, issuerURL, clientID string, usePKCE, useDeviceCode bool) (string, error) {
 	buf := &bytes.Buffer{}
-	if err := GetToken(ctx, issuerURL, clientID, usePKCE, buf); err != nil {
+	if err := GetToken(ctx, issuerURL, clientID, usePKCE, useDeviceCode, buf); err != nil {
 		return "", err
 	}
 
@@ -144,8 +149,27 @@ func (t *DefaultTokenGetter) GetTokenString(ctx context.Context, issuerURL, clie
 }
 
 // GetToken executes the OIDC login flow using the kubelogin with the provided
-// OIDC parameters writes the raw JSON ExecCredential result to out.
-func GetToken(ctx context.Context, issuerURL, clientID string, usePKCE bool, out io.Writer) error {
+// OIDC parameters writes the raw JSON ExecCredential result to out. If
+// useDeviceCode is true, the OAuth 2.0 device authorization grant (RFC 8628)
+// is used instead of the authorization code flow with a local browser and
+// callback listener. This allows logging in from an environment without a
+// local browser, e.g. an SSH session: the URL to approve the login is
+// printed and can be opened on any other device.
+func GetToken(ctx context.Context, issuerURL, clientID string, usePKCE, useDeviceCode bool, out io.Writer) error {
+	grantOptionSet := authentication.GrantOptionSet{
+		AuthCodeBrowserOption: &authcode.BrowserOption{
+			BindAddress:           defaultBindAddresses,
+			AuthenticationTimeout: defaultAuthTimeout,
+		},
+	}
+	if useDeviceCode {
+		grantOptionSet = authentication.GrantOptionSet{
+			DeviceCodeOption: &devicecode.Option{
+				SkipOpenBrowser: true,
+			},
+		}
+	}
+
 	in := credentialplugin.Input{
 		Provider: oidc.Provider{
 			IssuerURL: issuerURL,
@@ -154,12 +178,7 @@ func GetToken(ctx context.Context, issuerURL, clientID string, usePKCE bool, out
 		TokenCacheConfig: tokencache.Config{
 			Directory: path.Join(homedir.HomeDir(), DefaultTokenCachePath),
 		},
-		GrantOptionSet: authentication.GrantOptionSet{
-			AuthCodeBrowserOption: &authcode.BrowserOption{
-				BindAddress:           defaultBindAddresses,
-				AuthenticationTimeout: defaultAuthTimeout,
-			},
-		},
+		GrantOptionSet: grantOptionSet,
 	}
 
 	clockReal := &clock.Real{}
@@ -189,6 +208,10 @@ func GetToken(ctx context.Context, issuerURL, clientID string, usePKCE bool, out
 					Stdin: stdin,
 				},
 				Logger: logger,
+			},
+			DeviceCode: &devicecode.DeviceCode{
+				Browser: &browser.Browser{},
+				Logger:  logger,
 			},
 		},
 		Logger:                 logger,
