@@ -2,12 +2,10 @@ package create
 
 import (
 	"context"
-	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 
-	"github.com/alecthomas/kong"
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
@@ -17,10 +15,10 @@ import (
 
 type mysqlDatabaseCmd struct {
 	ResourceCmd
-	Location             meta.LocationName                      `placeholder:"${mysqldatabase_location_default}" help:"Where the MySQL database is created. Available locations are: ${mysqldatabase_location_options}"`
-	MysqlDatabaseVersion storage.MySQLVersion                   `placeholder:"${mysqldatabase_version_default}" help:"Version of the MySQL database. Available versions: ${mysqldatabase_versions}"`
-	CharacterSet         string                                 `placeholder:"${mysqldatabase_characterset_default}" help:"Character set for the MySQL database. Available character sets: ${mysqldatabase_characterset_options}"`
-	BackupSchedule       storage.DatabaseBackupScheduleCalendar `placeholder:"${mysqldatabase_backupschedule_default}" help:"Backup schedule for the MySQL database. Available schedules: ${mysqldatabase_backupschedule_options}"`
+	Location             meta.LocationName                      `help:"Where the MySQL database is created." completion-predictor:"apifield:mysqldatabase_location"`
+	MysqlDatabaseVersion storage.MySQLVersion                   `help:"Version of the MySQL database." completion-predictor:"apifield:mysqldatabase_version"`
+	CharacterSet         string                                 `help:"Character set for the MySQL database." completion-predictor:"apifield:mysqldatabase_character_set"`
+	BackupSchedule       storage.DatabaseBackupScheduleCalendar `help:"Backup schedule for the MySQL database." completion-predictor:"apifield:mysqldatabase_backup_schedule"`
 }
 
 func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error {
@@ -83,20 +81,4 @@ func (cmd *mysqlDatabaseCmd) newMySQLDatabase(namespace string) *storage.MySQLDa
 	}
 
 	return mysqlDatabase
-}
-
-// MySQLDatabaseKongVars returns all variables which are used in the MySQLDatabase
-// create command
-func MySQLDatabaseKongVars() kong.Vars {
-	result := make(kong.Vars)
-	result["mysqldatabase_location_default"] = string(storage.MySQLDatabaseLocationDefault)
-	result["mysqldatabase_location_options"] = strings.Join(stringSlice(storage.MySQLDatabaseLocationOptions), ", ")
-	result["mysqldatabase_version_default"] = string(storage.MySQLDatabaseVersionDefault)
-	result["mysqldatabase_versions"] = strings.Join(stringSlice(storage.MySQLDatabaseVersions), ", ")
-	result["mysqldatabase_characterset_default"] = "utf8mb4"
-	result["mysqldatabase_characterset_options"] = strings.Join([]string{"utf8mb4"}, ", ")
-	result["mysqldatabase_backupschedule_default"] = string(storage.DatabaseBackupScheduleCalendarDaily)
-	result["mysqldatabase_backupschedule_options"] = strings.Join(stringSlice(storage.DatabaseBackupScheduleCalendars), ", ")
-
-	return result
 }

@@ -18,7 +18,7 @@ import (
 
 type SetProjectCmd struct {
 	format.Writer `hidden:""`
-	Name          string `arg:"" help:"Name of the default project to be used." completion-predictor:"project_name"`
+	Name          string `arg:"" help:"Name of the default project to be used." completion-predictor:"client:project_name"`
 	Force         bool   `flag:"force" help:"Force setting the project even if it is not found. Required for APIServiceAccounts in sub-projects and APIServiceAccounts in the organization project without organization access."`
 }
 

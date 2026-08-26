@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 
-	"github.com/alecthomas/kong"
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
@@ -25,12 +23,12 @@ type cloudVMCmd struct {
 	Hostname            string                                  `default:"" help:"Configures the hostname explicitly. If unset, the name of the resource will be used as the hostname. This does not affect the DNS name."`
 	ReverseDNS          string                                  `default:"" help:"Configures the reverse DNS of the CloudVM."`
 	PowerState          infrastructure.VirtualMachinePowerState `default:"on" help:"Specify the initial power state of the CloudVM. Set to off to not start the VM after creation."`
-	OS                  infrastructure.OperatingSystem          `default:"" help:"Operating system to use to boot the VM. Available options: ${cloudvm_os_flavors}"`
+	OS                  infrastructure.OperatingSystem          `default:"" help:"Operating system to use to boot the VM." completion-predictor:"apifield:cloudvm_os"`
 	BootDiskSize        *resource.Quantity                      `default:"20Gi" help:"Configures the size of the boot disk."`
 	Disks               map[string]resource.Quantity            `default:"" help:"Additional disks to mount to the machine."`
 	SSHKeysFlags        `set:"ssh_keys_purpose=to connect to the CloudVM as root. Immutable after creation"`
 	CloudConfig         string   `default:"" help:"Pass custom cloud config data (https://cloudinit.readthedocs.io/en/latest/topics/format.html#cloud-config-data) to the cloud VM. If a cloud config is passed, --ssh-keys and --ssh-keys-from-files are ignored. Immutable after creation."`
-	CloudConfigFromFile *os.File `completion-predictor:"file" help:"Pass custom cloud config data (https://cloudinit.readthedocs.io/en/latest/topics/format.html#cloud-config-data) from a file. Takes precedence over --cloud-config. If a cloud config is passed, --ssh-keys and --ssh-keys-from-files are ignored. Immutable after creation."`
+	CloudConfigFromFile *os.File `completion-predictor:"local:file" help:"Pass custom cloud config data (https://cloudinit.readthedocs.io/en/latest/topics/format.html#cloud-config-data) from a file. Takes precedence over --cloud-config. If a cloud config is passed, --ssh-keys and --ssh-keys-from-files are ignored. Immutable after creation."`
 
 	// Deprecated Flags
 	DeprecatedKeysFlags `prefix:"public-"`
@@ -143,13 +141,4 @@ func (cmd *cloudVMCmd) publicKeys() ([]string, error) {
 	}
 
 	return append(keys, deprecated...), nil
-}
-
-// CloudVMKongVars returns all variables which are used in the application
-// create command.
-func CloudVMKongVars() kong.Vars {
-	result := make(kong.Vars)
-	result["cloudvm_os_flavors"] = strings.Join(stringSlice(infrastructure.CloudVirtualMachineOperatingSystems), ", ")
-
-	return result
 }

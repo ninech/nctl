@@ -12,7 +12,7 @@ import (
 
 type postgresDatabaseCmd struct {
 	ResourceCmd
-	BackupSchedule *storage.DatabaseBackupScheduleCalendar `help:"Backup schedule for the PostgreSQL database. Available schedules: ${postgresdatabase_backupschedule_options}"`
+	BackupSchedule *storage.DatabaseBackupScheduleCalendar `help:"Backup schedule for the PostgreSQL database." completion-predictor:"apifield:postgresdatabase_backup_schedule"`
 }
 
 func (cmd *postgresDatabaseCmd) Run(ctx context.Context, client *api.Client) error {

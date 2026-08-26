@@ -20,7 +20,7 @@ const (
 
 type postgresCmd struct {
 	ServiceCmd
-	Database string `name:"database" short:"d" default:"postgres" completion-predictor:"postgres_databases" help:"Database name to connect to."`
+	Database string `name:"database" short:"d" default:"postgres" completion-predictor:"client:postgres_databases" help:"Database name to connect to."`
 }
 
 // Help displays usage examples for the postgres exec command.

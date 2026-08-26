@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/alecthomas/kong"
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
@@ -17,10 +16,10 @@ import (
 
 type openSearchCmd struct {
 	ResourceCmd
-	Location          meta.LocationName             `placeholder:"${opensearch_location_default}" help:"Where the OpenSearch cluster is created. Available locations are: ${opensearch_location_options}"`
-	OpensearchVersion storage.OpenSearchVersion     `placeholder:"${opensearch_version_default}" help:"Version of the OpenSearch cluster. Available versions: ${opensearch_versions}"`
-	ClusterType       storage.OpenSearchClusterType `placeholder:"${opensearch_cluster_type_default}" help:"Type of cluster. Available types: ${opensearch_cluster_types}"`
-	MachineType       string                        `placeholder:"${opensearch_machine_type_default}" help:"Defines the sizing of an OpenSearch instance. Available types: ${opensearch_machine_types}"`
+	Location          meta.LocationName             `help:"Where the OpenSearch cluster is created." completion-predictor:"apifield:opensearch_location"`
+	OpensearchVersion storage.OpenSearchVersion     `help:"Version of the OpenSearch cluster." completion-predictor:"apifield:opensearch_version"`
+	ClusterType       storage.OpenSearchClusterType `help:"Type of cluster." completion-predictor:"apifield:opensearch_cluster_type"`
+	MachineType       string                        `help:"Defines the sizing of an OpenSearch instance." completion-predictor:"apifield:opensearch_machine_type"`
 	AllowedCidrs      []meta.IPv4CIDR               `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the public endpoint."`
 	BucketUsers       []LocalReference              `placeholder:"user1,user2" help:"BucketUsers specify the users who have read access to the OpenSearch snapshots bucket."`
 	PublicNetworking  *bool                         `negatable:"" help:"Enable or disable public networking. Enabled by default."`
@@ -56,22 +55,6 @@ func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client) error {
 			return false, nil
 		},
 	})
-}
-
-// OpenSearchKongVars returns all variables which are used in the OpenSearch
-// create command
-func OpenSearchKongVars() kong.Vars {
-	result := make(kong.Vars)
-	result["opensearch_machine_types"] = strings.Join(stringerSlice(storage.OpenSearchMachineTypes), ", ")
-	result["opensearch_machine_type_default"] = storage.OpenSearchMachineTypeDefault.String()
-	result["opensearch_cluster_types"] = strings.Join(stringSlice(storage.OpenSearchClusterTypes), ", ")
-	result["opensearch_cluster_type_default"] = string(storage.OpenSearchClusterTypeDefault)
-	result["opensearch_location_options"] = strings.Join(stringSlice(storage.OpenSearchLocationOptions), ", ")
-	result["opensearch_location_default"] = string(storage.OpenSearchLocationDefault)
-	result["opensearch_version_default"] = string(storage.OpenSearchVersionDefault)
-	result["opensearch_versions"] = strings.Join(stringSlice(storage.OpenSearchVersions), ", ")
-
-	return result
 }
 
 func (cmd *openSearchCmd) newOpenSearch(namespace string) (*storage.OpenSearch, error) {

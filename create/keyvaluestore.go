@@ -2,9 +2,7 @@ package create
 
 import (
 	"context"
-	"strings"
 
-	"github.com/alecthomas/kong"
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
@@ -15,9 +13,9 @@ import (
 
 type keyValueStoreCmd struct {
 	ResourceCmd
-	Location         meta.LocationName                    `placeholder:"${keyvaluestore_location_default}" help:"Where the Key-Value Store instance is created. Available locations are: ${keyvaluestore_location_options}"`
-	MemorySize       *storage.KeyValueStoreMemorySize     `placeholder:"${keyvaluestore_memorysize_default}" help:"Available amount of memory."`
-	MaxMemoryPolicy  storage.KeyValueStoreMaxMemoryPolicy `placeholder:"${keyvaluestore_maxmemorypolicy_default}" help:"Behaviour when the memory limit is reached."`
+	Location         meta.LocationName                    `help:"Where the Key-Value Store instance is created." completion-predictor:"apifield:keyvaluestore_location"`
+	MemorySize       *storage.KeyValueStoreMemorySize     `help:"Available amount of memory." completion-predictor:"apifield:keyvaluestore_memory_size"`
+	MaxMemoryPolicy  storage.KeyValueStoreMaxMemoryPolicy `help:"Behaviour when the memory limit is reached." completion-predictor:"apifield:keyvaluestore_max_memory_policy"`
 	AllowedCidrs     []meta.IPv4CIDR                      `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the public endpoint."`
 	PublicNetworking *bool                                `negatable:"" help:"Enable or disable public networking. Enabled by default."`
 
@@ -52,17 +50,6 @@ func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client) error 
 			return false, nil
 		},
 	})
-}
-
-// KeyValueStoreKongVars returns all variables which are used in the KeyValueStore
-// create command.
-func KeyValueStoreKongVars() kong.Vars {
-	result := make(kong.Vars)
-	result["keyvaluestore_memorysize_default"] = storage.KeyValueStoreMemorySizeDefault
-	result["keyvaluestore_maxmemorypolicy_default"] = string(storage.KeyValueStoreMaxMemoryPolicyDefault)
-	result["keyvaluestore_location_options"] = strings.Join(stringSlice(storage.KeyValueStoreLocationOptions), ", ")
-	result["keyvaluestore_location_default"] = string(storage.KeyValueStoreLocationDefault)
-	return result
 }
 
 func (cmd *keyValueStoreCmd) newKeyValueStore(namespace string) (*storage.KeyValueStore, error) {

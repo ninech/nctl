@@ -11,7 +11,7 @@ import (
 
 type fromFile struct {
 	format.Writer
-	Filename *os.File `short:"f" help:"Create any resource from a yaml or json file." completion-predictor:"file"`
+	Filename *os.File `short:"f" help:"Create any resource from a yaml or json file." completion-predictor:"local:file"`
 }
 
 func (cmd *fromFile) Run(ctx context.Context, client *api.Client) error {

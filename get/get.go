@@ -26,7 +26,7 @@ import (
 type Cmd struct {
 	output
 	All                 allCmd                `cmd:"" name:"all" group:"get-general" help:"Get project content."`
-	Clusters            clustersCmd           `cmd:"" group:"get-infra" aliases:"cluster,vcluster" help:"Get Kubernetes Clusters."`
+	Clusters            clustersCmd           `cmd:"" group:"get-infra" aliases:"cluster,vcluster" api-resource:"kubernetesclusters" help:"Get Kubernetes Clusters."`
 	APIServiceAccounts  apiServiceAccountsCmd `cmd:"" group:"get-access" name:"apiserviceaccounts" aliases:"asa" help:"Get API Service Accounts."`
 	Projects            projectCmd            `cmd:"" group:"get-access" name:"projects" aliases:"proj" help:"Get Projects."`
 	Applications        applicationsCmd       `cmd:"" group:"get-apps" name:"applications" aliases:"app,apps,application" help:"Get deplo.io Applications."`
@@ -63,7 +63,7 @@ type output struct {
 // [format.Writer], see [format.Writer.BeforeApply].
 type ResourceCmd struct {
 	format.Writer `kong:"-"`
-	Name          string `arg:"" completion-predictor:"resource_name" help:"Name of the resource to get. If omitted all in the project will be listed." default:""`
+	Name          string `arg:"" completion-predictor:"client:resource_name" help:"Name of the resource to get. If omitted all in the project will be listed." default:""`
 }
 
 type outputFormat string

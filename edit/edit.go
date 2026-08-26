@@ -8,24 +8,22 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"slices"
 	"strings"
 	"time"
 
 	"github.com/alecthomas/kong"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/apiresource"
 	"github.com/ninech/nctl/internal/format"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/kubectl/pkg/cmd/util/editor"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Cmd struct {
-	VCluster            resourceCmd `cmd:"" group:"edit-infra" name:"vcluster" help:"Edit a vcluster."`
+	VCluster            resourceCmd `cmd:"" group:"edit-infra" name:"vcluster" api-resource:"kubernetesclusters" help:"Edit a vcluster."`
 	APIServiceAccount   resourceCmd `cmd:"" group:"edit-access" name:"apiserviceaccount" aliases:"asa" help:"Edit an API Service Account."`
 	Project             resourceCmd `cmd:"" group:"edit-access" name:"project" help:"Edit a project."`
 	ProjectConfig       resourceCmd `cmd:"" group:"edit-apps" name:"project-config" aliases:"config" help:"Edit a deplo.io Project Configuration."`
@@ -41,7 +39,7 @@ type Cmd struct {
 
 type resourceCmd struct {
 	format.Writer `kong:"-"`
-	Name          string `arg:"" completion-predictor:"resource_name" help:"Name of the resource to edit." required:""`
+	Name          string `arg:"" completion-predictor:"client:resource_name" help:"Name of the resource to edit." required:""`
 }
 
 // BeforeApply initializes Writer from Kong's bound [io.Writer].
@@ -59,7 +57,7 @@ const header = `# Please edit the %s below.
 var editorEnvs = []string{"NCTL_EDITOR", "EDITOR"}
 
 func (cmd *resourceCmd) Run(kong *kong.Context, ctx context.Context, c *api.Client) error {
-	gvk, err := findGVK(c.Scheme(), append(kong.Selected().Aliases, kong.Selected().Name)...)
+	gvk, err := apiresource.FindKind(c.Scheme(), apiresource.OfCommand(kong.Selected()))
 	if err != nil {
 		return err
 	}
@@ -68,7 +66,7 @@ func (cmd *resourceCmd) Run(kong *kong.Context, ctx context.Context, c *api.Clie
 	if err := c.Get(ctx, c.Name(cmd.Name), obj); err != nil {
 		return err
 	}
-	// remove managedfields so they don't pollute the object
+	// Strip managedFields to keep the edited YAML clean.
 	managedFields := obj.GetManagedFields()
 	obj.SetManagedFields(nil)
 
@@ -117,18 +115,16 @@ func (cmd *resourceCmd) Run(kong *kong.Context, ctx context.Context, c *api.Clie
 		if err != nil {
 			return err
 		}
-		// no need to update the object if the file is unchanged
 		if newModTime.Equal(oldModTime) {
 			break
 		}
 
-		// create new empty object
 		obj = &unstructured.Unstructured{}
 		if err := yaml.NewYAMLOrJSONDecoder(f, 4096).Decode(obj); err != nil {
 			editError = err
 			continue
 		}
-		// restore managedfields so we don't delete them
+		// Restore original managedFields before updating.
 		obj.SetManagedFields(managedFields)
 
 		oldResourceVersion := obj.GetResourceVersion()
@@ -207,15 +203,6 @@ func formatObj(obj client.Object) string {
 		obj.GetName(),
 		obj.GetNamespace(),
 	)
-}
-
-func findGVK(scheme *runtime.Scheme, names ...string) (schema.GroupVersionKind, error) {
-	for gvk := range scheme.AllKnownTypes() {
-		if slices.Contains(names, strings.ToLower(gvk.Kind)) {
-			return gvk, nil
-		}
-	}
-	return schema.GroupVersionKind{}, fmt.Errorf("no type found for %s", names)
 }
 
 // printStatusErrorDetails pretty-prints a [kerrors.StatusError] with all the

@@ -40,7 +40,7 @@ type Cmd struct {
 // [format.Writer], see [format.Writer.BeforeApply].
 type ResourceCmd struct {
 	format.Writer `kong:"-"`
-	Name          string `arg:"" completion-predictor:"resource_name" help:"Name of the resource to update."`
+	Name          string `arg:"" completion-predictor:"client:resource_name" help:"Name of the resource to update."`
 }
 
 // BeforeApply initializes Writer from Kong's bound [io.Writer].

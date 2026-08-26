@@ -19,9 +19,9 @@ type Cmd struct {
 // It has to be exported so that Kong initializes the embedded [format.Writer], see [format.Writer.BeforeApply].
 type ResourceCmd struct {
 	format.Writer `kong:"-"`
-	Name          string `arg:"" help:"Name of the resource to copy." default:"" completion-predictor:"resource_name"`
+	Name          string `arg:"" help:"Name of the resource to copy." default:"" completion-predictor:"client:resource_name"`
 	TargetName    string `help:"Target name of the new resource. A random name is generated if omitted." default:""`
-	TargetProject string `help:"Target project of the new resource. The current project is used if omitted." default:"" completion-predictor:"project_name"`
+	TargetProject string `help:"Target project of the new resource. The current project is used if omitted." default:"" completion-predictor:"client:project_name"`
 }
 
 // BeforeApply initializes Writer from Kong's bound [io.Writer].

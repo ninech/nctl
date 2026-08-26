@@ -2,13 +2,10 @@ package create
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 
-	"github.com/alecthomas/kong"
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
@@ -19,12 +16,12 @@ import (
 
 type postgresCmd struct {
 	ResourceCmd
-	Location             meta.LocationName `placeholder:"${postgres_location_default}" help:"Where the PostgreSQL instance is created. Available locations are: ${postgres_location_options}"`
-	MachineType          string            `placeholder:"${postgres_machine_default}" help:"Defines the sizing for a particular PostgreSQL instance. Available types: ${postgres_machine_types}"`
+	Location             meta.LocationName `help:"Where the PostgreSQL instance is created." completion-predictor:"apifield:postgres_location"`
+	MachineType          string            `help:"Defines the sizing for a particular PostgreSQL instance." completion-predictor:"apifield:postgres_machine_type"`
 	AllowedCidrs         []meta.IPv4CIDR   `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the instance."`
 	DatabaseSSHKeysFlags `set:"ssh_keys_purpose=allowed to connect to the database server in order to up-/download and directly restore database backups"`
-	PostgresVersion      storage.PostgresVersion `placeholder:"${postgres_version_default}" help:"Release version with which the PostgreSQL instance is created. Available versions: ${postgres_versions}"`
-	KeepDailyBackups     *int                    `placeholder:"${postgres_backup_retention_days}" help:"Number of daily database backups to keep. Note that setting this to 0, backup will be disabled and existing dumps deleted immediately."`
+	PostgresVersion      storage.PostgresVersion `help:"Release version with which the PostgreSQL instance is created." completion-predictor:"apifield:postgres_version"`
+	KeepDailyBackups     *int                    `help:"Number of daily database backups to keep. Note that setting this to 0, backup will be disabled and existing dumps deleted immediately." completion-predictor:"apifield:postgres_keep_daily_backups"`
 }
 
 func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client) error {
@@ -95,19 +92,4 @@ func (cmd *postgresCmd) newPostgres(namespace string) (*storage.Postgres, error)
 	}
 
 	return postgres, nil
-}
-
-// PostgresKongVars returns all variables which are used in the Postgres
-// create command
-func PostgresKongVars() kong.Vars {
-	result := make(kong.Vars)
-	result["postgres_machine_types"] = strings.Join(stringerSlice(storage.PostgresMachineTypes), ", ")
-	result["postgres_machine_default"] = storage.PostgresMachineTypeDefault.String()
-	result["postgres_location_options"] = strings.Join(stringSlice(storage.PostgresLocationOptions), ", ")
-	result["postgres_location_default"] = string(storage.PostgresLocationDefault)
-	result["postgres_version_default"] = string(storage.PostgresVersionDefault)
-	result["postgres_versions"] = strings.Join(stringSlice(storage.PostgresVersions), ", ")
-	result["postgres_backup_retention_days"] = fmt.Sprintf("%d", storage.PostgresBackupRetentionDaysDefault)
-
-	return result
 }

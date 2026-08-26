@@ -14,10 +14,10 @@ import (
 
 type postgresCmd struct {
 	ResourceCmd
-	MachineType          *string          `placeholder:"${postgres_machine_default}" help:"Defines the sizing for a particular PostgreSQL instance. Available types: ${postgres_machine_types}"`
+	MachineType          *string          `help:"Defines the sizing for a particular PostgreSQL instance." completion-predictor:"apifield:postgres_machine_type"`
 	AllowedCidrs         *[]meta.IPv4CIDR `placeholder:"203.0.113.1/32" help:"Specifies the IP addresses allowed to connect to the instance."`
 	DatabaseSSHKeysFlags `set:"ssh_keys_purpose=allowed to connect to the database server in order to up-/download and directly restore database backups"`
-	KeepDailyBackups     *int `placeholder:"${postgres_backup_retention_days}" help:"Number of daily database backups to keep. Note that setting this to 0, backup will be disabled and existing dumps deleted immediately."`
+	KeepDailyBackups     *int `help:"Number of daily database backups to keep. Note that setting this to 0, backup will be disabled and existing dumps deleted immediately." completion-predictor:"apifield:postgres_keep_daily_backups"`
 }
 
 func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client) error {
