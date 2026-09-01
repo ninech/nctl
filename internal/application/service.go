@@ -41,7 +41,7 @@ func UpdateServices(existing apps.NamedServiceTargetList, toAdd apps.NamedServic
 	for _, add := range toAdd {
 		found := false
 		for i := range existing {
-			if existing[i].Name == add.Name {
+			if existing[i].Name == add.Name && existing[i].Target.Kind == add.Target.Kind {
 				existing[i].Target = add.Target
 				found = true
 				break

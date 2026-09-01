@@ -176,6 +176,15 @@ func TestUpdateServices(t *testing.T) {
 			toDelete: []string{"cache"},
 			want:     apps.NamedServiceTargetList{{Name: "db", Target: mysqlTarget}},
 		},
+		{
+			name:     "same name different kind",
+			existing: apps.NamedServiceTargetList{{Name: "cache", Target: kvsTarget}},
+			toAdd:    apps.NamedServiceTargetList{{Name: "cache", Target: mysqlTarget}},
+			want: apps.NamedServiceTargetList{
+				{Name: "cache", Target: kvsTarget},
+				{Name: "cache", Target: mysqlTarget},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
