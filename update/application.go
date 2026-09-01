@@ -49,22 +49,22 @@ type applicationCmd struct {
 	// structs. Due to the usage of kong these pointers will never be `nil`.
 	// So checking for `nil` values can not be used to find out if some of
 	// the struct fields have been set.
-	DeployJob                *deployJob             `embed:"" prefix:"deploy-job-"`
-	WorkerJob                *workerJob             `embed:"" prefix:"worker-job-"`
-	ScheduledJob             *scheduledJob          `embed:"" prefix:"scheduled-job-"`
-	DeleteWorkerJob          *string                `help:"Delete a worker job by name."`
-	DeleteScheduledJob       *string                `help:"Delete a scheduled job by name."`
-	Service                  application.ServiceMap `help:"Service reference to add/update in the form name=kind/target-name."`
-	DeleteService            []string               `help:"Service reference names to remove."`
-	RetryRelease             *bool                  `help:"Retries release for the application." placeholder:"false"`
-	RetryBuild               *bool                  `help:"Retries build for the application if set to true." placeholder:"false"`
-	Pause                    *bool                  `negatable:"" help:"Pause or unpause the application. Pausing stops all costs."`
-	GitInformationServiceURL string                 `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
-	SkipRepoAccessCheck      bool                   `help:"Skip the git repository access check." default:"false"`
-	Debug                    bool                   `help:"Enable debug messages." default:"false"`
-	Language                 *string                `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static,"`
-	DockerfileBuild          dockerfileBuild        `embed:""`
-	BuildpackStack           *string                `help:"${app_buildpack_stack_help} Possible values: ${enum}" enum:"paketo,heroku,"`
+	DeployJob                *deployJob                          `embed:"" prefix:"deploy-job-"`
+	WorkerJob                *workerJob                          `embed:"" prefix:"worker-job-"`
+	ScheduledJob             *scheduledJob                       `embed:"" prefix:"scheduled-job-"`
+	DeleteWorkerJob          *string                             `help:"Delete a worker job by name."`
+	DeleteScheduledJob       *string                             `help:"Delete a scheduled job by name."`
+	Service                  []application.NamedServiceReference `sep:"none" help:"Service reference to add/update in the form name=kind/target-name. Repeat the flag to pass more than one service."`
+	DeleteService            []string                            `help:"Service reference names to remove."`
+	RetryRelease             *bool                               `help:"Retries release for the application." placeholder:"false"`
+	RetryBuild               *bool                               `help:"Retries build for the application if set to true." placeholder:"false"`
+	Pause                    *bool                               `negatable:"" help:"Pause or unpause the application. Pausing stops all costs."`
+	GitInformationServiceURL string                              `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
+	SkipRepoAccessCheck      bool                                `help:"Skip the git repository access check." default:"false"`
+	Debug                    bool                                `help:"Enable debug messages." default:"false"`
+	Language                 *string                             `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static,"`
+	DockerfileBuild          dockerfileBuild                     `embed:""`
+	BuildpackStack           *string                             `help:"${app_buildpack_stack_help} Possible values: ${enum}" enum:"paketo,heroku,"`
 }
 
 type gitConfig struct {
@@ -366,7 +366,7 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 	}
 
 	if len(cmd.Service) > 0 || len(cmd.DeleteService) > 0 {
-		toAdd := application.ServicesFromMap(cmd.Service, app.Namespace)
+		toAdd := application.ServicesFromReferences(cmd.Service, app.Namespace)
 		app.Spec.ForProvider.Services = application.UpdateServices(
 			app.Spec.ForProvider.Services, toAdd, cmd.DeleteService, cmd.Writer,
 		)

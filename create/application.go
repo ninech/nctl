@@ -38,27 +38,27 @@ const DefaultReplicas = 2
 // update/application.go.
 type applicationCmd struct {
 	ResourceCmd
-	Git                      gitConfig              `embed:"" prefix:"git-"`
-	Size                     *string                `help:"Size of the application (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
-	Port                     *int32                 `help:"Port the application is listening on (defaults to ${app_default_port})." placeholder:"${app_default_port}"`
-	HealthProbe              healthProbe            `embed:"" prefix:"health-probe-"`
-	Replicas                 int32                  `help:"Amount of replicas of the running application (defaults to ${app_default_replicas})." placeholder:"${app_default_replicas}" default:"${app_default_replicas}"`
-	Hosts                    []string               `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
-	BasicAuth                *bool                  `help:"Enable/Disable basic authentication for the application (defaults to ${app_default_basic_auth})." placeholder:"${app_default_basic_auth}"`
-	Env                      map[string]string      `help:"Environment variables which are passed to the application at runtime."`
-	SensitiveEnv             map[string]string      `help:"Sensitive environment variables which are passed to the application at runtime."`
-	BuildEnv                 map[string]string      `help:"Environment variables which are passed to the application build process."`
-	SensitiveBuildEnv        map[string]string      `help:"Sensitive environment variables which are passed to the application build process."`
-	Service                  application.ServiceMap `help:"Service reference in the form name=kind/target-name. Credentials will be automatically injected as environment variables."`
-	DeployJob                deployJob              `embed:"" prefix:"deploy-job-"`
-	WorkerJob                workerJob              `embed:"" prefix:"worker-job-"`
-	ScheduledJob             scheduledJob           `embed:"" prefix:"scheduled-job-"`
-	GitInformationServiceURL string                 `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
-	SkipRepoAccessCheck      bool                   `help:"Skip the git repository access check." default:"false"`
-	Debug                    bool                   `help:"Enable debug messages." default:"false"`
-	Language                 string                 `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static," default:""`
-	DockerfileBuild          dockerfileBuild        `embed:""`
-	BuildpackStack           string                 `help:"${app_buildpack_stack_help} Possible values: ${enum}" enum:"paketo,heroku," default:""`
+	Git                      gitConfig                           `embed:"" prefix:"git-"`
+	Size                     *string                             `help:"Size of the application (defaults to \"${app_default_size}\")." placeholder:"${app_default_size}"`
+	Port                     *int32                              `help:"Port the application is listening on (defaults to ${app_default_port})." placeholder:"${app_default_port}"`
+	HealthProbe              healthProbe                         `embed:"" prefix:"health-probe-"`
+	Replicas                 int32                               `help:"Amount of replicas of the running application (defaults to ${app_default_replicas})." placeholder:"${app_default_replicas}" default:"${app_default_replicas}"`
+	Hosts                    []string                            `help:"Host names where the application can be accessed. If empty, the application will just be accessible on a generated host name on the deploio.app domain."`
+	BasicAuth                *bool                               `help:"Enable/Disable basic authentication for the application (defaults to ${app_default_basic_auth})." placeholder:"${app_default_basic_auth}"`
+	Env                      map[string]string                   `help:"Environment variables which are passed to the application at runtime."`
+	SensitiveEnv             map[string]string                   `help:"Sensitive environment variables which are passed to the application at runtime."`
+	BuildEnv                 map[string]string                   `help:"Environment variables which are passed to the application build process."`
+	SensitiveBuildEnv        map[string]string                   `help:"Sensitive environment variables which are passed to the application build process."`
+	Service                  []application.NamedServiceReference `sep:"none" help:"Service reference in the form name=kind/target-name. Credentials will be automatically injected as environment variables. Repeat the flag to pass more than one service."`
+	DeployJob                deployJob                           `embed:"" prefix:"deploy-job-"`
+	WorkerJob                workerJob                           `embed:"" prefix:"worker-job-"`
+	ScheduledJob             scheduledJob                        `embed:"" prefix:"scheduled-job-"`
+	GitInformationServiceURL string                              `help:"URL of the git information service." default:"https://git-info.deplo.io" env:"GIT_INFORMATION_SERVICE_URL" hidden:""`
+	SkipRepoAccessCheck      bool                                `help:"Skip the git repository access check." default:"false"`
+	Debug                    bool                                `help:"Enable debug messages." default:"false"`
+	Language                 string                              `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static," default:""`
+	DockerfileBuild          dockerfileBuild                     `embed:""`
+	BuildpackStack           string                              `help:"${app_buildpack_stack_help} Possible values: ${enum}" enum:"paketo,heroku," default:""`
 }
 
 type gitConfig struct {
@@ -401,7 +401,7 @@ func (cmd *applicationCmd) newApplication(project string) *apps.Application {
 				Hosts:    cmd.Hosts,
 				Config:   cmd.config(),
 				BuildEnv: combineEnvVars(cmd.BuildEnv, cmd.SensitiveBuildEnv),
-				Services: application.ServicesFromMap(cmd.Service, project),
+				Services: application.ServicesFromReferences(cmd.Service, project),
 				DockerfileBuild: apps.DockerfileBuild{
 					Enabled:        cmd.DockerfileBuild.Enabled,
 					DockerfilePath: cmd.DockerfileBuild.Path,

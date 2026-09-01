@@ -2,28 +2,46 @@ package application
 
 import (
 	"cmp"
+	"fmt"
 	"slices"
+	"strings"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/internal/format"
 )
 
-// ServiceMap is a map of service name to typed reference, used as a CLI flag type.
-type ServiceMap map[string]TypedReference
+// NamedServiceReference is a named reference to a service target, in the
+// form "name=kind/target-name".
+type NamedServiceReference struct {
+	Name   string
+	Target TypedReference
+}
 
-// ServicesFromMap converts a map of name -> TypedReference into a
+// UnmarshalText parses a named service reference from a string in
+// "name=kind/target-name" format.
+func (n *NamedServiceReference) UnmarshalText(text []byte) error {
+	name, rest, found := strings.Cut(string(text), "=")
+	if !found || name == "" {
+		return fmt.Errorf("unmarshal error: expected name=kind/target, got %q", text)
+	}
+	n.Name = name
+	return n.Target.UnmarshalText([]byte(rest))
+}
+
+// ServicesFromReferences converts a slice of NamedServiceReference into a
 // NamedServiceTargetList. The namespace is set on each target.
-func ServicesFromMap(services ServiceMap, namespace string) apps.NamedServiceTargetList {
+func ServicesFromReferences(services []NamedServiceReference, namespace string) apps.NamedServiceTargetList {
 	if len(services) == 0 {
 		return nil
 	}
 
 	result := make(apps.NamedServiceTargetList, 0, len(services))
-	for name, ref := range services {
-		ref.Namespace = namespace
+	for _, ref := range services {
+		target := ref.Target.TypedReference
+		target.Namespace = namespace
 		result = append(result, apps.NamedServiceTarget{
-			Name:   name,
-			Target: ref.TypedReference,
+			Name:   ref.Name,
+			Target: target,
 		})
 	}
 
@@ -41,7 +59,7 @@ func UpdateServices(existing apps.NamedServiceTargetList, toAdd apps.NamedServic
 	for _, add := range toAdd {
 		found := false
 		for i := range existing {
-			if existing[i].Name == add.Name {
+			if existing[i].Name == add.Name && existing[i].Target.Kind == add.Target.Kind {
 				existing[i].Target = add.Target
 				found = true
 				break
