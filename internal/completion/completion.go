@@ -81,6 +81,9 @@ func Command(ctx context.Context, parser *kong.Kong) (complete.Command, error) {
 	if err := bindResourceNames(cmd, parser.Model.Node, predictors.resourceName); err != nil {
 		return complete.Command{}, err
 	}
+	if err := bindArgFlags(cmd, parser.Model.Node); err != nil {
+		return complete.Command{}, err
+	}
 
 	return cmd, nil
 }

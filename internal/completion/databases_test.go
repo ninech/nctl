@@ -12,6 +12,10 @@ import (
 func TestFirstPositionalArg(t *testing.T) {
 	t.Parallel()
 
+	// The flags of a command which consume the token following them, as
+	// [bindArgFlags] binds them to the predictor.
+	argFlags := []string{"--project", "-p", "--database", "-d"}
+
 	tests := []struct {
 		name string
 		args []string
@@ -52,13 +56,38 @@ func TestFirstPositionalArg(t *testing.T) {
 			args: []string{"--database"},
 			want: "",
 		},
+		{
+			name: "boolean flag before positional",
+			args: []string{"--verbose", "myinstance"},
+			want: "myinstance",
+		},
+		{
+			name: "boolean flag between value flag and positional",
+			args: []string{"-p", "myproject", "--verbose", "myinstance"},
+			want: "myinstance",
+		},
+		{
+			name: "boolean flags only",
+			args: []string{"--verbose", "--all-projects"},
+			want: "",
+		},
+		{
+			name: "positional after end of flags",
+			args: []string{"--verbose", "--", "myinstance"},
+			want: "myinstance",
+		},
+		{
+			name: "dangling end of flags",
+			args: []string{"--"},
+			want: "",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			if got := firstPositionalArg(tt.args); got != tt.want {
+			if got := firstPositionalArg(tt.args, argFlags); got != tt.want {
 				t.Errorf("firstPositionalArg(%v) = %q, want %q", tt.args, got, tt.want)
 			}
 		})
