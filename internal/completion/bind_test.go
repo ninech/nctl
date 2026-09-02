@@ -168,3 +168,114 @@ func newBoundTestCommand(t *testing.T) complete.Command {
 func boundTo(resource string) complete.Predictor {
 	return complete.PredictSet("bound:" + resource)
 }
+
+// argFlagGrammar mirrors the parts of the CLI the database predictors depend on:
+// global flags taking a value and a boolean one, in front of a command naming its instance positionally.
+type argFlagGrammar struct {
+	Project string `help:"Limit commands to a specific project." short:"p"`
+	Verbose bool   `help:"Show verbose messages."`
+	Exec    struct {
+		MySQL struct {
+			Name     string `arg:"" default:""`
+			Database string `short:"d" completion-predictor:"spy"`
+		} `cmd:"" name:"mysql"`
+	} `cmd:""`
+}
+
+// argFlagSpy reports the instance name it reads off the command line with the flags [bindArgFlags] bound to it.
+type argFlagSpy struct {
+	argFlags []string
+}
+
+func (s argFlagSpy) Predict(args complete.Args) []string {
+	if name := firstPositionalArg(args.Completed, s.argFlags); name != "" {
+		return []string{"found:" + name}
+	}
+
+	return []string{"found:none"}
+}
+
+func (s argFlagSpy) withArgFlags(argFlags []string) complete.Predictor {
+	s.argFlags = argFlags
+
+	return s
+}
+
+func TestBindArgFlagsFindsThePositionalArg(t *testing.T) {
+	tests := []struct {
+		name     string
+		compLine string
+		want     string
+	}{
+		{
+			name:     "instance name only",
+			compLine: "nctl exec mysql myinstance -d ",
+			want:     "found:myinstance",
+		},
+		{
+			name:     "boolean flag before the instance name",
+			compLine: "nctl exec mysql --verbose myinstance -d ",
+			want:     "found:myinstance",
+		},
+		{
+			name:     "value flag before the instance name",
+			compLine: "nctl exec mysql -p myproject myinstance -d ",
+			want:     "found:myinstance",
+		},
+		{
+			name:     "both flag kinds before the instance name",
+			compLine: "nctl exec mysql --verbose --project myproject myinstance -d ",
+			want:     "found:myinstance",
+		},
+		{
+			name:     "no instance name",
+			compLine: "nctl exec mysql --verbose -d ",
+			want:     "found:none",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			is := require.New(t)
+
+			parser, err := kong.New(&argFlagGrammar{})
+			is.NoError(err)
+
+			cmd, err := kongcompletion.Command(parser, kongcompletion.WithPredictor("spy", argFlagSpy{}))
+			is.NoError(err)
+			is.NoError(bindArgFlags(cmd, parser.Model.Node))
+
+			t.Setenv("COMP_LINE", tt.compLine)
+			t.Setenv("COMP_POINT", strconv.Itoa(len(tt.compLine)))
+
+			out := &bytes.Buffer{}
+			completer := complete.New("nctl", cmd)
+			completer.Out = out
+			is.True(completer.Complete())
+
+			is.Equal([]string{tt.want}, strings.Fields(out.String()))
+		})
+	}
+}
+
+func TestBindArgFlagsWithoutNode(t *testing.T) {
+	t.Parallel()
+
+	require.NoError(t, bindArgFlags(complete.Command{}, nil))
+}
+
+func TestBindArgFlagsLeavesOtherPredictors(t *testing.T) {
+	t.Parallel()
+	is := require.New(t)
+
+	parser, err := kong.New(&argFlagGrammar{})
+	is.NoError(err)
+
+	other := complete.PredictSet("untouched")
+	cmd, err := kongcompletion.Command(parser, kongcompletion.WithPredictor("spy", other))
+	is.NoError(err)
+	is.NoError(bindArgFlags(cmd, parser.Model.Node))
+
+	is.Equal([]string{"untouched"},
+		cmd.Sub["exec"].Sub["mysql"].GlobalFlags["--database"].Predict(complete.Args{}))
+}

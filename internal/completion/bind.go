@@ -22,15 +22,13 @@ func (unboundResourceName) Predict(complete.Args) []string {
 	return fail(errors.New("no API resource is bound to the command"))
 }
 
-// bindResourceNames replaces [ResourceName] placeholders with predictors bound
-// to each command's API resource.
-//
-// posener/complete re-slices args during traversal but leaves LastCompleted
-// pointing to the end of the line, meaning trailing flags shadow the command.
-// Binding upfront resolves the resource and any command aliases during tree build.
-func bindResourceNames(cmd complete.Command, node *kong.Node, bind func(resource string) complete.Predictor) error {
+// walkCommands calls bind for every command of the completion tree, paired with the Kong node it was built from.
+func walkCommands(cmd complete.Command, node *kong.Node, bind func(complete.Command, *kong.Node) error) error {
 	if node == nil {
 		return nil
+	}
+	if err := bind(cmd, node); err != nil {
+		return err
 	}
 
 	for _, child := range node.Children {
@@ -42,15 +40,23 @@ func bindResourceNames(cmd complete.Command, node *kong.Node, bind func(resource
 		if !ok {
 			continue
 		}
-		if err := bindNodeResourceName(sub, child, bind); err != nil {
-			return err
-		}
-		if err := bindResourceNames(sub, child, bind); err != nil {
+		if err := walkCommands(sub, child, bind); err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+// bindResourceNames replaces [ResourceName] placeholders with predictors bound to each command's API resource.
+//
+// posener/complete re-slices args during traversal but leaves LastCompleted pointing to the end of the line,
+// meaning trailing flags shadow the command.
+// Binding upfront resolves the resource and any command aliases during tree build.
+func bindResourceNames(cmd complete.Command, node *kong.Node, bind func(resource string) complete.Predictor) error {
+	return walkCommands(cmd, node, func(cmd complete.Command, node *kong.Node) error {
+		return bindNodeResourceName(cmd, node, bind)
+	})
 }
 
 func bindNodeResourceName(cmd complete.Command, node *kong.Node, bind func(resource string) complete.Predictor) error {
@@ -67,6 +73,40 @@ func bindNodeResourceName(cmd complete.Command, node *kong.Node, bind func(resou
 				strings.TrimSpace(node.Path()), i)
 		}
 		predictors.Predictors[i] = bind(apiresource.OfCommand(node))
+	}
+
+	return nil
+}
+
+type argFlagScoped interface {
+	complete.Predictor
+	withArgFlags(argFlags []string) complete.Predictor
+}
+
+// bindArgFlags hands every [argFlagScoped] flag predictor the value taking flags of the command it completes.
+// kong-completion collects them per command, including the flags inherited from parent commands.
+func bindArgFlags(cmd complete.Command, node *kong.Node) error {
+	return walkCommands(cmd, node, bindNodeArgFlags)
+}
+
+func bindNodeArgFlags(cmd complete.Command, node *kong.Node) error {
+	for _, flag := range node.Flags {
+		if flag == nil {
+			continue
+		}
+		for _, name := range flagNames(flag) {
+			// Flags hidden from completion have no predictor in the tree.
+			scoped, ok := cmd.GlobalFlags[name].(argFlagScoped)
+			if !ok {
+				continue
+			}
+			predictors, ok := cmd.Args.(*kongcompletion.PositionalPredictor)
+			if !ok {
+				return fmt.Errorf("the command %q completes no argument, leaving the flags of %q unknown",
+					strings.TrimSpace(node.Path()), name)
+			}
+			cmd.GlobalFlags[name] = scoped.withArgFlags(predictors.ArgFlags)
+		}
 	}
 
 	return nil

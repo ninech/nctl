@@ -3,6 +3,7 @@ package completion
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/posener/complete"
@@ -13,17 +14,26 @@ import (
 
 // instanceDatabases completes database names from a database instance status.
 type instanceDatabases struct {
-	client  clientFunc
-	project projectFinder
-	gvk     schema.GroupVersionKind
+	client   clientFunc
+	project  projectFinder
+	gvk      schema.GroupVersionKind
+	argFlags []string
 }
 
 func newInstanceDatabases(client clientFunc, project projectFinder, gvk schema.GroupVersionKind) *instanceDatabases {
 	return &instanceDatabases{client: client, project: project, gvk: gvk}
 }
 
+// withArgFlags implements [argFlagScoped].
+func (d *instanceDatabases) withArgFlags(argFlags []string) complete.Predictor {
+	scoped := *d
+	scoped.argFlags = argFlags
+
+	return &scoped
+}
+
 func (d *instanceDatabases) Predict(args complete.Args) []string {
-	name := firstPositionalArg(args.Completed)
+	name := firstPositionalArg(args.Completed, d.argFlags)
 	if name == "" {
 		return nil
 	}
@@ -69,17 +79,24 @@ func (d *instanceDatabases) Predict(args complete.Args) []string {
 	return names
 }
 
-// firstPositionalArg returns the first positional argument in args, skipping flag-value pairs.
-func firstPositionalArg(args []string) string {
+// firstPositionalArg returns the first positional argument in args.
+func firstPositionalArg(args []string, argFlags []string) string {
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
-		if strings.HasPrefix(arg, "-") {
-			if !strings.Contains(arg, "=") {
-				i++ // skip the following value token
+		// Kong parses everything after "--" as positional.
+		if arg == "--" {
+			if i+1 < len(args) {
+				return args[i+1]
 			}
-			continue
+			return ""
 		}
-		return arg
+		if !strings.HasPrefix(arg, "-") {
+			return arg
+		}
+		// A flag assigning its value needs no value token of its own.
+		if !strings.Contains(arg, "=") && slices.Contains(argFlags, arg) {
+			i++
+		}
 	}
 	return ""
 }
