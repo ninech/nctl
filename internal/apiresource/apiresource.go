@@ -2,7 +2,9 @@
 package apiresource
 
 import (
+	"cmp"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/alecthomas/kong"
@@ -36,19 +38,29 @@ func OfCommand(node *kong.Node) string {
 
 // FindKind resolves a resource name (singular, plural, or hyphenated) to its Nine API [schema.GroupVersionKind].
 func FindKind(scheme *runtime.Scheme, resource string) (schema.GroupVersionKind, error) {
+	var found bool
+	var match schema.GroupVersionKind
+
 	if resource != "" {
 		for gvk := range scheme.AllKnownTypes() {
 			if strings.HasSuffix(gvk.Kind, listSuffix) ||
 				!strings.HasSuffix(strings.ToLower(gvk.Group), groupSuffix) {
 				continue
 			}
-			if normalize(gvk.Kind) == normalize(resource) {
-				return gvk, nil
+			if normalize(gvk.Kind) != normalize(resource) {
+				continue
+			}
+			if !found || compareKinds(scheme, gvk, match) < 0 {
+				found, match = true, gvk
 			}
 		}
 	}
 
-	return schema.GroupVersionKind{}, fmt.Errorf("no API resource named %q", resource)
+	if !found {
+		return schema.GroupVersionKind{}, fmt.Errorf("no API resource named %q", resource)
+	}
+
+	return match, nil
 }
 
 // FindListKind resolves a resource name to its list [schema.GroupVersionKind].
@@ -64,6 +76,25 @@ func FindListKind(scheme *runtime.Scheme, resource string) (schema.GroupVersionK
 	}
 
 	return list, nil
+}
+
+// compareKinds orders two kinds.
+func compareKinds(scheme *runtime.Scheme, a, b schema.GroupVersionKind) int {
+	return cmp.Or(
+		cmp.Compare(a.Group, b.Group),
+		cmp.Compare(versionPriority(scheme, a.GroupVersion()), versionPriority(scheme, b.GroupVersion())),
+		cmp.Compare(a.Kind, b.Kind),
+	)
+}
+
+// versionPriority returns the position of gv within the versions the scheme prioritizes for its group.
+func versionPriority(scheme *runtime.Scheme, gv schema.GroupVersion) int {
+	versions := scheme.PrioritizedVersionsForGroup(gv.Group)
+	if i := slices.Index(versions, gv); i >= 0 {
+		return i
+	}
+
+	return len(versions)
 }
 
 func normalize(s string) string {
