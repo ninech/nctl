@@ -24,9 +24,6 @@ It lets you manage applications, services, storage, and more from your terminal.
 ## Installation
 
 ```bash
-# If you have go already installed
-go install github.com/ninech/nctl@latest
-
 # Homebrew
 # if you have brew >= 6 you will need to trust the formula
 # brew trust --formula ninech/taps/nctl
