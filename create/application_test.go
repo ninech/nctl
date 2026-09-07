@@ -571,15 +571,15 @@ func TestCreateApplication(t *testing.T) {
 					URL:      "https://github.com/ninech/doesnotexist.git",
 					Revision: "main",
 				},
-				Service: func() application.ServiceMap {
-					m := application.ServiceMap{}
+				Service: func() []application.NamedServiceReference {
 					cache := application.TypedReference{}
 					cache.UnmarshalText([]byte("keyvaluestore/my-kvs"))
-					m["cache"] = cache
 					db := application.TypedReference{}
 					db.UnmarshalText([]byte("mysql/my-db"))
-					m["db"] = db
-					return m
+					return []application.NamedServiceReference{
+						{Name: "cache", Target: cache},
+						{Name: "db", Target: db},
+					}
 				}(),
 				SkipRepoAccessCheck: true,
 			},

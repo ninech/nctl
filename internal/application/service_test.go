@@ -12,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestServicesFromMap(t *testing.T) {
+func TestServicesFromReferences(t *testing.T) {
 	t.Parallel()
 
 	kvsRef := TypedReference{}
@@ -23,18 +23,21 @@ func TestServicesFromMap(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		services  ServiceMap
+		services  []NamedServiceReference
 		namespace string
 		want      apps.NamedServiceTargetList
+		// unordered is needed for entries sharing a name, since sort order
+		// among them is not guaranteed.
+		unordered bool
 	}{
 		{
-			name:     "nil map",
+			name:     "nil slice",
 			services: nil,
 			want:     nil,
 		},
 		{
 			name:      "single service",
-			services:  ServiceMap{"cache": kvsRef},
+			services:  []NamedServiceReference{{Name: "cache", Target: kvsRef}},
 			namespace: "my-project",
 			want: apps.NamedServiceTargetList{
 				{
@@ -48,9 +51,9 @@ func TestServicesFromMap(t *testing.T) {
 		},
 		{
 			name: "multiple services sorted",
-			services: ServiceMap{
-				"db":    mysqlRef,
-				"cache": kvsRef,
+			services: []NamedServiceReference{
+				{Name: "db", Target: mysqlRef},
+				{Name: "cache", Target: kvsRef},
 			},
 			namespace: "default",
 			want: apps.NamedServiceTargetList{
@@ -70,11 +73,40 @@ func TestServicesFromMap(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "same name different kind both preserved",
+			services: []NamedServiceReference{
+				{Name: "billy", Target: mysqlRef},
+				{Name: "billy", Target: kvsRef},
+			},
+			namespace: "default",
+			want: apps.NamedServiceTargetList{
+				{
+					Name: "billy",
+					Target: meta.TypedReference{
+						Reference: meta.Reference{Name: "my-db", Namespace: "default"},
+						GroupKind: mysqlRef.GroupKind,
+					},
+				},
+				{
+					Name: "billy",
+					Target: meta.TypedReference{
+						Reference: meta.Reference{Name: "my-kvs", Namespace: "default"},
+						GroupKind: kvsRef.GroupKind,
+					},
+				},
+			},
+			unordered: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got := ServicesFromMap(tt.services, tt.namespace)
+			got := ServicesFromReferences(tt.services, tt.namespace)
+			if tt.unordered {
+				require.ElementsMatch(t, tt.want, got)
+				return
+			}
 			require.Equal(t, tt.want, got)
 		})
 	}
@@ -175,6 +207,15 @@ func TestUpdateServices(t *testing.T) {
 			toAdd:    apps.NamedServiceTargetList{{Name: "db", Target: mysqlTarget}},
 			toDelete: []string{"cache"},
 			want:     apps.NamedServiceTargetList{{Name: "db", Target: mysqlTarget}},
+		},
+		{
+			name:     "same name different kind",
+			existing: apps.NamedServiceTargetList{{Name: "cache", Target: kvsTarget}},
+			toAdd:    apps.NamedServiceTargetList{{Name: "cache", Target: mysqlTarget}},
+			want: apps.NamedServiceTargetList{
+				{Name: "cache", Target: kvsTarget},
+				{Name: "cache", Target: mysqlTarget},
+			},
 		},
 	}
 	for _, tt := range tests {

@@ -790,10 +790,10 @@ func TestApplication(t *testing.T) {
 				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
-				Service: func() application.ServiceMap {
+				Service: func() []application.NamedServiceReference {
 					ref := application.TypedReference{}
 					ref.UnmarshalText([]byte("keyvaluestore/my-kvs"))
-					return application.ServiceMap{"cache": ref}
+					return []application.NamedServiceReference{{Name: "cache", Target: ref}}
 				}(),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
