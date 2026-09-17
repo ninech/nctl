@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -40,7 +40,7 @@ func TestCloudVM(t *testing.T) {
 			instances: []cvmInstance{
 				{
 					name:       "test",
-					project:    test.DefaultProject,
+					project:    testutil.DefaultProject,
 					powerState: infrastructure.VirtualMachinePowerState("on"),
 				},
 			},
@@ -54,17 +54,17 @@ func TestCloudVM(t *testing.T) {
 			instances: []cvmInstance{
 				{
 					name:       "test1",
-					project:    test.DefaultProject,
+					project:    testutil.DefaultProject,
 					powerState: infrastructure.VirtualMachinePowerState("on"),
 				},
 				{
 					name:       "test2",
-					project:    test.DefaultProject,
+					project:    testutil.DefaultProject,
 					powerState: infrastructure.VirtualMachinePowerState("off"),
 				},
 				{
 					name:       "test3",
-					project:    test.DefaultProject,
+					project:    testutil.DefaultProject,
 					powerState: infrastructure.VirtualMachinePowerState("shutdown"),
 				},
 			},
@@ -78,7 +78,7 @@ func TestCloudVM(t *testing.T) {
 			instances: []cvmInstance{
 				{
 					name:       "test",
-					project:    test.DefaultProject,
+					project:    testutil.DefaultProject,
 					powerState: infrastructure.VirtualMachinePowerState("on"),
 				},
 			},
@@ -93,7 +93,7 @@ func TestCloudVM(t *testing.T) {
 			instances: []cvmInstance{
 				{
 					name:       "test",
-					project:    test.DefaultProject,
+					project:    testutil.DefaultProject,
 					powerState: infrastructure.VirtualMachinePowerState("on"),
 				},
 				{
@@ -114,15 +114,15 @@ func TestCloudVM(t *testing.T) {
 
 			objects := []client.Object{}
 			for _, cvm := range tt.instances {
-				created := test.CloudVirtualMachine(cvm.name, cvm.project, "nine-es34", cvm.powerState)
+				created := testutil.CloudVirtualMachine(cvm.name, cvm.project, "nine-es34", cvm.powerState)
 				created.Status.AtProvider.PowerState = cvm.powerState
 				objects = append(objects, created)
 			}
-			apiClient := test.SetupClient(t,
-				test.WithProjectsFromResources(objects...),
-				test.WithObjects(objects...),
-				test.WithNameIndexFor(&infrastructure.CloudVirtualMachine{}),
-				test.WithKubeconfig(),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithProjectsFromResources(objects...),
+				testutil.WithObjects(objects...),
+				testutil.WithNameIndexFor(&infrastructure.CloudVirtualMachine{}),
+				testutil.WithKubeconfig(),
 			)
 			buf := &bytes.Buffer{}
 			cmd := NewTestCmd(buf, tt.out)
@@ -146,8 +146,8 @@ func TestCloudVM(t *testing.T) {
 					t.Errorf("cloudVMCmd.Run() did not contain %q, out = %q", tt.wantContain, buf.String())
 				}
 			}
-			if test.CountLines(buf.String()) != tt.wantLines {
-				t.Errorf("expected the output to have %d lines, but found %d", tt.wantLines, test.CountLines(buf.String()))
+			if testutil.CountLines(buf.String()) != tt.wantLines {
+				t.Errorf("expected the output to have %d lines, but found %d", tt.wantLines, testutil.CountLines(buf.String()))
 			}
 		})
 	}

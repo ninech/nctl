@@ -8,7 +8,7 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -32,10 +32,10 @@ func TestProjectConfig(t *testing.T) {
 		Wait:   false,
 	}
 
-	apiClient := test.SetupClient(t,
-		test.WithProjects(project),
-		test.WithDefaultProject(project),
-		test.WithObjects(cfg),
+	apiClient := testutil.SetupClient(t,
+		testutil.WithProjects(project),
+		testutil.WithDefaultProject(project),
+		testutil.WithObjects(cfg),
 	)
 	ctx := t.Context()
 

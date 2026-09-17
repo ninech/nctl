@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	storage "github.com/ninech/apis/storage/v1alpha1"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,7 +44,7 @@ func TestKeyValueStore(t *testing.T) {
 			instances: []kvsInstance{
 				{
 					name:    "test",
-					project: test.DefaultProject,
+					project: testutil.DefaultProject,
 					memSize: kvsMem("1G"),
 				},
 			},
@@ -58,17 +58,17 @@ func TestKeyValueStore(t *testing.T) {
 			instances: []kvsInstance{
 				{
 					name:    "test1",
-					project: test.DefaultProject,
+					project: testutil.DefaultProject,
 					memSize: kvsMem("1G"),
 				},
 				{
 					name:    "test2",
-					project: test.DefaultProject,
+					project: testutil.DefaultProject,
 					memSize: kvsMem("2G"),
 				},
 				{
 					name:    "test3",
-					project: test.DefaultProject,
+					project: testutil.DefaultProject,
 					memSize: kvsMem("3G"),
 				},
 			},
@@ -82,12 +82,12 @@ func TestKeyValueStore(t *testing.T) {
 			instances: []kvsInstance{
 				{
 					name:    "test1",
-					project: test.DefaultProject,
+					project: testutil.DefaultProject,
 					memSize: kvsMem("1G"),
 				},
 				{
 					name:    "test2",
-					project: test.DefaultProject,
+					project: testutil.DefaultProject,
 					memSize: kvsMem("2G"),
 				},
 			},
@@ -101,7 +101,7 @@ func TestKeyValueStore(t *testing.T) {
 			instances: []kvsInstance{
 				{
 					name:    "test1",
-					project: test.DefaultProject,
+					project: testutil.DefaultProject,
 					memSize: kvsMem("1G"),
 				},
 				{
@@ -126,12 +126,12 @@ func TestKeyValueStore(t *testing.T) {
 			instances: []kvsInstance{
 				{
 					name:    "test1",
-					project: test.DefaultProject,
+					project: testutil.DefaultProject,
 					memSize: kvsMem("1G"),
 				},
 				{
 					name:    "test2",
-					project: test.DefaultProject,
+					project: testutil.DefaultProject,
 					memSize: kvsMem("2G"),
 				},
 			},
@@ -147,7 +147,7 @@ func TestKeyValueStore(t *testing.T) {
 
 			objects := []client.Object{}
 			for _, instance := range tt.instances {
-				created := test.KeyValueStore(instance.name, instance.project, "nine-es34")
+				created := testutil.KeyValueStore(instance.name, instance.project, "nine-es34")
 				created.Spec.ForProvider.MemorySize = instance.memSize
 				objects = append(objects, created)
 				objects = append(objects, &corev1.Secret{
@@ -158,11 +158,11 @@ func TestKeyValueStore(t *testing.T) {
 					Data: map[string][]byte{"default": []byte(created.GetWriteConnectionSecretToReference().Name + "-topsecret")},
 				})
 			}
-			apiClient := test.SetupClient(t,
-				test.WithProjectsFromResources(objects...),
-				test.WithObjects(objects...),
-				test.WithNameIndexFor(&storage.KeyValueStore{}),
-				test.WithKubeconfig(),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithProjectsFromResources(objects...),
+				testutil.WithObjects(objects...),
+				testutil.WithNameIndexFor(&storage.KeyValueStore{}),
+				testutil.WithKubeconfig(),
 			)
 			buf := &bytes.Buffer{}
 			cmd := NewTestCmd(buf, tt.out)
@@ -185,8 +185,8 @@ func TestKeyValueStore(t *testing.T) {
 					t.Errorf("keyValueStoreCmd.Run() did not contain %q, out = %q", tt.wantContain, buf.String())
 				}
 			}
-			if test.CountLines(buf.String()) != tt.wantLines {
-				t.Errorf("expected the output to have %d lines, but found %d", tt.wantLines, test.CountLines(buf.String()))
+			if testutil.CountLines(buf.String()) != tt.wantLines {
+				t.Errorf("expected the output to have %d lines, but found %d", tt.wantLines, testutil.CountLines(buf.String()))
 				t.Log(buf.String())
 			}
 		})

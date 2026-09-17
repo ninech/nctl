@@ -9,7 +9,7 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -120,7 +120,7 @@ func TestOpenSearch(t *testing.T) {
 			tt.create.Wait = false
 			tt.create.WaitTimeout = time.Second
 
-			apiClient := test.SetupClient(t)
+			apiClient := testutil.SetupClient(t)
 
 			if err := tt.create.Run(t.Context(), apiClient); (err != nil) != tt.wantErr {
 				t.Errorf("openSearchCmd.Run() error = %v, wantErr %v", err, tt.wantErr)

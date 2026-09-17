@@ -13,7 +13,7 @@ import (
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -74,9 +74,9 @@ func TestCloudVM(t *testing.T) {
 			tt.update.Writer = format.NewWriter(out)
 			tt.update.Name = "test-" + t.Name()
 
-			apiClient := test.SetupClient(t)
+			apiClient := testutil.SetupClient(t)
 
-			created := test.CloudVirtualMachine(tt.update.Name, apiClient.Project, "nine-es34", tt.create.PowerState)
+			created := testutil.CloudVirtualMachine(tt.update.Name, apiClient.Project, "nine-es34", tt.create.PowerState)
 			created.Spec.ForProvider = tt.create
 			if err := apiClient.Create(t.Context(), created); err != nil {
 				t.Fatalf("cloudvm create error, got: %s", err)

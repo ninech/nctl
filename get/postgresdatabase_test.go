@@ -7,7 +7,7 @@ import (
 
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -39,7 +39,7 @@ func TestPostgresDatabase(t *testing.T) {
 			databases: []postgresDatabase{
 				{
 					name:     "test",
-					project:  test.DefaultProject,
+					project:  testutil.DefaultProject,
 					location: meta.LocationNineCZ41,
 				},
 			},
@@ -51,7 +51,7 @@ func TestPostgresDatabase(t *testing.T) {
 			databases: []postgresDatabase{
 				{
 					name:     "test1",
-					project:  test.DefaultProject,
+					project:  testutil.DefaultProject,
 					location: meta.LocationNineCZ41,
 				},
 			},
@@ -66,7 +66,7 @@ func TestPostgresDatabase(t *testing.T) {
 
 			objects := []client.Object{}
 			for _, database := range tt.databases {
-				created := test.PostgresDatabase(database.name, database.project, "nine-es34")
+				created := testutil.PostgresDatabase(database.name, database.project, "nine-es34")
 				created.Spec.ForProvider.Location = database.location
 				objects = append(objects, created, &corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
@@ -76,11 +76,11 @@ func TestPostgresDatabase(t *testing.T) {
 					Data: map[string][]byte{"foo_bar": []byte("topsecret")},
 				})
 			}
-			apiClient := test.SetupClient(t,
-				test.WithProjectsFromResources(objects...),
-				test.WithObjects(objects...),
-				test.WithNameIndexFor(&storage.PostgresDatabase{}),
-				test.WithKubeconfig(),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithProjectsFromResources(objects...),
+				testutil.WithObjects(objects...),
+				testutil.WithNameIndexFor(&storage.PostgresDatabase{}),
+				testutil.WithKubeconfig(),
 			)
 
 			if tt.out == "" {
@@ -101,8 +101,8 @@ func TestPostgresDatabase(t *testing.T) {
 					t.Errorf("postgresDatabaseCmd.Run() did not contain %q, out = %q", tt.wantContain, buf.String())
 				}
 			}
-			if test.CountLines(buf.String()) != tt.wantLines {
-				t.Errorf("expected the output to have %d lines, but found %d", tt.wantLines, test.CountLines(buf.String()))
+			if testutil.CountLines(buf.String()) != tt.wantLines {
+				t.Errorf("expected the output to have %d lines, but found %d", tt.wantLines, testutil.CountLines(buf.String()))
 				t.Log(buf.String())
 			}
 		})

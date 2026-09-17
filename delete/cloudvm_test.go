@@ -9,7 +9,7 @@ import (
 	"github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
@@ -26,9 +26,9 @@ func TestCloudVM(t *testing.T) {
 		},
 	}
 
-	cloudvm := test.CloudVirtualMachine("test", test.DefaultProject, "nine-es34", v1alpha1.VirtualMachinePowerState("on"))
+	cloudvm := testutil.CloudVirtualMachine("test", testutil.DefaultProject, "nine-es34", v1alpha1.VirtualMachinePowerState("on"))
 
-	apiClient := test.SetupClient(t)
+	apiClient := testutil.SetupClient(t)
 
 	ctx := t.Context()
 	if err := apiClient.Create(ctx, cloudvm); err != nil {

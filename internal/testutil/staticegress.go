@@ -1,4 +1,4 @@
-package test
+package testutil
 
 import (
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"

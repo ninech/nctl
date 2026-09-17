@@ -1,4 +1,4 @@
-package test
+package testutil
 
 func CountLines(s string) int {
 	count := 0

@@ -17,7 +17,7 @@ import (
 	"github.com/ninech/nctl/internal/apifield"
 	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/bucket"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -106,7 +106,7 @@ func TestUpdateWithoutChanges(t *testing.T) {
 
 			is := require.New(t)
 
-			existingPostgres := test.Postgres(postgres, project, "nine-es34")
+			existingPostgres := testutil.Postgres(postgres, project, "nine-es34")
 			existingPostgres.Spec.ForProvider.MachineType = infra.MachineTypeNineDBS
 			existingApplication := &apps.Application{
 				ObjectMeta: metav1.ObjectMeta{Name: application, Namespace: project},
@@ -125,10 +125,10 @@ func TestUpdateWithoutChanges(t *testing.T) {
 				},
 			}
 
-			apiClient := test.SetupClient(
+			apiClient := testutil.SetupClient(
 				t,
-				test.WithDefaultProject(project),
-				test.WithObjects(
+				testutil.WithDefaultProject(project),
+				testutil.WithObjects(
 					existingPostgres,
 					existingApplication,
 					existingBucket,

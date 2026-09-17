@@ -12,7 +12,7 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -96,11 +96,11 @@ func TestStaticEgress(t *testing.T) {
 			tt.create.Wait = false
 			tt.create.WaitTimeout = time.Second
 
-			opts := []test.ClientSetupOption{}
+			opts := []testutil.ClientSetupOption{}
 			if tt.interceptorFuncs != nil {
-				opts = append(opts, test.WithInterceptorFuncs(*tt.interceptorFuncs))
+				opts = append(opts, testutil.WithInterceptorFuncs(*tt.interceptorFuncs))
 			}
-			apiClient := test.SetupClient(t, opts...)
+			apiClient := testutil.SetupClient(t, opts...)
 
 			if err := tt.create.Run(t.Context(), apiClient); (err != nil) != tt.wantErr {
 				t.Errorf("staticEgressCmd.Run() error = %v, wantErr %v", err, tt.wantErr)
