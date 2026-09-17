@@ -21,7 +21,6 @@ import (
 	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/logbox"
-	"github.com/ninech/nctl/logs"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -490,7 +489,7 @@ func waitForBuildFinish(
 				if err := logClient.TailQuery(
 					ctx, 0, &logbox.Output{Program: p},
 					log.Query{
-						QueryString: logs.BuildsOfAppQuery(app.Name, app.Namespace),
+						QueryString: log.BuildsOfAppQuery(app.Name, app.Namespace),
 						Limit:       10,
 						Start:       time.Now(),
 						End:         time.Now(),
@@ -638,7 +637,7 @@ func printBuildLogs(ctx context.Context, client *api.Client, build *apps.Build) 
 	defer cancel()
 	return client.Log.TailQuery(
 		tailCtx, 0, client.Log.StdOut,
-		errorLogQuery(logs.BuildQuery(build.Name, build.Namespace)),
+		errorLogQuery(log.BuildQuery(build.Name, build.Namespace)),
 	)
 }
 
@@ -650,7 +649,7 @@ func printReleaseLogs(ctx context.Context, client *api.Client, release *apps.Rel
 		0,
 		client.Log.StdOut,
 		errorLogQuery(
-			logs.ApplicationQuery(release.Labels[application.ApplicationNameLabel], release.Namespace),
+			log.ApplicationQuery(release.Labels[application.ApplicationNameLabel], release.Namespace),
 		),
 	)
 }
