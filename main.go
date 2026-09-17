@@ -123,7 +123,7 @@ func main() {
 		)
 		if err != nil {
 			fmt.Fprintln(writer, err)
-			fmt.Fprintf(writer, "\nUnable to get API client, are you logged in?\n\nUse `%s` to login.\n", format.Command().Login())
+			fmt.Fprintf(writer, "\nUnable to get API client, are you logged in?\n\nUse `%s` to login.\n", cli.Command().Login())
 			os.Exit(1)
 		}
 		binds = append(binds, client)
@@ -139,8 +139,8 @@ func main() {
 					WithContext("Project", client.Project).
 					WithSuggestions(
 						"Verify in Cockpit Access Management that you are a member of the organization:\nhttps://cockpit.nine.ch/en/customer/contacts\n",
-						fmt.Sprintf("List available projects: %s", format.Command().GetProjects()),
-						fmt.Sprintf("Check your current session: %s", format.Command().WhoAmI()),
+						fmt.Sprintf("List available projects: %s", cli.Command().GetProjects()),
+						fmt.Sprintf("Check your current session: %s", cli.Command().WhoAmI()),
 					)
 			} else {
 				err = cli.ErrorWithContext(fmt.Errorf("permission denied: verify in Cockpit Access Management that you are a member of the organization")).
@@ -239,8 +239,8 @@ func newParser(ctx context.Context, cmd *rootCommand, w io.Writer, r io.Reader) 
 // require an API client. The command parameter is the resolved command path
 // from [kong.Context.Command].
 func noAPIClientRequired(command string) bool {
-	return matchCommand(command, auth.CmdName, format.LoginCommand) ||
-		matchCommand(command, auth.CmdName, format.LogoutCommand) ||
+	return matchCommand(command, auth.CmdName, cli.LoginCommand) ||
+		matchCommand(command, auth.CmdName, cli.LogoutCommand) ||
 		matchCommand(command, auth.CmdName, auth.OIDCCmdName) ||
 		matchCommand(command, auth.CmdName, auth.ClientCredentialsCmdName) ||
 		matchCommand(command, "completions")
