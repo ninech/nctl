@@ -7,7 +7,7 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/create"
+	"github.com/ninech/nctl/internal/flag"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 )
@@ -56,7 +56,7 @@ func TestOpenSearch(t *testing.T) {
 		},
 		{
 			name: "bucket-users-set",
-			update: openSearchCmd{BucketUsers: &[]create.LocalReference{
+			update: openSearchCmd{BucketUsers: &[]flag.LocalReference{
 				{LocalReference: meta.LocalReference{Name: "user1"}},
 				{LocalReference: meta.LocalReference{Name: "user2"}},
 			}},
