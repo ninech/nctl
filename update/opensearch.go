@@ -9,16 +9,16 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/create"
+	"github.com/ninech/nctl/internal/flag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type openSearchCmd struct {
 	ResourceCmd
-	MachineType      *string                  `help:"Configures OpenSearch to use a specified machine type." completion-predictor:"apifield:opensearch_machine_type"`
-	AllowedCidrs     *[]meta.IPv4CIDR         `help:"IP addresses allowed to connect to the cluster. These restrictions do not apply for service connections." placeholder:"203.0.113.1/32"`
-	BucketUsers      *[]create.LocalReference `help:"Users who have read access to the OpenSearch snapshots bucket." placeholder:"user1,user2"`
-	PublicNetworking *bool                    `negatable:"" help:"Enable or disable public networking."`
+	MachineType      *string                `help:"Configures OpenSearch to use a specified machine type." completion-predictor:"apifield:opensearch_machine_type"`
+	AllowedCidrs     *[]meta.IPv4CIDR       `help:"IP addresses allowed to connect to the cluster. These restrictions do not apply for service connections." placeholder:"203.0.113.1/32"`
+	BucketUsers      *[]flag.LocalReference `help:"Users who have read access to the OpenSearch snapshots bucket." placeholder:"user1,user2"`
+	PublicNetworking *bool                  `negatable:"" help:"Enable or disable public networking."`
 
 	// Deprecated Flags
 	PublicNetworkingEnabled *bool `hidden:"" help:"If public networking is \"false\", it is only possible to access the service by configuring a service connection."`
