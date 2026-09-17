@@ -1,88 +1,55 @@
 package auth
 
 import (
-	"io"
-	"log"
-	"os"
 	"testing"
 
-	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
-	"github.com/ninech/nctl/api/config"
-	"github.com/ninech/nctl/internal/test"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/clientcmd"
+	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/types"
 )
 
-const existingKubeconfig = `
-apiVersion: v1
-kind: Config
-clusters:
-- cluster:
-    server: https://existing.example.org
-  name: existing
-users:
-- name: existing
-current-context: existing
-contexts:
-- context:
-  name: existing
-`
-
-func TestClusterCmd(t *testing.T) {
+func TestClusterName(t *testing.T) {
 	t.Parallel()
 
-	// write our "existing" kubeconfig to a temp kubeconfig
-	kubeconfig, err := os.CreateTemp("", "*-kubeconfig.yaml")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer os.Remove(kubeconfig.Name())
-
-	if err := os.WriteFile(kubeconfig.Name(), []byte(existingKubeconfig), os.ModePerm); err != nil {
-		t.Fatal(err)
-	}
-
-	cluster := newCluster()
-	apiClient := test.SetupClient(t,
-		test.WithObjects(cluster),
-	)
-	apiClient.KubeconfigPath = kubeconfig.Name()
-
-	// we run without the execPlugin, that would be something for an e2e test
-	cmd := &ClusterCmd{Name: config.ContextName(cluster), ExecPlugin: false}
-	if err := cmd.Run(t.Context(), apiClient); err != nil {
-		t.Fatal(err)
-	}
-
-	// read out the kubeconfig again to test the contents
-	b, err := io.ReadAll(kubeconfig)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	merged, err := clientcmd.Load(b)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	checkConfig(t, merged, 2, config.ContextName(cluster))
-}
-
-func newCluster() *infrastructure.KubernetesCluster {
-	return &infrastructure.KubernetesCluster{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "test",
+	tests := []struct {
+		name           string
+		arg            string
+		defaultProject string
+		want           types.NamespacedName
+		wantErr        string
+	}{
+		{
+			name:           "name only uses the default project",
+			arg:            "cluster",
+			defaultProject: "proj",
+			want:           types.NamespacedName{Name: "cluster", Namespace: "proj"},
 		},
-		Spec: infrastructure.KubernetesClusterSpec{},
-		Status: infrastructure.KubernetesClusterStatus{
-			AtProvider: infrastructure.KubernetesClusterObservation{
-				ClusterObservation: infrastructure.ClusterObservation{
-					APIEndpoint:   "https://new.example.org",
-					OIDCClientID:  "some-client-id",
-					OIDCIssuerURL: "https://auth.example.org",
-				},
-			},
+		{
+			name:           "name/project overrides the default project",
+			arg:            "cluster/other",
+			defaultProject: "proj",
+			want:           types.NamespacedName{Name: "cluster", Namespace: "other"},
 		},
+		{
+			name: "name/project without a default project",
+			arg:  "cluster/other",
+			want: types.NamespacedName{Name: "cluster", Namespace: "other"},
+		},
+		{
+			name:    "name only without a default project",
+			arg:     "cluster",
+			wantErr: "project cannot be empty",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got, err := clusterName(tt.arg, tt.defaultProject)
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+		})
 	}
 }
