@@ -27,7 +27,6 @@ import (
 	"github.com/ninech/nctl/internal/bucket"
 	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/completion"
-	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/serviceconnection"
 	"github.com/ninech/nctl/logs"
 	"github.com/ninech/nctl/update"
@@ -97,8 +96,8 @@ func main() {
 				if node == nil {
 					node = parseErr.Context.Model.Node
 				}
-				if format.MissingChildren(node) {
-					err = format.ExitIfErrorf(writer, err, parseErr.Context.Command())
+				if missingChildren(node) {
+					err = exitIfErrorf(writer, err, parseErr.Context.Command())
 				}
 			}
 		}
@@ -214,7 +213,7 @@ func newParser(ctx context.Context, cmd *rootCommand, w io.Writer, r io.Reader) 
 			NoExpandSubcommands: true,
 		}),
 		kong.UsageOnError(),
-		kong.PostBuild(format.InterpolateFlagPlaceholders(kongVars)),
+		kong.PostBuild(interpolateFlagPlaceholders(kongVars)),
 		kong.PostBuild(apifield.Apply()),
 		kongVars,
 		kong.BindTo(ctx, (*context.Context)(nil)),
