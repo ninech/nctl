@@ -10,6 +10,7 @@ import (
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/sshkey"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,12 +27,12 @@ type cloudVMCmd struct {
 	OS                  infrastructure.OperatingSystem          `default:"" help:"Operating system to use to boot the VM." completion-predictor:"apifield:cloudvm_os"`
 	BootDiskSize        *resource.Quantity                      `default:"20Gi" help:"Configures the size of the boot disk."`
 	Disks               map[string]resource.Quantity            `default:"" help:"Additional disks to mount to the machine."`
-	SSHKeysFlags        `set:"ssh_keys_purpose=to connect to the CloudVM as root. Immutable after creation"`
+	sshkey.SSHKeysFlags `set:"ssh_keys_purpose=to connect to the CloudVM as root. Immutable after creation"`
 	CloudConfig         string   `default:"" help:"Pass custom cloud config data (https://cloudinit.readthedocs.io/en/latest/topics/format.html#cloud-config-data) to the cloud VM. If a cloud config is passed, --ssh-keys and --ssh-keys-from-files are ignored. Immutable after creation."`
 	CloudConfigFromFile *os.File `completion-predictor:"local:file" help:"Pass custom cloud config data (https://cloudinit.readthedocs.io/en/latest/topics/format.html#cloud-config-data) from a file. Takes precedence over --cloud-config. If a cloud config is passed, --ssh-keys and --ssh-keys-from-files are ignored. Immutable after creation."`
 
 	// Deprecated Flags
-	DeprecatedKeysFlags `prefix:"public-"`
+	sshkey.DeprecatedKeysFlags `prefix:"public-"`
 }
 
 func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {

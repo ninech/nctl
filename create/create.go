@@ -2,20 +2,16 @@
 package create
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"io"
 	"math/rand"
-	"os"
-	"strings"
 	"time"
 
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/lucasepe/codename"
 	meta "github.com/ninech/apis/meta/v1alpha1"
-	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/theckman/yacspin"
@@ -338,25 +334,4 @@ func getName(name string) string {
 	}
 
 	return codename.Generate(rand.New(rand.NewSource(time.Now().UnixNano())), 0)
-}
-
-// ParseSSHKeys parses the SSH keys from the given file.
-func ParseSSHKeys(file *os.File) ([]storage.SSHKey, error) {
-	keys := []storage.SSHKey{}
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-
-		keys = append(keys, storage.SSHKey(scanner.Text()))
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("error reading SSH keys file: %w", err)
-	}
-
-	return keys, nil
 }
