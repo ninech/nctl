@@ -1,7 +1,10 @@
 package main
 
 import (
+	"errors"
 	"go/build"
+	"io/fs"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -130,6 +133,9 @@ func completesResourceName(node *kong.Node) bool {
 	return false
 }
 
+// module is the import path of this module.
+const module = "github.com/ninech/nctl"
+
 // verbPackages are the packages implementing a CLI verb. They must not import
 // each other: anything two verbs share belongs in a resource package below
 // them.
@@ -148,13 +154,12 @@ func TestVerbsDoNotImportEachOther(t *testing.T) {
 	t.Parallel()
 	is := assert.New(t)
 
-	const module = "github.com/ninech/nctl/"
 	found := map[verbImport]bool{}
 	for _, from := range verbPackages {
 		pkg, err := build.Default.ImportDir(from, 0)
 		require.NoError(t, err)
 		for _, imported := range slices.Concat(pkg.Imports, pkg.TestImports, pkg.XTestImports) {
-			if to, ok := strings.CutPrefix(imported, module); ok && slices.Contains(verbPackages, to) {
+			if to, ok := strings.CutPrefix(imported, module+"/"); ok && slices.Contains(verbPackages, to) {
 				found[verbImport{from, to}] = true
 			}
 		}
@@ -166,4 +171,92 @@ func TestVerbsDoNotImportEachOther(t *testing.T) {
 	for edge := range allowedVerbImports {
 		is.True(found[edge], "verb %s no longer imports verb %s: remove the edge from allowedVerbImports", edge.from, edge.to)
 	}
+}
+
+// leafPackages use nothing else of the module:
+// cli holds the error and exit code vocabulary,
+// format and logbox only render output.
+var leafPackages = []string{"internal/cli", "internal/format", "internal/logbox"}
+
+// TestLayering guards the layers below the verbs.
+// Non-test imports are checked strictly;
+// tests may additionally import internal/test for fixtures.
+// See layeringViolation for the rules.
+func TestLayering(t *testing.T) {
+	t.Parallel()
+	is := assert.New(t)
+
+	packages := modulePackages(t)
+	for _, dir := range slices.Concat([]string{".", "api"}, leafPackages) {
+		require.Contains(t, packages, dir, "the module walk misses %s", dir)
+	}
+
+	for from, pkg := range packages {
+		check := func(imports []string, fixtures bool) {
+			for _, imported := range imports {
+				to, ok := strings.CutPrefix(imported, module+"/")
+				if !ok || (fixtures && to == "internal/test") {
+					continue
+				}
+				if reason := layeringViolation(from, to); reason != "" {
+					is.Fail("layering violation", "%s imports %s, but %s", from, to, reason)
+				}
+			}
+		}
+		check(pkg.Imports, false)
+		check(slices.Concat(pkg.TestImports, pkg.XTestImports), true)
+	}
+}
+
+// layeringViolation tells why the package in directory from must not import the package in directory to,
+// or "" when the import is fine.
+// Both are below the module root, "." being the main package.
+func layeringViolation(from, to string) string {
+	switch {
+	case slices.Contains(leafPackages, from):
+		return "leaf packages use nothing else of the module"
+	case within(from, "api") && !within(to, "api") && to != "internal/cli":
+		return "the api packages only use api/... and internal/cli"
+	case slices.Contains(verbPackages, to) && from != "." && !slices.Contains(verbPackages, from):
+		return "verbs are only imported by main and by other verbs"
+	}
+
+	return ""
+}
+
+// within reports whether dir is root or lies below it.
+func within(dir, root string) bool {
+	return dir == root || strings.HasPrefix(dir, root+"/")
+}
+
+// modulePackages returns the packages of the module by their directory below the module root,
+// "." being the main package.
+func modulePackages(t *testing.T) map[string]*build.Package {
+	t.Helper()
+
+	packages := map[string]*build.Package{}
+	err := filepath.WalkDir(".", func(dir string, entry fs.DirEntry, err error) error {
+		if err != nil || !entry.IsDir() {
+			return err
+		}
+		// Skip what the go tool skips,
+		// plus the generated completions and build output.
+		if name := entry.Name(); dir != "." && (strings.HasPrefix(name, ".") || strings.HasPrefix(name, "_") ||
+			slices.Contains([]string{"testdata", "completions", "dist"}, name)) {
+			return filepath.SkipDir
+		}
+		pkg, err := build.Default.ImportDir(dir, 0)
+		if _, ok := errors.AsType[*build.NoGoError](err); ok {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		packages[filepath.ToSlash(dir)] = pkg
+
+		return nil
+	})
+	require.NoError(t, err)
+
+	return packages
 }
