@@ -4,19 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
 	"net/url"
 	"os"
-	"strings"
 
 	"github.com/alecthomas/kong"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/api/config"
-	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/format"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/clientcmd"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	"github.com/ninech/nctl/internal/kubeconfig"
 )
 
 const (
@@ -66,11 +60,11 @@ func (cmd *LoginCmd) Run(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		cfg, err := newAPIConfig(apiURL, issuerURL, command, cmd.ClientID, useStaticToken(cmd.API.Token), withOrganization(cmd.Organization))
+		cfg, err := kubeconfig.NewAPIConfig(apiURL, issuerURL, command, cmd.ClientID, kubeconfig.UseStaticToken(cmd.API.Token), kubeconfig.WithOrganization(cmd.Organization))
 		if err != nil {
 			return err
 		}
-		return login(cmd.Writer, cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(cmd.Organization))
+		return kubeconfig.Login(cmd.Writer, cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", kubeconfig.WithProject(cmd.Organization))
 	}
 
 	if cmd.API.ClientID != "" {
@@ -85,7 +79,7 @@ func (cmd *LoginCmd) Run(ctx context.Context) error {
 		if org == "" {
 			org = userInfo.Orgs[0]
 		}
-		cfg, err := newAPIConfig(apiURL, issuerURL, command, cmd.API.ClientID, useClientCredentials(cmd.API), withOrganization(org))
+		cfg, err := kubeconfig.NewAPIConfig(apiURL, issuerURL, command, cmd.API.ClientID, kubeconfig.UseClientCredentials(cmd.API.clientCredentials()), kubeconfig.WithOrganization(org))
 		if err != nil {
 			return err
 		}
@@ -93,7 +87,7 @@ func (cmd *LoginCmd) Run(ctx context.Context) error {
 		if userInfo.Project != "" {
 			proj = userInfo.Project
 		}
-		return login(cmd.Writer, cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(proj))
+		return kubeconfig.Login(cmd.Writer, cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", kubeconfig.WithProject(proj))
 	}
 
 	if !cmd.ForceInteractiveEnvOverride && !format.IsInteractiveEnvironment(os.Stdout) {
@@ -123,12 +117,12 @@ func (cmd *LoginCmd) Run(ctx context.Context) error {
 		printAvailableOrgsString(cmd.Writer, org, userInfo.Orgs)
 	}
 
-	cfg, err := newAPIConfig(apiURL, issuerURL, command, cmd.ClientID, withOrganization(org))
+	cfg, err := kubeconfig.NewAPIConfig(apiURL, issuerURL, command, cmd.ClientID, kubeconfig.WithOrganization(org))
 	if err != nil {
 		return err
 	}
 
-	return login(cmd.Writer, cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", project(org))
+	return kubeconfig.Login(cmd.Writer, cfg, loadingRules.GetDefaultFilename(), userInfo.User, "", kubeconfig.WithProject(org))
 }
 
 func printAvailableOrgsString(w format.Writer, currentorg string, orgs []string) {
@@ -151,172 +145,6 @@ func (cmd *LoginCmd) tokenGetter() api.TokenGetter {
 		return cmd.tk
 	}
 	return &api.DefaultTokenGetter{}
-}
-
-type apiConfig struct {
-	name         string
-	token        string
-	api          API
-	caCert       []byte
-	organization string
-}
-
-type apiConfigOption func(*apiConfig)
-
-func overrideName(name string) apiConfigOption {
-	return func(ac *apiConfig) {
-		ac.name = name
-	}
-}
-
-func setCACert(caCert []byte) apiConfigOption {
-	return func(ac *apiConfig) {
-		ac.caCert = caCert
-	}
-}
-
-func useStaticToken(token string) apiConfigOption {
-	return func(ac *apiConfig) {
-		ac.token = token
-	}
-}
-
-func useClientCredentials(api API) apiConfigOption {
-	return func(ac *apiConfig) {
-		ac.api = api
-	}
-}
-
-func withOrganization(organization string) apiConfigOption {
-	return func(ac *apiConfig) {
-		ac.organization = organization
-	}
-}
-
-func newAPIConfig(apiURL, issuerURL *url.URL, command, clientID string, opts ...apiConfigOption) (*clientcmdapi.Config, error) {
-	cfg := &apiConfig{
-		name: apiURL.Host,
-	}
-
-	for _, opt := range opts {
-		opt(cfg)
-	}
-
-	extension, err := config.NewExtension(cfg.organization).ToObject()
-	if err != nil {
-		return nil, err
-	}
-
-	clientConfig := &clientcmdapi.Config{
-		Clusters: map[string]*clientcmdapi.Cluster{
-			cfg.name: {
-				Server:                   apiURL.String(),
-				CertificateAuthorityData: cfg.caCert,
-			},
-		},
-		Contexts: map[string]*clientcmdapi.Context{
-			cfg.name: {
-				Cluster:  cfg.name,
-				AuthInfo: cfg.name,
-				Extensions: map[string]runtime.Object{
-					cli.Name: extension,
-				},
-			},
-		},
-		AuthInfos:      map[string]*clientcmdapi.AuthInfo{},
-		CurrentContext: cfg.name,
-	}
-
-	if len(cfg.token) != 0 {
-		clientConfig.AuthInfos[cfg.name] = &clientcmdapi.AuthInfo{
-			Token: cfg.token,
-		}
-		return clientConfig, nil
-	}
-
-	if cfg.api.ClientID != "" {
-		clientConfig.AuthInfos[cfg.name] = &clientcmdapi.AuthInfo{
-			Exec: apiExecConfig(command, cfg.api),
-		}
-		return clientConfig, nil
-	}
-
-	clientConfig.AuthInfos[cfg.name] = &clientcmdapi.AuthInfo{
-		Exec: execConfig(command, clientID, issuerURL),
-	}
-
-	return clientConfig, nil
-}
-
-type loginConfig struct {
-	project              string
-	switchCurrentContext bool
-}
-
-type loginOption func(*loginConfig)
-
-// project overrides the project in the new config
-func project(project string) loginOption {
-	return func(l *loginConfig) {
-		l.project = project
-	}
-}
-
-// switchCurrentContext sets the context of the merged kubeconfig to the one
-// defined in the newConfig
-func switchCurrentContext() loginOption {
-	return func(l *loginConfig) {
-		l.switchCurrentContext = true
-	}
-}
-
-func login(w format.Writer, newConfig *clientcmdapi.Config, kubeconfigPath, userName string, toOrg string, opts ...loginOption) error {
-	loginConfig := &loginConfig{}
-	for _, opt := range opts {
-		opt(loginConfig)
-	}
-
-	if loginConfig.project != "" && newConfig.Contexts[newConfig.CurrentContext] != nil {
-		newConfig.Contexts[newConfig.CurrentContext].Namespace = loginConfig.project
-	}
-
-	kubeconfig, err := clientcmd.LoadFromFile(kubeconfigPath)
-	if err != nil {
-		if !os.IsNotExist(err) {
-			return err
-		}
-		// kubeconfig file does not exist so we just use our new config
-		kubeconfig = newConfig
-	}
-
-	mergeKubeConfig(newConfig, kubeconfig)
-
-	if loginConfig.switchCurrentContext {
-		kubeconfig.CurrentContext = newConfig.CurrentContext
-	}
-
-	if err := clientcmd.WriteToFile(*kubeconfig, kubeconfigPath); err != nil {
-		return err
-	}
-
-	if toOrg != "" {
-		w.Successf("🏢", "switched to the organization %q", toOrg)
-	}
-	w.Successf("📋", "added %s to kubeconfig", newConfig.CurrentContext)
-
-	loginMessage := fmt.Sprintf("logged into cluster %s", newConfig.CurrentContext)
-	if strings.TrimSpace(userName) != "" {
-		loginMessage = fmt.Sprintf("logged into cluster %s as %s", newConfig.CurrentContext, userName)
-	}
-	w.Success("🚀", loginMessage)
-
-	return nil
-}
-
-func mergeKubeConfig(from, to *clientcmdapi.Config) {
-	maps.Copy(to.Clusters, from.Clusters)
-	maps.Copy(to.AuthInfos, from.AuthInfos)
-	maps.Copy(to.Contexts, from.Contexts)
 }
 
 // LoginKongVars returns all variables which are used in the login command
