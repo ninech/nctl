@@ -110,7 +110,7 @@ func orgFromProject(ctx context.Context, client *api.Client, project string) (st
 		return "", cli.ErrorWithContext(fmt.Errorf("project %q not found", project)).
 			WithExitCode(cli.ExitUsageError).
 			WithAvailable(userInfo.Orgs...).
-			WithSuggestions(fmt.Sprintf("Project names always contain the organization name:\n%s", format.Command().SetProject("<org>-<project>")))
+			WithSuggestions(fmt.Sprintf("Project names always contain the organization name:\n%s", cli.Command().SetProject("<org>-<project>")))
 	}
 
 	// Filter the organizations to check by only considering those that match the project prefix.
@@ -143,6 +143,6 @@ func orgFromProject(ctx context.Context, client *api.Client, project string) (st
 
 	return "", cli.ErrorWithContext(fmt.Errorf("could not find project %q in any available organization", project)).
 		WithExitCode(cli.ExitUsageError).
-		WithSuggestions("List all available projects:\n" + format.Command().GetProjects()).
+		WithSuggestions("List all available projects:\n" + cli.Command().GetProjects()).
 		WithSuggestions("For APIServiceAccounts in sub-projects or without organizational access, you'll need to set the --force flag.")
 }

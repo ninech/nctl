@@ -262,7 +262,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 			"could not gather basic auth credentials: %w\n"+
 				"Please use %q to gather credentials manually",
 			err,
-			format.Command().Get(apps.ApplicationKind, newApp.Name, "--basic-auth-credentials"),
+			cli.Command().Get(apps.ApplicationKind, newApp.Name, "--basic-auth-credentials"),
 		)
 	}
 	cmd.printCredentials(basicAuth)
