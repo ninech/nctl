@@ -11,6 +11,7 @@ import (
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -52,6 +53,16 @@ spec: {}
 `
 	invalidResourceJSON = `
 {wat}
+`
+	labeledAPIServiceAccountYAML = `kind: APIServiceAccount
+apiVersion: iam.nine.ch/v1alpha1
+metadata:
+  name: %s
+  namespace: default
+  annotations:
+    key: value
+  labels:
+    team: platform
 `
 )
 
@@ -171,6 +182,29 @@ func TestFromFile(t *testing.T) {
 	}
 }
 
+// TestApplyOverObjectWithoutMetadata applies a manifest which sets annotations
+// and labels over an existing object which has neither.
+func TestApplyOverObjectWithoutMetadata(t *testing.T) {
+	t.Parallel()
+	is := require.New(t)
+	ctx := t.Context()
+
+	const name = "bare"
+	existing := &iam.APIServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "default"}}
+	apiClient := test.SetupClient(t, test.WithObjects(existing))
+
+	f := manifest(t, labeledAPIServiceAccountYAML, name)
+	obj, result, err := apiClient.ApplyFromFile(ctx, f)
+	is.NoError(err)
+	is.Equal(api.ApplyResultUpdated, result)
+	assertObj(t, obj, name)
+
+	asa := &iam.APIServiceAccount{}
+	is.NoError(apiClient.Get(ctx, types.NamespacedName{Name: name, Namespace: "default"}, asa))
+	is.Equal("value", asa.GetAnnotations()["key"])
+	is.Equal(map[string]string{"team": "platform"}, asa.GetLabels())
+}
+
 func TestFromFileMissing(t *testing.T) {
 	t.Parallel()
 	is := require.New(t)
@@ -179,11 +213,11 @@ func TestFromFileMissing(t *testing.T) {
 	ctx := t.Context()
 
 	_, err := apiClient.CreateFromFile(ctx, nil)
-	is.EqualError(err, "missing flag -f, --filename=STRING")
+	is.EqualError(err, "no manifest file given")
 	_, _, err = apiClient.ApplyFromFile(ctx, nil)
-	is.EqualError(err, "missing flag -f, --filename=STRING")
+	is.EqualError(err, "no manifest file given")
 	_, err = apiClient.DeleteFromFile(ctx, nil)
-	is.EqualError(err, "missing flag -f, --filename=STRING")
+	is.EqualError(err, "no manifest file given")
 }
 
 // manifest writes the template filled with args to a temporary file and

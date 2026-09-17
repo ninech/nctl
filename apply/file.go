@@ -10,7 +10,7 @@ import (
 
 type fromFile struct {
 	format.Writer `hidden:""`
-	Filename      *os.File `short:"f" completion-predictor:"local:file"`
+	Filename      *os.File `short:"f" required:"" completion-predictor:"local:file"`
 }
 
 func (cmd *fromFile) Run(ctx context.Context, client *api.Client) error {

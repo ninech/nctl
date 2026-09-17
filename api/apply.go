@@ -2,11 +2,11 @@ package api
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"maps"
 	"os"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
@@ -43,7 +43,7 @@ func (c *Client) ApplyFromFile(ctx context.Context, file *os.File) (*unstructure
 		return nil, "", err
 	}
 	if err := c.Create(ctx, obj); err != nil {
-		if !errors.IsAlreadyExists(err) {
+		if !kerrors.IsAlreadyExists(err) {
 			return nil, "", err
 		}
 		if err := c.updateExisting(ctx, obj); err != nil {
@@ -74,7 +74,7 @@ func (c *Client) DeleteFromFile(ctx context.Context, file *os.File) (*unstructur
 // it.
 func decodeManifest(file *os.File) (*unstructured.Unstructured, error) {
 	if file == nil {
-		return nil, fmt.Errorf("missing flag -f, --filename=STRING")
+		return nil, errors.New("no manifest file given")
 	}
 	defer file.Close()
 
@@ -97,11 +97,8 @@ func (c *Client) updateExisting(ctx context.Context, obj *unstructured.Unstructu
 	}
 
 	// merge annotations/labels
-	annotations, labels := oldObj.GetAnnotations(), oldObj.GetLabels()
-	maps.Copy(annotations, obj.GetAnnotations())
-	maps.Copy(labels, obj.GetLabels())
-	obj.SetAnnotations(annotations)
-	obj.SetLabels(labels)
+	obj.SetAnnotations(mergeInto(oldObj.GetAnnotations(), obj.GetAnnotations()))
+	obj.SetLabels(mergeInto(oldObj.GetLabels(), obj.GetLabels()))
 
 	// preserve finalizers
 	obj.SetFinalizers(append(obj.GetFinalizers(), oldObj.GetFinalizers()...))
@@ -109,4 +106,15 @@ func (c *Client) updateExisting(ctx context.Context, obj *unstructured.Unstructu
 	obj.SetResourceVersion(oldObj.GetResourceVersion())
 
 	return c.Update(ctx, obj)
+}
+
+// mergeInto copies src into dst and returns dst. A nil dst is allocated when
+// there is something to copy and stays nil otherwise.
+func mergeInto(dst, src map[string]string) map[string]string {
+	if dst == nil && len(src) > 0 {
+		dst = make(map[string]string, len(src))
+	}
+	maps.Copy(dst, src)
+
+	return dst
 }
