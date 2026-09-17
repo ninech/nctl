@@ -11,8 +11,9 @@ import (
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/create"
+	"github.com/ninech/nctl/internal/flag"
 	"github.com/ninech/nctl/internal/format"
+	"github.com/ninech/nctl/internal/serviceconnection"
 	"github.com/ninech/nctl/internal/test"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -29,8 +30,8 @@ func TestServiceConnection(t *testing.T) {
 		{
 			name: "addClusterOptions",
 			update: serviceConnectionCmd{
-				KubernetesClusterOptions: create.KubernetesClusterOptions{
-					PodSelector: &create.LabelSelector{
+				KubernetesClusterOptions: serviceconnection.KubernetesClusterOptions{
+					PodSelector: &flag.LabelSelector{
 						LabelSelector: metav1.LabelSelector{
 							MatchLabels: map[string]string{
 								"key1": "value1",
@@ -48,7 +49,7 @@ func TestServiceConnection(t *testing.T) {
 							},
 						},
 					},
-					NamespaceSelector: &create.LabelSelector{
+					NamespaceSelector: &flag.LabelSelector{
 						LabelSelector: metav1.LabelSelector{
 							MatchLabels: map[string]string{
 								"key4": "value4",

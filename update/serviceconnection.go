@@ -7,14 +7,14 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/create"
+	"github.com/ninech/nctl/internal/serviceconnection"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type serviceConnectionCmd struct {
 	ResourceCmd
-	KubernetesClusterOptions create.KubernetesClusterOptions `embed:"" prefix:"source-"`
+	KubernetesClusterOptions serviceconnection.KubernetesClusterOptions `embed:"" prefix:"source-"`
 }
 
 func (cmd *serviceConnectionCmd) Run(ctx context.Context, client *api.Client) error {

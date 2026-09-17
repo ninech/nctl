@@ -11,7 +11,6 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api/gitinfo"
-	"github.com/ninech/nctl/create"
 	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/test"
@@ -974,7 +973,7 @@ func TestApplicationFlags(t *testing.T) {
 	is := require.New(t)
 
 	nilFlags := &applicationCmd{}
-	vars, err := create.ApplicationKongVars()
+	vars, err := application.KongVars()
 	is.NoError(err)
 	_, err = kong.Must(nilFlags, vars, kong.BindTo(t.Output(), (*io.Writer)(nil))).Parse([]string{`testname`})
 	is.NoError(err)

@@ -5,14 +5,14 @@ import (
 
 	storage "github.com/ninech/apis/storage/v1alpha1"
 
-	"github.com/ninech/nctl/create"
 	"github.com/ninech/nctl/internal/format"
+	"github.com/ninech/nctl/internal/sshkey"
 )
 
-// OptionalSSHKeysFlags is [create.SSHKeysFlags] for the update commands, where
+// OptionalSSHKeysFlags is [sshkey.SSHKeysFlags] for the update commands, where
 // a flag which was not passed has to be told apart from one which was passed an
 // empty value in order to clear the configured keys. It is embedded and
-// described just like [create.SSHKeysFlags].
+// described just like [sshkey.SSHKeysFlags].
 type OptionalSSHKeysFlags struct {
 	// sep:"none" keeps Kong from splitting a value on commas, which would tear
 	// apart the options of an authorized_keys line. Repeat the flag or separate
@@ -28,13 +28,13 @@ type OptionalSSHKeysFlags struct {
 // into a single empty entry, telling the flag apart from one which was never
 // passed.
 func (f OptionalSSHKeysFlags) SSHKeysSet() bool {
-	return len(f.SSHKeys) != 0 || create.AnyFile(f.SSHKeysFromFiles)
+	return len(f.SSHKeys) != 0 || sshkey.AnyFile(f.SSHKeysFromFiles)
 }
 
 // Keys returns the validated SSH public keys of --<prefix>ssh-keys followed by
 // those of --<prefix>ssh-keys-from-files, in that order.
 func (f OptionalSSHKeysFlags) Keys(w *format.Writer, prefix string) ([]string, error) {
-	return create.ReadAuthorizedKeys(w, prefix+"ssh-keys", f.SSHKeys, f.SSHKeysFromFiles)
+	return sshkey.ReadAuthorizedKeys(w, prefix+"ssh-keys", f.SSHKeys, f.SSHKeysFromFiles)
 }
 
 // DatabaseSSHKeysFlags declares the SSH public key flags of the database update
@@ -60,5 +60,5 @@ func (f DatabaseSSHKeysFlags) StorageKeys(w *format.Writer) ([]storage.SSHKey, e
 		return nil, err
 	}
 
-	return create.StorageKeysWithDeprecatedFile(w, keys, f.SSHKeysFile)
+	return sshkey.StorageKeysWithDeprecatedFile(w, keys, f.SSHKeysFile)
 }

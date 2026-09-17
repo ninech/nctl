@@ -142,9 +142,7 @@ type verbImport struct{ from, to string }
 // allowedVerbImports are the verb-to-verb imports that still exist. Each
 // entry must be removed by the PR that breaks that edge; the test fails once
 // an entry is stale.
-var allowedVerbImports = map[verbImport]bool{
-	{"update", "create"}: true,
-}
+var allowedVerbImports = map[verbImport]bool{}
 
 func TestVerbsDoNotImportEachOther(t *testing.T) {
 	t.Parallel()
