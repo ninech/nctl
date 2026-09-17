@@ -12,6 +12,7 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/flag"
+	"github.com/ninech/nctl/internal/serviceconnection"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -101,7 +102,7 @@ func TestServiceConnection(t *testing.T) {
 		{
 			name: "withClusterOptions",
 			create: serviceConnectionCmd{
-				KubernetesClusterOptions: KubernetesClusterOptions{
+				KubernetesClusterOptions: serviceconnection.KubernetesClusterOptions{
 					PodSelector: &flag.LabelSelector{
 						LabelSelector: metav1.LabelSelector{
 							MatchLabels: map[string]string{
