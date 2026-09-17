@@ -2,14 +2,13 @@ package create
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/flag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 )
@@ -21,7 +20,7 @@ type openSearchCmd struct {
 	ClusterType       storage.OpenSearchClusterType `help:"Type of cluster." completion-predictor:"apifield:opensearch_cluster_type"`
 	MachineType       string                        `help:"Defines the sizing of an OpenSearch instance." completion-predictor:"apifield:opensearch_machine_type"`
 	AllowedCidrs      []meta.IPv4CIDR               `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the public endpoint."`
-	BucketUsers       []LocalReference              `placeholder:"user1,user2" help:"BucketUsers specify the users who have read access to the OpenSearch snapshots bucket."`
+	BucketUsers       []flag.LocalReference         `placeholder:"user1,user2" help:"BucketUsers specify the users who have read access to the OpenSearch snapshots bucket."`
 	PublicNetworking  *bool                         `negatable:"" help:"Enable or disable public networking. Enabled by default."`
 
 	// Deprecated Flags
@@ -95,21 +94,4 @@ func (cmd *openSearchCmd) newOpenSearch(namespace string) (*storage.OpenSearch, 
 	}
 
 	return openSearch, nil
-}
-
-// LocalReference references another object in the same namespace.
-type LocalReference struct {
-	meta.LocalReference
-}
-
-// UnmarshalText parses a local reference from a string.
-func (r *LocalReference) UnmarshalText(text []byte) error {
-	name := strings.TrimSpace(string(text))
-	if name == "" {
-		return fmt.Errorf("reference unmarshal error: got %q", text)
-	}
-
-	r.Name = name
-
-	return nil
 }

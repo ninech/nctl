@@ -11,6 +11,7 @@ import (
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/application"
+	"github.com/ninech/nctl/internal/flag"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -101,7 +102,7 @@ func TestServiceConnection(t *testing.T) {
 			name: "withClusterOptions",
 			create: serviceConnectionCmd{
 				KubernetesClusterOptions: KubernetesClusterOptions{
-					PodSelector: &LabelSelector{
+					PodSelector: &flag.LabelSelector{
 						LabelSelector: metav1.LabelSelector{
 							MatchLabels: map[string]string{
 								"key1": "value1",
@@ -119,7 +120,7 @@ func TestServiceConnection(t *testing.T) {
 							},
 						},
 					},
-					NamespaceSelector: &LabelSelector{
+					NamespaceSelector: &flag.LabelSelector{
 						LabelSelector: metav1.LabelSelector{
 							MatchLabels: map[string]string{
 								"key4": "value4",
@@ -260,35 +261,6 @@ func TestServiceConnection(t *testing.T) {
 			}
 
 			is.Equal(tt.want, created.Spec.ForProvider)
-		})
-	}
-}
-
-func TestLabelSelector_UnmarshalText(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name    string
-		arg     string
-		want    metav1.LabelSelector
-		wantErr bool
-	}{
-		{"none", "", metav1.LabelSelector{MatchLabels: nil, MatchExpressions: nil}, false},
-		{"simple", "key1=value1", metav1.LabelSelector{MatchLabels: map[string]string{"key1": "value1"}, MatchExpressions: []metav1.LabelSelectorRequirement{}}, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			is := require.New(t)
-
-			ls := &LabelSelector{}
-			err := ls.UnmarshalText([]byte(tt.arg))
-			if err == nil && !tt.wantErr {
-				is.Equal(tt.want, ls.LabelSelector)
-			}
-			if (err != nil) != tt.wantErr {
-				t.Errorf("LabelSelector.UnmarshalText() error = %v, wantErr %v", err, tt.wantErr)
-			}
 		})
 	}
 }
