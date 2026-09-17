@@ -17,7 +17,7 @@ import (
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/application"
-	"github.com/ninech/nctl/internal/flag"
+	"github.com/ninech/nctl/internal/serviceconnection"
 )
 
 // These might be replaced to fetch compatible resources from the schema.
@@ -30,36 +30,10 @@ var (
 
 type serviceConnectionCmd struct {
 	ResourceCmd
-	Source                   application.TypedReference `placeholder:"kind/name" help:"Source of the connection in the form kind/name. Allowed source kinds are: ${allowed_sources}." required:""`
-	Destination              application.TypedReference `placeholder:"kind/name" help:"Destination of the connection in the form kind/name. Must be in the same project as the service connection. Allowed destination kinds are: ${allowed_destinations}." required:""`
-	SourceNamespace          string                     `help:"Source namespace of the connection. Defaults to current project."`
-	KubernetesClusterOptions KubernetesClusterOptions   `embed:"" prefix:"source-"`
-}
-
-// KubernetesClusterOptions contains options for a KubernetesCluster source.
-// https://pkg.go.dev/github.com/ninech/apis@v0.0.0-20250708054129-4d49f7a6c606/networking/v1alpha1#KubernetesClusterOptions
-type KubernetesClusterOptions struct {
-	PodSelector       *flag.LabelSelector `placeholder:"${label_selector_placeholder}" help:"${label_selector_requirements} Restrict which pods of the KubernetesCluster can connect to the service connection destination. If left empty, all pods are allowed. If the namespace selector is also set, then the pod selector as a whole selects the pods matching pod selector in the namespaces selected by namespace selector.\n\n${label_selector_usage}."`
-	NamespaceSelector *flag.LabelSelector `placeholder:"${label_selector_placeholder}" help:"${label_selector_requirements} Select namespaces using labels set on namespaces. If left empty, all namespaces are selected. Allows to further restrict the pods selected by the PodSelector.\n\n${label_selector_usage}."`
-}
-
-// APIType returns the API type [networking.KubernetesClusterOptions] of the [KubernetesClusterOptions].
-func (kco *KubernetesClusterOptions) APIType() *networking.KubernetesClusterOptions {
-	if kco == nil || (kco.PodSelector == nil && kco.NamespaceSelector == nil) {
-		return nil
-	}
-
-	nkco := &networking.KubernetesClusterOptions{}
-	if kco.PodSelector != nil {
-		nkco.PodSelector.MatchLabels = kco.PodSelector.MatchLabels
-		nkco.PodSelector.MatchExpressions = kco.PodSelector.MatchExpressions
-	}
-	if kco.NamespaceSelector != nil {
-		nkco.NamespaceSelector.MatchLabels = kco.NamespaceSelector.MatchLabels
-		nkco.NamespaceSelector.MatchExpressions = kco.NamespaceSelector.MatchExpressions
-	}
-
-	return nkco
+	Source                   application.TypedReference                 `placeholder:"kind/name" help:"Source of the connection in the form kind/name. Allowed source kinds are: ${allowed_sources}." required:""`
+	Destination              application.TypedReference                 `placeholder:"kind/name" help:"Destination of the connection in the form kind/name. Must be in the same project as the service connection. Allowed destination kinds are: ${allowed_destinations}." required:""`
+	SourceNamespace          string                                     `help:"Source namespace of the connection. Defaults to current project."`
+	KubernetesClusterOptions serviceconnection.KubernetesClusterOptions `embed:"" prefix:"source-"`
 }
 
 func (cmd *serviceConnectionCmd) Run(ctx context.Context, client *api.Client) error {
@@ -157,15 +131,12 @@ func (cmd *serviceConnectionCmd) newServiceConnection(namespace string) (*networ
 	return sc, nil
 }
 
-// ServiceConnectionKongVars returns all variables which are used in the ServiceConnection
-// create command
+// ServiceConnectionKongVars returns the variables which only the service connection create command interpolates.
+// The variables of the flags it shares with the update command come from [serviceconnection.KongVars].
 func ServiceConnectionKongVars() kong.Vars {
 	result := make(kong.Vars)
 	result["allowed_sources"] = strings.Join(allowedSources, ", ")
 	result["allowed_destinations"] = strings.Join(allowedDestinations, ", ")
-	result["label_selector_placeholder"] = "'key1=value1,key2=value2,key3 in (value3)'"
-	result["label_selector_usage"] = "Selector (label query) to filter on, supports '=', '==', '!=', 'in', 'notin'. Matching objects must satisfy all of the specified label constraints."
-	result["label_selector_requirements"] = "Can only be set when the source is a KubernetesCluster."
 
 	return result
 }

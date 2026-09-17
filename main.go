@@ -28,6 +28,7 @@ import (
 	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/completion"
 	"github.com/ninech/nctl/internal/format"
+	"github.com/ninech/nctl/internal/serviceconnection"
 	"github.com/ninech/nctl/logs"
 	"github.com/ninech/nctl/update"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -280,6 +281,7 @@ func kongVariables() (kong.Vars, error) {
 		appKongVars,
 		create.MySQLKongVars(),
 		create.ServiceConnectionKongVars(),
+		serviceconnection.KongVars(),
 		bucket.KongVars(),
 		update.BucketKongVars(),
 		auth.LoginKongVars(),
