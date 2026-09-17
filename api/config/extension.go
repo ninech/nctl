@@ -9,7 +9,6 @@ import (
 
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/internal/cli"
-	"github.com/ninech/nctl/internal/format"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/clientcmd"
@@ -207,7 +206,7 @@ func contextNotFoundError[T any](contextName string, contexts map[string]T) erro
 	return cli.ErrorWithContext(fmt.Errorf("could not find context %q in kubeconfig", contextName)).
 		WithExitCode(cli.ExitUsageError).
 		WithAvailable(available...).
-		WithSuggestions("Login to the API: " + format.Command().Login())
+		WithSuggestions("Login to the API: " + cli.Command().Login())
 }
 
 // clusterNotFoundError returns an error with available clusters listed.
