@@ -8,7 +8,6 @@ import (
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/bucket"
-	"github.com/ninech/nctl/internal/cli"
 
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/internal/test"
@@ -823,7 +822,7 @@ func TestBucketNoFlagsDoesNotUpdate(t *testing.T) {
 		api.NamespacedName(name, apiClient.Project),
 		updated,
 	))
-	is.NotContains(updated.GetAnnotations(), cli.ManagedByAnnotation)
+	is.NotContains(updated.GetAnnotations(), api.ManagedByAnnotation)
 }
 
 func runBucketUpdateNamedWithFlags(

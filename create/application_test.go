@@ -19,7 +19,6 @@ import (
 	"github.com/ninech/nctl/api/gitinfo"
 	"github.com/ninech/nctl/api/log"
 	"github.com/ninech/nctl/internal/application"
-	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 
@@ -187,7 +186,7 @@ func TestCreateApplication(t *testing.T) {
 
 				is.Equal(*cmd.Git.Username, string(authSecret.Data[gitinfo.UsernameSecretKey]))
 				is.Equal(*cmd.Git.Password, string(authSecret.Data[gitinfo.PasswordSecretKey]))
-				is.True(cli.IsManagedBy(authSecret.Annotations))
+				is.True(api.IsManagedBy(authSecret.Annotations))
 			},
 		},
 		"with ssh key git auth": {
@@ -211,7 +210,7 @@ func TestCreateApplication(t *testing.T) {
 				}
 
 				is.Equal(strings.TrimSpace(*cmd.Git.SSHPrivateKey), string(authSecret.Data[gitinfo.PrivateKeySecretKey]))
-				is.True(cli.IsManagedBy(authSecret.Annotations))
+				is.True(api.IsManagedBy(authSecret.Annotations))
 			},
 		},
 		"with ssh ed25519 key git auth": {
@@ -235,7 +234,7 @@ func TestCreateApplication(t *testing.T) {
 				}
 
 				is.Equal(strings.TrimSpace(*cmd.Git.SSHPrivateKey), string(authSecret.Data[gitinfo.PrivateKeySecretKey]))
-				is.True(cli.IsManagedBy(authSecret.Annotations))
+				is.True(api.IsManagedBy(authSecret.Annotations))
 			},
 		},
 		"with ssh key git auth from file": {
@@ -259,7 +258,7 @@ func TestCreateApplication(t *testing.T) {
 				}
 
 				is.Equal(dummyRSAKey, string(authSecret.Data[gitinfo.PrivateKeySecretKey]))
-				is.True(cli.IsManagedBy(authSecret.Annotations))
+				is.True(api.IsManagedBy(authSecret.Annotations))
 			},
 		},
 		"with ed25519 ssh key git auth from file": {
@@ -283,7 +282,7 @@ func TestCreateApplication(t *testing.T) {
 				}
 
 				is.Equal(strings.TrimSpace(dummyED25519Key), string(authSecret.Data[gitinfo.PrivateKeySecretKey]))
-				is.True(cli.IsManagedBy(authSecret.Annotations))
+				is.True(api.IsManagedBy(authSecret.Annotations))
 			},
 		},
 		"with non valid ssh key": {

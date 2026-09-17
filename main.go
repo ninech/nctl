@@ -119,7 +119,7 @@ func main() {
 			cmd.APICluster,
 			cmd.Project,
 			api.LogClient(ctx, cmd.LogAPIAddress, cmd.LogAPIInsecure),
-			api.DefaultAnnotations(cli.ManagedByAnnotation, cli.Name),
+			api.DefaultAnnotations(api.ManagedByAnnotation, api.Name),
 		)
 		if err != nil {
 			fmt.Fprintln(writer, err)
@@ -169,7 +169,7 @@ func newParser(ctx context.Context, cmd *rootCommand, w io.Writer, r io.Reader) 
 
 	parser, err := kong.New(
 		cmd,
-		kong.Name(cli.Name),
+		kong.Name(api.Name),
 		kong.Description(
 			"Interact with Nine API resources. See https://docs.nineapis.ch for the full API docs.",
 		),

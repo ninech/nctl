@@ -9,7 +9,6 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/gitinfo"
 	"github.com/ninech/nctl/internal/application"
-	"github.com/ninech/nctl/internal/cli"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -118,7 +117,7 @@ func (app *applicationCmd) deleteGitAuthSecret(
 		)
 	}
 
-	if !cli.IsManagedBy(secret.Annotations) {
+	if !api.IsManagedBy(secret.Annotations) {
 		// the secret was not created by nctl, so we will not delete it
 		return nil
 	}

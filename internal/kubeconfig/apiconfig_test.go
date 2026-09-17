@@ -6,7 +6,6 @@ import (
 
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
-	"github.com/ninech/nctl/internal/cli"
 	"github.com/stretchr/testify/require"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
@@ -113,7 +112,7 @@ func TestNewAPIConfig(t *testing.T) {
 
 			wantExtension, err := config.NewExtension(tt.wantOrg).ToObject()
 			is.NoError(err)
-			is.Equal(wantExtension, cfg.Contexts[tt.wantName].Extensions[cli.Name])
+			is.Equal(wantExtension, cfg.Contexts[tt.wantName].Extensions[api.Name])
 		})
 	}
 }

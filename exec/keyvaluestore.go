@@ -67,7 +67,7 @@ func (kvsConnector) Update(ctx context.Context, client *api.Client, kvs *storage
 	if current.Spec.ForProvider.PublicNetworkingEnabled != nil && !*current.Spec.ForProvider.PublicNetworkingEnabled {
 		return cli.ErrorWithContext(fmt.Errorf("public networking is disabled for keyvaluestore %q", kvs.GetName())).
 			WithSuggestions(
-				fmt.Sprintf("Enable it with: %s update keyvaluestore %s --public-networking", cli.Name, kvs.GetName()),
+				fmt.Sprintf("Enable it with: %s update keyvaluestore %s --public-networking", api.Name, kvs.GetName()),
 			)
 	}
 

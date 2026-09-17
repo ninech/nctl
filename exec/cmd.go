@@ -185,7 +185,7 @@ func ensureAccess[T resource.Managed](
 			return nil
 		}
 	} else {
-		ip, err := ipcheck.New(ipcheck.WithUserAgent(cli.Name)).PublicIP(ctx)
+		ip, err := ipcheck.New(ipcheck.WithUserAgent(api.Name)).PublicIP(ctx)
 		if err != nil {
 			return cli.ErrorWithContext(fmt.Errorf("detecting public IP address: %w", err)).
 				WithSuggestions("Are you connected to the internet?")

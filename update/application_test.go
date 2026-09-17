@@ -10,9 +10,9 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
+	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/gitinfo"
 	"github.com/ninech/nctl/internal/application"
-	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -354,7 +354,7 @@ func TestApplication(t *testing.T) {
 				is := require.New(t)
 				is.Equal(*cmd.Git.Username, string(authSecret.Data[gitinfo.UsernameSecretKey]))
 				is.Equal(*cmd.Git.Password, string(authSecret.Data[gitinfo.PasswordSecretKey]))
-				is.True(cli.IsManagedBy(authSecret.Annotations))
+				is.True(api.IsManagedBy(authSecret.Annotations))
 			},
 		},
 		"git auth update ssh key": {
@@ -386,7 +386,7 @@ func TestApplication(t *testing.T) {
 			checkSecret: func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret) {
 				is := require.New(t)
 				is.Equal(strings.TrimSpace(*cmd.Git.SSHPrivateKey), string(authSecret.Data[gitinfo.PrivateKeySecretKey]))
-				is.True(cli.IsManagedBy(authSecret.Annotations))
+				is.True(api.IsManagedBy(authSecret.Annotations))
 			},
 		},
 		"git auth update creates a secret": {
@@ -418,7 +418,7 @@ func TestApplication(t *testing.T) {
 				is := require.New(t)
 				is.Equal(*cmd.Git.Username, string(authSecret.Data[gitinfo.UsernameSecretKey]))
 				is.Equal(*cmd.Git.Password, string(authSecret.Data[gitinfo.PasswordSecretKey]))
-				is.True(cli.IsManagedBy(authSecret.Annotations))
+				is.True(api.IsManagedBy(authSecret.Annotations))
 			},
 		},
 		"git auth is unchanged on normal field update": {
@@ -454,7 +454,7 @@ func TestApplication(t *testing.T) {
 			checkSecret: func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret) {
 				is := require.New(t)
 				is.Equal("fakekey", string(authSecret.Data[gitinfo.PrivateKeySecretKey]))
-				is.True(cli.IsManagedBy(authSecret.Annotations))
+				is.True(api.IsManagedBy(authSecret.Annotations))
 			},
 		},
 		"disable deploy job": {

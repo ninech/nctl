@@ -7,7 +7,6 @@ import (
 
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
-	"github.com/ninech/nctl/internal/cli"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -160,7 +159,7 @@ func SetupClient(t *testing.T, opts ...ClientSetupOption) *api.Client {
 		Config:    &rest.Config{BearerToken: FakeJWTToken},
 		WithWatch: client, Project: setup.defaultProject,
 	}
-	if err := api.DefaultAnnotations(cli.ManagedByAnnotation, cli.Name)(c); err != nil {
+	if err := api.DefaultAnnotations(api.ManagedByAnnotation, api.Name)(c); err != nil {
 		t.Errorf("error on default annotations: %s", err)
 		return nil
 	}
@@ -203,7 +202,7 @@ func CreateTestKubeconfig(client *api.Client, organization string) (string, erro
 			return "", err
 		}
 		extensions = map[string]runtime.Object{
-			cli.Name: cfgObject,
+			api.Name: cfgObject,
 		}
 	}
 
