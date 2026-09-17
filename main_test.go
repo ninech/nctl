@@ -1,6 +1,9 @@
 package main
 
 import (
+	"go/build"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/alecthomas/kong"
@@ -125,4 +128,47 @@ func completesResourceName(node *kong.Node) bool {
 	}
 
 	return false
+}
+
+// verbPackages are the packages implementing a CLI verb. They must not import
+// each other: anything two verbs share belongs in a resource package below
+// them.
+var verbPackages = []string{"apply", "auth", "copy", "create", "delete", "edit", "exec", "get", "logs", "update"}
+
+// verbImport is a direct import of the verb package to by the verb package
+// from, including from its tests.
+type verbImport struct{ from, to string }
+
+// allowedVerbImports are the verb-to-verb imports that still exist. Each
+// entry must be removed by the PR that breaks that edge; the test fails once
+// an entry is stale.
+var allowedVerbImports = map[verbImport]bool{
+	{"create", "logs"}:   true,
+	{"create", "auth"}:   true,
+	{"exec", "get"}:      true,
+	{"update", "create"}: true,
+}
+
+func TestVerbsDoNotImportEachOther(t *testing.T) {
+	t.Parallel()
+	is := assert.New(t)
+
+	const module = "github.com/ninech/nctl/"
+	found := map[verbImport]bool{}
+	for _, from := range verbPackages {
+		pkg, err := build.Default.ImportDir(from, 0)
+		require.NoError(t, err)
+		for _, imported := range slices.Concat(pkg.Imports, pkg.TestImports, pkg.XTestImports) {
+			if to, ok := strings.CutPrefix(imported, module); ok && slices.Contains(verbPackages, to) {
+				found[verbImport{from, to}] = true
+			}
+		}
+	}
+
+	for edge := range found {
+		is.True(allowedVerbImports[edge], "verb %s imports verb %s: move what they share to a resource package", edge.from, edge.to)
+	}
+	for edge := range allowedVerbImports {
+		is.True(found[edge], "verb %s no longer imports verb %s: remove the edge from allowedVerbImports", edge.from, edge.to)
+	}
 }
