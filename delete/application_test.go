@@ -10,7 +10,6 @@ import (
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/gitinfo"
-	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/test"
 	corev1 "k8s.io/api/core/v1"
@@ -79,7 +78,7 @@ func TestApplication(t *testing.T) {
 
 				customSecret := nctlSecret.DeepCopy()
 				customSecret.Name = "custom"
-				delete(customSecret.Annotations, cli.ManagedByAnnotation)
+				delete(customSecret.Annotations, api.ManagedByAnnotation)
 				appOne.Spec.ForProvider.Git.Auth = &apps.GitAuth{
 					FromSecret: &meta.LocalReference{
 						Name: customSecret.Name,
@@ -100,7 +99,7 @@ func TestApplication(t *testing.T) {
 			testObjects: func() []testObject {
 				appOne := dummyApp("dev", project)
 				nctlSecret := gitSecretFor(appOne)
-				delete(nctlSecret.Annotations, cli.ManagedByAnnotation)
+				delete(nctlSecret.Annotations, api.ManagedByAnnotation)
 				return toTestObj(
 					appOne,
 					noDeletionExpected(nctlSecret),
@@ -220,7 +219,7 @@ func gitSecretFor(app *apps.Application) *corev1.Secret {
 		Kind:       "Secret",
 	}
 	s.Annotations = map[string]string{
-		cli.ManagedByAnnotation: cli.Name,
+		api.ManagedByAnnotation: api.Name,
 	}
 	return s
 }
