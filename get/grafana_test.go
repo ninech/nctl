@@ -113,7 +113,7 @@ func TestGrafana(t *testing.T) {
 			for _, instance := range tt.instances {
 				g := test.Grafana(instance.name, instance.project)
 				g.Spec.ForProvider.EnableAdminAccess = instance.enableAdminAccess
-			g.Spec.ForProvider.AllowLocalUsers = instance.allowLocalUsers
+				g.Spec.ForProvider.AllowLocalUsers = instance.allowLocalUsers
 				objects = append(objects, g)
 			}
 			apiClient := test.SetupClient(t,
