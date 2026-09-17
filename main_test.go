@@ -4,6 +4,7 @@ import (
 	"errors"
 	"go/build"
 	"io/fs"
+	"path"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -133,12 +134,16 @@ func completesResourceName(node *kong.Node) bool {
 	return false
 }
 
-// module is the import path of this module.
-const module = "github.com/ninech/nctl"
+const (
+	// module is the import path of this module.
+	module = "github.com/ninech/nctl"
+	// verbDir is the directory below the module root holding the verb packages.
+	verbDir = "internal/cmd"
+)
 
-// verbPackages are the packages implementing a CLI verb. They must not import
-// each other: anything two verbs share belongs in a resource package below
-// them.
+// verbPackages are the packages implementing a CLI verb, by name below
+// verbDir. They must not import each other: anything two verbs share belongs
+// in a resource package below them.
 var verbPackages = []string{"apply", "auth", "copy", "create", "delete", "edit", "exec", "get", "logs", "update"}
 
 // verbImport is a direct import of the verb package to by the verb package
@@ -154,12 +159,13 @@ func TestVerbsDoNotImportEachOther(t *testing.T) {
 	t.Parallel()
 	is := assert.New(t)
 
+	verbImportPrefix := path.Join(module, verbDir) + "/"
 	found := map[verbImport]bool{}
 	for _, from := range verbPackages {
-		pkg, err := build.Default.ImportDir(from, 0)
+		pkg, err := build.Default.ImportDir(filepath.Join(verbDir, from), 0)
 		require.NoError(t, err)
 		for _, imported := range slices.Concat(pkg.Imports, pkg.TestImports, pkg.XTestImports) {
-			if to, ok := strings.CutPrefix(imported, module+"/"); ok && slices.Contains(verbPackages, to) {
+			if to, ok := strings.CutPrefix(imported, verbImportPrefix); ok && slices.Contains(verbPackages, to) {
 				found[verbImport{from, to}] = true
 			}
 		}
@@ -215,7 +221,7 @@ func layeringViolation(from, to string) string {
 		return "leaf packages use nothing else of the module"
 	case within(from, "api") && !within(to, "api") && to != "internal/cli":
 		return "the api packages only use api/... and internal/cli"
-	case slices.Contains(verbPackages, to) && from != "." && !slices.Contains(verbPackages, from):
+	case within(to, verbDir) && from != "." && !within(from, verbDir):
 		return "verbs are only imported by main and by other verbs"
 	}
 
