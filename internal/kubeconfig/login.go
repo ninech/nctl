@@ -26,17 +26,16 @@ func WithProject(project string) LoginOption {
 	}
 }
 
-// SwitchCurrentContext sets the current context of the merged kubeconfig to
-// the one of the new config.
+// SwitchCurrentContext sets the current context of the merged kubeconfig to the one of the new config.
 func SwitchCurrentContext() LoginOption {
 	return func(l *loginConfig) {
 		l.switchCurrentContext = true
 	}
 }
 
-// Login merges newConfig into the kubeconfig at kubeconfigPath, creating the
-// file if it does not exist, and reports the result to w. userName and
-// toOrg are only used in the messages and may be empty.
+// Login merges newConfig into the kubeconfig at kubeconfigPath,
+// creating the file if it does not exist,
+// and reports the result to w. userName and toOrg are only used in the messages and may be empty.
 func Login(w format.Writer, newConfig *clientcmdapi.Config, kubeconfigPath, userName string, toOrg string, opts ...LoginOption) error {
 	loginConfig := &loginConfig{}
 	for _, opt := range opts {

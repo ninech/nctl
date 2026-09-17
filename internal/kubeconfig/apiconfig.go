@@ -1,6 +1,5 @@
-// Package kubeconfig builds the kubeconfig entries nctl uses to talk to the
-// Nine API and to Kubernetes clusters, and merges them into the user's
-// kubeconfig.
+// Package kubeconfig builds the kubeconfig entries nctl uses to talk to the Nine API and to Kubernetes clusters,
+// and merges them into the user's kubeconfig.
 package kubeconfig
 
 import (
@@ -13,8 +12,7 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
-// ClientCredentials are the APIServiceAccount credentials the exec plugin
-// uses to obtain a token.
+// ClientCredentials are the APIServiceAccount credentials the exec plugin uses to obtain a token.
 type ClientCredentials struct {
 	ClientID     string
 	ClientSecret string
@@ -32,8 +30,8 @@ type apiConfig struct {
 // APIConfigOption configures the kubeconfig built by [NewAPIConfig].
 type APIConfigOption func(*apiConfig)
 
-// OverrideName sets the name used for the cluster, context and user entry
-// instead of the API URL host.
+// OverrideName sets the name used for the cluster,
+// context and user entry instead of the API URL host.
 func OverrideName(name string) APIConfigOption {
 	return func(ac *apiConfig) {
 		ac.name = name
@@ -47,16 +45,14 @@ func WithCACert(caCert []byte) APIConfigOption {
 	}
 }
 
-// UseStaticToken authenticates with a static token instead of an exec
-// plugin.
+// UseStaticToken authenticates with a static token instead of an exec plugin.
 func UseStaticToken(token string) APIConfigOption {
 	return func(ac *apiConfig) {
 		ac.token = token
 	}
 }
 
-// UseClientCredentials authenticates through the client-credentials exec
-// plugin instead of the interactive OIDC one.
+// UseClientCredentials authenticates through the client-credentials exec plugin instead of the interactive OIDC one.
 func UseClientCredentials(credentials ClientCredentials) APIConfigOption {
 	return func(ac *apiConfig) {
 		ac.credentials = credentials
@@ -70,10 +66,10 @@ func WithOrganization(organization string) APIConfigOption {
 	}
 }
 
-// NewAPIConfig returns a kubeconfig with a single cluster, context and user
-// for the API at apiURL. Unless a static token or client credentials are
-// configured, the user authenticates through the OIDC exec plugin of the
-// nctl binary at command.
+// NewAPIConfig returns a kubeconfig with a single cluster,
+// context and user for the API at apiURL.
+// Unless a static token or client credentials are configured,
+// the user authenticates through the OIDC exec plugin of the nctl binary at command.
 func NewAPIConfig(apiURL, issuerURL *url.URL, command, clientID string, opts ...APIConfigOption) (*clientcmdapi.Config, error) {
 	cfg := &apiConfig{
 		name: apiURL.Host,
@@ -129,8 +125,7 @@ func NewAPIConfig(apiURL, issuerURL *url.URL, command, clientID string, opts ...
 	return clientConfig, nil
 }
 
-// oidcExecConfig returns an exec config that obtains a token through the
-// interactive OIDC login of nctl.
+// oidcExecConfig returns an exec config that obtains a token through the interactive OIDC login of nctl.
 func oidcExecConfig(command, clientID string, issuerURL *url.URL) *clientcmdapi.ExecConfig {
 	return &clientcmdapi.ExecConfig{
 		APIVersion: "client.authentication.k8s.io/v1beta1",
@@ -145,8 +140,7 @@ func oidcExecConfig(command, clientID string, issuerURL *url.URL) *clientcmdapi.
 	}
 }
 
-// clientCredentialsExecConfig returns an exec config that obtains a token
-// through the client-credentials login of nctl.
+// clientCredentialsExecConfig returns an exec config that obtains a token through the client-credentials login of nctl.
 func clientCredentialsExecConfig(command string, credentials ClientCredentials) *clientcmdapi.ExecConfig {
 	return &clientcmdapi.ExecConfig{
 		APIVersion:      "client.authentication.k8s.io/v1",
