@@ -16,9 +16,8 @@ import (
 )
 
 // LoginCluster adds the KubernetesCluster name to the kubeconfig of client
-// and switches the current context to it. If execPlugin is set, the OIDC
-// exec plugin is run right away so the user is logged in and named in the
-// output.
+// and switches the current context to it.
+// If execPlugin is set, the OIDC exec plugin is run right away so the user is logged in and named in the output.
 func LoginCluster(ctx context.Context, client *api.Client, w format.Writer, name types.NamespacedName, execPlugin bool) error {
 	cluster := &infrastructure.KubernetesCluster{}
 	if err := client.Get(ctx, name, cluster); err != nil {
