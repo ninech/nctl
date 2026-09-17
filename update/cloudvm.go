@@ -7,7 +7,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/create"
+	"github.com/ninech/nctl/internal/sshkey"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	res "k8s.io/apimachinery/pkg/api/resource"
@@ -28,7 +28,7 @@ type cloudVMCmd struct {
 	OptionalSSHKeysFlags `prefix:"rescue-" set:"ssh_keys_purpose=that can be used to connect to the CloudVM while booted into rescue"`
 
 	// Deprecated Flags
-	create.DeprecatedKeysFlags `prefix:"rescue-public-"`
+	sshkey.DeprecatedKeysFlags `prefix:"rescue-public-"`
 }
 
 func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {

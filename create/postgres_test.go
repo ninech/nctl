@@ -10,6 +10,7 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/sshkey"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,7 +51,7 @@ func TestPostgres(t *testing.T) {
 		{
 			name: "sshKeys",
 			create: postgresCmd{DatabaseSSHKeysFlags: DatabaseSSHKeysFlags{
-				SSHKeysFlags: SSHKeysFlags{SSHKeys: []string{testPublicKeyA}},
+				SSHKeysFlags: sshkey.SSHKeysFlags{SSHKeys: []string{testPublicKeyA}},
 			}},
 			want: storage.PostgresParameters{SSHKeys: []storage.SSHKey{testPublicKeyA}},
 		},
