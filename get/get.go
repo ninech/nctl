@@ -176,7 +176,7 @@ func (out *output) notFound(kind, project string) error {
 	if project != "" {
 		err = err.
 			WithContext("Project", project).
-			WithSuggestions(fmt.Sprintf("List all %s in your organization: %s", pluralKind, format.Command().Get(pluralKind, "--all-projects")))
+			WithSuggestions(fmt.Sprintf("List all %s in your organization: %s", pluralKind, cli.Command().Get(pluralKind, "--all-projects")))
 	}
 
 	return err
