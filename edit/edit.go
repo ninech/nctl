@@ -139,9 +139,9 @@ func (cmd *resourceCmd) Run(kong *kong.Context, ctx context.Context, c *api.Clie
 		return editError
 	}
 	if modified {
-		cmd.Successf("🏗", "updated %s", formatObj(obj))
+		cmd.Successf("🏗", "updated %s", format.Object(obj))
 	} else {
-		cmd.Infof("", "no changes made to %s", formatObj(obj))
+		cmd.Infof("", "no changes made to %s", format.Object(obj))
 	}
 	return nil
 }
@@ -155,7 +155,7 @@ func modTime(f *os.File) (time.Time, error) {
 }
 
 func writeHeader(w io.Writer, obj client.Object) {
-	fmt.Fprintf(w, header, formatObj(obj))
+	fmt.Fprintf(w, header, format.Object(obj))
 }
 
 // writeError rewrites the file with an error message after the header.
@@ -194,15 +194,6 @@ func writeError(fileName string, editError error, obj client.Object) error {
 		return err
 	}
 	return nil
-}
-
-func formatObj(obj client.Object) string {
-	return fmt.Sprintf(
-		"%s %s/%s",
-		obj.GetObjectKind().GroupVersionKind().Kind,
-		obj.GetName(),
-		obj.GetNamespace(),
-	)
 }
 
 // printStatusErrorDetails pretty-prints a [kerrors.StatusError] with all the
