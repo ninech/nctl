@@ -23,6 +23,7 @@ import (
 	"github.com/ninech/nctl/exec"
 	"github.com/ninech/nctl/get"
 	"github.com/ninech/nctl/internal/apifield"
+	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/completion"
 	"github.com/ninech/nctl/internal/format"
@@ -269,13 +270,13 @@ func kongVariables() (kong.Vars, error) {
 	result := make(kong.Vars)
 	result["version"] = versionOutput(version, commit, date)
 	result["api_cluster"] = defaultAPICluster
-	appCreateKongVars, err := create.ApplicationKongVars()
+	appKongVars, err := application.KongVars()
 	if err != nil {
-		return nil, fmt.Errorf("error on application create kong vars: %w", err)
+		return nil, fmt.Errorf("error on application kong vars: %w", err)
 	}
 	if err := merge(
 		result,
-		appCreateKongVars,
+		appKongVars,
 		create.MySQLKongVars(),
 		create.ServiceConnectionKongVars(),
 		create.BucketKongVars(),
