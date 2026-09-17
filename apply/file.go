@@ -2,113 +2,28 @@ package apply
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
-	"maps"
-
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/util/yaml"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type fromFile struct {
 	format.Writer `hidden:""`
-	Filename      *os.File `short:"f" completion-predictor:"local:file"`
+	Filename      *os.File `short:"f" required:"" completion-predictor:"local:file"`
 }
 
 func (cmd *fromFile) Run(ctx context.Context, client *api.Client) error {
-	return File(ctx, cmd.Writer, client, cmd.Filename, UpdateOnExists())
-}
-
-type Option func(*config)
-
-type config struct {
-	updateOnExists bool
-	delete         bool
-}
-
-func UpdateOnExists() Option {
-	return func(c *config) {
-		c.updateOnExists = true
-	}
-}
-
-func Delete() Option {
-	return func(c *config) {
-		c.delete = true
-	}
-}
-
-func File(ctx context.Context, w format.Writer, client *api.Client, file *os.File, opts ...Option) error {
-	if file == nil {
-		return fmt.Errorf("missing flag -f, --filename=STRING")
-	}
-	defer file.Close()
-
-	cfg := &config{}
-	for _, opt := range opts {
-		opt(cfg)
-	}
-
-	obj := &unstructured.Unstructured{}
-	if err := yaml.NewYAMLOrJSONDecoder(file, 4096).Decode(obj); err != nil {
+	obj, result, err := client.ApplyFromFile(ctx, cmd.Filename)
+	if err != nil {
 		return err
 	}
 
-	if cfg.delete {
-		if err := client.Delete(ctx, obj); err != nil {
-			return err
-		}
-		w.Successf("🗑", "deleted %s", formatObj(obj))
-
-		return nil
+	verb := "created"
+	if result == api.ApplyResultUpdated {
+		verb = "applied"
 	}
-
-	if err := client.Create(ctx, obj); err != nil {
-		if errors.IsAlreadyExists(err) && cfg.updateOnExists {
-			if err := update(ctx, client, obj); err != nil {
-				return err
-			}
-			w.Successf("🏗", "applied %s", formatObj(obj))
-			return nil
-		}
-		return err
-	}
-
-	w.Successf("🏗", "created %s", formatObj(obj))
-	return nil
-}
-
-func update(ctx context.Context, client *api.Client, obj *unstructured.Unstructured) error {
-	oldObj := &unstructured.Unstructured{}
-	oldObj.SetGroupVersionKind(obj.GetObjectKind().GroupVersionKind())
-	if err := client.Get(ctx, api.ObjectName(obj), oldObj); err != nil {
-		return err
-	}
-
-	// merge annotations/labels
-	annotations, labels := oldObj.GetAnnotations(), oldObj.GetLabels()
-	maps.Copy(annotations, obj.GetAnnotations())
-	maps.Copy(labels, obj.GetLabels())
-	obj.SetAnnotations(annotations)
-	obj.SetLabels(labels)
-
-	// preserve finalizers
-	obj.SetFinalizers(append(obj.GetFinalizers(), oldObj.GetFinalizers()...))
-	// ensure resource version is up to date
-	obj.SetResourceVersion(oldObj.GetResourceVersion())
-
-	if err := client.Update(ctx, obj); err != nil {
-		return err
-	}
+	cmd.Successf("🏗", "%s %s", verb, format.Object(obj))
 
 	return nil
-}
-
-func formatObj(obj client.Object) string {
-	return fmt.Sprintf("%s %s/%s", obj.GetObjectKind().GroupVersionKind().Kind, obj.GetName(), obj.GetNamespace())
 }
