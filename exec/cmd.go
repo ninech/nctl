@@ -16,7 +16,6 @@ import (
 	"github.com/mattn/go-isatty"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/get"
 	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/ipcheck"
@@ -297,7 +296,7 @@ func (cmd ServiceCmd) confirm(msg string) (bool, error) {
 // getCredentials fetches the connection secret for the given resource and
 // returns the first username/password pair found.
 func getCredentials(ctx context.Context, client *api.Client, mg resource.Managed) (string, string, error) {
-	secret, err := get.ConnectionSecretMap(ctx, client, mg)
+	secret, err := client.ConnectionSecretData(ctx, mg)
 	if err != nil {
 		return "", "", fmt.Errorf("getting connection secret: %w", err)
 	}
@@ -397,7 +396,7 @@ func writeCACert(dir, caCert string) (string, error) {
 	}
 	defer f.Close()
 
-	if err := get.WriteBase64(f, caCert); err != nil {
+	if err := format.WriteBase64Decoded(f, caCert); err != nil {
 		return "", fmt.Errorf("writing CA cert %q: %w", path, err)
 	}
 

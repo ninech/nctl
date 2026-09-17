@@ -171,6 +171,17 @@ func (c *Client) GetConnectionSecret(ctx context.Context, mg resource.Managed) (
 	return secret, nil
 }
 
+// ConnectionSecretData returns the data of the connection secret referenced
+// by mg.
+func (c *Client) ConnectionSecretData(ctx context.Context, mg resource.Managed) (map[string][]byte, error) {
+	secret, err := c.GetConnectionSecret(ctx, mg)
+	if err != nil {
+		return nil, err
+	}
+
+	return secret.Data, nil
+}
+
 func (c *Client) Token(ctx context.Context) string {
 	if c.Config == nil {
 		return ""
