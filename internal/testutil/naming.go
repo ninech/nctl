@@ -1,4 +1,4 @@
-package test
+package testutil
 
 import (
 	apps "github.com/ninech/apis/apps/v1alpha1"

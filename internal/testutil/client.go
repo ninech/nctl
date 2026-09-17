@@ -1,5 +1,5 @@
-// Package test provides utilities and helpers for testing nctl.
-package test
+// Package testutil provides utilities and helpers for testing nctl.
+package testutil
 
 import (
 	"os"

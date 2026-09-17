@@ -178,7 +178,7 @@ func TestVerbsDoNotImportEachOther(t *testing.T) {
 var leafPackages = []string{"internal/cli", "internal/format", "internal/logbox"}
 
 // TestLayering guards the layers below the verbs. Non-test imports are
-// checked strictly; tests may additionally import internal/test for
+// checked strictly; tests may additionally import internal/testutil for
 // fixtures. See layeringViolation for the rules.
 func TestLayering(t *testing.T) {
 	t.Parallel()
@@ -193,7 +193,7 @@ func TestLayering(t *testing.T) {
 		check := func(imports []string, fixtures bool) {
 			for _, imported := range imports {
 				to, ok := strings.CutPrefix(imported, module+"/")
-				if !ok || (fixtures && to == "internal/test") {
+				if !ok || (fixtures && to == "internal/testutil") {
 					continue
 				}
 				if reason := layeringViolation(from, to); reason != "" {

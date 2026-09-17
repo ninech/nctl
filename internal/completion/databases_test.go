@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	storage "github.com/ninech/apis/storage/v1alpha1"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/posener/complete"
 )
 
@@ -99,20 +99,20 @@ func TestInstanceDatabasesPredict(t *testing.T) {
 
 	const (
 		instanceName = "mypg"
-		project      = test.DefaultProject
+		project      = testutil.DefaultProject
 		location     = "nine-es34"
 	)
 
-	pg := test.Postgres(instanceName, project, location)
+	pg := testutil.Postgres(instanceName, project, location)
 	pg.Status.AtProvider.Databases = map[string]storage.DatabaseObservation{
 		"appdb":    {},
 		"otherdb":  {},
 		"postgres": {},
 	}
 
-	client := test.SetupClient(t,
-		test.WithObjects(pg),
-		test.WithDefaultProject(project),
+	client := testutil.SetupClient(t,
+		testutil.WithObjects(pg),
+		testutil.WithDefaultProject(project),
 	)
 
 	predictor := newInstanceDatabases(staticClient(client), testProjectFinder(t), storage.PostgresGroupVersionKind)

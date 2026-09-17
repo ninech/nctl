@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/ninech/nctl/internal/format"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -27,6 +27,6 @@ metadata:
 
 	out := &bytes.Buffer{}
 	cmd := &fromFile{Writer: format.NewWriter(out), Filename: f}
-	is.NoError(cmd.Run(t.Context(), test.SetupClient(t)))
+	is.NoError(cmd.Run(t.Context(), testutil.SetupClient(t)))
 	is.Contains(out.String(), "created APIServiceAccount asa/default")
 }

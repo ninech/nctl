@@ -7,7 +7,7 @@ import (
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api/gitinfo"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -15,20 +15,20 @@ import (
 func TestRepositoryInformation(t *testing.T) {
 	t.Parallel()
 
-	gitInfo := test.NewGitInformationService()
+	gitInfo := testutil.NewGitInformationService()
 	gitInfo.Start()
 	defer gitInfo.Close()
 
 	is := require.New(t)
-	dummyPrivateKey, err := test.GenerateRSAPrivateKey()
+	dummyPrivateKey, err := testutil.GenerateRSAPrivateKey()
 	is.NoError(err)
 
 	for name, testCase := range map[string]struct {
 		git              apps.GitTarget
 		token            string
 		auth             gitinfo.Auth
-		verifyRequest    func(t *testing.T) func(p test.GitInfoServiceParsed, err error)
-		setResponse      *test.GitInformationServiceResponse
+		verifyRequest    func(t *testing.T) func(p testutil.GitInfoServiceParsed, err error)
+		setResponse      *testutil.GitInformationServiceResponse
 		expectedResponse *apps.GitExploreResponse
 		expectedRetries  int
 		backoff          *wait.Backoff
@@ -45,7 +45,7 @@ func TestRepositoryInformation(t *testing.T) {
 				Password:      new("fakePass"),
 				SSHPrivateKey: &dummyPrivateKey,
 			},
-			setResponse: &test.GitInformationServiceResponse{
+			setResponse: &testutil.GitInformationServiceResponse{
 				Code: http.StatusOK,
 				Content: apps.GitExploreResponse{
 					RepositoryInfo: &apps.RepositoryInfo{
@@ -70,8 +70,8 @@ func TestRepositoryInformation(t *testing.T) {
 					},
 				},
 			},
-			verifyRequest: func(t *testing.T) func(p test.GitInfoServiceParsed, err error) {
-				return func(p test.GitInfoServiceParsed, err error) {
+			verifyRequest: func(t *testing.T) func(p testutil.GitInfoServiceParsed, err error) {
+				return func(p testutil.GitInfoServiceParsed, err error) {
 					is := require.New(t)
 					is.NoError(err)
 					is.Equal("https://github.com/ninech/deploio-examples", p.Request.Repository)
@@ -96,7 +96,7 @@ func TestRepositoryInformation(t *testing.T) {
 				Duration: 100 * time.Millisecond,
 				Steps:    2,
 			},
-			setResponse: &test.GitInformationServiceResponse{
+			setResponse: &testutil.GitInformationServiceResponse{
 				Code: http.StatusBadGateway,
 				Raw:  new("currently unavailable"),
 			},

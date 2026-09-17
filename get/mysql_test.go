@@ -7,7 +7,7 @@ import (
 
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -44,7 +44,7 @@ func TestMySQL(t *testing.T) {
 			instances: []mysqlInstance{
 				{
 					name:        "test",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					machineType: machineType("nine-db-prod-s"),
 				},
 			},
@@ -56,17 +56,17 @@ func TestMySQL(t *testing.T) {
 			instances: []mysqlInstance{
 				{
 					name:        "test1",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					machineType: machineType("nine-db-prod-s"),
 				},
 				{
 					name:        "test2",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					machineType: machineType("nine-db-prod-m"),
 				},
 				{
 					name:        "test3",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					machineType: machineType("nine-db-prod-l"),
 				},
 			},
@@ -78,12 +78,12 @@ func TestMySQL(t *testing.T) {
 			instances: []mysqlInstance{
 				{
 					name:        "test1",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					machineType: machineType("nine-db-prod-s"),
 				},
 				{
 					name:        "test2",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					machineType: machineType("nine-db-prod-m"),
 				},
 			},
@@ -96,7 +96,7 @@ func TestMySQL(t *testing.T) {
 			instances: []mysqlInstance{
 				{
 					name:        "test1",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					machineType: machineType("nine-db-prod-s"),
 				},
 				{
@@ -119,12 +119,12 @@ func TestMySQL(t *testing.T) {
 			instances: []mysqlInstance{
 				{
 					name:        "test1",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					machineType: machineType("nine-db-prod-s"),
 				},
 				{
 					name:        "test2",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					machineType: machineType("nine-db-prod-m"),
 				},
 			},
@@ -139,7 +139,7 @@ func TestMySQL(t *testing.T) {
 
 			objects := []client.Object{}
 			for _, instance := range tt.instances {
-				created := test.MySQL(instance.name, instance.project, "nine-es34")
+				created := testutil.MySQL(instance.name, instance.project, "nine-es34")
 				created.Spec.ForProvider.MachineType = instance.machineType
 				objects = append(objects, created, &corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
@@ -150,11 +150,11 @@ func TestMySQL(t *testing.T) {
 				})
 			}
 
-			apiClient := test.SetupClient(t,
-				test.WithProjectsFromResources(objects...),
-				test.WithObjects(objects...),
-				test.WithNameIndexFor(&storage.MySQL{}),
-				test.WithKubeconfig(),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithProjectsFromResources(objects...),
+				testutil.WithObjects(objects...),
+				testutil.WithNameIndexFor(&storage.MySQL{}),
+				testutil.WithKubeconfig(),
 			)
 			if tt.out == "" {
 				tt.out = full
@@ -180,8 +180,8 @@ func TestMySQL(t *testing.T) {
 					t.Errorf("mySQLCmd.Run() did not contain %q, out = %q", tt.wantContain, buf.String())
 				}
 			}
-			if test.CountLines(buf.String()) != tt.wantLines {
-				t.Errorf("expected the output to have %d lines, but found %d", tt.wantLines, test.CountLines(buf.String()))
+			if testutil.CountLines(buf.String()) != tt.wantLines {
+				t.Errorf("expected the output to have %d lines, but found %d", tt.wantLines, testutil.CountLines(buf.String()))
 				t.Log(buf.String())
 			}
 		})

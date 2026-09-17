@@ -8,7 +8,7 @@ import (
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/bucket"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -289,7 +289,7 @@ func runBucketCreateNamedWithFlags(
 	t *testing.T,
 	name string,
 	flags []string,
-	clientOpts ...test.ClientSetupOption,
+	clientOpts ...testutil.ClientSetupOption,
 ) (*api.Client, string, error) {
 	t.Helper()
 
@@ -297,7 +297,7 @@ func runBucketCreateNamedWithFlags(
 		Bucket *bucketCmd `cmd:"" group:"storage.nine.ch" name:"bucket" help:"Create a new Bucket."`
 	}
 
-	return test.RunNamedWithFlags(
+	return testutil.RunNamedWithFlags(
 		t,
 		&cli,
 		bucket.KongVars(),
