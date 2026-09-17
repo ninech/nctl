@@ -24,6 +24,7 @@ import (
 	"github.com/ninech/nctl/get"
 	"github.com/ninech/nctl/internal/apifield"
 	"github.com/ninech/nctl/internal/application"
+	"github.com/ninech/nctl/internal/bucket"
 	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/completion"
 	"github.com/ninech/nctl/internal/format"
@@ -279,7 +280,7 @@ func kongVariables() (kong.Vars, error) {
 		appKongVars,
 		create.MySQLKongVars(),
 		create.ServiceConnectionKongVars(),
-		create.BucketKongVars(),
+		bucket.KongVars(),
 		update.BucketKongVars(),
 		auth.LoginKongVars(),
 		logs.KongVars(),
