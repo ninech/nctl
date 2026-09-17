@@ -7,12 +7,11 @@ import (
 	"os"
 
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/kubeconfig"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientauthenticationv1 "k8s.io/client-go/pkg/apis/clientauthentication/v1"
-
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 type API struct {
@@ -76,17 +75,11 @@ func (a *API) UserInfo(ctx context.Context) (*api.UserInfo, error) {
 	return api.GetUserInfoFromToken(token.AccessToken)
 }
 
-func apiExecConfig(command string, apiInfo API) *clientcmdapi.ExecConfig {
-	return &clientcmdapi.ExecConfig{
-		APIVersion:      "client.authentication.k8s.io/v1",
-		InteractiveMode: clientcmdapi.NeverExecInteractiveMode,
-		Command:         command,
-		Args: []string{
-			CmdName,
-			ClientCredentialsCmdName,
-			api.ClientIDArg + apiInfo.ClientID,
-			api.ClientSecretArg + apiInfo.ClientSecret,
-			api.TokenURLArg + apiInfo.TokenURL,
-		},
+// clientCredentials returns the credentials the kubeconfig exec plugin uses.
+func (a API) clientCredentials() kubeconfig.ClientCredentials {
+	return kubeconfig.ClientCredentials{
+		ClientID:     a.ClientID,
+		ClientSecret: a.ClientSecret,
+		TokenURL:     a.TokenURL,
 	}
 }
