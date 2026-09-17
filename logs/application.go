@@ -6,6 +6,7 @@ import (
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/log"
 )
 
 type applicationCmd struct {
@@ -22,19 +23,11 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		return err
 	}
 
-	return cmd.LogsCmd.Run(ctx, client, buildQuery(append(
-		cmd.Type.queryExpressions(),
-		inProject(client.Project),
-		queryExpr(opEquals, apps.LogLabelApplication, cmd.Name))...),
+	return cmd.LogsCmd.Run(ctx, client, log.Selector(append(
+		cmd.Type.matchers(),
+		log.InProject(client.Project),
+		log.Equal(apps.LogLabelApplication, cmd.Name))...),
 		apps.LogLabelBuild, apps.LogLabelReplica, apps.LogLabelWorkerJob, apps.LogLabelDeployJob, apps.LogLabelDeployJob,
-	)
-}
-
-func ApplicationQuery(name, project string) string {
-	return buildQuery(
-		inProject(project),
-		queryExpr(opEquals, apps.LogLabelApplication, name),
-		queryExpr(opEquals, apps.LogLabelBuild, ""),
 	)
 }
 
@@ -49,25 +42,27 @@ const (
 	logTypeScheduledJob appLogType = "scheduled_job"
 )
 
-func (a appLogType) queryExpressions() []string {
-	expr := []string{}
+// matchers returns the label matchers narrowing application logs down to the
+// log type.
+func (a appLogType) matchers() []log.Matcher {
 	switch a {
 	case logTypeAll:
-		return expr
+		return nil
 	case logTypeApp:
-		expr = append(expr,
-			queryExpr(opEquals, apps.LogLabelDeployJob, ""),
-			queryExpr(opEquals, apps.LogLabelWorkerJob, ""),
-			queryExpr(opEquals, apps.LogLabelScheduledJob, ""),
-			queryExpr(opEquals, apps.LogLabelBuild, ""))
+		return []log.Matcher{
+			log.Equal(apps.LogLabelDeployJob, ""),
+			log.Equal(apps.LogLabelWorkerJob, ""),
+			log.Equal(apps.LogLabelScheduledJob, ""),
+			log.Equal(apps.LogLabelBuild, ""),
+		}
 	case logTypeBuild:
-		expr = append(expr, queryExpr(opNotEquals, apps.LogLabelBuild, ""))
+		return []log.Matcher{log.NotEqual(apps.LogLabelBuild, "")}
 	case logTypeDeployJob:
-		expr = append(expr, queryExpr(opNotEquals, apps.LogLabelDeployJob, ""))
+		return []log.Matcher{log.NotEqual(apps.LogLabelDeployJob, "")}
 	case logTypeWorkerJob:
-		expr = append(expr, queryExpr(opNotEquals, apps.LogLabelWorkerJob, ""))
+		return []log.Matcher{log.NotEqual(apps.LogLabelWorkerJob, "")}
 	case logTypeScheduledJob:
-		expr = append(expr, queryExpr(opNotEquals, apps.LogLabelScheduledJob, ""))
+		return []log.Matcher{log.NotEqual(apps.LogLabelScheduledJob, "")}
 	}
-	return expr
+	return nil
 }

@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"strings"
 	"time"
 
 	"github.com/alecthomas/kong"
@@ -108,25 +107,6 @@ func (cmd *LogsCmd) Run(
 	}
 
 	return nil
-}
-
-type queryOperator string
-
-const (
-	opEquals    queryOperator = "="
-	opNotEquals queryOperator = "!="
-)
-
-func queryExpr(operator queryOperator, key, value string) string {
-	return fmt.Sprintf(`%s%s"%s"`, key, operator, value)
-}
-
-func buildQuery(expr ...string) string {
-	return "{" + strings.Join(expr, ",") + "}"
-}
-
-func inProject(project string) string {
-	return queryExpr(opEquals, "namespace", project)
 }
 
 // KongVars returns all variables which are used in the logs commands
