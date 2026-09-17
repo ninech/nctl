@@ -340,15 +340,6 @@ func getName(name string) string {
 	return codename.Generate(rand.New(rand.NewSource(time.Now().UnixNano())), 0)
 }
 
-// stringSlice converts a slice of string like elements to a slice of strings.
-func stringSlice[K ~string](elems []K) []string {
-	s := make([]string, 0, len(elems))
-	for _, elem := range elems {
-		s = append(s, string(elem))
-	}
-	return s
-}
-
 // ParseSSHKeys parses the SSH keys from the given file.
 func ParseSSHKeys(file *os.File) ([]storage.SSHKey, error) {
 	keys := []storage.SSHKey{}

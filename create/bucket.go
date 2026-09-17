@@ -3,9 +3,7 @@ package create
 import (
 	"context"
 	"fmt"
-	"strings"
 
-	"github.com/alecthomas/kong"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
@@ -13,8 +11,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 )
-
-var bucketRoles = []storage.BucketRole{storage.BucketRoleReader, storage.BucketRoleWriter}
 
 type bucketCmd struct {
 	ResourceCmd
@@ -110,14 +106,4 @@ func (cmd *bucketCmd) newBucket(project string) (*storage.Bucket, error) {
 	}
 
 	return b, nil
-}
-
-func BucketKongVars() kong.Vars {
-	result := make(kong.Vars)
-	result["bucket_role_options"] = strings.Join(stringSlice(bucketRoles), ", ")
-	result["bucket_permissions_example"] = fmt.Sprintf("%s=frontend,analytics;%s=ingest", storage.BucketRoleReader, storage.BucketRoleWriter)
-	result["bucket_lifecycle_policy_example"] = "prefix=p/;expire-after-days=7;is-live=true"
-	result["bucket_cors_example"] = "origins=https://a.com,https://b.com;allowed-headers=Content-Type,Content-MD5;response-headers=ETag,Last-Modified;max-age=3600"
-	result["bucket_custom_hostnames_example"] = "my-bucket.example.com,your-bucket.example.com"
-	return result
 }

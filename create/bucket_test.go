@@ -7,6 +7,7 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/bucket"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 )
@@ -299,7 +300,7 @@ func runBucketCreateNamedWithFlags(
 	return test.RunNamedWithFlags(
 		t,
 		&cli,
-		BucketKongVars(),
+		bucket.KongVars(),
 		[]string{"bucket"}, // command path for CREATE
 		name,
 		flags,

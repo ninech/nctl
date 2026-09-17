@@ -7,7 +7,7 @@ import (
 
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/create"
+	"github.com/ninech/nctl/internal/bucket"
 	"github.com/ninech/nctl/internal/cli"
 
 	meta "github.com/ninech/apis/meta/v1alpha1"
@@ -838,7 +838,7 @@ func runBucketUpdateNamedWithFlags(
 		Bucket *bucketCmd `cmd:"" group:"storage.nine.ch" name:"bucket" help:"Update a Bucket."`
 	}
 
-	vars := create.BucketKongVars()
+	vars := bucket.KongVars()
 	maps.Copy(vars, BucketKongVars())
 
 	return test.RunNamedWithFlags(
