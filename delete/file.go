@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/apply"
 	"github.com/ninech/nctl/internal/format"
 )
 
@@ -15,5 +14,11 @@ type fromFile struct {
 }
 
 func (cmd *fromFile) Run(ctx context.Context, client *api.Client) error {
-	return apply.File(ctx, cmd.Writer, client, cmd.Filename, apply.Delete())
+	obj, err := client.DeleteFromFile(ctx, cmd.Filename)
+	if err != nil {
+		return err
+	}
+	cmd.Successf("🗑", "deleted %s", format.Object(obj))
+
+	return nil
 }
