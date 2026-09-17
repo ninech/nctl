@@ -17,7 +17,6 @@ import (
 	"github.com/ninech/nctl/internal/apifield"
 	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/bucket"
-	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -156,9 +155,9 @@ func TestUpdateWithoutChanges(t *testing.T) {
 			// annotation a reliable probe for whether the update reached the
 			// API at all.
 			if tc.wantUpdate {
-				is.Contains(tc.probe.GetAnnotations(), cli.ManagedByAnnotation)
+				is.Contains(tc.probe.GetAnnotations(), api.ManagedByAnnotation)
 			} else {
-				is.NotContains(tc.probe.GetAnnotations(), cli.ManagedByAnnotation)
+				is.NotContains(tc.probe.GetAnnotations(), api.ManagedByAnnotation)
 			}
 		})
 	}

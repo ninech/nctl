@@ -52,7 +52,7 @@ func LoginCluster(ctx context.Context, client *api.Client, w format.Writer, name
 	// we try to find out where the nctl binary is located
 	command, err := os.Executable()
 	if err != nil {
-		return fmt.Errorf("can not identify executable path of %s: %w", cli.Name, err)
+		return fmt.Errorf("can not identify executable path of %s: %w", api.Name, err)
 	}
 
 	cfg, err := NewAPIConfig(

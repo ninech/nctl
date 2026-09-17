@@ -166,7 +166,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		if err := client.Create(ctx, secret); err != nil {
 			if kerrors.IsAlreadyExists(err) {
 				// only update the secret if it is managed by nctl in the first place
-				if cli.IsManagedBy(newApp.Annotations) {
+				if api.IsManagedBy(newApp.Annotations) {
 					cmd.Successf("🔐", "updating git auth credentials")
 					if err := client.Get(ctx, client.Name(secret.Name), secret); err != nil {
 						return err
