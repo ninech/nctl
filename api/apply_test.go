@@ -2,7 +2,8 @@ package api_test
 
 import (
 	"fmt"
-	"os"
+	"io"
+	"strings"
 	"testing"
 
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
@@ -66,7 +67,7 @@ metadata:
 `
 )
 
-func TestFromFile(t *testing.T) {
+func TestManifest(t *testing.T) {
 	t.Parallel()
 
 	apiClient := test.SetupClient(t)
@@ -134,9 +135,8 @@ func TestFromFile(t *testing.T) {
 			ctx := t.Context()
 
 			if tc.create {
-				f := manifest(t, tc.file, name, "value", runtimev1.DeletionOrphan)
-				obj, err := apiClient.CreateFromFile(ctx, f)
-				is.ErrorIs(f.Close(), os.ErrClosed, "file is closed")
+				r := manifest(tc.file, name, "value", runtimev1.DeletionOrphan)
+				obj, err := apiClient.CreateManifest(ctx, r)
 				if tc.expectedErr {
 					is.Error(err)
 					return
@@ -147,18 +147,16 @@ func TestFromFile(t *testing.T) {
 
 			if tc.apply {
 				// The updated manifest changes the annotation and the spec.
-				f := manifest(t, tc.file, name, "updated", runtimev1.DeletionDelete)
-				obj, result, err := apiClient.ApplyFromFile(ctx, f)
-				is.ErrorIs(f.Close(), os.ErrClosed, "file is closed")
+				r := manifest(tc.file, name, "updated", runtimev1.DeletionDelete)
+				obj, result, err := apiClient.ApplyManifest(ctx, r)
 				is.NoError(err)
 				is.Equal(tc.expectedResult, result)
 				assertObj(t, obj, name)
 			}
 
 			if tc.delete {
-				f := manifest(t, tc.file, name, "value", runtimev1.DeletionOrphan)
-				obj, err := apiClient.DeleteFromFile(ctx, f)
-				is.ErrorIs(f.Close(), os.ErrClosed, "file is closed")
+				r := manifest(tc.file, name, "value", runtimev1.DeletionOrphan)
+				obj, err := apiClient.DeleteManifest(ctx, r)
 				is.NoError(err)
 				assertObj(t, obj, name)
 			}
@@ -193,8 +191,8 @@ func TestApplyOverObjectWithoutMetadata(t *testing.T) {
 	existing := &iam.APIServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "default"}}
 	apiClient := test.SetupClient(t, test.WithObjects(existing))
 
-	f := manifest(t, labeledAPIServiceAccountYAML, name)
-	obj, result, err := apiClient.ApplyFromFile(ctx, f)
+	r := manifest(labeledAPIServiceAccountYAML, name)
+	obj, result, err := apiClient.ApplyManifest(ctx, r)
 	is.NoError(err)
 	is.Equal(api.ApplyResultUpdated, result)
 	assertObj(t, obj, name)
@@ -205,32 +203,24 @@ func TestApplyOverObjectWithoutMetadata(t *testing.T) {
 	is.Equal(map[string]string{"team": "platform"}, asa.GetLabels())
 }
 
-func TestFromFileMissing(t *testing.T) {
+func TestManifestMissing(t *testing.T) {
 	t.Parallel()
 	is := require.New(t)
 
 	apiClient := test.SetupClient(t)
 	ctx := t.Context()
 
-	_, err := apiClient.CreateFromFile(ctx, nil)
-	is.EqualError(err, "no manifest file given")
-	_, _, err = apiClient.ApplyFromFile(ctx, nil)
-	is.EqualError(err, "no manifest file given")
-	_, err = apiClient.DeleteFromFile(ctx, nil)
-	is.EqualError(err, "no manifest file given")
+	_, err := apiClient.CreateManifest(ctx, nil)
+	is.EqualError(err, "no manifest given")
+	_, _, err = apiClient.ApplyManifest(ctx, nil)
+	is.EqualError(err, "no manifest given")
+	_, err = apiClient.DeleteManifest(ctx, nil)
+	is.EqualError(err, "no manifest given")
 }
 
-// manifest writes the template filled with args to a temporary file and
-// returns it opened for reading.
-func manifest(t *testing.T, template string, args ...any) *os.File {
-	t.Helper()
-
-	path := t.TempDir() + "/manifest"
-	require.NoError(t, os.WriteFile(path, fmt.Appendf(nil, template, args...), 0o600))
-	f, err := os.Open(path)
-	require.NoError(t, err)
-
-	return f
+// manifest returns a reader of the template filled with args.
+func manifest(template string, args ...any) io.Reader {
+	return strings.NewReader(fmt.Sprintf(template, args...))
 }
 
 func assertObj(t *testing.T, obj *unstructured.Unstructured, name string) {

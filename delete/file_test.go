@@ -36,5 +36,6 @@ metadata:
 	cmd := &fromFile{Writer: format.NewWriter(out), Filename: f}
 	is.NoError(cmd.Run(t.Context(), apiClient))
 	is.Contains(out.String(), "deleted APIServiceAccount asa/default")
+	is.ErrorIs(f.Close(), os.ErrClosed, "file is closed")
 	is.True(kerrors.IsNotFound(apiClient.Get(t.Context(), api.ObjectName(asa), asa)))
 }

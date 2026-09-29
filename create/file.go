@@ -14,7 +14,9 @@ type fromFile struct {
 }
 
 func (cmd *fromFile) Run(ctx context.Context, client *api.Client) error {
-	obj, err := client.CreateFromFile(ctx, cmd.Filename)
+	defer cmd.Filename.Close()
+
+	obj, err := client.CreateManifest(ctx, cmd.Filename)
 	if err != nil {
 		return err
 	}
