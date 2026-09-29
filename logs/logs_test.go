@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/log"
 	"github.com/stretchr/testify/require"
@@ -104,7 +103,7 @@ func TestRun(t *testing.T) {
 
 			tc.cmd.out = out
 
-			if err := tc.cmd.Run(t.Context(), apiClient, ApplicationQuery("app-name", "app-ns")); err != nil {
+			if err := tc.cmd.Run(t.Context(), apiClient, log.ApplicationQuery("app-name", "app-ns")); err != nil {
 				if tc.expectedErrContains != "" {
 					is.ErrorContains(err, tc.expectedErrContains)
 				} else {
@@ -132,14 +131,4 @@ func TestRun(t *testing.T) {
 			buf.Reset()
 		})
 	}
-}
-
-func TestMatchLabels(t *testing.T) {
-	t.Parallel()
-	is := require.New(t)
-
-	is.Equal(
-		buildQuery(queryExpr(opEquals, apps.LogLabelApplication, "some-app"), inProject("default")),
-		`{app="some-app",namespace="default"}`,
-	)
 }

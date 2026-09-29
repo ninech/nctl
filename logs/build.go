@@ -8,6 +8,7 @@ import (
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/api/log"
 )
 
 type buildCmd struct {
@@ -34,22 +35,10 @@ func (cmd *buildCmd) Run(ctx context.Context, client *api.Client) error {
 		cmd.Since = time.Since(build.CreationTimestamp.Time)
 	}
 
-	query := BuildQuery(cmd.Name, client.Project)
+	query := log.BuildQuery(cmd.Name, client.Project)
 	if len(cmd.ApplicationName) != 0 {
-		query = BuildsOfAppQuery(cmd.ApplicationName, client.Project)
+		query = log.BuildsOfAppQuery(cmd.ApplicationName, client.Project)
 	}
 
 	return cmd.LogsCmd.Run(ctx, client, query, apps.LogLabelBuild)
-}
-
-func BuildQuery(name, project string) string {
-	return buildQuery(inProject(project), queryExpr(opEquals, apps.LogLabelBuild, name))
-}
-
-func BuildsOfAppQuery(name, project string) string {
-	return buildQuery(
-		inProject(project),
-		queryExpr(opEquals, apps.LogLabelApplication, name),
-		queryExpr(opNotEquals, apps.LogLabelBuild, ""),
-	)
 }

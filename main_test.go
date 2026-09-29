@@ -143,7 +143,6 @@ type verbImport struct{ from, to string }
 // entry must be removed by the PR that breaks that edge; the test fails once
 // an entry is stale.
 var allowedVerbImports = map[verbImport]bool{
-	{"create", "logs"}:   true,
 	{"create", "auth"}:   true,
 	{"exec", "get"}:      true,
 	{"update", "create"}: true,
