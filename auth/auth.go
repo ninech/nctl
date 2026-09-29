@@ -1,6 +1,8 @@
 // Package auth provides commands for authentication and session management.
 package auth
 
+import "github.com/ninech/nctl/api"
+
 type Cmd struct {
 	Login             LoginCmd             `cmd:"" help:"Login to nineapis.ch."`
 	Logout            LogoutCmd            `cmd:"" help:"Logout from nineapis.ch."`
@@ -13,4 +15,4 @@ type Cmd struct {
 	PrintAccessToken  PrintAccessTokenCmd  `cmd:"" help:"Print short-lived access token to authenticate against the API to stdout and exit."`
 }
 
-const CmdName = "auth"
+const CmdName = api.AuthCmdName
