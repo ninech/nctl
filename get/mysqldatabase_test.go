@@ -56,8 +56,8 @@ func TestMySQLDatabase(t *testing.T) {
 					location: meta.LocationNineCZ41,
 				},
 			},
-			get:         mysqlDatabaseCmd{DatabaseCmd: DatabaseCmd{ResourceCmd: ResourceCmd{Name: "test1"}, PrintConnectionString: true}},
-			wantContain: []string{"mysql://", "foo_bar", "topsecret", "ssl-mode=REQUIRED"},
+			get:         mysqlDatabaseCmd{ServiceCmd: ServiceCmd{ResourceCmd: ResourceCmd{Name: "test1"}, PrintConnectionString: true}},
+			wantContain: []string{"mysql://foo_bar:topsecret@test1.example.com:3306/foo_bar?ssl-mode=REQUIRED"},
 			wantLines:   1,
 		},
 	}
@@ -69,6 +69,7 @@ func TestMySQLDatabase(t *testing.T) {
 			for _, database := range tt.databases {
 				created := test.MySQLDatabase(database.name, database.project, "nine-es34")
 				created.Spec.ForProvider.Location = database.location
+				created.Status.AtProvider.FQDN = database.name + ".example.com"
 				created.Spec.ForProvider.CharacterSet = database.characterSet
 				objects = append(objects, created, &corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
@@ -78,7 +79,8 @@ func TestMySQLDatabase(t *testing.T) {
 					Data: map[string][]byte{"foo_bar": []byte("topsecret")},
 				})
 			}
-			apiClient := test.SetupClient(t,
+			apiClient := test.SetupClient(
+				t,
 				test.WithProjectsFromResources(objects...),
 				test.WithObjects(objects...),
 				test.WithNameIndexFor(&storage.MySQLDatabase{}),

@@ -3,17 +3,18 @@ package get
 import (
 	"context"
 	"fmt"
+	"strconv"
 
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/internal/format"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type keyValueStoreCmd struct {
-	ResourceCmd
-	PrintToken  bool `help:"Print the bearer token of the Account. Requires name to be set." xor:"print"`
-	PrintCACert bool `help:"Print the ca certificate. Requires name to be set." xor:"print"`
+	ServiceCmd
+	// PrintToken is deprecated in favour of PrintPassword and only kept for backwards compatibility.
+	PrintToken bool `help:"Deprecated: use --print-password." hidden:"" xor:"print"`
 }
 
 func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
@@ -29,44 +30,48 @@ func (cmd *keyValueStoreCmd) print(ctx context.Context, client *api.Client, list
 	if !ok {
 		return fmt.Errorf("expected %T, got %T", &storage.KeyValueStoreList{}, list)
 	}
-	if len(keyValueStoreList.Items) == 0 {
-		return out.notFound(storage.KeyValueStoreKind, client.Project)
+
+	if cmd.PrintToken {
+		cmd.PrintPassword = true
 	}
 
-	if cmd.Name != "" && cmd.PrintToken {
-		return cmd.printSecret(ctx, client, &keyValueStoreList.Items[0], out, func(_, pw string) string { return pw })
-	}
-	if cmd.Name != "" && cmd.PrintCACert {
-		return WriteBase64(&out.Writer, keyValueStoreList.Items[0].Status.AtProvider.CACert)
-	}
-
-	switch out.Format {
-	case full:
-		return cmd.printKeyValueStoreInstances(keyValueStoreList.Items, out, true)
-	case noHeader:
-		return cmd.printKeyValueStoreInstances(keyValueStoreList.Items, out, false)
-	case yamlOut:
-		return format.PrettyPrintObjects(keyValueStoreList.GetItems(), format.PrintOpts{})
-	case jsonOut:
-		return format.PrettyPrintObjects(
-			keyValueStoreList.GetItems(),
-			format.PrintOpts{
-				Format: format.OutputFormatTypeJSON,
-				JSONOpts: format.JSONOutputOptions{
-					PrintSingleItem: cmd.Name != "",
-				},
-			})
-	}
-
-	return nil
+	return cmd.run(ctx, client, out, keyValueStoreList, service{
+		kind:             storage.KeyValueStoreKind,
+		connectionString: cmd.connectionString,
+		printList:        cmd.printKeyValueStoreInstances,
+		caCert: func(mg resource.Managed) (string, error) {
+			kvs, ok := mg.(*storage.KeyValueStore)
+			if !ok {
+				return "", fmt.Errorf("expected %T, got %T", &storage.KeyValueStore{}, mg)
+			}
+			return kvs.Status.AtProvider.CACert, nil
+		},
+	})
 }
 
-func (cmd *keyValueStoreCmd) printKeyValueStoreInstances(list []storage.KeyValueStore, out *output, header bool) error {
+// connectionString returns a Redis URI with TLS, which is also understood by Valkey clients.
+// See https://www.iana.org/assignments/uri-schemes/prov/rediss
+func (cmd *keyValueStoreCmd) connectionString(mg resource.Managed, user, password string) (string, error) {
+	kvs, ok := mg.(*storage.KeyValueStore)
+	if !ok {
+		return "", fmt.Errorf("expected %T, got %T", &storage.KeyValueStore{}, mg)
+	}
+
+	port := strconv.Itoa(int(storage.KeyValueStorePort))
+	return connectionURI("rediss", kvs.Status.AtProvider.FQDN, port, user, password, "", nil)
+}
+
+func (cmd *keyValueStoreCmd) printKeyValueStoreInstances(resources resource.ManagedList, out *output, header bool) error {
+	list, ok := resources.(*storage.KeyValueStoreList)
+	if !ok {
+		return fmt.Errorf("expected %T, got %T", &storage.KeyValueStoreList{}, resources)
+	}
+
 	if header {
 		out.writeHeader("NAME", "LOCATION", "VERSION", "PRIVATE FQDN", "PUBLIC FQDN", "MEMORY POLICY", "MEMORY SIZE")
 	}
 
-	for _, kvs := range list {
+	for _, kvs := range list.Items {
 		out.writeTabRow(
 			kvs.Namespace,
 			kvs.Name,
