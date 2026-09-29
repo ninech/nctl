@@ -13,6 +13,7 @@ import (
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/apiresource"
+	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -95,7 +96,7 @@ func TestEdit(t *testing.T) {
 			gvk, err := apiutil.GVKForObject(tc.resource, apiClient.Scheme())
 			is.NoError(err)
 			tc.resource.GetObjectKind().SetGroupVersionKind(gvk)
-			is.True(strings.HasPrefix(string(out), fmt.Sprintf(header, formatObj(tc.resource))), "header matches")
+			is.True(strings.HasPrefix(string(out), fmt.Sprintf(header, format.Object(tc.resource))), "header matches")
 		})
 	}
 }

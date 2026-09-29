@@ -20,6 +20,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
 
@@ -43,6 +44,11 @@ type JSONOutputOptions struct {
 }
 
 var spinnerCharset = yacspin.CharSets[24]
+
+// Object names obj as "Kind name/namespace" for messages about it.
+func Object(obj client.Object) string {
+	return fmt.Sprintf("%s %s/%s", obj.GetObjectKind().GroupVersionKind().Kind, obj.GetName(), obj.GetNamespace())
+}
 
 // Progress is a formatted message for use with a spinner.Suffix. An
 // icon can be added which is displayed at the end of the message.
