@@ -27,7 +27,6 @@ import (
 	"github.com/ninech/nctl/internal/bucket"
 	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/completion"
-	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/serviceconnection"
 	"github.com/ninech/nctl/logs"
 	"github.com/ninech/nctl/update"
@@ -97,8 +96,8 @@ func main() {
 				if node == nil {
 					node = parseErr.Context.Model.Node
 				}
-				if format.MissingChildren(node) {
-					err = format.ExitIfErrorf(writer, err, parseErr.Context.Command())
+				if missingChildren(node) {
+					err = exitIfErrorf(writer, err, parseErr.Context.Command())
 				}
 			}
 		}
@@ -119,11 +118,11 @@ func main() {
 			cmd.APICluster,
 			cmd.Project,
 			api.LogClient(ctx, cmd.LogAPIAddress, cmd.LogAPIInsecure),
-			api.DefaultAnnotations(cli.ManagedByAnnotation, cli.Name),
+			api.DefaultAnnotations(api.ManagedByAnnotation, api.Name),
 		)
 		if err != nil {
 			fmt.Fprintln(writer, err)
-			fmt.Fprintf(writer, "\nUnable to get API client, are you logged in?\n\nUse `%s` to login.\n", format.Command().Login())
+			fmt.Fprintf(writer, "\nUnable to get API client, are you logged in?\n\nUse `%s` to login.\n", cli.Command().Login())
 			os.Exit(1)
 		}
 		binds = append(binds, client)
@@ -139,8 +138,8 @@ func main() {
 					WithContext("Project", client.Project).
 					WithSuggestions(
 						"Verify in Cockpit Access Management that you are a member of the organization:\nhttps://cockpit.nine.ch/en/customer/contacts\n",
-						fmt.Sprintf("List available projects: %s", format.Command().GetProjects()),
-						fmt.Sprintf("Check your current session: %s", format.Command().WhoAmI()),
+						fmt.Sprintf("List available projects: %s", cli.Command().GetProjects()),
+						fmt.Sprintf("Check your current session: %s", cli.Command().WhoAmI()),
 					)
 			} else {
 				err = cli.ErrorWithContext(fmt.Errorf("permission denied: verify in Cockpit Access Management that you are a member of the organization")).
@@ -169,7 +168,7 @@ func newParser(ctx context.Context, cmd *rootCommand, w io.Writer, r io.Reader) 
 
 	parser, err := kong.New(
 		cmd,
-		kong.Name(cli.Name),
+		kong.Name(api.Name),
 		kong.Description(
 			"Interact with Nine API resources. See https://docs.nineapis.ch for the full API docs.",
 		),
@@ -214,7 +213,7 @@ func newParser(ctx context.Context, cmd *rootCommand, w io.Writer, r io.Reader) 
 			NoExpandSubcommands: true,
 		}),
 		kong.UsageOnError(),
-		kong.PostBuild(format.InterpolateFlagPlaceholders(kongVars)),
+		kong.PostBuild(interpolateFlagPlaceholders(kongVars)),
 		kong.PostBuild(apifield.Apply()),
 		kongVars,
 		kong.BindTo(ctx, (*context.Context)(nil)),
@@ -239,8 +238,8 @@ func newParser(ctx context.Context, cmd *rootCommand, w io.Writer, r io.Reader) 
 // require an API client. The command parameter is the resolved command path
 // from [kong.Context.Command].
 func noAPIClientRequired(command string) bool {
-	return matchCommand(command, auth.CmdName, format.LoginCommand) ||
-		matchCommand(command, auth.CmdName, format.LogoutCommand) ||
+	return matchCommand(command, auth.CmdName, cli.LoginCommand) ||
+		matchCommand(command, auth.CmdName, cli.LogoutCommand) ||
 		matchCommand(command, auth.CmdName, auth.OIDCCmdName) ||
 		matchCommand(command, auth.CmdName, auth.ClientCredentialsCmdName) ||
 		matchCommand(command, "completions")

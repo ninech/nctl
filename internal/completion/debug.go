@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ninech/nctl/internal/cli"
+	"github.com/ninech/nctl/api"
 )
 
 // DebugENV enables completion diagnostics on stderr.
@@ -21,7 +21,7 @@ const DebugENV = "NCTL_COMPLETION_DEBUG"
 // middle of the line the user is currently completing.
 func fail(err error) []string {
 	if err != nil && os.Getenv(DebugENV) != "" {
-		fmt.Fprintf(os.Stderr, "\n%s: completion: %v\n", cli.Name, err)
+		fmt.Fprintf(os.Stderr, "\n%s: completion: %v\n", api.Name, err)
 	}
 
 	return nil

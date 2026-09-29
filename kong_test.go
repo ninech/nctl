@@ -1,4 +1,4 @@
-package format
+package main
 
 import (
 	"testing"
@@ -26,7 +26,7 @@ func TestPlaceholderInterpolation(t *testing.T) {
 	p, err := kong.New(
 		&cli,
 		vars,
-		kong.PostBuild(InterpolateFlagPlaceholders(vars)),
+		kong.PostBuild(interpolateFlagPlaceholders(vars)),
 	)
 	is := require.New(t)
 	is.NoError(err)
@@ -52,7 +52,7 @@ func TestPlaceholderInterpolationError(t *testing.T) {
 	}
 	_, err := kong.New(
 		&cli,
-		kong.PostBuild(InterpolateFlagPlaceholders(kong.Vars{"unused": "garbage"})),
+		kong.PostBuild(interpolateFlagPlaceholders(kong.Vars{"unused": "garbage"})),
 	)
 	is := require.New(t)
 	is.Error(err)

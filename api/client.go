@@ -16,7 +16,7 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api/config"
 	"github.com/ninech/nctl/api/log"
-	"github.com/ninech/nctl/internal/format"
+	"github.com/ninech/nctl/internal/cli"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -235,7 +235,7 @@ func reloginNeeded(err error) error {
 	return fmt.Errorf(
 		"%w, please re-login by executing %q",
 		err,
-		format.Command().Login(),
+		cli.Command().Login(),
 	)
 }
 

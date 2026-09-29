@@ -8,7 +8,6 @@ import (
 
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
-	"github.com/ninech/nctl/internal/cli"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
@@ -100,7 +99,7 @@ func NewAPIConfig(apiURL, issuerURL *url.URL, command, clientID string, opts ...
 				Cluster:  cfg.name,
 				AuthInfo: cfg.name,
 				Extensions: map[string]runtime.Object{
-					cli.Name: extension,
+					api.Name: extension,
 				},
 			},
 		},
