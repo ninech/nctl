@@ -9,7 +9,7 @@ import (
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -50,7 +50,7 @@ func TestOpenSearch(t *testing.T) {
 			instances: []openSearchInstance{
 				{
 					name:        "test",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					machineType: infra.MachineTypeNineSearchS,
 					clusterType: storage.OpenSearchClusterTypeSingle,
 				},
@@ -63,12 +63,12 @@ func TestOpenSearch(t *testing.T) {
 			instances: []openSearchInstance{
 				{
 					name:        "test1",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					machineType: infra.MachineTypeNineSearchS,
 				},
 				{
 					name:        "test2",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					machineType: infra.MachineTypeNineSearchM,
 				},
 			},
@@ -80,12 +80,12 @@ func TestOpenSearch(t *testing.T) {
 			instances: []openSearchInstance{
 				{
 					name:        "test1",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					machineType: machineType("nine-db-prod-s"),
 				},
 				{
 					name:        "test2",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					machineType: machineType("nine-db-prod-m"),
 				},
 				{
@@ -103,12 +103,12 @@ func TestOpenSearch(t *testing.T) {
 			instances: []openSearchInstance{
 				{
 					name:        "test1",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					machineType: infra.MachineTypeNineSearchS,
 				},
 				{
 					name:        "test2",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					machineType: infra.MachineTypeNineSearchM,
 				},
 			},
@@ -121,7 +121,7 @@ func TestOpenSearch(t *testing.T) {
 			instances: []openSearchInstance{
 				{
 					name:           "snapshot-instance",
-					project:        test.DefaultProject,
+					project:        testutil.DefaultProject,
 					machineType:    infra.MachineTypeNineSearchS,
 					snapshotBucket: "snapshot-instance-012345a",
 				},
@@ -135,12 +135,12 @@ func TestOpenSearch(t *testing.T) {
 			instances: []openSearchInstance{
 				{
 					name:        "test1",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					machineType: infra.MachineTypeNineSearchL,
 				},
 				{
 					name:        "test2",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					machineType: infra.MachineTypeNineSearchM,
 				},
 			},
@@ -153,7 +153,7 @@ func TestOpenSearch(t *testing.T) {
 			instances: []openSearchInstance{
 				{
 					name:        "healthy-instance",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					machineType: infra.MachineTypeNineSearchS,
 				},
 			},
@@ -166,7 +166,7 @@ func TestOpenSearch(t *testing.T) {
 			instances: []openSearchInstance{
 				{
 					name:        "unhealthy-instance",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					machineType: infra.MachineTypeNineSearchS,
 					clusterHealth: storage.OpenSearchClusterHealth{
 						Indices: map[string]storage.OpenSearchClusterIndex{
@@ -190,7 +190,7 @@ func TestOpenSearch(t *testing.T) {
 
 			objects := []client.Object{}
 			for _, instance := range tt.instances {
-				created := test.OpenSearch(instance.name, instance.project, meta.LocationNineES34)
+				created := testutil.OpenSearch(instance.name, instance.project, meta.LocationNineES34)
 				created.Spec.ForProvider.MachineType = instance.machineType
 
 				// Set cluster health status if provided
@@ -230,11 +230,11 @@ func TestOpenSearch(t *testing.T) {
 					Data: map[string][]byte{storage.OpenSearchUser: []byte(created.GetWriteConnectionSecretToReference().Name + "-topsecret")},
 				})
 			}
-			apiClient := test.SetupClient(t,
-				test.WithProjectsFromResources(objects...),
-				test.WithObjects(objects...),
-				test.WithNameIndexFor(&storage.OpenSearch{}),
-				test.WithKubeconfig(),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithProjectsFromResources(objects...),
+				testutil.WithObjects(objects...),
+				testutil.WithNameIndexFor(&storage.OpenSearch{}),
+				testutil.WithKubeconfig(),
 			)
 
 			if tt.out == "" {
@@ -260,8 +260,8 @@ func TestOpenSearch(t *testing.T) {
 					t.Errorf("openSearchCmd.Run() did not contain %q, out = %q", tt.wantContain, buf.String())
 				}
 			}
-			if test.CountLines(buf.String()) != tt.wantLines {
-				t.Errorf("expected the output to have %d lines, but found %d", tt.wantLines, test.CountLines(buf.String()))
+			if testutil.CountLines(buf.String()) != tt.wantLines {
+				t.Errorf("expected the output to have %d lines, but found %d", tt.wantLines, testutil.CountLines(buf.String()))
 				t.Log(buf.String())
 			}
 		})

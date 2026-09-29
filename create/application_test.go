@@ -19,7 +19,7 @@ import (
 	"github.com/ninech/nctl/api/gitinfo"
 	"github.com/ninech/nctl/api/log"
 	"github.com/ninech/nctl/internal/application"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 
 	corev1 "k8s.io/api/core/v1"
@@ -42,9 +42,9 @@ func createTempKeyFile(content string) (string, error) {
 func TestCreateApplication(t *testing.T) {
 	t.Parallel()
 
-	apiClient := test.SetupClient(t)
+	apiClient := testutil.SetupClient(t)
 
-	dummyRSAKey, err := test.GenerateRSAPrivateKey()
+	dummyRSAKey, err := testutil.GenerateRSAPrivateKey()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +54,7 @@ func TestCreateApplication(t *testing.T) {
 	}
 	defer os.Remove(filenameRSAKey)
 
-	dummyED25519Key, err := test.GenerateED25519PrivateKey()
+	dummyED25519Key, err := testutil.GenerateED25519PrivateKey()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,14 +64,14 @@ func TestCreateApplication(t *testing.T) {
 	}
 	defer os.Remove(filenameED25519Key)
 
-	gitInfoService := test.NewGitInformationService()
+	gitInfoService := testutil.NewGitInformationService()
 	gitInfoService.Start()
 	defer gitInfoService.Close()
 
 	cases := map[string]struct {
 		cmd                           applicationCmd
 		checkApp                      func(t *testing.T, cmd applicationCmd, app *apps.Application)
-		gitInformationServiceResponse test.GitInformationServiceResponse
+		gitInformationServiceResponse testutil.GitInformationServiceResponse
 		errorExpected                 bool
 	}{
 		"without git auth": {
@@ -349,7 +349,7 @@ func TestCreateApplication(t *testing.T) {
 				},
 				Size: new("mini"),
 			},
-			gitInformationServiceResponse: test.GitInformationServiceResponse{
+			gitInformationServiceResponse: testutil.GitInformationServiceResponse{
 				Code: 200,
 				Content: apps.GitExploreResponse{
 					RepositoryInfo: &apps.RepositoryInfo{
@@ -386,7 +386,7 @@ func TestCreateApplication(t *testing.T) {
 				},
 				Size: new("mini"),
 			},
-			gitInformationServiceResponse: test.GitInformationServiceResponse{
+			gitInformationServiceResponse: testutil.GitInformationServiceResponse{
 				Code: 200,
 				Content: apps.GitExploreResponse{
 					Error: "repository does not exist",
@@ -407,7 +407,7 @@ func TestCreateApplication(t *testing.T) {
 				},
 				Size: new("mini"),
 			},
-			gitInformationServiceResponse: test.GitInformationServiceResponse{
+			gitInformationServiceResponse: testutil.GitInformationServiceResponse{
 				Code: 200,
 				Content: apps.GitExploreResponse{
 					RepositoryInfo: &apps.RepositoryInfo{
@@ -436,7 +436,7 @@ func TestCreateApplication(t *testing.T) {
 				},
 				Size: new("mini"),
 			},
-			gitInformationServiceResponse: test.GitInformationServiceResponse{
+			gitInformationServiceResponse: testutil.GitInformationServiceResponse{
 				Code: 501,
 				Raw:  new("maintenance mode - we will be back soon"),
 			},
@@ -455,7 +455,7 @@ func TestCreateApplication(t *testing.T) {
 				},
 				Size: new("mini"),
 			},
-			gitInformationServiceResponse: test.GitInformationServiceResponse{
+			gitInformationServiceResponse: testutil.GitInformationServiceResponse{
 				Code: 200,
 				Content: apps.GitExploreResponse{
 					RepositoryInfo: &apps.RepositoryInfo{
@@ -633,7 +633,7 @@ func TestApplicationWait(t *testing.T) {
 		BasicAuth:           new(true),
 		SkipRepoAccessCheck: true,
 	}
-	project := test.DefaultProject
+	project := testutil.DefaultProject
 
 	build := &apps.Build{
 		ObjectMeta: metav1.ObjectMeta{
@@ -683,7 +683,7 @@ func TestApplicationWait(t *testing.T) {
 	release2 := *release
 	release2.Name = release2.Name + "-1"
 
-	apiClient := test.SetupClient(t, test.WithObjects(build, &build2, release, &release2, basicAuth))
+	apiClient := testutil.SetupClient(t, testutil.WithObjects(build, &build2, release, &release2, basicAuth))
 
 	out, err := log.StdOut("default")
 	if err != nil {
@@ -782,7 +782,7 @@ func TestApplicationBuildFail(t *testing.T) {
 		},
 		SkipRepoAccessCheck: true,
 	}
-	project := test.DefaultProject
+	project := testutil.DefaultProject
 
 	build := &apps.Build{
 		ObjectMeta: metav1.ObjectMeta{
@@ -794,7 +794,7 @@ func TestApplicationBuildFail(t *testing.T) {
 		},
 	}
 
-	client := test.SetupClient(t, test.WithObjects(build))
+	client := testutil.SetupClient(t, testutil.WithObjects(build))
 
 	var buf bytes.Buffer
 	out, err := output.NewLogOutput(&buf, log.Mode("default"), &output.LogOutputOptions{
@@ -856,7 +856,7 @@ func TestApplicationBuildFail(t *testing.T) {
 	}
 
 	is.Contains(buf.String(), logString)
-	is.Equal(test.CountLines(buf.String()), errorLogLines)
+	is.Equal(testutil.CountLines(buf.String()), errorLogLines)
 }
 
 func setResourceCondition(ctx context.Context, apiClient *api.Client, mg resource.Managed, condition runtimev1.Condition) error {

@@ -9,7 +9,7 @@ import (
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	iam "github.com/ninech/apis/iam/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -70,7 +70,7 @@ metadata:
 func TestManifest(t *testing.T) {
 	t.Parallel()
 
-	apiClient := test.SetupClient(t)
+	apiClient := testutil.SetupClient(t)
 
 	tests := map[string]struct {
 		file           string
@@ -189,7 +189,7 @@ func TestApplyOverObjectWithoutMetadata(t *testing.T) {
 
 	const name = "bare"
 	existing := &iam.APIServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "default"}}
-	apiClient := test.SetupClient(t, test.WithObjects(existing))
+	apiClient := testutil.SetupClient(t, testutil.WithObjects(existing))
 
 	r := manifest(labeledAPIServiceAccountYAML, name)
 	obj, result, err := apiClient.ApplyManifest(ctx, r)
@@ -207,7 +207,7 @@ func TestManifestMissing(t *testing.T) {
 	t.Parallel()
 	is := require.New(t)
 
-	apiClient := test.SetupClient(t)
+	apiClient := testutil.SetupClient(t)
 	ctx := t.Context()
 
 	_, err := apiClient.CreateManifest(ctx, nil)

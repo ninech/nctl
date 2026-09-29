@@ -12,7 +12,7 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -175,7 +175,7 @@ func TestCreateLocationFallback(t *testing.T) {
 			cmd.Wait = false
 			cmd.WaitTimeout = time.Second
 
-			apiClient := test.SetupClient(t, test.WithInterceptorFuncs(interceptor.Funcs{
+			apiClient := testutil.SetupClient(t, testutil.WithInterceptorFuncs(interceptor.Funcs{
 				Create: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
 					if denied < tt.denials {
 						denied++

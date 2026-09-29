@@ -14,7 +14,7 @@ import (
 
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
 	"k8s.io/client-go/tools/clientcmd"
@@ -39,7 +39,7 @@ contexts:
 type fakeTokenGetter struct{}
 
 func (f *fakeTokenGetter) GetTokenString(ctx context.Context, issuerURL, clientID string, usePKCE bool) (string, error) {
-	return test.FakeJWTToken, nil
+	return testutil.FakeJWTToken, nil
 }
 
 func checkErrorRequire(t *testing.T, err error, expectError bool, expectedErrMsg string) {
@@ -98,7 +98,7 @@ func TestLoginClientCredentials(t *testing.T) {
 	mockTokenServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		tok := &oauth2.Token{
-			AccessToken: test.ASAJWTToken,
+			AccessToken: testutil.ASAJWTToken,
 			Expiry:      time.Now().Add(time.Minute),
 			ExpiresIn:   int64(time.Minute.Seconds()),
 			TokenType:   "Bearer",
@@ -200,26 +200,26 @@ func TestLoginStaticToken(t *testing.T) {
 			name: "interactive environment with token",
 			cmd: &LoginCmd{
 				API: API{
-					URL: "https://" + apiHost, Token: test.FakeJWTToken,
+					URL: "https://" + apiHost, Token: testutil.FakeJWTToken,
 				},
 				Organization:                "test",
 				ForceInteractiveEnvOverride: true,
 				tk:                          &fakeTokenGetter{},
 			},
-			wantToken: test.FakeJWTToken,
+			wantToken: testutil.FakeJWTToken,
 		},
 		{
 			name: "non-interactive environment with token",
 			cmd: &LoginCmd{
 				API: API{
 					URL:   "https://" + apiHost,
-					Token: test.FakeJWTToken,
+					Token: testutil.FakeJWTToken,
 				},
 				Organization:                "test",
 				ForceInteractiveEnvOverride: false,
 				tk:                          &fakeTokenGetter{},
 			},
-			wantToken: test.FakeJWTToken,
+			wantToken: testutil.FakeJWTToken,
 		},
 		{
 			name: "non-interactive environment with empty token",

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	networking "github.com/ninech/apis/networking/v1alpha1"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -42,7 +42,7 @@ func TestServiceConnection(t *testing.T) {
 			instances: []serviceConnectionInstance{
 				{
 					name:        "testConnection",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					source:      "test-source-1",
 					destination: "test-destination-1",
 				},
@@ -55,19 +55,19 @@ func TestServiceConnection(t *testing.T) {
 			instances: []serviceConnectionInstance{
 				{
 					name:        "testConnection1",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					source:      "test-source-1",
 					destination: "test-destination-1",
 				},
 				{
 					name:        "test2",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					source:      "test-source-2",
 					destination: "test-destination-2",
 				},
 				{
 					name:        "test3",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					source:      "test-source-3",
 					destination: "test-destination-3",
 				},
@@ -84,13 +84,13 @@ func TestServiceConnection(t *testing.T) {
 			instances: []serviceConnectionInstance{
 				{
 					name:        "test1",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					source:      "test-source-1",
 					destination: "test-destination-1",
 				},
 				{
 					name:        "test2",
-					project:     test.DefaultProject,
+					project:     testutil.DefaultProject,
 					source:      "test-source-2",
 					destination: "test-destination-2",
 				},
@@ -106,17 +106,17 @@ func TestServiceConnection(t *testing.T) {
 
 			objects := []client.Object{}
 			for _, instance := range tt.instances {
-				created := test.ServiceConnection(instance.name, instance.project)
+				created := testutil.ServiceConnection(instance.name, instance.project)
 				created.Spec.ForProvider.Source.Reference.Name = instance.source
 				created.Spec.ForProvider.Destination.Name = instance.destination
 				objects = append(objects, created)
 			}
 
-			apiClient := test.SetupClient(t,
-				test.WithProjectsFromResources(objects...),
-				test.WithObjects(objects...),
-				test.WithNameIndexFor(&networking.ServiceConnection{}),
-				test.WithKubeconfig(),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithProjectsFromResources(objects...),
+				testutil.WithObjects(objects...),
+				testutil.WithNameIndexFor(&networking.ServiceConnection{}),
+				testutil.WithKubeconfig(),
 			)
 			if tt.out == "" {
 				tt.out = full
@@ -142,8 +142,8 @@ func TestServiceConnection(t *testing.T) {
 					t.Errorf("serviceConnectionCmd.Run() did not contain %q, out = %q", tt.wantContain, buf.String())
 				}
 			}
-			if test.CountLines(buf.String()) != tt.wantLines {
-				t.Errorf("expected the output to have %d lines, but found %d", tt.wantLines, test.CountLines(buf.String()))
+			if testutil.CountLines(buf.String()) != tt.wantLines {
+				t.Errorf("expected the output to have %d lines, but found %d", tt.wantLines, testutil.CountLines(buf.String()))
 				t.Log(buf.String())
 			}
 		})

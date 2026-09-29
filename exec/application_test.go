@@ -12,14 +12,14 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/internal/application"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	project = test.DefaultProject
+	project = testutil.DefaultProject
 )
 
 func TestSetupTTY(t *testing.T) {
@@ -366,11 +366,11 @@ func TestApplicationReplicaSelection(t *testing.T) {
 			t.Parallel()
 			is := require.New(t)
 
-			apiClient := test.SetupClient(t,
-				test.WithKubeconfig(),
-				test.WithNameIndexFor(&apps.Release{}),
-				test.WithObjects(addCreationTimestamp(testCase.releases)...),
-				test.WithDefaultProject(project),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithKubeconfig(),
+				testutil.WithNameIndexFor(&apps.Release{}),
+				testutil.WithObjects(addCreationTimestamp(testCase.releases)...),
+				testutil.WithDefaultProject(project),
 			)
 
 			cmd := applicationCmd{resourceCmd: resourceCmd{Name: testCase.application}}
