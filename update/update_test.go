@@ -14,8 +14,9 @@ import (
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/create"
 	"github.com/ninech/nctl/internal/apifield"
+	"github.com/ninech/nctl/internal/application"
+	"github.com/ninech/nctl/internal/bucket"
 	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/test"
 	"github.com/stretchr/testify/require"
@@ -183,11 +184,11 @@ func runUpdate(t *testing.T, client *api.Client, out io.Writer, args []string) e
 		Bucket      bucketCmd      `cmd:"" name:"bucket"`
 	}
 
-	vars, err := create.ApplicationKongVars()
+	vars, err := application.KongVars()
 	if err != nil {
 		t.Fatalf("application kong vars: %s", err)
 	}
-	maps.Copy(vars, create.BucketKongVars())
+	maps.Copy(vars, bucket.KongVars())
 	maps.Copy(vars, BucketKongVars())
 
 	parser := kong.Must(
