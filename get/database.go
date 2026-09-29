@@ -52,7 +52,7 @@ func (cmd *DatabaseCmd) run(ctx context.Context, client *api.Client, get *Cmd,
 	}
 
 	if cmd.Name != "" && cmd.PrintConnectionString {
-		secrets, err := ConnectionSecretMap(ctx, client, databaseResources.GetItems()[0])
+		secrets, err := client.ConnectionSecretData(ctx, databaseResources.GetItems()[0])
 		if err != nil {
 			return err
 		}
@@ -71,7 +71,7 @@ func (cmd *DatabaseCmd) run(ctx context.Context, client *api.Client, get *Cmd,
 		if err != nil {
 			return err
 		}
-		return WriteBase64(&get.Writer, ca)
+		return format.WriteBase64Decoded(&get.Writer, ca)
 	}
 
 	switch get.Format {

@@ -144,7 +144,6 @@ type verbImport struct{ from, to string }
 // an entry is stale.
 var allowedVerbImports = map[verbImport]bool{
 	{"create", "auth"}:   true,
-	{"exec", "get"}:      true,
 	{"update", "create"}: true,
 }
 

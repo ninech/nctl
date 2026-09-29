@@ -2,15 +2,12 @@
 package get
 
 import (
-	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"maps"
 	"slices"
-	"strings"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/gobuffalo/flect"
@@ -185,17 +182,8 @@ func (out *output) notFound(kind, project string) error {
 	return err
 }
 
-func ConnectionSecretMap(ctx context.Context, client *api.Client, mg resource.Managed) (map[string][]byte, error) {
-	secret, err := client.GetConnectionSecret(ctx, mg)
-	if err != nil {
-		return nil, err
-	}
-
-	return secret.Data, nil
-}
-
 func connectionSecret(ctx context.Context, client *api.Client, key string, mg resource.Managed) (string, error) {
-	secrets, err := ConnectionSecretMap(ctx, client, mg)
+	secrets, err := client.ConnectionSecretData(ctx, mg)
 	if err != nil {
 		return "", fmt.Errorf("unable to get connection secret: %w", err)
 	}
@@ -215,7 +203,7 @@ func (cmd *ResourceCmd) printSecret(
 	out *output,
 	field func(string, string) string,
 ) error {
-	secrets, err := ConnectionSecretMap(ctx, client, mg)
+	secrets, err := client.ConnectionSecretData(ctx, mg)
 	if err != nil {
 		return err
 	}
@@ -234,7 +222,7 @@ func (cmd *ResourceCmd) printCredentials(
 	out *output,
 	filter func(key string) bool,
 ) error {
-	data, err := ConnectionSecretMap(ctx, client, mg)
+	data, err := client.ConnectionSecretData(ctx, mg)
 	if err != nil {
 		return err
 	}
@@ -269,19 +257,4 @@ func (cmd *ResourceCmd) printCredentials(
 		out.Printf("%s\n", string(b))
 	}
 	return nil
-}
-
-func WriteBase64(out io.Writer, s string) error {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return nil
-	}
-
-	pem, err := base64.StdEncoding.DecodeString(s)
-	if err != nil {
-		return fmt.Errorf("unable to decode base64: %w", err)
-	}
-
-	_, err = fmt.Fprintln(out, string(bytes.TrimSpace(pem)))
-	return err
 }
