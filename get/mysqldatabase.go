@@ -3,7 +3,6 @@ package get
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"strconv"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
@@ -12,7 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type mysqlDatabaseCmd struct{ DatabaseCmd }
+type mysqlDatabaseCmd struct{ ServiceCmd }
 
 func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, c *api.Client, get *Cmd) error {
 	return get.listPrint(ctx, c, cmd, api.MatchName(cmd.Name))
@@ -28,11 +27,11 @@ func (cmd *mysqlDatabaseCmd) print(ctx context.Context, client *api.Client, list
 		return fmt.Errorf("expected %T, got %T", &storage.MySQLDatabaseList{}, list)
 	}
 
-	return cmd.run(ctx, client, &Cmd{output: *out},
-		databaseList, storage.MySQLDatabaseKind,
-		cmd.connectionString,
-		cmd.printMySQLDatabases,
-		func(mg resource.Managed) (string, error) {
+	return cmd.run(ctx, client, out, databaseList, service{
+		kind:             storage.MySQLDatabaseKind,
+		connectionString: cmd.connectionString,
+		printList:        cmd.printMySQLDatabases,
+		caCert: func(mg resource.Managed) (string, error) {
 			db, ok := mg.(*storage.MySQLDatabase)
 			if !ok {
 				return "", fmt.Errorf("expected %T, got %T", &storage.MySQLDatabase{}, mg)
@@ -40,53 +39,31 @@ func (cmd *mysqlDatabaseCmd) print(ctx context.Context, client *api.Client, list
 
 			return db.Status.AtProvider.CACert, nil
 		},
-	)
+	})
 }
 
-func (cmd *mysqlDatabaseCmd) printMySQLDatabases(resources resource.ManagedList, get *Cmd, header bool) error {
+func (cmd *mysqlDatabaseCmd) printMySQLDatabases(resources resource.ManagedList, out *output, header bool) error {
 	dbs, ok := resources.(*storage.MySQLDatabaseList)
 	if !ok {
 		return fmt.Errorf("expected %T, got %T", &storage.MySQLDatabaseList{}, dbs)
 	}
 
 	if header {
-		get.writeHeader("NAME", "LOCATION", "VERSION", "FQDN", "SIZE", "CONNECTIONS")
+		out.writeHeader("NAME", "LOCATION", "VERSION", "FQDN", "SIZE", "CONNECTIONS")
 	}
 
 	for _, db := range dbs.Items {
-		get.writeTabRow(db.Namespace, db.Name, string(db.Spec.ForProvider.Location), string(db.Spec.ForProvider.Version), db.Status.AtProvider.FQDN, db.Status.AtProvider.Size.String(), strconv.FormatUint(uint64(db.Status.AtProvider.Connections), 10))
+		out.writeTabRow(db.Namespace, db.Name, string(db.Spec.ForProvider.Location), string(db.Spec.ForProvider.Version), db.Status.AtProvider.FQDN, db.Status.AtProvider.Size.String(), strconv.FormatUint(uint64(db.Status.AtProvider.Connections), 10))
 	}
 
-	return get.tabWriter.Flush()
+	return out.tabWriter.Flush()
 }
 
-func (cmd *mysqlDatabaseCmd) connectionString(mg resource.Managed, secrets map[string][]byte) (string, error) {
+func (cmd *mysqlDatabaseCmd) connectionString(mg resource.Managed, user, password string) (string, error) {
 	my, ok := mg.(*storage.MySQLDatabase)
 	if !ok {
 		return "", fmt.Errorf("expected %T, got %T", &storage.MySQLDatabase{}, mg)
 	}
 
-	for user, pw := range secrets {
-		return mySQLConnectionString(my.Status.AtProvider.FQDN, user, user, pw), nil
-	}
-
-	return "", nil
-}
-
-// mySQLConnectionString according to the MySQL documentation:
-// https://dev.mysql.com/doc/refman/8.4/en/connecting-using-uri-or-key-value-pairs.html#connecting-using-uri
-// ssl-mode is REQUIRED as there is no CA cert on disk to verify against.
-func mySQLConnectionString(fqdn, user, db string, pw []byte) string {
-	q := url.Values{}
-	q.Set("ssl-mode", "REQUIRED")
-
-	u := &url.URL{
-		Scheme:   "mysql",
-		Host:     fqdn,
-		User:     url.UserPassword(user, string(pw)),
-		Path:     db,
-		RawQuery: q.Encode(),
-	}
-
-	return u.String()
+	return mySQLConnectionString(my.Status.AtProvider.FQDN, user, password, user)
 }

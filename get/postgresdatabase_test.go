@@ -55,8 +55,8 @@ func TestPostgresDatabase(t *testing.T) {
 					location: meta.LocationNineCZ41,
 				},
 			},
-			get:         postgresDatabaseCmd{DatabaseCmd: DatabaseCmd{ResourceCmd: ResourceCmd{Name: "test1"}, PrintConnectionString: true}},
-			wantContain: []string{"postgres://", "foo_bar", "topsecret", "sslmode=require"},
+			get:         postgresDatabaseCmd{ServiceCmd: ServiceCmd{ResourceCmd: ResourceCmd{Name: "test1"}, PrintConnectionString: true}},
+			wantContain: []string{"postgresql://foo_bar:topsecret@test1.example.com:5432/foo_bar?sslmode=require"},
 			wantLines:   1,
 		},
 	}
@@ -68,6 +68,7 @@ func TestPostgresDatabase(t *testing.T) {
 			for _, database := range tt.databases {
 				created := test.PostgresDatabase(database.name, database.project, "nine-es34")
 				created.Spec.ForProvider.Location = database.location
+				created.Status.AtProvider.FQDN = database.name + ".example.com"
 				objects = append(objects, created, &corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      created.GetWriteConnectionSecretToReference().Name,
@@ -76,7 +77,8 @@ func TestPostgresDatabase(t *testing.T) {
 					Data: map[string][]byte{"foo_bar": []byte("topsecret")},
 				})
 			}
-			apiClient := test.SetupClient(t,
+			apiClient := test.SetupClient(
+				t,
 				test.WithProjectsFromResources(objects...),
 				test.WithObjects(objects...),
 				test.WithNameIndexFor(&storage.PostgresDatabase{}),

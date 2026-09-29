@@ -91,7 +91,7 @@ func TestKeyValueStore(t *testing.T) {
 					memSize: kvsMem("2G"),
 				},
 			},
-			get:         keyValueStoreCmd{ResourceCmd: ResourceCmd{Name: "test1"}},
+			get:         keyValueStoreCmd{ServiceCmd: ServiceCmd{ResourceCmd: ResourceCmd{Name: "test1"}}},
 			out:         full,
 			wantContain: []string{"test1", "1G"},
 			wantLines:   2, // header + result
@@ -135,10 +135,34 @@ func TestKeyValueStore(t *testing.T) {
 					memSize: kvsMem("2G"),
 				},
 			},
-			get:         keyValueStoreCmd{ResourceCmd: ResourceCmd{Name: "test2"}, PrintToken: true},
+			get:         keyValueStoreCmd{ServiceCmd: ServiceCmd{ResourceCmd: ResourceCmd{Name: "test2"}, PrintPassword: true}},
 			out:         full,
 			wantContain: []string{"test2-topsecret"},
-			wantLines:   1, // print token does not print any header line
+			wantLines:   1, // print password does not print any header line
+		},
+		{
+			name:        "get password with deprecated token flag",
+			instances:   []kvsInstance{{name: "test1", project: test.DefaultProject, memSize: kvsMem("1G")}},
+			get:         keyValueStoreCmd{ServiceCmd: ServiceCmd{ResourceCmd: ResourceCmd{Name: "test1"}}, PrintToken: true},
+			out:         full,
+			wantContain: []string{"test1-topsecret"},
+			wantLines:   1,
+		},
+		{
+			name:        "get user",
+			instances:   []kvsInstance{{name: "test1", project: test.DefaultProject, memSize: kvsMem("1G")}},
+			get:         keyValueStoreCmd{ServiceCmd: ServiceCmd{ResourceCmd: ResourceCmd{Name: "test1"}, PrintUser: true}},
+			out:         full,
+			wantContain: []string{storage.KeyValueStoreUser},
+			wantLines:   1,
+		},
+		{
+			name:        "get connection string",
+			instances:   []kvsInstance{{name: "test1", project: test.DefaultProject, memSize: kvsMem("1G")}},
+			get:         keyValueStoreCmd{ServiceCmd: ServiceCmd{ResourceCmd: ResourceCmd{Name: "test1"}, PrintConnectionString: true}},
+			out:         full,
+			wantContain: []string{"rediss://default:test1-topsecret@test1.example.com:6379"},
+			wantLines:   1,
 		},
 	}
 	for _, tt := range tests {
@@ -149,16 +173,18 @@ func TestKeyValueStore(t *testing.T) {
 			for _, instance := range tt.instances {
 				created := test.KeyValueStore(instance.name, instance.project, "nine-es34")
 				created.Spec.ForProvider.MemorySize = instance.memSize
+				created.Status.AtProvider.FQDN = instance.name + ".example.com"
 				objects = append(objects, created)
 				objects = append(objects, &corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      created.GetWriteConnectionSecretToReference().Name,
 						Namespace: created.GetWriteConnectionSecretToReference().Namespace,
 					},
-					Data: map[string][]byte{"default": []byte(created.GetWriteConnectionSecretToReference().Name + "-topsecret")},
+					Data: map[string][]byte{storage.KeyValueStoreUser: []byte(created.GetWriteConnectionSecretToReference().Name + "-topsecret")},
 				})
 			}
-			apiClient := test.SetupClient(t,
+			apiClient := test.SetupClient(
+				t,
 				test.WithProjectsFromResources(objects...),
 				test.WithObjects(objects...),
 				test.WithNameIndexFor(&storage.KeyValueStore{}),

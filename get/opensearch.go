@@ -2,22 +2,21 @@ package get
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/url"
 
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/internal/format"
 
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type openSearchCmd struct {
-	ResourceCmd
-	PrintPassword       bool `help:"Print the password of the OpenSearch BasicAuth User. Requires name to be set." xor:"print"`
-	PrintUser           bool `help:"Print the name of the OpenSearch BasicAuth User. Requires name to be set."     xor:"print"`
-	PrintCACert         bool `help:"Print the ca certificate. Requires name to be set."                            xor:"print"`
-	PrintSnapshotBucket bool `help:"Print the URL of the snapshot bucket."                                         xor:"print"`
+	ServiceCmd
+	PrintSnapshotBucket bool `help:"Print the URL of the snapshot bucket." xor:"print"`
 }
 
 func (cmd *openSearchCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
@@ -38,68 +37,55 @@ func (cmd *openSearchCmd) print(
 	if !ok {
 		return fmt.Errorf("expected %T, got %T", &storage.OpenSearchList{}, list)
 	}
-	if len(openSearchList.Items) == 0 {
-		return out.notFound(storage.OpenSearchKind, client.Project)
-	}
 
-	if cmd.Name != "" && cmd.PrintUser {
-		return cmd.printSecret(
-			ctx,
-			client,
-			&openSearchList.Items[0],
-			out,
-			func(user, _ string) string { return user },
-		)
-	}
-
-	if cmd.Name != "" && cmd.PrintPassword {
-		return cmd.printSecret(
-			ctx,
-			client,
-			&openSearchList.Items[0],
-			out,
-			func(_, pw string) string { return pw },
-		)
-	}
-
-	if cmd.Name != "" && cmd.PrintCACert {
-		return WriteBase64(&out.Writer, openSearchList.Items[0].Status.AtProvider.CACert)
-	}
-
-	if cmd.Name != "" && cmd.PrintSnapshotBucket {
+	if cmd.Name != "" && cmd.PrintSnapshotBucket && len(openSearchList.Items) > 0 {
 		return cmd.printSnapshotBucket(ctx, client, &openSearchList.Items[0], out)
 	}
 
-	switch out.Format {
-	case full:
-		return cmd.printOpenSearchInstances(openSearchList.Items, out, true)
-	case noHeader:
-		return cmd.printOpenSearchInstances(openSearchList.Items, out, false)
-	case yamlOut:
-		return format.PrettyPrintObjects(
-			openSearchList.GetItems(),
-			format.PrintOpts{Out: &out.Writer},
-		)
-	case jsonOut:
-		return format.PrettyPrintObjects(
-			openSearchList.GetItems(),
-			format.PrintOpts{
-				Out:    &out.Writer,
-				Format: format.OutputFormatTypeJSON,
-				JSONOpts: format.JSONOutputOptions{
-					PrintSingleItem: cmd.Name != "",
-				},
-			})
+	return cmd.run(ctx, client, out, openSearchList, service{
+		kind:             storage.OpenSearchKind,
+		connectionString: cmd.connectionString,
+		printList:        cmd.printOpenSearchInstances,
+		caCert: func(mg resource.Managed) (string, error) {
+			os, ok := mg.(*storage.OpenSearch)
+			if !ok {
+				return "", fmt.Errorf("expected %T, got %T", &storage.OpenSearch{}, mg)
+			}
+			return os.Status.AtProvider.CACert, nil
+		},
+	})
+}
+
+// connectionString returns the public URL of the cluster with the basic auth credentials embedded.
+func (cmd *openSearchCmd) connectionString(mg resource.Managed, user, password string) (string, error) {
+	os, ok := mg.(*storage.OpenSearch)
+	if !ok {
+		return "", fmt.Errorf("expected %T, got %T", &storage.OpenSearch{}, mg)
 	}
 
-	return nil
+	if os.Status.AtProvider.URL == "" {
+		return "", errors.New("no URL found, the service might not be ready yet")
+	}
+
+	u, err := url.Parse(string(os.Status.AtProvider.URL))
+	if err != nil {
+		return "", fmt.Errorf("unable to parse URL: %w", err)
+	}
+	u.User = url.UserPassword(user, password)
+
+	return u.String(), nil
 }
 
 func (cmd *openSearchCmd) printOpenSearchInstances(
-	list []storage.OpenSearch,
+	resources resource.ManagedList,
 	out *output,
 	header bool,
 ) error {
+	list, ok := resources.(*storage.OpenSearchList)
+	if !ok {
+		return fmt.Errorf("expected %T, got %T", &storage.OpenSearchList{}, resources)
+	}
+
 	if header {
 		out.writeHeader(
 			"NAME",
@@ -114,7 +100,7 @@ func (cmd *openSearchCmd) printOpenSearchInstances(
 		)
 	}
 
-	for _, os := range list {
+	for _, os := range list.Items {
 		out.writeTabRow(
 			os.Namespace,
 			os.Name,

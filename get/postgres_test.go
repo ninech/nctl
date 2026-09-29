@@ -110,7 +110,7 @@ func TestPostgres(t *testing.T) {
 					machineType: machineType("nine-db-prod-m"),
 				},
 			},
-			get:         postgresCmd{DatabaseCmd{ResourceCmd: ResourceCmd{Name: "test1"}}},
+			get:         postgresCmd{ServiceCmd{ResourceCmd: ResourceCmd{Name: "test1"}}},
 			wantContain: []string{"test1", "nine-db-prod-s"},
 			wantLines:   2,
 		},
@@ -128,7 +128,7 @@ func TestPostgres(t *testing.T) {
 					machineType: machineType("nine-db-prod-m"),
 				},
 			},
-			get:         postgresCmd{DatabaseCmd{ResourceCmd: ResourceCmd{Name: "test2"}, PrintPassword: true}},
+			get:         postgresCmd{ServiceCmd{ResourceCmd: ResourceCmd{Name: "test2"}, PrintPassword: true}},
 			wantContain: []string{"test2-topsecret"},
 			wantLines:   1, // no header in this case
 		},
@@ -149,7 +149,8 @@ func TestPostgres(t *testing.T) {
 					Data: map[string][]byte{storage.PostgresUser: []byte(created.GetWriteConnectionSecretToReference().Name + "-topsecret")},
 				})
 			}
-			apiClient := test.SetupClient(t,
+			apiClient := test.SetupClient(
+				t,
 				test.WithProjectsFromResources(objects...),
 				test.WithObjects(objects...),
 				test.WithNameIndexFor(&storage.Postgres{}),

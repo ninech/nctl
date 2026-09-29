@@ -112,7 +112,7 @@ func TestOpenSearch(t *testing.T) {
 					machineType: infra.MachineTypeNineSearchM,
 				},
 			},
-			get:         openSearchCmd{ResourceCmd: ResourceCmd{Name: "test1"}},
+			get:         openSearchCmd{ServiceCmd: ServiceCmd{ResourceCmd: ResourceCmd{Name: "test1"}}},
 			wantContain: []string{"test1", "nine-search-s"},
 			wantLines:   2,
 		},
@@ -126,7 +126,7 @@ func TestOpenSearch(t *testing.T) {
 					snapshotBucket: "snapshot-instance-012345a",
 				},
 			},
-			get:       openSearchCmd{ResourceCmd: ResourceCmd{Name: "snapshot-instance"}, PrintSnapshotBucket: true},
+			get:       openSearchCmd{ServiceCmd: ServiceCmd{ResourceCmd: ResourceCmd{Name: "snapshot-instance"}}, PrintSnapshotBucket: true},
 			want:      "https://nine-es34.objects.nineapis.ch/snapshot-instance-012345a",
 			wantLines: 1,
 		},
@@ -144,9 +144,27 @@ func TestOpenSearch(t *testing.T) {
 					machineType: infra.MachineTypeNineSearchM,
 				},
 			},
-			get:         openSearchCmd{ResourceCmd: ResourceCmd{Name: "test2"}, PrintPassword: true},
+			get:         openSearchCmd{ServiceCmd: ServiceCmd{ResourceCmd: ResourceCmd{Name: "test2"}, PrintPassword: true}},
 			wantContain: []string{"test2-topsecret"},
 			wantLines:   1, // no header in this case
+		},
+		{
+			name: "show-user",
+			instances: []openSearchInstance{
+				{name: "test1", project: test.DefaultProject, machineType: infra.MachineTypeNineSearchS},
+			},
+			get:       openSearchCmd{ServiceCmd: ServiceCmd{ResourceCmd: ResourceCmd{Name: "test1"}, PrintUser: true}},
+			want:      storage.OpenSearchUser,
+			wantLines: 1,
+		},
+		{
+			name: "show-connection-string",
+			instances: []openSearchInstance{
+				{name: "test1", project: test.DefaultProject, machineType: infra.MachineTypeNineSearchS},
+			},
+			get:       openSearchCmd{ServiceCmd: ServiceCmd{ResourceCmd: ResourceCmd{Name: "test1"}, PrintConnectionString: true}},
+			want:      "https://admin:test1-topsecret@test1.example.com:9200",
+			wantLines: 1,
 		},
 		{
 			name: "instance with green status",
@@ -157,7 +175,7 @@ func TestOpenSearch(t *testing.T) {
 					machineType: infra.MachineTypeNineSearchS,
 				},
 			},
-			get:         openSearchCmd{ResourceCmd: ResourceCmd{Name: "healthy-instance"}},
+			get:         openSearchCmd{ServiceCmd: ServiceCmd{ResourceCmd: ResourceCmd{Name: "healthy-instance"}}},
 			wantContain: []string{"green"},
 			wantLines:   2,
 		},
@@ -177,7 +195,7 @@ func TestOpenSearch(t *testing.T) {
 					},
 				},
 			},
-			get:         openSearchCmd{ResourceCmd: ResourceCmd{Name: "unhealthy-instance"}},
+			get:         openSearchCmd{ServiceCmd: ServiceCmd{ResourceCmd: ResourceCmd{Name: "unhealthy-instance"}}},
 			wantContain: []string{"red"},
 			wantLines:   2,
 		},
@@ -192,6 +210,7 @@ func TestOpenSearch(t *testing.T) {
 			for _, instance := range tt.instances {
 				created := test.OpenSearch(instance.name, instance.project, meta.LocationNineES34)
 				created.Spec.ForProvider.MachineType = instance.machineType
+				created.Status.AtProvider.URL = meta.URL("https://" + instance.name + ".example.com:9200")
 
 				// Set cluster health status if provided
 				if len(instance.clusterHealth.Indices) > 0 {
@@ -230,7 +249,8 @@ func TestOpenSearch(t *testing.T) {
 					Data: map[string][]byte{storage.OpenSearchUser: []byte(created.GetWriteConnectionSecretToReference().Name + "-topsecret")},
 				})
 			}
-			apiClient := test.SetupClient(t,
+			apiClient := test.SetupClient(
+				t,
 				test.WithProjectsFromResources(objects...),
 				test.WithObjects(objects...),
 				test.WithNameIndexFor(&storage.OpenSearch{}),
@@ -255,6 +275,9 @@ func TestOpenSearch(t *testing.T) {
 				return
 			}
 
+			if tt.want != "" && strings.TrimSpace(buf.String()) != tt.want {
+				t.Errorf("openSearchCmd.Run() = %q, want %q", buf.String(), tt.want)
+			}
 			for _, substr := range tt.wantContain {
 				if !strings.Contains(buf.String(), substr) {
 					t.Errorf("openSearchCmd.Run() did not contain %q, out = %q", tt.wantContain, buf.String())
