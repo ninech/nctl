@@ -3,15 +3,15 @@ package api
 import (
 	"context"
 	"errors"
+	"io"
 	"maps"
-	"os"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
-// ApplyResult tells what [Client.ApplyFromFile] did with the object of the
+// ApplyResult tells what [Client.ApplyManifest] did with the object of the
 // manifest.
 type ApplyResult string
 
@@ -20,10 +20,10 @@ const (
 	ApplyResultUpdated ApplyResult = "updated"
 )
 
-// CreateFromFile creates the object described by the YAML or JSON manifest in
-// file and returns it. file is closed before returning.
-func (c *Client) CreateFromFile(ctx context.Context, file *os.File) (*unstructured.Unstructured, error) {
-	obj, err := decodeManifest(file)
+// CreateManifest creates the object described by the YAML or JSON manifest
+// read from r and returns it.
+func (c *Client) CreateManifest(ctx context.Context, r io.Reader) (*unstructured.Unstructured, error) {
+	obj, err := decodeManifest(r)
 	if err != nil {
 		return nil, err
 	}
@@ -34,11 +34,11 @@ func (c *Client) CreateFromFile(ctx context.Context, file *os.File) (*unstructur
 	return obj, nil
 }
 
-// ApplyFromFile creates the object described by the YAML or JSON manifest in
-// file, or updates it if it already exists, and returns it along with what
-// happened. file is closed before returning.
-func (c *Client) ApplyFromFile(ctx context.Context, file *os.File) (*unstructured.Unstructured, ApplyResult, error) {
-	obj, err := decodeManifest(file)
+// ApplyManifest creates the object described by the YAML or JSON manifest
+// read from r, or updates it if it already exists, and returns it along with
+// what happened.
+func (c *Client) ApplyManifest(ctx context.Context, r io.Reader) (*unstructured.Unstructured, ApplyResult, error) {
+	obj, err := decodeManifest(r)
 	if err != nil {
 		return nil, "", err
 	}
@@ -56,10 +56,10 @@ func (c *Client) ApplyFromFile(ctx context.Context, file *os.File) (*unstructure
 	return obj, ApplyResultCreated, nil
 }
 
-// DeleteFromFile deletes the object described by the YAML or JSON manifest in
-// file and returns it. file is closed before returning.
-func (c *Client) DeleteFromFile(ctx context.Context, file *os.File) (*unstructured.Unstructured, error) {
-	obj, err := decodeManifest(file)
+// DeleteManifest deletes the object described by the YAML or JSON manifest
+// read from r and returns it.
+func (c *Client) DeleteManifest(ctx context.Context, r io.Reader) (*unstructured.Unstructured, error) {
+	obj, err := decodeManifest(r)
 	if err != nil {
 		return nil, err
 	}
@@ -70,16 +70,14 @@ func (c *Client) DeleteFromFile(ctx context.Context, file *os.File) (*unstructur
 	return obj, nil
 }
 
-// decodeManifest decodes the first YAML or JSON document of file and closes
-// it.
-func decodeManifest(file *os.File) (*unstructured.Unstructured, error) {
-	if file == nil {
-		return nil, errors.New("no manifest file given")
+// decodeManifest decodes the first YAML or JSON document read from r.
+func decodeManifest(r io.Reader) (*unstructured.Unstructured, error) {
+	if r == nil {
+		return nil, errors.New("no manifest given")
 	}
-	defer file.Close()
 
 	obj := &unstructured.Unstructured{}
-	if err := yaml.NewYAMLOrJSONDecoder(file, 4096).Decode(obj); err != nil {
+	if err := yaml.NewYAMLOrJSONDecoder(r, 4096).Decode(obj); err != nil {
 		return nil, err
 	}
 

@@ -29,4 +29,5 @@ metadata:
 	cmd := &fromFile{Writer: format.NewWriter(out), Filename: f}
 	is.NoError(cmd.Run(t.Context(), test.SetupClient(t)))
 	is.Contains(out.String(), "created APIServiceAccount asa/default")
+	is.ErrorIs(f.Close(), os.ErrClosed, "file is closed")
 }

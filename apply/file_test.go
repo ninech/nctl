@@ -29,11 +29,13 @@ func TestFromFile(t *testing.T) {
 	cmd := &fromFile{Writer: format.NewWriter(out), Filename: manifest(t, apiServiceAccountYAML)}
 	is.NoError(cmd.Run(ctx, apiClient))
 	is.Contains(out.String(), "created APIServiceAccount asa/default")
+	is.ErrorIs(cmd.Filename.Close(), os.ErrClosed, "file is closed")
 
 	out.Reset()
 	cmd.Filename = manifest(t, apiServiceAccountYAML)
 	is.NoError(cmd.Run(ctx, apiClient))
 	is.Contains(out.String(), "applied APIServiceAccount asa/default")
+	is.ErrorIs(cmd.Filename.Close(), os.ErrClosed, "file is closed")
 }
 
 func manifest(t *testing.T, content string) *os.File {
