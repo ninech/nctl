@@ -67,7 +67,7 @@ func (cmd *ServiceCmd) run(ctx context.Context, client *api.Client, out *output,
 
 	if cmd.Name != "" && cmd.PrintConnectionString {
 		mg := list.GetItems()[0]
-		secrets, err := ConnectionSecretMap(ctx, client, mg)
+		secrets, err := client.ConnectionSecretData(ctx, mg)
 		if err != nil {
 			return err
 		}
@@ -91,7 +91,7 @@ func (cmd *ServiceCmd) run(ctx context.Context, client *api.Client, out *output,
 		if err != nil {
 			return err
 		}
-		return WriteBase64(&out.Writer, ca)
+		return format.WriteBase64Decoded(&out.Writer, ca)
 	}
 
 	switch out.Format {
