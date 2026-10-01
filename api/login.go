@@ -42,6 +42,7 @@ const (
 	TokenURLArg              = "--token-url="
 	UsePKCEArg               = "--use-pkce"
 	CustomersPrefix          = "/Customers/"
+	AuthCmdName              = "auth"
 	ClientCredentialsCmdName = "client-credentials"
 	OIDCCmdName              = "oidc"
 )

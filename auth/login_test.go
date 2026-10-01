@@ -21,6 +21,21 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
+const existingKubeconfig = `
+apiVersion: v1
+kind: Config
+clusters:
+- cluster:
+    server: https://existing.example.org
+  name: existing
+users:
+- name: existing
+current-context: existing
+contexts:
+- context:
+  name: existing
+`
+
 type fakeTokenGetter struct{}
 
 func (f *fakeTokenGetter) GetTokenString(ctx context.Context, issuerURL, clientID string, usePKCE bool) (string, error) {
