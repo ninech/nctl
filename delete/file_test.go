@@ -9,7 +9,7 @@ import (
 	iam "github.com/ninech/apis/iam/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,8 +19,8 @@ func TestFromFile(t *testing.T) {
 	t.Parallel()
 	is := require.New(t)
 
-	asa := &iam.APIServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: "asa", Namespace: test.DefaultProject}}
-	apiClient := test.SetupClient(t, test.WithObjects(asa))
+	asa := &iam.APIServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: "asa", Namespace: testutil.DefaultProject}}
+	apiClient := testutil.SetupClient(t, testutil.WithObjects(asa))
 
 	path := filepath.Join(t.TempDir(), "manifest.yaml")
 	is.NoError(os.WriteFile(path, []byte(`kind: APIServiceAccount

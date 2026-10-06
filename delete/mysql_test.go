@@ -8,7 +8,7 @@ import (
 
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
@@ -25,8 +25,8 @@ func TestMySQL(t *testing.T) {
 		},
 	}
 
-	mysql := test.MySQL("test", test.DefaultProject, "nine-es34")
-	apiClient := test.SetupClient(t)
+	mysql := testutil.MySQL("test", testutil.DefaultProject, "nine-es34")
+	apiClient := testutil.SetupClient(t)
 
 	ctx := t.Context()
 	if err := apiClient.Create(ctx, mysql); err != nil {

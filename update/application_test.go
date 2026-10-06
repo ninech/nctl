@@ -13,7 +13,7 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/gitinfo"
 	"github.com/ninech/nctl/internal/application"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,19 +26,19 @@ func TestApplication(t *testing.T) {
 
 	initialSize := apps.ApplicationSize("micro")
 
-	dummyRSAKey, err := test.GenerateRSAPrivateKey()
+	dummyRSAKey, err := testutil.GenerateRSAPrivateKey()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	gitInfoService := test.NewGitInformationService()
+	gitInfoService := testutil.NewGitInformationService()
 	gitInfoService.Start()
 	defer gitInfoService.Close()
 
 	existingApp := &apps.Application{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "some-name",
-			Namespace: test.DefaultProject,
+			Namespace: testutil.DefaultProject,
 		},
 		Spec: apps.ApplicationSpec{
 			ForProvider: apps.ApplicationParameters{
@@ -78,8 +78,8 @@ func TestApplication(t *testing.T) {
 		cmd                           applicationCmd
 		checkApp                      func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application)
 		checkSecret                   func(t *testing.T, cmd applicationCmd, authSecret *corev1.Secret)
-		verifyRequest                 func(t *testing.T, p test.GitInfoServiceParsed)
-		gitInformationServiceResponse test.GitInformationServiceResponse
+		verifyRequest                 func(t *testing.T, p testutil.GitInfoServiceParsed)
+		gitInformationServiceResponse testutil.GitInformationServiceResponse
 		errorExpected                 bool
 	}{
 		"change port": {
@@ -337,7 +337,7 @@ func TestApplication(t *testing.T) {
 					Password: new("new-pass"),
 				},
 			},
-			gitInformationServiceResponse: test.GitInformationServiceResponse{
+			gitInformationServiceResponse: testutil.GitInformationServiceResponse{
 				Code: 200,
 				Content: apps.GitExploreResponse{
 					RepositoryInfo: &apps.RepositoryInfo{
@@ -370,7 +370,7 @@ func TestApplication(t *testing.T) {
 					SSHPrivateKey: &dummyRSAKey,
 				},
 			},
-			gitInformationServiceResponse: test.GitInformationServiceResponse{
+			gitInformationServiceResponse: testutil.GitInformationServiceResponse{
 				Code: 200,
 				Content: apps.GitExploreResponse{
 					RepositoryInfo: &apps.RepositoryInfo{
@@ -401,7 +401,7 @@ func TestApplication(t *testing.T) {
 					Password: new("new-pass"),
 				},
 			},
-			gitInformationServiceResponse: test.GitInformationServiceResponse{
+			gitInformationServiceResponse: testutil.GitInformationServiceResponse{
 				Code: 200,
 				Content: apps.GitExploreResponse{
 					RepositoryInfo: &apps.RepositoryInfo{
@@ -434,7 +434,7 @@ func TestApplication(t *testing.T) {
 					URL: new("https://newgit.example.org"),
 				},
 			},
-			gitInformationServiceResponse: test.GitInformationServiceResponse{
+			gitInformationServiceResponse: testutil.GitInformationServiceResponse{
 				Code: 200,
 				Content: apps.GitExploreResponse{
 					RepositoryInfo: &apps.RepositoryInfo{
@@ -471,7 +471,7 @@ func TestApplication(t *testing.T) {
 				},
 				DeployJob: &deployJob{Enabled: new(false)},
 			},
-			gitInformationServiceResponse: test.GitInformationServiceResponse{
+			gitInformationServiceResponse: testutil.GitInformationServiceResponse{
 				Code: 200,
 				Content: apps.GitExploreResponse{
 					RepositoryInfo: &apps.RepositoryInfo{
@@ -615,7 +615,7 @@ func TestApplication(t *testing.T) {
 				},
 				SkipRepoAccessCheck: true,
 			},
-			gitInformationServiceResponse: test.GitInformationServiceResponse{
+			gitInformationServiceResponse: testutil.GitInformationServiceResponse{
 				Code: 200,
 				Content: apps.GitExploreResponse{
 					Error: "repository can not be accessed",
@@ -636,7 +636,7 @@ func TestApplication(t *testing.T) {
 					URL: new("https://newgit.example.org"),
 				},
 			},
-			gitInformationServiceResponse: test.GitInformationServiceResponse{
+			gitInformationServiceResponse: testutil.GitInformationServiceResponse{
 				Code: 200,
 				Content: apps.GitExploreResponse{
 					Error: "repository can not be accessed",
@@ -655,7 +655,7 @@ func TestApplication(t *testing.T) {
 					Revision: new("not-existent"),
 				},
 			},
-			gitInformationServiceResponse: test.GitInformationServiceResponse{
+			gitInformationServiceResponse: testutil.GitInformationServiceResponse{
 				Code: 200,
 				Content: apps.GitExploreResponse{
 					RepositoryInfo: &apps.RepositoryInfo{
@@ -764,7 +764,7 @@ func TestApplication(t *testing.T) {
 				},
 			},
 			gitAuth: &gitinfo.Auth{},
-			gitInformationServiceResponse: test.GitInformationServiceResponse{
+			gitInformationServiceResponse: testutil.GitInformationServiceResponse{
 				Code: 200,
 				Content: apps.GitExploreResponse{
 					RepositoryInfo: &apps.RepositoryInfo{
@@ -850,7 +850,7 @@ func TestApplication(t *testing.T) {
 					Revision: new("v1.2.3"),
 				},
 			},
-			gitInformationServiceResponse: test.GitInformationServiceResponse{
+			gitInformationServiceResponse: testutil.GitInformationServiceResponse{
 				Code: 200,
 				Content: apps.GitExploreResponse{
 					RepositoryInfo: &apps.RepositoryInfo{
@@ -867,7 +867,7 @@ func TestApplication(t *testing.T) {
 				is := require.New(t)
 				is.Equal("v1.2.3", updated.Spec.ForProvider.Git.Revision)
 			},
-			verifyRequest: func(t *testing.T, p test.GitInfoServiceParsed) {
+			verifyRequest: func(t *testing.T, p testutil.GitInfoServiceParsed) {
 				is := require.New(t)
 				is.NotNil(p.Request.Auth, "existing SSH key should have been sent to the git info service")
 				is.NotEmpty(p.Request.Auth.PrivateKey)
@@ -877,7 +877,7 @@ func TestApplication(t *testing.T) {
 			orig: &apps.Application{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "some-name",
-					Namespace: test.DefaultProject,
+					Namespace: testutil.DefaultProject,
 				},
 				Spec: apps.ApplicationSpec{
 					ForProvider: apps.ApplicationParameters{
@@ -889,7 +889,7 @@ func TestApplication(t *testing.T) {
 							{
 								Name: "cache",
 								Target: meta.TypedReference{
-									Reference: meta.Reference{Name: "my-kvs", Namespace: test.DefaultProject},
+									Reference: meta.Reference{Name: "my-kvs", Namespace: testutil.DefaultProject},
 									GroupKind: metav1.GroupKind{Group: storage.Group, Kind: storage.KeyValueStoreKind},
 								},
 							},
@@ -925,8 +925,8 @@ func TestApplication(t *testing.T) {
 				tc.gitAuth.ApplyToSecret(secret)
 				objects = append(objects, secret)
 			}
-			apiClient := test.SetupClient(t,
-				test.WithObjects(objects...),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithObjects(objects...),
 			)
 
 			if err := tc.cmd.Run(t.Context(), apiClient); err != nil {

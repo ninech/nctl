@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -21,7 +21,7 @@ func TestBuild(t *testing.T) {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
-			Namespace: test.DefaultProject,
+			Namespace: testutil.DefaultProject,
 		},
 		Spec: apps.BuildSpec{},
 	}
@@ -31,9 +31,9 @@ func TestBuild(t *testing.T) {
 	buf := &bytes.Buffer{}
 	get := NewTestCmd(buf, full)
 
-	apiClient := test.SetupClient(t,
-		test.WithNameIndexFor(&apps.Build{}),
-		test.WithObjects(&build, &build2),
+	apiClient := testutil.SetupClient(t,
+		testutil.WithNameIndexFor(&apps.Build{}),
+		testutil.WithObjects(&build, &build2),
 	)
 
 	cmd := buildCmd{}
@@ -41,7 +41,7 @@ func TestBuild(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	is.Equal(3, test.CountLines(buf.String()))
+	is.Equal(3, testutil.CountLines(buf.String()))
 	buf.Reset()
 
 	cmd.Name = build.Name
@@ -49,7 +49,7 @@ func TestBuild(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	is.Equal(2, test.CountLines(buf.String()))
+	is.Equal(2, testutil.CountLines(buf.String()))
 	buf.Reset()
 
 	get.Format = noHeader
@@ -57,5 +57,5 @@ func TestBuild(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	is.Equal(1, test.CountLines(buf.String()))
+	is.Equal(1, testutil.CountLines(buf.String()))
 }

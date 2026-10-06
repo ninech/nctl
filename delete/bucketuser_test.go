@@ -10,7 +10,7 @@ import (
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -28,8 +28,8 @@ func TestBucketUser(t *testing.T) {
 		},
 	}
 
-	bu := bucketUser("test", test.DefaultProject, "nine-es34")
-	apiClient := test.SetupClient(t, test.WithObjects(bu))
+	bu := bucketUser("test", testutil.DefaultProject, "nine-es34")
+	apiClient := testutil.SetupClient(t, testutil.WithObjects(bu))
 
 	ctx := t.Context()
 	if err := apiClient.Get(ctx, api.ObjectName(bu), bu); err != nil {

@@ -11,7 +11,7 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/gitinfo"
 	"github.com/ninech/nctl/internal/format"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -154,10 +154,10 @@ func TestApplication(t *testing.T) {
 				},
 			}
 
-			apiClient := test.SetupClient(t,
-				test.WithDefaultProject(project),
-				test.WithProjectsFromResources(testCase.testObjects.clientObjects()...),
-				test.WithObjects(testCase.testObjects.clientObjects()...),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithDefaultProject(project),
+				testutil.WithProjectsFromResources(testCase.testObjects.clientObjects()...),
+				testutil.WithObjects(testCase.testObjects.clientObjects()...),
 			)
 
 			ctx := t.Context()

@@ -8,7 +8,7 @@ import (
 
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
@@ -25,9 +25,9 @@ func TestOpenSearch(t *testing.T) {
 		},
 	}
 
-	opensearch := test.OpenSearch("test", test.DefaultProject, "nine-es34")
+	opensearch := testutil.OpenSearch("test", testutil.DefaultProject, "nine-es34")
 
-	apiClient := test.SetupClient(t)
+	apiClient := testutil.SetupClient(t)
 
 	ctx := t.Context()
 	if err := apiClient.Create(ctx, opensearch); err != nil {

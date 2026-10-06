@@ -8,7 +8,7 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 )
 
 func TestPostgres(t *testing.T) {
@@ -93,9 +93,9 @@ func TestPostgres(t *testing.T) {
 
 			tt.update.Name = "test-" + t.Name()
 
-			apiClient := test.SetupClient(t)
+			apiClient := testutil.SetupClient(t)
 
-			created := test.Postgres(tt.update.Name, apiClient.Project, "nine-es34")
+			created := testutil.Postgres(tt.update.Name, apiClient.Project, "nine-es34")
 			created.Spec.ForProvider = tt.create
 			if err := apiClient.Create(t.Context(), created); err != nil {
 				t.Fatalf("postgres create error, got: %s", err)
