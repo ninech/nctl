@@ -1,4 +1,4 @@
-package test
+package testutil
 
 import (
 	management "github.com/ninech/apis/management/v1alpha1"

@@ -10,14 +10,14 @@ import (
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestBucketUser(t *testing.T) {
 	t.Parallel()
 
-	apiClient := test.SetupClient(t)
+	apiClient := testutil.SetupClient(t)
 
 	created := bucketUser("user", apiClient.Project, "nine-es34")
 	if err := apiClient.Create(t.Context(), created); err != nil {

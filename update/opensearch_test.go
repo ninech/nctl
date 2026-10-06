@@ -8,7 +8,7 @@ import (
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/flag"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -103,9 +103,9 @@ func TestOpenSearch(t *testing.T) {
 
 			tt.update.Name = "test-" + t.Name()
 
-			apiClient := test.SetupClient(t)
+			apiClient := testutil.SetupClient(t)
 
-			created := test.OpenSearch(tt.update.Name, apiClient.Project, meta.LocationNineES34)
+			created := testutil.OpenSearch(tt.update.Name, apiClient.Project, meta.LocationNineES34)
 			created.Spec.ForProvider = tt.create
 			if err := apiClient.Create(t.Context(), created); err != nil {
 				t.Fatalf("opensearch create error, got: %s", err)

@@ -9,7 +9,7 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -26,21 +26,21 @@ func TestKVSCmd(t *testing.T) {
 	cidr := []meta.IPv4CIDR{"203.0.113.5/32"}
 	pubNet := true
 
-	ready := test.KeyValueStore(kvsName, test.DefaultProject, "nine-es34")
+	ready := testutil.KeyValueStore(kvsName, testutil.DefaultProject, "nine-es34")
 	ready.Status.AtProvider.FQDN = kvsFQDN
 	ready.Spec.ForProvider.AllowedCIDRs = []meta.IPv4CIDR{"10.0.0.1/32"}
 	ready.Spec.ForProvider.PublicNetworkingEnabled = &pubNet
 
 	pubNetFalse := false
-	pubNetDisabled := test.KeyValueStore("no-public", test.DefaultProject, "nine-es34")
+	pubNetDisabled := testutil.KeyValueStore("no-public", testutil.DefaultProject, "nine-es34")
 	pubNetDisabled.Status.AtProvider.FQDN = "no-public.example.com"
 	pubNetDisabled.Spec.ForProvider.PublicNetworkingEnabled = &pubNetFalse
 	pubNetDisabled.Spec.ForProvider.AllowedCIDRs = []meta.IPv4CIDR{}
 
-	notReady := test.KeyValueStore("notready", test.DefaultProject, "nine-es34")
+	notReady := testutil.KeyValueStore("notready", testutil.DefaultProject, "nine-es34")
 
 	// KVS secret: single key with auth token as value.
-	secret := testSecret(kvsName, test.DefaultProject, "token", kvsToken)
+	secret := testSecret(kvsName, testutil.DefaultProject, "token", kvsToken)
 
 	_, notFoundCmd := testDatabaseCmd("doesnotexist", &cidr)
 	_, notReadyCmd := testDatabaseCmd("notready", &cidr)
@@ -110,9 +110,9 @@ func TestKVSCmd(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			updateCalled := false
-			apiClient := test.SetupClient(t,
-				test.WithObjects(ready, notReady, pubNetDisabled, secret),
-				test.WithInterceptorFuncs(interceptor.Funcs{
+			apiClient := testutil.SetupClient(t,
+				testutil.WithObjects(ready, notReady, pubNetDisabled, secret),
+				testutil.WithInterceptorFuncs(interceptor.Funcs{
 					Update: func(ctx context.Context, c runtimeclient.WithWatch, obj runtimeclient.Object, opts ...runtimeclient.UpdateOption) error {
 						updateCalled = true
 						return c.Update(ctx, obj, opts...)

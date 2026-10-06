@@ -1,4 +1,4 @@
-package test
+package testutil
 
 import (
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
@@ -7,21 +7,21 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func OpenSearch(name, project string, location meta.LocationName) *storage.OpenSearch {
-	return &storage.OpenSearch{
+func PostgresDatabase(name, project, location string) *storage.PostgresDatabase {
+	return &storage.PostgresDatabase{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: project,
 		},
-		Spec: storage.OpenSearchSpec{
+		Spec: storage.PostgresDatabaseSpec{
 			ResourceSpec: runtimev1.ResourceSpec{
 				WriteConnectionSecretToReference: &runtimev1.SecretReference{
 					Name:      name,
 					Namespace: project,
 				},
 			},
-			ForProvider: storage.OpenSearchParameters{
-				Location: location,
+			ForProvider: storage.PostgresDatabaseParameters{
+				Location: meta.LocationName(location),
 			},
 		},
 	}

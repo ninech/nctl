@@ -10,7 +10,7 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -28,13 +28,13 @@ func TestPostgresCmd(t *testing.T) {
 
 	cidr := []meta.IPv4CIDR{"203.0.113.5/32"}
 
-	ready := test.Postgres(pgName, test.DefaultProject, location)
+	ready := testutil.Postgres(pgName, testutil.DefaultProject, location)
 	ready.Status.AtProvider.FQDN = fqdn
 	ready.Spec.ForProvider.AllowedCIDRs = []meta.IPv4CIDR{"10.0.0.1/32"}
 
-	notReady := test.Postgres("notready", test.DefaultProject, location)
+	notReady := testutil.Postgres("notready", testutil.DefaultProject, location)
 
-	secret := testSecret(pgName, test.DefaultProject, pgUser, pgPass)
+	secret := testSecret(pgName, testutil.DefaultProject, pgUser, pgPass)
 
 	_, notFoundCmd := testDatabaseCmd("doesnotexist", &cidr)
 	_, notReadyCmd := testDatabaseCmd("notready", &cidr)
@@ -120,9 +120,9 @@ func TestPostgresCmd(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			updateCalled := false
-			apiClient := test.SetupClient(t,
-				test.WithObjects(ready, notReady, secret),
-				test.WithInterceptorFuncs(interceptor.Funcs{
+			apiClient := testutil.SetupClient(t,
+				testutil.WithObjects(ready, notReady, secret),
+				testutil.WithInterceptorFuncs(interceptor.Funcs{
 					Update: func(ctx context.Context, c runtimeclient.WithWatch, obj runtimeclient.Object, opts ...runtimeclient.UpdateOption) error {
 						updateCalled = true
 						return c.Update(ctx, obj, opts...)

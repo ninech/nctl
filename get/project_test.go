@@ -10,7 +10,7 @@ import (
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api/config"
 	"github.com/ninech/nctl/internal/cli"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -30,7 +30,7 @@ func TestProject(t *testing.T) {
 		exitCode      int
 	}{
 		"projects exist, full format": {
-			projects:     test.Projects(organization, "dev", "staging", "prod"),
+			projects:     testutil.Projects(organization, "dev", "staging", "prod"),
 			displayNames: []string{"Development", "", "Production"},
 			outputFormat: full,
 			output: `PROJECT  DISPLAY NAME
@@ -40,7 +40,7 @@ staging  <none>
 `,
 		},
 		"projects exist, no header format": {
-			projects:     test.Projects(organization, "dev", "staging", "prod"),
+			projects:     testutil.Projects(organization, "dev", "staging", "prod"),
 			outputFormat: noHeader,
 			output: `dev      <none>
 prod     <none>
@@ -48,7 +48,7 @@ staging  <none>
 `,
 		},
 		"projects exist and allProjects is set": {
-			projects:     test.Projects(organization, "dev", "staging", "prod"),
+			projects:     testutil.Projects(organization, "dev", "staging", "prod"),
 			outputFormat: full,
 			allProjects:  true,
 			output: `PROJECT  DISPLAY NAME
@@ -70,7 +70,7 @@ staging  <none>
 			exitCode:      cli.ExitOK,
 		},
 		"specific project requested": {
-			projects:     test.Projects(organization, "dev", "staging"),
+			projects:     testutil.Projects(organization, "dev", "staging"),
 			name:         "dev",
 			outputFormat: full,
 			output: `PROJECT  DISPLAY NAME
@@ -78,27 +78,27 @@ dev      <none>
 `,
 		},
 		"specific project requested, but does not exist": {
-			projects:      test.Projects(organization, "staging"),
+			projects:      testutil.Projects(organization, "staging"),
 			name:          "dev",
 			outputFormat:  full,
 			errorContains: []string{`project "dev" was not found`},
 			exitCode:      cli.ExitUsageError,
 		},
 		"specific project requested, but does not exist, json output": {
-			projects:      test.Projects(organization, "staging"),
+			projects:      testutil.Projects(organization, "staging"),
 			name:          "dev",
 			outputFormat:  jsonOut,
 			errorContains: []string{`project "dev" was not found`},
 			exitCode:      cli.ExitUsageError,
 		},
 		"specific project requested, yaml output": {
-			projects:     test.Projects(organization, "dev", "staging"),
+			projects:     testutil.Projects(organization, "dev", "staging"),
 			name:         "dev",
 			outputFormat: yamlOut,
 			output:       "metadata:\n  name: dev\n  namespace: evilcorp\nspec:\n  isNonProduction: false\nstatus:\n  atProvider: {}\n",
 		},
 		"specific project requested, json output": {
-			projects:     test.Projects(organization, "dev", "staging"),
+			projects:     testutil.Projects(organization, "dev", "staging"),
 			name:         "dev",
 			outputFormat: jsonOut,
 			output: `{
@@ -116,7 +116,7 @@ dev      <none>
 `,
 		},
 		"no specific project requested, json output": {
-			projects:     test.Projects(organization, "dev", "staging"),
+			projects:     testutil.Projects(organization, "dev", "staging"),
 			outputFormat: jsonOut,
 			output: `[
   {
@@ -163,11 +163,11 @@ dev      <none>
 				}
 				proj.(*management.Project).Spec.DisplayName = testCase.displayNames[i]
 			}
-			apiClient := test.SetupClient(t,
-				test.WithObjects(projects...),
-				test.WithKubeconfig(),
-				test.WithNameIndexFor(&management.Project{}),
-				test.WithOrganization(organization),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithObjects(projects...),
+				testutil.WithKubeconfig(),
+				testutil.WithNameIndexFor(&management.Project{}),
+				testutil.WithOrganization(organization),
 			)
 
 			cmd := projectCmd{
@@ -203,7 +203,7 @@ func TestProjectsConfigErrors(t *testing.T) {
 	t.Parallel()
 
 	is := require.New(t)
-	apiClient := test.SetupClient(t)
+	apiClient := testutil.SetupClient(t)
 	cmd := projectCmd{
 		ResourceCmd: ResourceCmd{
 			Name: "testproject",
@@ -217,7 +217,7 @@ func TestProjectsConfigErrors(t *testing.T) {
 
 	// we create a kubeconfig which does not contain a nctl config
 	// extension
-	kubeconfig, err := test.CreateTestKubeconfig(apiClient, "")
+	kubeconfig, err := testutil.CreateTestKubeconfig(apiClient, "")
 	is.NoError(err)
 	defer os.Remove(kubeconfig)
 	is.ErrorIs(cmd.Run(t.Context(), apiClient, get), config.ErrExtensionNotFound)

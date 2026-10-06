@@ -8,7 +8,7 @@ import (
 
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
@@ -25,9 +25,9 @@ func TestStaticEgress(t *testing.T) {
 		},
 	}
 
-	staticEgress := test.StaticEgress("test", test.DefaultProject, "my-app")
+	staticEgress := testutil.StaticEgress("test", testutil.DefaultProject, "my-app")
 
-	apiClient := test.SetupClient(t)
+	apiClient := testutil.SetupClient(t)
 
 	ctx := t.Context()
 	if err := apiClient.Create(ctx, staticEgress); err != nil {

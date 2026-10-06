@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 )
 
 func TestVCluster(t *testing.T) {
@@ -19,8 +19,8 @@ func TestVCluster(t *testing.T) {
 		},
 	}
 
-	cluster := cmd.newCluster(test.DefaultProject)
-	apiClient := test.SetupClient(t)
+	cluster := cmd.newCluster(testutil.DefaultProject)
+	apiClient := testutil.SetupClient(t)
 
 	if err := cmd.Run(t.Context(), apiClient); err != nil {
 		t.Fatal(err)

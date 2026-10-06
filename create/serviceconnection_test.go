@@ -13,7 +13,7 @@ import (
 	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/flag"
 	"github.com/ninech/nctl/internal/serviceconnection"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
@@ -229,11 +229,11 @@ func TestServiceConnection(t *testing.T) {
 			tt.create.Wait = false
 			tt.create.WaitTimeout = time.Second
 
-			opts := []test.ClientSetupOption{}
+			opts := []testutil.ClientSetupOption{}
 			if tt.interceptorFuncs != nil {
-				opts = append(opts, test.WithInterceptorFuncs(*tt.interceptorFuncs))
+				opts = append(opts, testutil.WithInterceptorFuncs(*tt.interceptorFuncs))
 			}
-			apiClient := test.SetupClient(t, opts...)
+			apiClient := testutil.SetupClient(t, opts...)
 
 			if err := tt.create.Source.UnmarshalText([]byte(tt.source)); err != nil {
 				if tt.wantErr {

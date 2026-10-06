@@ -8,7 +8,7 @@ import (
 
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -45,7 +45,7 @@ func TestBucketGet(t *testing.T) {
 		{
 			name: "list single",
 			instances: []bucketInstance{
-				{name: "b1", project: test.DefaultProject, location: meta.LocationNineES34},
+				{name: "b1", project: testutil.DefaultProject, location: meta.LocationNineES34},
 			},
 			getCmd:      bucketCmd{},
 			out:         full,
@@ -55,8 +55,8 @@ func TestBucketGet(t *testing.T) {
 		{
 			name: "list multiple (noHeader)",
 			instances: []bucketInstance{
-				{name: "a", project: test.DefaultProject, location: meta.LocationNineES34},
-				{name: "b", project: test.DefaultProject, location: meta.LocationNineCZ42},
+				{name: "a", project: testutil.DefaultProject, location: meta.LocationNineES34},
+				{name: "b", project: testutil.DefaultProject, location: meta.LocationNineCZ42},
 			},
 			getCmd:      bucketCmd{},
 			out:         noHeader,
@@ -66,7 +66,7 @@ func TestBucketGet(t *testing.T) {
 		{
 			name: "permissions empty",
 			instances: []bucketInstance{
-				{name: "b1", project: test.DefaultProject, location: meta.LocationNineES34},
+				{name: "b1", project: testutil.DefaultProject, location: meta.LocationNineES34},
 			},
 			getCmd: bucketCmd{
 				ResourceCmd:      ResourceCmd{Name: "b1"},
@@ -81,7 +81,7 @@ func TestBucketGet(t *testing.T) {
 			instances: []bucketInstance{
 				{
 					name:     "b1",
-					project:  test.DefaultProject,
+					project:  testutil.DefaultProject,
 					location: meta.LocationNineES34,
 					spec: func(s *storage.BucketSpec) {
 						s.ForProvider.Permissions = []*storage.BucketPermission{
@@ -102,7 +102,7 @@ func TestBucketGet(t *testing.T) {
 		{
 			name: "lifecycle empty",
 			instances: []bucketInstance{
-				{name: "b1", project: test.DefaultProject, location: meta.LocationNineES34},
+				{name: "b1", project: testutil.DefaultProject, location: meta.LocationNineES34},
 			},
 			getCmd: bucketCmd{
 				ResourceCmd:            ResourceCmd{Name: "b1"},
@@ -117,7 +117,7 @@ func TestBucketGet(t *testing.T) {
 			instances: []bucketInstance{
 				{
 					name:     "b1",
-					project:  test.DefaultProject,
+					project:  testutil.DefaultProject,
 					location: meta.LocationNineES34,
 					spec: func(s *storage.BucketSpec) {
 						s.ForProvider.LifecyclePolicies = []*storage.BucketLifecyclePolicy{
@@ -137,7 +137,7 @@ func TestBucketGet(t *testing.T) {
 		{
 			name: "cors nil",
 			instances: []bucketInstance{
-				{name: "b1", project: test.DefaultProject, location: meta.LocationNineES34},
+				{name: "b1", project: testutil.DefaultProject, location: meta.LocationNineES34},
 			},
 			getCmd: bucketCmd{
 				ResourceCmd: ResourceCmd{Name: "b1"},
@@ -152,7 +152,7 @@ func TestBucketGet(t *testing.T) {
 			instances: []bucketInstance{
 				{
 					name:     "b1",
-					project:  test.DefaultProject,
+					project:  testutil.DefaultProject,
 					location: meta.LocationNineES34,
 					spec: func(s *storage.BucketSpec) {
 						s.ForProvider.CORS = &storage.CORSConfig{
@@ -175,7 +175,7 @@ func TestBucketGet(t *testing.T) {
 		{
 			name: "custom hostnames none",
 			instances: []bucketInstance{
-				{name: "b1", project: test.DefaultProject, location: meta.LocationNineES34},
+				{name: "b1", project: testutil.DefaultProject, location: meta.LocationNineES34},
 			},
 			getCmd: bucketCmd{
 				ResourceCmd:          ResourceCmd{Name: "b1"},
@@ -190,7 +190,7 @@ func TestBucketGet(t *testing.T) {
 			instances: []bucketInstance{
 				{
 					name:     "b1",
-					project:  test.DefaultProject,
+					project:  testutil.DefaultProject,
 					location: meta.LocationNineES34,
 					spec: func(s *storage.BucketSpec) {
 						s.ForProvider.CustomHostnames = []string{"cdn.example.com", "img.example.com", "pending.example.com"}
@@ -244,11 +244,11 @@ func TestBucketGet(t *testing.T) {
 				objs = append(objs, &b)
 			}
 
-			apiClient := test.SetupClient(t,
-				test.WithProjectsFromResources(objs...),
-				test.WithObjects(objs...),
-				test.WithNameIndexFor(&storage.Bucket{}),
-				test.WithKubeconfig(),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithProjectsFromResources(objs...),
+				testutil.WithObjects(objs...),
+				testutil.WithNameIndexFor(&storage.Bucket{}),
+				testutil.WithKubeconfig(),
 			)
 
 			buf := &bytes.Buffer{}
@@ -271,7 +271,7 @@ func TestBucketGet(t *testing.T) {
 				is.Contains(outStr, s, "missing expected substring %q in output:\n%s", s, outStr)
 			}
 			if tt.wantLines > 0 {
-				is.Equal(tt.wantLines, test.CountLines(outStr), "unexpected number of lines:\n%s", outStr)
+				is.Equal(tt.wantLines, testutil.CountLines(outStr), "unexpected number of lines:\n%s", outStr)
 			}
 		})
 	}

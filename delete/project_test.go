@@ -11,7 +11,7 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
 	"github.com/ninech/nctl/internal/format"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
@@ -50,10 +50,10 @@ func TestProject(t *testing.T) {
 				},
 			}
 
-			apiClient := test.SetupClient(t,
-				test.WithOrganization(organization),
-				test.WithProjects(testCase.projects...),
-				test.WithKubeconfig(),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithOrganization(organization),
+				testutil.WithProjects(testCase.projects...),
+				testutil.WithKubeconfig(),
 			)
 
 			ctx := t.Context()
@@ -94,7 +94,7 @@ func TestProject(t *testing.T) {
 func TestProjectsConfigErrors(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
-	apiClient := test.SetupClient(t)
+	apiClient := testutil.SetupClient(t)
 	cmd := projectCmd{
 		ResourceCmd: ResourceCmd{
 			Force: true,
@@ -109,7 +109,7 @@ func TestProjectsConfigErrors(t *testing.T) {
 
 	// we create a kubeconfig which does not contain a nctl config
 	// extension
-	kubeconfig, err := test.CreateTestKubeconfig(apiClient, "")
+	kubeconfig, err := testutil.CreateTestKubeconfig(apiClient, "")
 	if err != nil {
 		t.Fatalf("failed to create test kubeconfig: %v", err)
 	}

@@ -5,14 +5,14 @@ import (
 
 	iam "github.com/ninech/apis/iam/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAPIServiceAccount(t *testing.T) {
 	t.Parallel()
 
-	apiClient := test.SetupClient(t)
+	apiClient := testutil.SetupClient(t)
 
 	for name, tc := range map[string]struct {
 		cmd                    apiServiceAccountCmd

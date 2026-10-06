@@ -9,7 +9,7 @@ import (
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"k8s.io/utils/ptr"
 )
 
@@ -49,9 +49,9 @@ func TestMySQLDatabase(t *testing.T) {
 			tt.update.Writer = format.NewWriter(out)
 			tt.update.Name = "test-" + t.Name()
 
-			apiClient := test.SetupClient(t)
+			apiClient := testutil.SetupClient(t)
 
-			created := test.MySQLDatabase(tt.update.Name, apiClient.Project, "nine-es34")
+			created := testutil.MySQLDatabase(tt.update.Name, apiClient.Project, "nine-es34")
 			created.Spec.ForProvider = tt.create
 			if err := apiClient.Create(t.Context(), created); err != nil {
 				t.Fatalf("mysqldatabase create error, got: %s", err)

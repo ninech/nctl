@@ -8,7 +8,7 @@ import (
 	iam "github.com/ninech/apis/iam/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -18,12 +18,12 @@ func TestDeleter(t *testing.T) {
 	asa := &iam.APIServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
-			Namespace: test.DefaultProject,
+			Namespace: testutil.DefaultProject,
 		},
 		Spec: iam.APIServiceAccountSpec{},
 	}
-	apiClient := test.SetupClient(t,
-		test.WithObjects(asa),
+	apiClient := testutil.SetupClient(t,
+		testutil.WithObjects(asa),
 	)
 	out := &bytes.Buffer{}
 	cmd := &apiServiceAccountCmd{ResourceCmd{Writer: format.NewWriter(out)}}

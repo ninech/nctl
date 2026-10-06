@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/ninech/nctl/internal/format"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -14,8 +14,8 @@ func TestWhoAmICmd_Run(t *testing.T) {
 
 	expected := whoAmIOutput{
 		Account:      "jrocket@example.com",
-		Organization: test.DefaultProject,
-		Project:      test.DefaultProject,
+		Organization: testutil.DefaultProject,
+		Project:      testutil.DefaultProject,
 		Orgs:         []string{"test", "bla"},
 	}
 
@@ -54,7 +54,7 @@ func TestWhoAmICmd_Run(t *testing.T) {
 			t.Parallel()
 
 			buf := &bytes.Buffer{}
-			apiClient := test.SetupClient(t, test.WithKubeconfig())
+			apiClient := testutil.SetupClient(t, testutil.WithKubeconfig())
 			cmd := &WhoAmICmd{
 				Writer:    format.NewWriter(buf),
 				IssuerURL: "https://auth.nine.ch/auth/realms/pub",

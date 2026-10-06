@@ -10,7 +10,7 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -27,19 +27,19 @@ func TestMySQLCmd(t *testing.T) {
 
 	cidr := []meta.IPv4CIDR{"203.0.113.5/32"}
 
-	ready := test.MySQL(myName, test.DefaultProject, "nine-es34")
+	ready := testutil.MySQL(myName, testutil.DefaultProject, "nine-es34")
 	ready.Status.AtProvider.FQDN = myFQDN
 	ready.Spec.ForProvider.AllowedCIDRs = []meta.IPv4CIDR{"10.0.0.1/32"}
 
-	readyWithCA := test.MySQL(myName+"-ca", test.DefaultProject, "nine-es34")
+	readyWithCA := testutil.MySQL(myName+"-ca", testutil.DefaultProject, "nine-es34")
 	readyWithCA.Status.AtProvider.FQDN = myFQDN
 	readyWithCA.Status.AtProvider.CACert = base64.StdEncoding.EncodeToString([]byte("fake-ca-cert"))
 	readyWithCA.Spec.ForProvider.AllowedCIDRs = []meta.IPv4CIDR{"10.0.0.1/32"}
 
-	notReady := test.MySQL("notready", test.DefaultProject, "nine-es34")
+	notReady := testutil.MySQL("notready", testutil.DefaultProject, "nine-es34")
 
-	secret := testSecret(myName, test.DefaultProject, myUser, myPass)
-	secretWithCA := testSecret(myName+"-ca", test.DefaultProject, myUser, myPass)
+	secret := testSecret(myName, testutil.DefaultProject, myUser, myPass)
+	secretWithCA := testSecret(myName+"-ca", testutil.DefaultProject, myUser, myPass)
 
 	_, notFoundCmd := testDatabaseCmd("doesnotexist", &cidr)
 	_, notReadyCmd := testDatabaseCmd("notready", &cidr)
@@ -140,9 +140,9 @@ func TestMySQLCmd(t *testing.T) {
 				objs = tc.objects
 			}
 			updateCalled := false
-			apiClient := test.SetupClient(t,
-				test.WithObjects(objs...),
-				test.WithInterceptorFuncs(interceptor.Funcs{
+			apiClient := testutil.SetupClient(t,
+				testutil.WithObjects(objs...),
+				testutil.WithInterceptorFuncs(interceptor.Funcs{
 					Update: func(ctx context.Context, c runtimeclient.WithWatch, obj runtimeclient.Object, opts ...runtimeclient.UpdateOption) error {
 						updateCalled = true
 						return c.Update(ctx, obj, opts...)

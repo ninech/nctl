@@ -10,7 +10,7 @@ import (
 	"github.com/ninech/nctl/internal/bucket"
 
 	meta "github.com/ninech/apis/meta/v1alpha1"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -764,8 +764,8 @@ func TestBucket(t *testing.T) {
 				t,
 				name,
 				tc.flags,
-				test.WithDefaultProject(project),
-				test.WithObjects(orig),
+				testutil.WithDefaultProject(project),
+				testutil.WithObjects(orig),
 			)
 			if tc.wantErr {
 				is.Error(err)
@@ -806,10 +806,10 @@ func TestBucketNoFlagsDoesNotUpdate(t *testing.T) {
 		},
 	}
 
-	apiClient := test.SetupClient(
+	apiClient := testutil.SetupClient(
 		t,
-		test.WithDefaultProject(project),
-		test.WithObjects(orig),
+		testutil.WithDefaultProject(project),
+		testutil.WithObjects(orig),
 	)
 
 	cmd := bucketCmd{ResourceCmd: ResourceCmd{Name: name}}
@@ -829,7 +829,7 @@ func runBucketUpdateNamedWithFlags(
 	t *testing.T,
 	name string,
 	flags []string,
-	clientOpts ...test.ClientSetupOption,
+	clientOpts ...testutil.ClientSetupOption,
 ) (*api.Client, string, error) {
 	t.Helper()
 
@@ -840,7 +840,7 @@ func runBucketUpdateNamedWithFlags(
 	vars := bucket.KongVars()
 	maps.Copy(vars, BucketKongVars())
 
-	return test.RunNamedWithFlags(
+	return testutil.RunNamedWithFlags(
 		t,
 		&cli,
 		vars,

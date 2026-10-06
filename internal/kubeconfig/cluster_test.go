@@ -8,7 +8,7 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
 	"github.com/ninech/nctl/internal/format"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
@@ -35,9 +35,9 @@ func TestLoginCluster(t *testing.T) {
 	}
 	// the test kubeconfig already contains one entry which has to survive
 	// the merge
-	apiClient := test.SetupClient(t,
-		test.WithKubeconfig(),
-		test.WithObjects(cluster),
+	apiClient := testutil.SetupClient(t,
+		testutil.WithKubeconfig(),
+		testutil.WithObjects(cluster),
 	)
 
 	out := &bytes.Buffer{}
@@ -67,9 +67,9 @@ func TestLoginCluster(t *testing.T) {
 func TestLoginClusterNotFound(t *testing.T) {
 	t.Parallel()
 
-	apiClient := test.SetupClient(t, test.WithKubeconfig())
+	apiClient := testutil.SetupClient(t, testutil.WithKubeconfig())
 	err := LoginCluster(t.Context(), apiClient, format.Writer{}, api.ObjectName(&infrastructure.KubernetesCluster{
-		ObjectMeta: metav1.ObjectMeta{Name: "missing", Namespace: test.DefaultProject},
+		ObjectMeta: metav1.ObjectMeta{Name: "missing", Namespace: testutil.DefaultProject},
 	}), false)
 	require.Error(t, err)
 }
