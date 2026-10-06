@@ -11,7 +11,7 @@ import (
 	management "github.com/ninech/apis/management/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,7 +35,7 @@ func TestAllContent(t *testing.T) {
 		errorContains        []string
 	}{
 		"all resources from one project, full format": {
-			projects:     test.Projects(organization, "dev", "staging", "prod"),
+			projects:     testutil.Projects(organization, "dev", "staging", "prod"),
 			objects:      []client.Object{testApplication("banana", "dev"), testRelease("pear", "dev")},
 			outputFormat: full,
 			projectName:  "dev",
@@ -45,7 +45,7 @@ dev      pear    Release      apps.nine.ch  <none>
 `,
 		},
 		"all resources from one project, no header": {
-			projects:     test.Projects(organization, "dev", "staging", "prod"),
+			projects:     testutil.Projects(organization, "dev", "staging", "prod"),
 			objects:      []client.Object{testApplication("banana", "dev"), testRelease("pear", "dev")},
 			outputFormat: noHeader,
 			projectName:  "dev",
@@ -54,14 +54,14 @@ dev  pear    Release      apps.nine.ch  <none>
 `,
 		},
 		"all resources from one project, yaml format": {
-			projects:     test.Projects(organization, "dev", "staging", "prod"),
+			projects:     testutil.Projects(organization, "dev", "staging", "prod"),
 			objects:      []client.Object{testApplication("banana", "dev"), testRelease("pear", "dev")},
 			outputFormat: yamlOut,
 			projectName:  "dev",
 			output:       "apiVersion: apps.nine.ch/v1alpha1\nkind: Application\nmetadata:\n  name: banana\n  namespace: dev\nspec:\n  forProvider:\n    buildEnv: null\n    config:\n      env: null\n      port: null\n      replicas: null\n      size: \"\"\n    dockerfileBuild:\n      enabled: false\n    git:\n      revision: \"\"\n      subPath: \"\"\n      url: \"\"\n    paused: false\nstatus:\n  atProvider:\n    defaultURLs: null\n---\napiVersion: apps.nine.ch/v1alpha1\ncreationTimestampNano: 0\nkind: Release\nmetadata:\n  name: pear\n  namespace: dev\nspec:\n  forProvider:\n    build:\n      name: \"\"\n    configuration:\n      size:\n        origin: \"\"\n        value: \"\"\n    defaultHosts: null\n    healthProbeConfiguration: null\n    image: {}\n    paused: false\nstatus:\n  atProvider:\n    owning: false\n",
 		},
 		"all resources from one project, json format": {
-			projects:     test.Projects(organization, "dev", "staging", "prod"),
+			projects:     testutil.Projects(organization, "dev", "staging", "prod"),
 			objects:      []client.Object{testApplication("banana", "dev"), testRelease("pear", "dev")},
 			outputFormat: jsonOut,
 			projectName:  "dev",
@@ -134,7 +134,7 @@ dev  pear    Release      apps.nine.ch  <none>
 `,
 		},
 		"all projects, full format": {
-			projects: test.Projects(organization, "dev", "staging", "prod"),
+			projects: testutil.Projects(organization, "dev", "staging", "prod"),
 			objects: []client.Object{
 				testApplication("banana", "dev"), testRelease("pear", "dev"),
 				testApplication("apple", "staging"), testRelease("melon", "staging"),
@@ -151,7 +151,7 @@ staging  melon   Release            apps.nine.ch            <none>
 `,
 		},
 		"all projects, no headers format": {
-			projects: test.Projects(organization, "dev", "staging", "prod"),
+			projects: testutil.Projects(organization, "dev", "staging", "prod"),
 			objects: []client.Object{
 				testApplication("banana", "dev"), testRelease("pear", "dev"),
 				testApplication("apple", "staging"), testRelease("melon", "staging"),
@@ -167,7 +167,7 @@ staging  melon   Release            apps.nine.ch            <none>
 `,
 		},
 		"empty resources of a specific project, full format": {
-			projects:      test.Projects(organization, "dev"),
+			projects:      testutil.Projects(organization, "dev"),
 			objects:       []client.Object{},
 			outputFormat:  full,
 			projectName:   "dev",
@@ -175,7 +175,7 @@ staging  melon   Release            apps.nine.ch            <none>
 			errorContains: []string{`no "Resources" found`, `Project: dev`, "get resources --all-projects"},
 		},
 		"empty resources of all projects, full format": {
-			projects:      test.Projects(organization, "dev", "staging"),
+			projects:      testutil.Projects(organization, "dev", "staging"),
 			objects:       []client.Object{},
 			outputFormat:  full,
 			allProjects:   true,
@@ -183,7 +183,7 @@ staging  melon   Release            apps.nine.ch            <none>
 			errorContains: []string{`no "Resources" found`},
 		},
 		"filter nine resources, no headers format": {
-			projects: test.Projects(organization, "dev", "staging", "prod"),
+			projects: testutil.Projects(organization, "dev", "staging", "prod"),
 			objects: []client.Object{
 				testApplication("banana", "dev"), testRelease("pear", "dev"),
 				testApplication("apple", "staging"), testRelease("melon", "staging"), testRelease("cherry", "staging"),
@@ -207,7 +207,7 @@ staging  melon   Release            apps.nine.ch            <none>
 `,
 		},
 		"include nine resources, no headers format": {
-			projects: test.Projects(organization, "dev", "staging", "prod"),
+			projects: testutil.Projects(organization, "dev", "staging", "prod"),
 			objects: []client.Object{
 				testApplication("banana", "dev"), testRelease("pear", "dev"),
 				testApplication("apple", "staging"), testRelease("melon", "staging"), testRelease("cherry", "staging"),
@@ -233,7 +233,7 @@ staging  melon   Release            apps.nine.ch            <none>
 `,
 		},
 		"only certain kind": {
-			projects: test.Projects(organization, "dev", "staging", "prod"),
+			projects: testutil.Projects(organization, "dev", "staging", "prod"),
 			objects: []client.Object{
 				testApplication("banana", "dev"), testRelease("pear", "dev"),
 				testApplication("apple", "staging"), testRelease("melon", "staging"), testRelease("cherry", "staging"),
@@ -248,7 +248,7 @@ staging  apple   Application  apps.nine.ch  <none>
 `,
 		},
 		"multiple certain kinds, no header format": {
-			projects: test.Projects(organization, "dev", "staging", "prod"),
+			projects: testutil.Projects(organization, "dev", "staging", "prod"),
 			objects: []client.Object{
 				testApplication("banana", "dev"), testRelease("pear", "dev"),
 				testApplication("apple", "staging"), testRelease("melon", "staging"), testRelease("cherry", "staging"),
@@ -266,7 +266,7 @@ staging  melon        Release            apps.nine.ch            <none>
 `,
 		},
 		"not known kind leads to an error": {
-			projects:      test.Projects(organization, "dev", "staging", "prod"),
+			projects:      testutil.Projects(organization, "dev", "staging", "prod"),
 			objects:       []client.Object{},
 			outputFormat:  noHeader,
 			allProjects:   true,
@@ -274,7 +274,7 @@ staging  melon        Release            apps.nine.ch            <none>
 			errorExpected: true,
 		},
 		"excluded list kinds are not shown": {
-			projects: test.Projects(organization, "dev"),
+			projects: testutil.Projects(organization, "dev"),
 			objects: []client.Object{
 				testApplication("banana", "dev"), testRelease("pear", "dev"),
 				testClusterData(),
@@ -309,7 +309,7 @@ dev      pear    Release      apps.nine.ch  <none>
 				WithObjects(append(testCase.projects, testCase.objects...)...).Build()
 
 			apiClient := &api.Client{WithWatch: client, Project: testCase.projectName}
-			kubeconfig, err := test.CreateTestKubeconfig(apiClient, organization)
+			kubeconfig, err := testutil.CreateTestKubeconfig(apiClient, organization)
 			is.NoError(err)
 			defer os.Remove(kubeconfig)
 

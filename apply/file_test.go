@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/ninech/nctl/internal/format"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,7 +22,7 @@ func TestFromFile(t *testing.T) {
 	t.Parallel()
 	is := require.New(t)
 
-	apiClient := test.SetupClient(t)
+	apiClient := testutil.SetupClient(t)
 	ctx := t.Context()
 
 	out := &bytes.Buffer{}

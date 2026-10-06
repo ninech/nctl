@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	observability "github.com/ninech/apis/observability/v1alpha1"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -37,16 +37,16 @@ func TestGrafana(t *testing.T) {
 		},
 		{
 			name:        "single instance in project",
-			instances:   []grafanaInstance{{name: "test", project: test.DefaultProject}},
+			instances:   []grafanaInstance{{name: "test", project: testutil.DefaultProject}},
 			wantContain: []string{"test"},
 			wantLines:   2, // header + result
 		},
 		{
 			name: "multiple instances in one project",
 			instances: []grafanaInstance{
-				{name: "test1", project: test.DefaultProject},
-				{name: "test2", project: test.DefaultProject},
-				{name: "test3", project: test.DefaultProject},
+				{name: "test1", project: testutil.DefaultProject},
+				{name: "test2", project: testutil.DefaultProject},
+				{name: "test3", project: testutil.DefaultProject},
 			},
 			wantContain: []string{"test1", "test2", "test3"},
 			wantLines:   4, // header + result
@@ -54,7 +54,7 @@ func TestGrafana(t *testing.T) {
 		{
 			name: "multiple instances in multiple projects",
 			instances: []grafanaInstance{
-				{name: "test1", project: test.DefaultProject},
+				{name: "test1", project: testutil.DefaultProject},
 				{name: "test2", project: "dev"},
 				{name: "test3", project: "testing"},
 			},
@@ -65,8 +65,8 @@ func TestGrafana(t *testing.T) {
 		{
 			name: "get by name",
 			instances: []grafanaInstance{
-				{name: "test1", project: test.DefaultProject},
-				{name: "test2", project: test.DefaultProject},
+				{name: "test1", project: testutil.DefaultProject},
+				{name: "test2", project: testutil.DefaultProject},
 			},
 			get:         grafanaCmd{ResourceCmd: ResourceCmd{Name: "test1"}},
 			wantContain: []string{"test1"},
@@ -75,7 +75,7 @@ func TestGrafana(t *testing.T) {
 		{
 			name: "admin access enabled",
 			instances: []grafanaInstance{
-				{name: "test1", project: test.DefaultProject, enableAdminAccess: true},
+				{name: "test1", project: testutil.DefaultProject, enableAdminAccess: true},
 			},
 			wantContain: []string{"test1", "ADMIN ACCESS", "true"},
 			wantLines:   2,
@@ -83,7 +83,7 @@ func TestGrafana(t *testing.T) {
 		{
 			name: "admin access disabled",
 			instances: []grafanaInstance{
-				{name: "test1", project: test.DefaultProject, enableAdminAccess: false},
+				{name: "test1", project: testutil.DefaultProject, enableAdminAccess: false},
 			},
 			wantContain: []string{"test1", "ADMIN ACCESS", "false"},
 			wantLines:   2,
@@ -91,7 +91,7 @@ func TestGrafana(t *testing.T) {
 		{
 			name: "local users login enabled",
 			instances: []grafanaInstance{
-				{name: "test1", project: test.DefaultProject, allowLocalUsers: true},
+				{name: "test1", project: testutil.DefaultProject, allowLocalUsers: true},
 			},
 			wantContain: []string{"test1", "LOCAL USERS LOGIN", "true"},
 			wantLines:   2,
@@ -99,7 +99,7 @@ func TestGrafana(t *testing.T) {
 		{
 			name: "local users login disabled",
 			instances: []grafanaInstance{
-				{name: "test1", project: test.DefaultProject, allowLocalUsers: false},
+				{name: "test1", project: testutil.DefaultProject, allowLocalUsers: false},
 			},
 			wantContain: []string{"test1", "LOCAL USERS LOGIN", "false"},
 			wantLines:   2,
@@ -111,16 +111,16 @@ func TestGrafana(t *testing.T) {
 
 			objects := []client.Object{}
 			for _, instance := range tt.instances {
-				g := test.Grafana(instance.name, instance.project)
+				g := testutil.Grafana(instance.name, instance.project)
 				g.Spec.ForProvider.EnableAdminAccess = instance.enableAdminAccess
 				g.Spec.ForProvider.AllowLocalUsers = instance.allowLocalUsers
 				objects = append(objects, g)
 			}
-			apiClient := test.SetupClient(t,
-				test.WithProjectsFromResources(objects...),
-				test.WithObjects(objects...),
-				test.WithNameIndexFor(&observability.Grafana{}),
-				test.WithKubeconfig(),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithProjectsFromResources(objects...),
+				testutil.WithObjects(objects...),
+				testutil.WithNameIndexFor(&observability.Grafana{}),
+				testutil.WithKubeconfig(),
 			)
 
 			if tt.out == "" {
@@ -147,8 +147,8 @@ func TestGrafana(t *testing.T) {
 					t.Errorf("grafanaCmd.Run() did not contain %q, out = %q", substr, buf.String())
 				}
 			}
-			if test.CountLines(buf.String()) != tt.wantLines {
-				t.Errorf("expected the output to have %d lines, but found %d", tt.wantLines, test.CountLines(buf.String()))
+			if testutil.CountLines(buf.String()) != tt.wantLines {
+				t.Errorf("expected the output to have %d lines, but found %d", tt.wantLines, testutil.CountLines(buf.String()))
 				t.Log(buf.String())
 			}
 		})

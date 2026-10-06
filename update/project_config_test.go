@@ -7,7 +7,7 @@ import (
 	"github.com/alecthomas/kong"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/internal/application"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -16,9 +16,9 @@ import (
 func TestConfig(t *testing.T) {
 	t.Parallel()
 
-	const project = test.DefaultProject
+	const project = testutil.DefaultProject
 
-	initialSize := test.AppMicro
+	initialSize := testutil.AppMicro
 
 	existingConfig := &apps.ProjectConfig{
 		ObjectMeta: metav1.ObjectMeta{
@@ -104,8 +104,8 @@ func TestConfig(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			apiClient := test.SetupClient(t,
-				test.WithObjects(tc.orig),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithObjects(tc.orig),
 			)
 
 			if err := tc.cmd.Run(t.Context(), apiClient); err != nil {

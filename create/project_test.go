@@ -8,7 +8,7 @@ import (
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/api/config"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,10 +17,10 @@ func TestProjects(t *testing.T) {
 
 	const existsAlready = "exists-already"
 	projectName, organization := "testproject", "evilcorp"
-	apiClient := test.SetupClient(t,
-		test.WithOrganization("evilcorp"),
-		test.WithKubeconfig(),
-		test.WithProjects(existsAlready),
+	apiClient := testutil.SetupClient(t,
+		testutil.WithOrganization("evilcorp"),
+		testutil.WithKubeconfig(),
+		testutil.WithProjects(existsAlready),
 	)
 
 	cmd := projectCmd{
@@ -55,7 +55,7 @@ func TestProjectsConfigErrors(t *testing.T) {
 	t.Parallel()
 
 	is := require.New(t)
-	apiClient := test.SetupClient(t)
+	apiClient := testutil.SetupClient(t)
 	cmd := projectCmd{
 		ResourceCmd: ResourceCmd{
 			Name:        "testproject",
@@ -68,7 +68,7 @@ func TestProjectsConfigErrors(t *testing.T) {
 
 	// we create a kubeconfig which does not contain a nctl config
 	// extension
-	kubeconfig, err := test.CreateTestKubeconfig(apiClient, "")
+	kubeconfig, err := testutil.CreateTestKubeconfig(apiClient, "")
 	is.NoError(err)
 	defer os.Remove(kubeconfig)
 	is.ErrorIs(cmd.Run(t.Context(), apiClient), config.ErrExtensionNotFound)

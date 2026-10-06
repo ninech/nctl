@@ -7,7 +7,7 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/api/gitinfo"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -170,7 +170,7 @@ func TestApplication(t *testing.T) {
 			if tc.staticEgress != nil {
 				objs = append(objs, tc.staticEgress)
 			}
-			apiClient := test.SetupClient(t, test.WithObjects(objs...))
+			apiClient := testutil.SetupClient(t, testutil.WithObjects(objs...))
 
 			err := tc.cmd.Run(t.Context(), apiClient)
 			if tc.expectedErr != "" {

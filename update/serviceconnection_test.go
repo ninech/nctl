@@ -14,7 +14,7 @@ import (
 	"github.com/ninech/nctl/internal/flag"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/serviceconnection"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -137,9 +137,9 @@ func TestServiceConnection(t *testing.T) {
 			tt.update.Writer = format.NewWriter(out)
 			tt.update.Name = "test-" + t.Name()
 
-			apiClient := test.SetupClient(t)
+			apiClient := testutil.SetupClient(t)
 
-			created := test.ServiceConnection(tt.update.Name, apiClient.Project)
+			created := testutil.ServiceConnection(tt.update.Name, apiClient.Project)
 			if err := apiClient.Create(t.Context(), created); err != nil {
 				t.Fatalf("serviceconnection create error, got: %s", err)
 			}

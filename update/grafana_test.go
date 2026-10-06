@@ -9,7 +9,7 @@ import (
 	observability "github.com/ninech/apis/observability/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 )
 
 func TestGrafana(t *testing.T) {
@@ -64,9 +64,9 @@ func TestGrafana(t *testing.T) {
 			tt.update.Writer = format.NewWriter(out)
 			tt.update.Name = "test-" + t.Name()
 
-			apiClient := test.SetupClient(t)
+			apiClient := testutil.SetupClient(t)
 
-			created := test.Grafana(tt.update.Name, apiClient.Project)
+			created := testutil.Grafana(tt.update.Name, apiClient.Project)
 			created.Spec.ForProvider = tt.create
 			if err := apiClient.Create(t.Context(), created); err != nil {
 				t.Fatalf("grafana create error, got: %s", err)

@@ -12,7 +12,7 @@ import (
 	networking "github.com/ninech/apis/networking/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -107,7 +107,7 @@ func TestStaticEgress(t *testing.T) {
 			tt.update.Writer = format.NewWriter(out)
 			tt.update.Name = "test-" + t.Name()
 
-			apiClient := test.SetupClient(t)
+			apiClient := testutil.SetupClient(t)
 
 			targetName := tt.targetName
 			if targetName == "" {
@@ -115,9 +115,9 @@ func TestStaticEgress(t *testing.T) {
 			}
 			var created *networking.StaticEgress
 			if tt.create.Target.Kind == infrastructure.KubernetesClusterKind {
-				created = test.StaticEgressForCluster(tt.update.Name, apiClient.Project, targetName)
+				created = testutil.StaticEgressForCluster(tt.update.Name, apiClient.Project, targetName)
 			} else {
-				created = test.StaticEgress(tt.update.Name, apiClient.Project, targetName)
+				created = testutil.StaticEgress(tt.update.Name, apiClient.Project, targetName)
 			}
 			created.Spec.ForProvider = tt.create
 			if err := apiClient.Create(t.Context(), created); err != nil {

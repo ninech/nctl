@@ -1,4 +1,4 @@
-package test
+package testutil
 
 import (
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"

@@ -8,7 +8,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -45,7 +45,7 @@ func TestDatabase(t *testing.T) {
 			databases: []postgresDatabase{
 				{
 					name:     "test",
-					project:  test.DefaultProject,
+					project:  testutil.DefaultProject,
 					location: meta.LocationNineCZ41,
 				},
 			},
@@ -57,17 +57,17 @@ func TestDatabase(t *testing.T) {
 			databases: []postgresDatabase{
 				{
 					name:     "test1",
-					project:  test.DefaultProject,
+					project:  testutil.DefaultProject,
 					location: meta.LocationNineCZ41,
 				},
 				{
 					name:     "test2",
-					project:  test.DefaultProject,
+					project:  testutil.DefaultProject,
 					location: meta.LocationNineCZ42,
 				},
 				{
 					name:     "test3",
-					project:  test.DefaultProject,
+					project:  testutil.DefaultProject,
 					location: meta.LocationNineES34,
 				},
 			},
@@ -79,7 +79,7 @@ func TestDatabase(t *testing.T) {
 			databases: []postgresDatabase{
 				{
 					name:     "test1",
-					project:  test.DefaultProject,
+					project:  testutil.DefaultProject,
 					location: meta.LocationNineCZ41,
 				},
 				{
@@ -102,12 +102,12 @@ func TestDatabase(t *testing.T) {
 			databases: []postgresDatabase{
 				{
 					name:     "test1",
-					project:  test.DefaultProject,
+					project:  testutil.DefaultProject,
 					location: meta.LocationNineCZ41,
 				},
 				{
 					name:     "test2",
-					project:  test.DefaultProject,
+					project:  testutil.DefaultProject,
 					location: meta.LocationNineCZ42,
 				},
 			},
@@ -120,12 +120,12 @@ func TestDatabase(t *testing.T) {
 			databases: []postgresDatabase{
 				{
 					name:     "test1",
-					project:  test.DefaultProject,
+					project:  testutil.DefaultProject,
 					location: meta.LocationNineCZ41,
 				},
 				{
 					name:     "test2",
-					project:  test.DefaultProject,
+					project:  testutil.DefaultProject,
 					location: meta.LocationNineCZ41,
 				},
 			},
@@ -140,7 +140,7 @@ func TestDatabase(t *testing.T) {
 
 			objects := []client.Object{}
 			for _, database := range tt.databases {
-				created := test.PostgresDatabase(database.name, database.project, "nine-es34")
+				created := testutil.PostgresDatabase(database.name, database.project, "nine-es34")
 				created.Spec.ForProvider.Location = database.location
 				objects = append(objects, created, &corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
@@ -150,12 +150,12 @@ func TestDatabase(t *testing.T) {
 					Data: map[string][]byte{"foo_bar": []byte("topsecret")},
 				})
 			}
-			apiClient := test.SetupClient(
+			apiClient := testutil.SetupClient(
 				t,
-				test.WithProjectsFromResources(objects...),
-				test.WithObjects(objects...),
-				test.WithNameIndexFor(&storage.PostgresDatabase{}),
-				test.WithKubeconfig(),
+				testutil.WithProjectsFromResources(objects...),
+				testutil.WithObjects(objects...),
+				testutil.WithNameIndexFor(&storage.PostgresDatabase{}),
+				testutil.WithKubeconfig(),
 			)
 			if tt.out == "" {
 				tt.out = full
@@ -181,8 +181,8 @@ func TestDatabase(t *testing.T) {
 					t.Errorf("postgresDatabaseCmd.Run() did not contain %q, out = %q", tt.wantContain, buf.String())
 				}
 			}
-			if test.CountLines(buf.String()) != tt.wantLines {
-				t.Errorf("expected the output to have %d lines, but found %d", tt.wantLines, test.CountLines(buf.String()))
+			if testutil.CountLines(buf.String()) != tt.wantLines {
+				t.Errorf("expected the output to have %d lines, but found %d", tt.wantLines, testutil.CountLines(buf.String()))
 				t.Log(buf.String())
 			}
 		})
@@ -222,7 +222,7 @@ func TestConnectionString(t *testing.T) {
 	}{
 		{
 			name:     "postgres",
-			mg:       test.Postgres("pg", test.DefaultProject, "nine-es34"),
+			mg:       testutil.Postgres("pg", testutil.DefaultProject, "nine-es34"),
 			setup:    withFQDN("pg.0000000.postgres.test.nineapis.ch"),
 			build:    (&postgresCmd{}).connectionString,
 			user:     storage.PostgresUser,
@@ -231,7 +231,7 @@ func TestConnectionString(t *testing.T) {
 		},
 		{
 			name:     "postgres database",
-			mg:       test.PostgresDatabase("pgdb", test.DefaultProject, "nine-es34"),
+			mg:       testutil.PostgresDatabase("pgdb", testutil.DefaultProject, "nine-es34"),
 			setup:    withFQDN("pgdb.0000000.postgres.test.nineapis.ch"),
 			build:    (&postgresDatabaseCmd{}).connectionString,
 			user:     "singledb-1234567",
@@ -240,7 +240,7 @@ func TestConnectionString(t *testing.T) {
 		},
 		{
 			name:     "mysql",
-			mg:       test.MySQL("my", test.DefaultProject, "nine-es34"),
+			mg:       testutil.MySQL("my", testutil.DefaultProject, "nine-es34"),
 			setup:    withFQDN("testdb.0000000.mysql.test.nineapis.ch"),
 			build:    (&mySQLCmd{}).connectionString,
 			user:     storage.MySQLUser,
@@ -249,7 +249,7 @@ func TestConnectionString(t *testing.T) {
 		},
 		{
 			name:     "mysql database",
-			mg:       test.MySQLDatabase("mydb", test.DefaultProject, "nine-es34"),
+			mg:       testutil.MySQLDatabase("mydb", testutil.DefaultProject, "nine-es34"),
 			setup:    withFQDN("testdb.0000000.mysql.test.nineapis.ch"),
 			build:    (&mysqlDatabaseCmd{}).connectionString,
 			user:     "singledb-1234567",
@@ -258,7 +258,7 @@ func TestConnectionString(t *testing.T) {
 		},
 		{
 			name:     "keyvaluestore",
-			mg:       test.KeyValueStore("kvs", test.DefaultProject, meta.LocationNineES34),
+			mg:       testutil.KeyValueStore("kvs", testutil.DefaultProject, meta.LocationNineES34),
 			setup:    withFQDN("testdb.0000000.keyvaluestore.test.nineapis.ch"),
 			build:    (&keyValueStoreCmd{}).connectionString,
 			user:     storage.KeyValueStoreUser,
@@ -267,7 +267,7 @@ func TestConnectionString(t *testing.T) {
 		},
 		{
 			name: "opensearch",
-			mg:   test.OpenSearch("os", test.DefaultProject, meta.LocationNineES34),
+			mg:   testutil.OpenSearch("os", testutil.DefaultProject, meta.LocationNineES34),
 			setup: func(mg resource.Managed) {
 				mg.(*storage.OpenSearch).Status.AtProvider.URL = "https://testdb.0000000.opensearch.test.nineapis.ch:9200"
 			},
@@ -278,7 +278,7 @@ func TestConnectionString(t *testing.T) {
 		},
 		{
 			name:     "password with reserved characters",
-			mg:       test.KeyValueStore("kvs", test.DefaultProject, meta.LocationNineES34),
+			mg:       testutil.KeyValueStore("kvs", testutil.DefaultProject, meta.LocationNineES34),
 			setup:    withFQDN("kvs.example.com"),
 			build:    (&keyValueStoreCmd{}).connectionString,
 			user:     storage.KeyValueStoreUser,
@@ -287,7 +287,7 @@ func TestConnectionString(t *testing.T) {
 		},
 		{
 			name:     "missing fqdn",
-			mg:       test.KeyValueStore("kvs", test.DefaultProject, meta.LocationNineES34),
+			mg:       testutil.KeyValueStore("kvs", testutil.DefaultProject, meta.LocationNineES34),
 			setup:    withFQDN(""),
 			build:    (&keyValueStoreCmd{}).connectionString,
 			user:     storage.KeyValueStoreUser,
@@ -296,7 +296,7 @@ func TestConnectionString(t *testing.T) {
 		},
 		{
 			name:     "missing opensearch url",
-			mg:       test.OpenSearch("os", test.DefaultProject, meta.LocationNineES34),
+			mg:       testutil.OpenSearch("os", testutil.DefaultProject, meta.LocationNineES34),
 			setup:    func(resource.Managed) {},
 			build:    (&openSearchCmd{}).connectionString,
 			user:     storage.OpenSearchUser,

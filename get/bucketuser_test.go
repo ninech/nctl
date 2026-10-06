@@ -7,7 +7,7 @@ import (
 
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -42,7 +42,7 @@ func TestBucketUser(t *testing.T) {
 			instances: []buInstance{
 				{
 					name:     "test",
-					project:  test.DefaultProject,
+					project:  testutil.DefaultProject,
 					location: meta.LocationNineES34,
 				},
 			},
@@ -56,17 +56,17 @@ func TestBucketUser(t *testing.T) {
 			instances: []buInstance{
 				{
 					name:     "test1",
-					project:  test.DefaultProject,
+					project:  testutil.DefaultProject,
 					location: meta.LocationNineES34,
 				},
 				{
 					name:     "test2",
-					project:  test.DefaultProject,
+					project:  testutil.DefaultProject,
 					location: meta.LocationNineES34,
 				},
 				{
 					name:     "test3",
-					project:  test.DefaultProject,
+					project:  testutil.DefaultProject,
 					location: meta.LocationNineCZ42,
 				},
 			},
@@ -80,7 +80,7 @@ func TestBucketUser(t *testing.T) {
 			instances: []buInstance{
 				{
 					name:     "test",
-					project:  test.DefaultProject,
+					project:  testutil.DefaultProject,
 					location: meta.LocationNineES34,
 				},
 			},
@@ -95,7 +95,7 @@ func TestBucketUser(t *testing.T) {
 			instances: []buInstance{
 				{
 					name:     "test",
-					project:  test.DefaultProject,
+					project:  testutil.DefaultProject,
 					location: meta.LocationNineES34,
 				},
 				{
@@ -119,11 +119,11 @@ func TestBucketUser(t *testing.T) {
 				created := bucketUser(bu.name, bu.project, bu.location)
 				objects = append(objects, created)
 			}
-			apiClient := test.SetupClient(t,
-				test.WithProjectsFromResources(objects...),
-				test.WithObjects(objects...),
-				test.WithNameIndexFor(&storage.BucketUser{}),
-				test.WithKubeconfig(),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithProjectsFromResources(objects...),
+				testutil.WithObjects(objects...),
+				testutil.WithNameIndexFor(&storage.BucketUser{}),
+				testutil.WithKubeconfig(),
 			)
 			buf := &bytes.Buffer{}
 			cmd := NewTestCmd(buf, tt.out)
@@ -147,8 +147,8 @@ func TestBucketUser(t *testing.T) {
 					t.Errorf("bucketUserCmd.Run() did not contain %q, out = %q", tt.wantContain, buf.String())
 				}
 			}
-			if test.CountLines(buf.String()) != tt.wantLines {
-				t.Errorf("expected the output to have %d lines, but found %d", tt.wantLines, test.CountLines(buf.String()))
+			if testutil.CountLines(buf.String()) != tt.wantLines {
+				t.Errorf("expected the output to have %d lines, but found %d", tt.wantLines, testutil.CountLines(buf.String()))
 			}
 		})
 	}

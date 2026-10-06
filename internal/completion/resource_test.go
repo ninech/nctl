@@ -4,20 +4,20 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/posener/complete"
 )
 
 func TestResourcePredictNames(t *testing.T) {
 	t.Parallel()
 
-	const project = test.DefaultProject
-	client := test.SetupClient(t,
-		test.WithObjects(
-			test.Postgres("one", project, "nine-es34"),
-			test.Postgres("two", project, "nine-es34"),
+	const project = testutil.DefaultProject
+	client := testutil.SetupClient(t,
+		testutil.WithObjects(
+			testutil.Postgres("one", project, "nine-es34"),
+			testutil.Postgres("two", project, "nine-es34"),
 		),
-		test.WithDefaultProject(project),
+		testutil.WithDefaultProject(project),
 	)
 
 	got := newResourceName(staticClient(client), testProjectFinder(t), "postgres").
@@ -38,7 +38,7 @@ func TestResourcePredictNames(t *testing.T) {
 func TestResourcePredictNamesOfUnknownResource(t *testing.T) {
 	t.Parallel()
 
-	client := test.SetupClient(t, test.WithDefaultProject(test.DefaultProject))
+	client := testutil.SetupClient(t, testutil.WithDefaultProject(testutil.DefaultProject))
 
 	if got := newResourceName(staticClient(client), testProjectFinder(t), "nosuchthing").
 		Predict(complete.Args{}); got != nil {

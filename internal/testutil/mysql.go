@@ -1,4 +1,4 @@
-package test
+package testutil
 
 import (
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
@@ -7,20 +7,20 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func Postgres(name, project, location string) *storage.Postgres {
-	return &storage.Postgres{
+func MySQL(name, project, location string) *storage.MySQL {
+	return &storage.MySQL{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: project,
 		},
-		Spec: storage.PostgresSpec{
+		Spec: storage.MySQLSpec{
 			ResourceSpec: runtimev1.ResourceSpec{
 				WriteConnectionSecretToReference: &runtimev1.SecretReference{
 					Name:      name,
 					Namespace: project,
 				},
 			},
-			ForProvider: storage.PostgresParameters{
+			ForProvider: storage.MySQLParameters{
 				Location: meta.LocationName(location),
 			},
 		},

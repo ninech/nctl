@@ -5,14 +5,14 @@ import (
 
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestBucketUser(t *testing.T) {
 	t.Parallel()
 
-	apiClient := test.SetupClient(t)
+	apiClient := testutil.SetupClient(t)
 
 	for name, tc := range map[string]struct {
 		cmd             bucketUserCmd

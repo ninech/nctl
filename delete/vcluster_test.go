@@ -9,7 +9,7 @@ import (
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -29,7 +29,7 @@ func TestVCluster(t *testing.T) {
 	cluster := &infrastructure.KubernetesCluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
-			Namespace: test.DefaultProject,
+			Namespace: testutil.DefaultProject,
 		},
 		Spec: infrastructure.KubernetesClusterSpec{
 			ForProvider: infrastructure.KubernetesClusterParameters{
@@ -38,9 +38,9 @@ func TestVCluster(t *testing.T) {
 		},
 	}
 
-	apiClient := test.SetupClient(t, test.WithObjects(cluster))
+	apiClient := testutil.SetupClient(t, testutil.WithObjects(cluster))
 
-	kubeconfig, err := test.CreateTestKubeconfig(apiClient, "")
+	kubeconfig, err := testutil.CreateTestKubeconfig(apiClient, "")
 	if err != nil {
 		t.Fatalf("failed to create test kubeconfig: %v", err)
 	}

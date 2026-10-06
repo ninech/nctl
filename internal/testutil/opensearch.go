@@ -1,4 +1,4 @@
-package test
+package testutil
 
 import (
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
@@ -7,21 +7,21 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func MySQLDatabase(name, project, location string) *storage.MySQLDatabase {
-	return &storage.MySQLDatabase{
+func OpenSearch(name, project string, location meta.LocationName) *storage.OpenSearch {
+	return &storage.OpenSearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: project,
 		},
-		Spec: storage.MySQLDatabaseSpec{
+		Spec: storage.OpenSearchSpec{
 			ResourceSpec: runtimev1.ResourceSpec{
 				WriteConnectionSecretToReference: &runtimev1.SecretReference{
 					Name:      name,
 					Namespace: project,
 				},
 			},
-			ForProvider: storage.MySQLDatabaseParameters{
-				Location: meta.LocationName(location),
+			ForProvider: storage.OpenSearchParameters{
+				Location: location,
 			},
 		},
 	}

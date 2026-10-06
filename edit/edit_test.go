@@ -14,7 +14,7 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/apiresource"
 	"github.com/ninech/nctl/internal/format"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -79,7 +79,7 @@ func TestEdit(t *testing.T) {
 			is := require.New(t)
 
 			objs := []client.Object{tc.resource}
-			apiClient := test.SetupClient(t, test.WithObjects(objs...))
+			apiClient := testutil.SetupClient(t, testutil.WithObjects(objs...))
 			r, w, _ := os.Pipe()
 			os.Stdout = w
 			err := tc.cmd.Run(selectCommand(t, tc.command, tc.cmd.Name), t.Context(), apiClient)

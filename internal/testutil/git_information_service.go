@@ -1,4 +1,4 @@
-package test
+package testutil
 
 import (
 	"encoding/json"
@@ -25,16 +25,14 @@ type GitInformationServiceResponse struct {
 	Raw *string
 }
 
-// GitInfoServiceParsed represents are parsed request received by the git
-// information service
+// GitInfoServiceParsed represents are parsed request received by the git information service
 type GitInfoServiceParsed struct {
 	Token   string
 	Method  string
 	Request apps.GitExploreRequest
 }
 
-// VerifyRequestFunc can be used to verify the parsed request which was sent to
-// the git information service
+// VerifyRequestFunc can be used to verify the parsed request which was sent to the git information service
 type VerifyRequestFunc func(p GitInfoServiceParsed, err error)
 
 type gitInformationService struct {
@@ -55,9 +53,9 @@ func defaultResponse() GitInformationServiceResponse {
 	}
 }
 
-// NewGitInformationService returns a new git information service mock. It can
-// be used to verify requests sent to it and also to just return with a
-// previously set response.
+// NewGitInformationService returns a new git information service mock.
+// It can be used to verify requests sent to it
+// and also to just return with a previously set response.
 func NewGitInformationService() *gitInformationService {
 	g := &gitInformationService{
 		logger:   slog.New(slog.NewJSONHandler(os.Stdout, nil)),

@@ -12,16 +12,16 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/internal/application"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var defaultCreationTime = metav1.NewTime(test.MustParseTime(time.RFC3339, "2023-03-13T14:00:00Z"))
+var defaultCreationTime = metav1.NewTime(testutil.MustParseTime(time.RFC3339, "2023-03-13T14:00:00Z"))
 
 func TestReleases(t *testing.T) {
 	t.Parallel()
-	const project = test.DefaultProject
+	const project = testutil.DefaultProject
 
 	cases := map[string]struct {
 		cmd           releasesCmd
@@ -38,12 +38,12 @@ func TestReleases(t *testing.T) {
 				ApplicationName: "app1",
 			},
 			releases: []client.Object{
-				newRelease(time.Second*10, 10, "a1", project, "app1", "pc", test.StatusAvailable),
+				newRelease(time.Second*10, 10, "a1", project, "app1", "pc", testutil.StatusAvailable),
 				// these releases are just added to show that
 				// they do not influence the output
-				newRelease(time.Second*13, 10, "o-a1", project, "other-app1", "pc", test.StatusSuperseded),
-				newRelease(time.Second*10, 20, "o-b1", project, "other-app1", "pc", test.StatusSuperseded),
-				newRelease(time.Second*11, 30, "o-c1", project, "other-app1", "pc", test.StatusAvailable),
+				newRelease(time.Second*13, 10, "o-a1", project, "other-app1", "pc", testutil.StatusSuperseded),
+				newRelease(time.Second*10, 20, "o-b1", project, "other-app1", "pc", testutil.StatusSuperseded),
+				newRelease(time.Second*11, 30, "o-c1", project, "other-app1", "pc", testutil.StatusAvailable),
 			},
 			wantContain: []string{"app1"},
 			wantLines:   2, // header + result
@@ -54,11 +54,11 @@ func TestReleases(t *testing.T) {
 				ApplicationName: "app2",
 			},
 			releases: []client.Object{
-				newRelease(time.Second*16, 10, "a2", project, "app2", "pc", test.StatusSuperseded),
-				newRelease(time.Second*12, 20, "b2", project, "app2", "pc", test.StatusSuperseded),
-				newRelease(time.Second*17, 30, "c2", project, "app2", "pc", test.StatusAvailable),
+				newRelease(time.Second*16, 10, "a2", project, "app2", "pc", testutil.StatusSuperseded),
+				newRelease(time.Second*12, 20, "b2", project, "app2", "pc", testutil.StatusSuperseded),
+				newRelease(time.Second*17, 30, "c2", project, "app2", "pc", testutil.StatusAvailable),
 				// another foreign release which should influence the output
-				newRelease(time.Second*10, 10, "o-a1", project, "other-app1", "pc", test.StatusAvailable),
+				newRelease(time.Second*10, 10, "o-a1", project, "other-app1", "pc", testutil.StatusAvailable),
 			},
 			wantContain: []string{"a2", "b2", "c2"},
 			wantLines:   4, // header + result
@@ -69,7 +69,7 @@ func TestReleases(t *testing.T) {
 				ApplicationName: "app3",
 			},
 			releases: []client.Object{
-				newRelease(time.Second*10, 10, "o-a1", project, "other-app1", "pc", test.StatusAvailable),
+				newRelease(time.Second*10, 10, "o-a1", project, "other-app1", "pc", testutil.StatusAvailable),
 			},
 			wantErr:     true,
 			wantContain: []string{`no "Releases" found`},
@@ -79,13 +79,13 @@ func TestReleases(t *testing.T) {
 			cmd: releasesCmd{},
 			releases: []client.Object{
 				// all app3 releases
-				newRelease(time.Second*12, 10, "a3", project, "app3", "pc", test.StatusSuperseded),
-				newRelease(time.Second*11, 20, "b3", project, "app3", "pc", test.StatusSuperseded),
-				newRelease(time.Second*10, 30, "c3", project, "app3", "pc", test.StatusAvailable),
+				newRelease(time.Second*12, 10, "a3", project, "app3", "pc", testutil.StatusSuperseded),
+				newRelease(time.Second*11, 20, "b3", project, "app3", "pc", testutil.StatusSuperseded),
+				newRelease(time.Second*10, 30, "c3", project, "app3", "pc", testutil.StatusAvailable),
 
 				// all app4 releases
-				newRelease(time.Second*10, 10, "a4", project, "app4", "pc", test.StatusSuperseded),
-				newRelease(time.Second*10, 20, "b4", project, "app4", "pc", test.StatusAvailable),
+				newRelease(time.Second*10, 10, "a4", project, "app4", "pc", testutil.StatusSuperseded),
+				newRelease(time.Second*10, 20, "b4", project, "app4", "pc", testutil.StatusAvailable),
 			},
 			wantContain: []string{"a3", "b3", "c3", "a4", "b4"},
 			wantLines:   6,
@@ -98,9 +98,9 @@ func TestReleases(t *testing.T) {
 				},
 			},
 			releases: []client.Object{
-				newRelease(time.Second*10, 10, "a4", project, "app4", "pc", test.StatusSuperseded),
+				newRelease(time.Second*10, 10, "a4", project, "app4", "pc", testutil.StatusSuperseded),
 				// this release should be ignored
-				newRelease(time.Second*12, 10, "a3", project, "app3", "pc", test.StatusSuperseded),
+				newRelease(time.Second*12, 10, "a3", project, "app3", "pc", testutil.StatusSuperseded),
 			},
 			wantContain: []string{"a4"},
 			wantLines:   2,
@@ -114,9 +114,9 @@ func TestReleases(t *testing.T) {
 				ApplicationName: "app5",
 			},
 			releases: []client.Object{
-				newRelease(time.Second*10, 20, "b5", project, "app5", "pc", test.StatusSuperseded),
-				newRelease(time.Second*12, 10, "a3", project, "app3", "pc", test.StatusSuperseded),
-				newRelease(time.Second*10, 10, "a4", project, "app4", "pc", test.StatusSuperseded),
+				newRelease(time.Second*10, 20, "b5", project, "app5", "pc", testutil.StatusSuperseded),
+				newRelease(time.Second*12, 10, "a3", project, "app3", "pc", testutil.StatusSuperseded),
+				newRelease(time.Second*10, 10, "a4", project, "app4", "pc", testutil.StatusSuperseded),
 			},
 			wantContain: []string{"b5", "app5"},
 			wantLines:   2,
@@ -126,9 +126,9 @@ func TestReleases(t *testing.T) {
 			cmd:           releasesCmd{},
 			inAllProjects: true,
 			releases: []client.Object{
-				newRelease(time.Second*10, 20, "app1-release", project, "app1", "pc", test.StatusSuperseded),
-				newRelease(time.Second*12, 10, "app2-release", "dev", "app2", "pc", test.StatusSuperseded),
-				newRelease(time.Second*10, 10, "app3-release", "production", "app3", "pc", test.StatusSuperseded),
+				newRelease(time.Second*10, 20, "app1-release", project, "app1", "pc", testutil.StatusSuperseded),
+				newRelease(time.Second*12, 10, "app2-release", "dev", "app2", "pc", testutil.StatusSuperseded),
+				newRelease(time.Second*10, 10, "app3-release", "production", "app3", "pc", testutil.StatusSuperseded),
 			},
 			wantContain: []string{"app1-release", "app2-release", "app3-release"},
 			wantLines:   4,
@@ -140,9 +140,9 @@ func TestReleases(t *testing.T) {
 			},
 			inAllProjects: true,
 			releases: []client.Object{
-				newRelease(time.Second*10, 20, "falcon", project, "app1", "pc", test.StatusSuperseded),
-				newRelease(time.Second*10, 20, "eagle", "dev", "app1", "pc", test.StatusSuperseded),
-				newRelease(time.Second*12, 10, "starling", "production", "app2", "pc", test.StatusSuperseded),
+				newRelease(time.Second*10, 20, "falcon", project, "app1", "pc", testutil.StatusSuperseded),
+				newRelease(time.Second*10, 20, "eagle", "dev", "app1", "pc", testutil.StatusSuperseded),
+				newRelease(time.Second*12, 10, "starling", "production", "app2", "pc", testutil.StatusSuperseded),
 			},
 			wantContain: []string{"falcon", "eagle"},
 			wantLines:   3,
@@ -160,11 +160,11 @@ func TestReleases(t *testing.T) {
 			// allows to test the prepare Releases output logic.
 			releasesByCreationTime := copyAndSortReleasesByCreationTime(tc.releases)
 
-			apiClient := test.SetupClient(t,
-				test.WithProjectsFromResources(releasesByCreationTime...),
-				test.WithObjects(releasesByCreationTime...),
-				test.WithNameIndexFor(&apps.Release{}),
-				test.WithKubeconfig(),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithProjectsFromResources(releasesByCreationTime...),
+				testutil.WithObjects(releasesByCreationTime...),
+				testutil.WithNameIndexFor(&apps.Release{}),
+				testutil.WithKubeconfig(),
 			)
 
 			if tc.output == "" {
@@ -191,8 +191,8 @@ func TestReleases(t *testing.T) {
 					t.Errorf("releasesCmd.Run() did not contain %q, out = %q", tc.wantContain, buf.String())
 				}
 			}
-			if test.CountLines(buf.String()) != tc.wantLines {
-				t.Errorf("expected the output to have %d lines, but found %d", tc.wantLines, test.CountLines(buf.String()))
+			if testutil.CountLines(buf.String()) != tc.wantLines {
+				t.Errorf("expected the output to have %d lines, but found %d", tc.wantLines, testutil.CountLines(buf.String()))
 				t.Log(buf.String())
 			}
 		})
@@ -228,7 +228,7 @@ func newRelease(
 					Tag:        "stable-alpine",
 				},
 				Configuration: apps.Config{
-					Size:     test.AppMicro,
+					Size:     testutil.AppMicro,
 					Replicas: new(int32(1)),
 					Port:     new(int32(8080)),
 				}.WithOrigin(apps.ConfigOriginApplication),

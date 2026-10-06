@@ -7,7 +7,7 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/internal/application"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,7 +22,7 @@ func TestApplication(t *testing.T) {
 	app := apps.Application{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
-			Namespace: test.DefaultProject,
+			Namespace: testutil.DefaultProject,
 		},
 		Spec: apps.ApplicationSpec{},
 	}
@@ -36,11 +36,11 @@ func TestApplication(t *testing.T) {
 	buf := &bytes.Buffer{}
 	get := NewTestCmd(buf, full)
 
-	apiClient := test.SetupClient(t,
-		test.WithNameIndexFor(&apps.Application{}),
-		test.WithProjectsFromResources(&app, &app2, &app3),
-		test.WithObjects(&app, &app2, &app3),
-		test.WithKubeconfig(),
+	apiClient := testutil.SetupClient(t,
+		testutil.WithNameIndexFor(&apps.Application{}),
+		testutil.WithProjectsFromResources(&app, &app2, &app3),
+		testutil.WithObjects(&app, &app2, &app3),
+		testutil.WithKubeconfig(),
 	)
 
 	cmd := applicationsCmd{
@@ -51,7 +51,7 @@ func TestApplication(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	is.Equal(3, test.CountLines(buf.String()), buf.String())
+	is.Equal(3, testutil.CountLines(buf.String()), buf.String())
 	buf.Reset()
 
 	cmd.Name = app.Name
@@ -59,7 +59,7 @@ func TestApplication(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	is.Equal(2, test.CountLines(buf.String()))
+	is.Equal(2, testutil.CountLines(buf.String()))
 	buf.Reset()
 
 	get.Format = noHeader
@@ -67,7 +67,7 @@ func TestApplication(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	is.Equal(1, test.CountLines(buf.String()))
+	is.Equal(1, testutil.CountLines(buf.String()))
 
 	// app3 is in a different project and we want to check if a hint gets
 	// displayed along the error that it was not found
@@ -296,12 +296,12 @@ dev      dev-second  dev-second  sample-second
 			get := NewTestCmd(buf, testCase.outputFormat)
 			get.AllProjects = testCase.project == ""
 
-			apiClient := test.SetupClient(t,
-				test.WithProjectsFromResources(testCase.resources...),
-				test.WithObjects(testCase.resources...),
-				test.WithKubeconfig(),
-				test.WithDefaultProject(testCase.project),
-				test.WithNameIndexFor(&apps.Application{}),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithProjectsFromResources(testCase.resources...),
+				testutil.WithObjects(testCase.resources...),
+				testutil.WithKubeconfig(),
+				testutil.WithDefaultProject(testCase.project),
+				testutil.WithNameIndexFor(&apps.Application{}),
 			)
 
 			cmd := applicationsCmd{
@@ -466,11 +466,11 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 			buf := &bytes.Buffer{}
 			get := NewTestCmd(buf, testCase.outputFormat)
 			get.AllProjects = testCase.project == ""
-			apiClient := test.SetupClient(t,
-				test.WithProjectsFromResources(testCase.apps...),
-				test.WithObjects(testCase.apps...),
-				test.WithKubeconfig(),
-				test.WithDefaultProject(testCase.project),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithProjectsFromResources(testCase.apps...),
+				testutil.WithObjects(testCase.apps...),
+				testutil.WithKubeconfig(),
+				testutil.WithDefaultProject(testCase.project),
 			)
 
 			cmd := applicationsCmd{
