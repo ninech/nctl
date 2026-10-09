@@ -10,7 +10,6 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/cli"
-	"github.com/ninech/nctl/internal/format"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -126,7 +125,7 @@ func (cmd *applicationCmd) getReplica(ctx context.Context, client *api.Client) (
 			return "", buildType, cli.ErrorWithContext(fmt.Errorf("worker job %q not found", cmd.WorkerJob)).
 				WithAvailable(availableJobs...).
 				WithSuggestions(
-					fmt.Sprintf("List worker jobs: %s", format.Command().Get(apps.ApplicationKind, cmd.Name, "-o", "yaml")),
+					fmt.Sprintf("List worker jobs: %s", cli.Command().Get(apps.ApplicationKind, cmd.Name, "-o", "yaml")),
 				)
 		}
 	}

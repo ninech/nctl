@@ -1,4 +1,4 @@
-package format
+package main
 
 import (
 	"testing"
@@ -26,7 +26,7 @@ func TestPlaceholderInterpolation(t *testing.T) {
 	p, err := kong.New(
 		&cli,
 		vars,
-		kong.PostBuild(InterpolateFlagPlaceholders(vars)),
+		kong.PostBuild(interpolateFlagPlaceholders(vars)),
 	)
 	is := require.New(t)
 	is.NoError(err)
@@ -42,8 +42,8 @@ func TestPlaceholderInterpolation(t *testing.T) {
 	is.Equal("coleslaw!", subFlagPointer.PlaceHolder)
 }
 
-// TestPlaceholderInterpolationError makes sure that an error gets thrown if a
-// variable in a placeholder was not defined
+// TestPlaceholderInterpolationError makes sure that an error gets thrown
+// if a variable in a placeholder was not defined
 func TestPlaceholderInterpolationError(t *testing.T) {
 	t.Parallel()
 
@@ -52,7 +52,7 @@ func TestPlaceholderInterpolationError(t *testing.T) {
 	}
 	_, err := kong.New(
 		&cli,
-		kong.PostBuild(InterpolateFlagPlaceholders(kong.Vars{"unused": "garbage"})),
+		kong.PostBuild(interpolateFlagPlaceholders(kong.Vars{"unused": "garbage"})),
 	)
 	is := require.New(t)
 	is.Error(err)
