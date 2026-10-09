@@ -3,7 +3,7 @@ package api_test
 import (
 	"testing"
 
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,7 +14,7 @@ func TestClient_ConnectionSecretData(t *testing.T) {
 	is := require.New(t)
 
 	const project = "default"
-	postgres := test.Postgres("pg", project, "nine-es34")
+	postgres := testutil.Postgres("pg", project, "nine-es34")
 	data := map[string][]byte{"user": []byte("secret")}
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -24,21 +24,21 @@ func TestClient_ConnectionSecretData(t *testing.T) {
 		Data: data,
 	}
 
-	client := test.SetupClient(
+	client := testutil.SetupClient(
 		t,
-		test.WithProjects(project),
-		test.WithObjects(postgres, secret),
+		testutil.WithProjects(project),
+		testutil.WithObjects(postgres, secret),
 	)
 
 	got, err := client.ConnectionSecretData(t.Context(), postgres)
 	is.NoError(err)
 	is.Equal(data, got)
 
-	missing := test.Postgres("missing", project, "nine-es34")
+	missing := testutil.Postgres("missing", project, "nine-es34")
 	_, err = client.ConnectionSecretData(t.Context(), missing)
 	is.Error(err)
 
-	noRef := test.Postgres("noref", project, "nine-es34")
+	noRef := testutil.Postgres("noref", project, "nine-es34")
 	noRef.Spec.WriteConnectionSecretToReference = nil
 	_, err = client.ConnectionSecretData(t.Context(), noRef)
 	is.Error(err)

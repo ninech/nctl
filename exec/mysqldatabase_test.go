@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -21,13 +21,13 @@ func TestMySQLDatabaseCmd(t *testing.T) {
 		myDBPass = "mydbpass"
 	)
 
-	ready := test.MySQLDatabase(myDBName, test.DefaultProject, "nine-es34")
+	ready := testutil.MySQLDatabase(myDBName, testutil.DefaultProject, "nine-es34")
 	ready.Status.AtProvider.FQDN = myDBFQDN
 	ready.Status.AtProvider.Name = myDBName
 
-	notReady := test.MySQLDatabase("notready", test.DefaultProject, "nine-es34")
+	notReady := testutil.MySQLDatabase("notready", testutil.DefaultProject, "nine-es34")
 
-	secret := testSecret(myDBName, test.DefaultProject, myDBUser, myDBPass)
+	secret := testSecret(myDBName, testutil.DefaultProject, myDBUser, myDBPass)
 
 	_, notFoundCmd := testDatabaseCmd("doesnotexist", nil)
 	_, notReadyCmd := testDatabaseCmd("notready", nil)
@@ -75,9 +75,9 @@ func TestMySQLDatabaseCmd(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			updateCalled := false
-			apiClient := test.SetupClient(t,
-				test.WithObjects(ready, notReady, secret),
-				test.WithInterceptorFuncs(interceptor.Funcs{
+			apiClient := testutil.SetupClient(t,
+				testutil.WithObjects(ready, notReady, secret),
+				testutil.WithInterceptorFuncs(interceptor.Funcs{
 					Update: func(ctx context.Context, c runtimeclient.WithWatch, obj runtimeclient.Object, opts ...runtimeclient.UpdateOption) error {
 						updateCalled = true
 						return c.Update(ctx, obj, opts...)

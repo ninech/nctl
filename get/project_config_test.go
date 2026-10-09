@@ -8,7 +8,7 @@ import (
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/internal/application"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -123,12 +123,12 @@ func TestProjectConfigs(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			is := require.New(t)
 
-			apiClient := test.SetupClient(t,
-				test.WithProjectsFromResources(tc.createdConfigs...),
-				test.WithObjects(tc.createdConfigs...),
-				test.WithKubeconfig(),
-				test.WithDefaultProject(tc.project),
-				test.WithNameIndexFor(&apps.ProjectConfig{}),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithProjectsFromResources(tc.createdConfigs...),
+				testutil.WithObjects(tc.createdConfigs...),
+				testutil.WithKubeconfig(),
+				testutil.WithDefaultProject(tc.project),
+				testutil.WithNameIndexFor(&apps.ProjectConfig{}),
 			)
 
 			buf := &bytes.Buffer{}
@@ -145,7 +145,7 @@ func TestProjectConfigs(t *testing.T) {
 			}
 			is.NoError(err)
 			if tc.expectedLineAmountInOutput != nil {
-				is.Equal(*tc.expectedLineAmountInOutput, test.CountLines(buf.String()), buf.String())
+				is.Equal(*tc.expectedLineAmountInOutput, testutil.CountLines(buf.String()), buf.String())
 			}
 
 			if tc.expectExactMessage == nil {
@@ -169,7 +169,7 @@ func fakeProjectConfig(
 		Spec: apps.ProjectConfigSpec{
 			ForProvider: apps.ProjectConfigParameters{
 				Config: apps.Config{
-					Size:     test.AppMicro,
+					Size:     testutil.AppMicro,
 					Replicas: new(int32(1)),
 					Port:     new(int32(9000)),
 					Env:      application.EnvVarsFromMap(map[string]string{"key1": "val1"}),

@@ -7,14 +7,14 @@ import (
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/application"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestProjectConfig(t *testing.T) {
 	t.Parallel()
 
-	apiClient := test.SetupClient(t)
+	apiClient := testutil.SetupClient(t)
 
 	cases := map[string]struct {
 		cmd         configCmd
@@ -23,7 +23,7 @@ func TestProjectConfig(t *testing.T) {
 	}{
 		"all fields set": {
 			cmd: configCmd{
-				Size:      string(test.AppMini),
+				Size:      string(testutil.AppMini),
 				Port:      new(int32(1337)),
 				Replicas:  new(int32(42)),
 				Env:       &map[string]string{"key1": "val1"},
@@ -50,7 +50,7 @@ func TestProjectConfig(t *testing.T) {
 		},
 		"some fields not set": {
 			cmd: configCmd{
-				Size:     string(test.AppMicro),
+				Size:     string(testutil.AppMicro),
 				Replicas: new(int32(1)),
 			},
 			project: "namespace-2",
@@ -71,7 +71,7 @@ func TestProjectConfig(t *testing.T) {
 			checkConfig: func(t *testing.T, cmd configCmd, cfg *apps.ProjectConfig) {
 				is := require.New(t)
 				is.Equal(apiClient.Project, cfg.Name)
-				is.Equal(test.AppSizeNotSet, cfg.Spec.ForProvider.Config.Size)
+				is.Equal(testutil.AppSizeNotSet, cfg.Spec.ForProvider.Config.Size)
 				is.Nil(cfg.Spec.ForProvider.Config.Port)
 				is.Nil(cfg.Spec.ForProvider.Config.Replicas)
 				is.Empty(cfg.Spec.ForProvider.Config.Env)

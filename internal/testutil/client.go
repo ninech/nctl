@@ -1,5 +1,5 @@
-// Package test provides utilities and helpers for testing nctl.
-package test
+// Package testutil provides utilities and helpers for testing nctl.
+package testutil
 
 import (
 	"os"
@@ -58,11 +58,11 @@ func WithProjects(projects ...string) ClientSetupOption {
 	}
 }
 
-// WithProjectsFromResources reads the namespaces of all given resources and
-// adds them (unique) to the clientSetups project list.
-// Use this on your own risk in combination with `WithProjects`. Make make sure that
-// `WithProjects` is set before this function call in a functional options
-// list. Otherwise you will overwrite the results from this function.
+// WithProjectsFromResources reads the namespaces of all given resources
+// and adds them (unique) to the clientSetups project list.
+// Use this on your own risk in combination with `WithProjects`.
+// Make make sure that `WithProjects` is set before this function call in a functional options list.
+// Otherwise you will overwrite the results from this function.
 func WithProjectsFromResources(resources ...client.Object) ClientSetupOption {
 	return func(cs *clientSetup) {
 		seen := make(map[string]struct{})
@@ -98,8 +98,7 @@ func WithObjects(objects ...client.Object) ClientSetupOption {
 	}
 }
 
-// WithKubeconfig creates a fake kubeconfig which gets removed once the passed
-// test finished
+// WithKubeconfig creates a fake kubeconfig which gets removed once the passed test finished
 func WithKubeconfig() ClientSetupOption {
 	return func(cs *clientSetup) {
 		cs.kubeconfig = true
@@ -135,8 +134,7 @@ func SetupClient(t *testing.T, opts ...ClientSetupOption) *api.Client {
 	resources := []client.Object{namespace(setup.organization)}
 	resources = append(resources, Projects(setup.organization, setup.projects...)...)
 	for _, proj := range setup.projects {
-		// do not create the namespace for the organisation project
-		// again
+		// do not create the namespace for the organisation project again
 		if proj == setup.organization {
 			continue
 		}
@@ -191,8 +189,8 @@ func namespace(name string) *corev1.Namespace {
 	}
 }
 
-// CreateTestKubeconfig creates a test kubeconfig which contains a nctl
-// extension config with the given organization
+// CreateTestKubeconfig creates a test kubeconfig
+// which contains a nctl extension config with the given organization
 func CreateTestKubeconfig(client *api.Client, organization string) (string, error) {
 	var extensions map[string]runtime.Object
 	if organization != "" {

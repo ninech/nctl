@@ -8,7 +8,7 @@ import (
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -51,11 +51,11 @@ func TestProject(t *testing.T) {
 			out := &bytes.Buffer{}
 			tc.cmd.Writer = format.NewWriter(out)
 
-			apiClient := test.SetupClient(t,
-				test.WithObjects(tc.orig),
-				test.WithOrganization(organization),
-				test.WithDefaultProject(tc.orig.Name),
-				test.WithKubeconfig(),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithObjects(tc.orig),
+				testutil.WithOrganization(organization),
+				testutil.WithDefaultProject(tc.orig.Name),
+				testutil.WithKubeconfig(),
 			)
 
 			if err := tc.cmd.Run(t.Context(), apiClient); err != nil {

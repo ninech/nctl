@@ -1,4 +1,4 @@
-package test
+package testutil
 
 import (
 	"context"
@@ -17,7 +17,7 @@ import (
 //   - name:       optional positional NAME; if empty, defaults to "test-"+t.Name()
 //   - flags:      command-line flags only (the helper prepends cmdPath + NAME)
 //   - afterParse: closure returning pointers to defaulted fields (e.g. Name, WaitTimeout)
-//   - clientOpts: passthrough options for test.SetupClient (e.g. test.WithObjects(...))
+//   - clientOpts: passthrough options for SetupClient (e.g. WithObjects(...))
 //
 // Safe to use with t.Parallel(): each test gets a unique name.
 // Inspired by https://github.com/alecthomas/kong/blob/v1.12.1/kong_test.go#L454

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	management "github.com/ninech/apis/management/v1alpha1"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -59,8 +59,8 @@ func TestOrgFromProject(t *testing.T) {
 			t.Parallel()
 			is := require.New(t)
 
-			apiClient := test.SetupClient(t,
-				test.WithObjects(tc.objects...),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithObjects(tc.objects...),
 			)
 
 			org, err := orgFromProject(t.Context(), apiClient, tc.project)
@@ -110,8 +110,8 @@ func TestOrgFromProjectAPIErrors(t *testing.T) {
 			t.Parallel()
 			is := require.New(t)
 
-			apiClient := test.SetupClient(t,
-				test.WithInterceptorFuncs(tc.interceptor),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithInterceptorFuncs(tc.interceptor),
 			)
 
 			_, err := orgFromProject(t.Context(), apiClient, "test-prod")
@@ -166,10 +166,10 @@ func TestTrySwitchOrg(t *testing.T) {
 			t.Parallel()
 			is := require.New(t)
 
-			apiClient := test.SetupClient(t,
-				test.WithOrganization(tc.currentOrg),
-				test.WithKubeconfig(),
-				test.WithObjects(tc.objects...),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithOrganization(tc.currentOrg),
+				testutil.WithKubeconfig(),
+				testutil.WithObjects(tc.objects...),
 			)
 
 			err := trySwitchOrg(t.Context(), apiClient, tc.project)
@@ -212,10 +212,10 @@ func TestSetProjectCmd(t *testing.T) {
 			t.Parallel()
 			is := require.New(t)
 
-			apiClient := test.SetupClient(t,
-				test.WithOrganization(tc.currentOrg),
-				test.WithKubeconfig(),
-				test.WithObjects(tc.objects...),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithOrganization(tc.currentOrg),
+				testutil.WithKubeconfig(),
+				testutil.WithObjects(tc.objects...),
 			)
 
 			cmd := SetProjectCmd{Name: tc.project}

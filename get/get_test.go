@@ -11,7 +11,7 @@ import (
 
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/internal/format"
-	"github.com/ninech/nctl/internal/test"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -49,21 +49,21 @@ func TestListPrint(t *testing.T) {
 		"watch disabled": {
 			out: full,
 			existingResources: []client.Object{
-				test.CloudVirtualMachine("foo", test.DefaultProject, "nine-es34", infrastructure.VirtualMachinePowerState("on")),
+				testutil.CloudVirtualMachine("foo", testutil.DefaultProject, "nine-es34", infrastructure.VirtualMachinePowerState("on")),
 			},
-			toCreate:    []client.Object{test.CloudVirtualMachine("new", test.DefaultProject, "nine-es34", infrastructure.VirtualMachinePowerState("on"))},
+			toCreate:    []client.Object{testutil.CloudVirtualMachine("new", testutil.DefaultProject, "nine-es34", infrastructure.VirtualMachinePowerState("on"))},
 			wantContain: []string{"foo"},
 			wantLines:   2,
 		},
 		"watch": {
 			out: full,
 			existingResources: []client.Object{
-				test.CloudVirtualMachine("foo", test.DefaultProject, "nine-es34", infrastructure.VirtualMachinePowerState("on")),
+				testutil.CloudVirtualMachine("foo", testutil.DefaultProject, "nine-es34", infrastructure.VirtualMachinePowerState("on")),
 			},
 			toCreate: []client.Object{
-				test.CloudVirtualMachine("new", test.DefaultProject, "nine-es34", infrastructure.VirtualMachinePowerState("on")),
-				test.CloudVirtualMachine("new2", test.DefaultProject, "nine-es34", infrastructure.VirtualMachinePowerState("on")),
-				test.CloudVirtualMachine("new3", "other-project", "nine-es34", infrastructure.VirtualMachinePowerState("on")),
+				testutil.CloudVirtualMachine("new", testutil.DefaultProject, "nine-es34", infrastructure.VirtualMachinePowerState("on")),
+				testutil.CloudVirtualMachine("new2", testutil.DefaultProject, "nine-es34", infrastructure.VirtualMachinePowerState("on")),
+				testutil.CloudVirtualMachine("new3", "other-project", "nine-es34", infrastructure.VirtualMachinePowerState("on")),
 			},
 			wantContain: []string{"new", "new2"},
 			wantLines:   4,
@@ -75,11 +75,11 @@ func TestListPrint(t *testing.T) {
 		// "watch all projects": {
 		// 	out: full,
 		// 	existingResources: []client.Object{
-		// 		test.CloudVirtualMachine("foo", test.DefaultProject, "nine-es34", infrastructure.VirtualMachinePowerState("on")),
+		// 		testutil.CloudVirtualMachine("foo", testutil.DefaultProject, "nine-es34", infrastructure.VirtualMachinePowerState("on")),
 		// 	},
 		// 	toCreate: []client.Object{
-		// 		test.CloudVirtualMachine("new", test.DefaultProject, "nine-es34", infrastructure.VirtualMachinePowerState("on")),
-		// 		test.CloudVirtualMachine("new2", "default-project", "nine-es34", infrastructure.VirtualMachinePowerState("on")),
+		// 		testutil.CloudVirtualMachine("new", testutil.DefaultProject, "nine-es34", infrastructure.VirtualMachinePowerState("on")),
+		// 		testutil.CloudVirtualMachine("new2", "default-project", "nine-es34", infrastructure.VirtualMachinePowerState("on")),
 		// 	},
 		// 	wantContain:   []string{"foo", "new2"},
 		// 	wantLines:     4,
@@ -92,11 +92,11 @@ func TestListPrint(t *testing.T) {
 			t.Parallel()
 			is := require.New(t)
 
-			apiClient := test.SetupClient(t,
-				test.WithDefaultProject(test.DefaultProject),
-				test.WithProjectsFromResources(append(tc.existingResources, tc.toCreate...)...),
-				test.WithObjects(tc.existingResources...),
-				test.WithKubeconfig(),
+			apiClient := testutil.SetupClient(t,
+				testutil.WithDefaultProject(testutil.DefaultProject),
+				testutil.WithProjectsFromResources(append(tc.existingResources, tc.toCreate...)...),
+				testutil.WithObjects(tc.existingResources...),
+				testutil.WithKubeconfig(),
 			)
 
 			buf := &bytes.Buffer{}
@@ -127,8 +127,8 @@ func TestListPrint(t *testing.T) {
 					t.Errorf("cmd.list did not contain %q, out = %q", tc.wantContain, buf.String())
 				}
 			}
-			if test.CountLines(buf.String()) != tc.wantLines {
-				t.Errorf("expected the output to have %d lines, but found %d", tc.wantLines, test.CountLines(buf.String()))
+			if testutil.CountLines(buf.String()) != tc.wantLines {
+				t.Errorf("expected the output to have %d lines, but found %d", tc.wantLines, testutil.CountLines(buf.String()))
 			}
 		})
 	}
