@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"bytes"
@@ -56,7 +56,7 @@ func TestKongInitializesIO(t *testing.T) {
 func newTestParser(t *testing.T) *kong.Kong {
 	t.Helper()
 
-	parser, err := newParser(t.Context(), &rootCommand{}, &bytes.Buffer{}, &bytes.Buffer{})
+	parser, err := newParser(t.Context(), &rootCommand{}, "test", &bytes.Buffer{}, &bytes.Buffer{})
 	require.NoError(t, err)
 
 	return parser
