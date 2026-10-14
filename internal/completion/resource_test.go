@@ -20,7 +20,7 @@ func TestResourcePredictNames(t *testing.T) {
 		testutil.WithDefaultProject(project),
 	)
 
-	got := newResourceName(staticClient(client), testProjectFinder(t), "postgres").
+	got := newResourceName(debugLog{}, staticClient(client), testProjectFinder(t), "postgres").
 		Predict(complete.Args{})
 	sort.Strings(got)
 
@@ -40,7 +40,7 @@ func TestResourcePredictNamesOfUnknownResource(t *testing.T) {
 
 	client := testutil.SetupClient(t, testutil.WithDefaultProject(testutil.DefaultProject))
 
-	if got := newResourceName(staticClient(client), testProjectFinder(t), "nosuchthing").
+	if got := newResourceName(debugLog{}, staticClient(client), testProjectFinder(t), "nosuchthing").
 		Predict(complete.Args{}); got != nil {
 		t.Errorf("Predict() = %q, want no completions", got)
 	}

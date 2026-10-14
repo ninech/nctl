@@ -115,7 +115,7 @@ func TestInstanceDatabasesPredict(t *testing.T) {
 		testutil.WithDefaultProject(project),
 	)
 
-	predictor := newInstanceDatabases(staticClient(client), testProjectFinder(t), storage.PostgresGroupVersionKind)
+	predictor := newInstanceDatabases(debugLog{}, staticClient(client), testProjectFinder(t), storage.PostgresGroupVersionKind)
 
 	tests := []struct {
 		name      string

@@ -4,6 +4,7 @@ package completion
 import (
 	"context"
 	"fmt"
+	"io"
 	"reflect"
 	"sync"
 
@@ -32,12 +33,19 @@ const (
 // lazily created client between them, so that completing a command line
 // authenticates at most once.
 type apiPredictors struct {
+	log     debugLog
 	client  clientFunc
 	project projectFinder
 }
 
 func newAPIPredictors(ctx context.Context, parser *kong.Kong) *apiPredictors {
+	var stderr io.Writer
+	if parser != nil {
+		stderr = parser.Stderr
+	}
+
 	return &apiPredictors{
+		log: newDebugLog(stderr),
 		client: sync.OnceValues(func() (*api.Client, error) {
 			return newClient(ctx, apiCluster(parser))
 		}),
@@ -53,17 +61,17 @@ func (p *apiPredictors) options() []kongcompletion.Option {
 		kongcompletion.WithPredictor(localFile, complete.PredictFiles("*")),
 		kongcompletion.WithPredictors(apifield.Predictors()),
 		kongcompletion.WithPredictors(map[string]complete.Predictor{
-			ResourceName: unboundResourceName{},
-			ProjectName: newResourceNameWithKind(p.client, p.project,
+			ResourceName: unboundResourceName{p.log},
+			ProjectName: newResourceNameWithKind(p.log, p.client, p.project,
 				management.SchemeGroupVersion.WithKind(reflect.TypeFor[management.ProjectList]().Name())),
-			PostgresDatabases: newInstanceDatabases(p.client, p.project, storage.PostgresGroupVersionKind),
-			MySQLDatabases:    newInstanceDatabases(p.client, p.project, storage.MySQLGroupVersionKind),
+			PostgresDatabases: newInstanceDatabases(p.log, p.client, p.project, storage.PostgresGroupVersionKind),
+			MySQLDatabases:    newInstanceDatabases(p.log, p.client, p.project, storage.MySQLGroupVersionKind),
 		}),
 	}
 }
 
 func (p *apiPredictors) resourceName(resource string) complete.Predictor {
-	return newResourceName(p.client, p.project, resource)
+	return newResourceName(p.log, p.client, p.project, resource)
 }
 
 // Command builds the complete.Command tree for shell completion.

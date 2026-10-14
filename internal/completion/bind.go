@@ -16,10 +16,12 @@ const predictorTag = "completion-predictor"
 // unboundResourceName stands in for [ResourceName] while the completion tree
 // is built, until [bindResourceNames] replaces it with a predictor bound to
 // the API resource of its command. Reaching it means a command was not bound.
-type unboundResourceName struct{}
+type unboundResourceName struct {
+	debugLog
+}
 
-func (unboundResourceName) Predict(complete.Args) []string {
-	return fail(errors.New("no API resource is bound to the command"))
+func (u unboundResourceName) Predict(complete.Args) []string {
+	return u.fail(errors.New("no API resource is bound to the command"))
 }
 
 // walkCommands calls bind for every command of the completion tree, paired with the Kong node it was built from.
