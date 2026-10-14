@@ -145,6 +145,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 		}
 
 		validator := &application.RepositoryValidator{
+			Writer: cmd.Writer,
 			Auth:   auth,
 			Client: client,
 			Debug:  cmd.Debug,
