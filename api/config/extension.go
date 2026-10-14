@@ -206,7 +206,7 @@ func contextNotFoundError[T any](contextName string, contexts map[string]T) erro
 	return cli.ErrorWithContext(fmt.Errorf("could not find context %q in kubeconfig", contextName)).
 		WithExitCode(cli.ExitUsageError).
 		WithAvailable(available...).
-		WithSuggestions("Login to the API: " + cli.Command().Login())
+		WithSuggestions("Login to the API: " + cli.LoginCmd)
 }
 
 // clusterNotFoundError returns an error with available clusters listed.
