@@ -3,7 +3,6 @@ package get
 import (
 	"context"
 	"fmt"
-	"os"
 	"path"
 	"time"
 
@@ -116,8 +115,8 @@ func pullImage(ctx context.Context, apiClient *api.Client, build *apps.Build, ou
 	}
 	defer reader.Close()
 
-	termFd, isTerm := term.GetFdInfo(os.Stderr)
-	if err := jsonmessage.DisplayJSONMessagesStream(reader, os.Stderr, termFd, isTerm, nil); err != nil {
+	termFd, isTerm := term.GetFdInfo(out.Err())
+	if err := jsonmessage.DisplayJSONMessagesStream(reader, out.Err(), termFd, isTerm, nil); err != nil {
 		return err
 	}
 

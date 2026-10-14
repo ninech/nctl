@@ -73,8 +73,7 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 	}()
 
 	root := &rootCommand{}
-	parser, err := newParser(ctx, root, version, stdin, stdout,
-		kong.Writers(stdout, stderr),
+	parser, err := newParser(ctx, root, version, stdin, stdout, stderr,
 		kong.Exit(func(code int) { panic(exit(code)) }),
 	)
 	if err != nil {

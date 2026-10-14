@@ -43,8 +43,8 @@ type resourceCmd struct {
 }
 
 // BeforeApply initializes Writer from Kong's bound [io.Writer].
-func (cmd *resourceCmd) BeforeApply(writer io.Writer) error {
-	return cmd.Writer.BeforeApply(writer)
+func (cmd *resourceCmd) BeforeApply(kctx *kong.Context) error {
+	return cmd.Writer.BeforeApply(kctx)
 }
 
 const header = `# Please edit the %s below.

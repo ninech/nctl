@@ -27,7 +27,7 @@ func parseDatabaseSSHKeys(t *testing.T, args ...string) DatabaseSSHKeysFlags {
 	var cmd struct {
 		DatabaseSSHKeysFlags `set:"ssh_keys_purpose=for the tests"`
 	}
-	_, err := kong.Must(&cmd, kong.BindTo(io.Discard, (*io.Writer)(nil))).Parse(args)
+	_, err := kong.Must(&cmd, kong.Writers(io.Discard, io.Discard)).Parse(args)
 	require.NoError(t, err)
 
 	return cmd.DatabaseSSHKeysFlags

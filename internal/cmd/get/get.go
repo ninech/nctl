@@ -5,10 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"maps"
 	"slices"
 
+	"github.com/alecthomas/kong"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/gobuffalo/flect"
 	"github.com/liggitt/tabwriter"
@@ -76,13 +76,13 @@ const (
 )
 
 // BeforeApply is called by Kong before parsing to initialize the output.
-func (cmd *Cmd) BeforeApply(writer io.Writer) error {
-	if err := cmd.output.BeforeApply(writer); err != nil {
+func (cmd *Cmd) BeforeApply(kctx *kong.Context) error {
+	if err := cmd.output.BeforeApply(kctx); err != nil {
 		return err
 	}
 
 	if cmd.tabWriter == nil {
-		cmd.tabWriter = tabwriter.NewWriter(writer, 0, 0, 2, ' ', tabwriter.RememberWidths)
+		cmd.tabWriter = tabwriter.NewWriter(kctx.Stdout, 0, 0, 2, ' ', tabwriter.RememberWidths)
 	}
 
 	return nil

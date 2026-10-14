@@ -56,7 +56,7 @@ func TestKongInitializesIO(t *testing.T) {
 func newTestParser(t *testing.T) *kong.Kong {
 	t.Helper()
 
-	parser, err := newParser(t.Context(), &rootCommand{}, "test", &bytes.Buffer{}, &bytes.Buffer{})
+	parser, err := newParser(t.Context(), &rootCommand{}, "test", &bytes.Buffer{}, &bytes.Buffer{}, &bytes.Buffer{})
 	require.NoError(t, err)
 
 	return parser
@@ -179,6 +179,7 @@ func isExclusive(groups []string, used map[string]bool) bool {
 // uninitializedIO returns the field paths of all [format.Writer] and
 // [format.Reader] fields which are reachable from target through embedded
 // structs and which do not wrap an [io.Writer] or [io.Reader].
+// A [format.Writer] also needs its writer for diagnostics.
 func uninitializedIO(target reflect.Value, path string) []string {
 	if target.Kind() == reflect.Pointer {
 		if target.IsNil() {
@@ -197,8 +198,13 @@ func uninitializedIO(target reflect.Value, path string) []string {
 		fieldPath := path + "." + field.Name
 
 		switch field.Type {
-		case reflect.TypeFor[format.Writer](), reflect.TypeFor[format.Reader]():
-			// Both wrap their interface in the first field.
+		case reflect.TypeFor[format.Writer]():
+			// The output is the first field, the diagnostics the second.
+			if target.Field(i).Field(0).IsNil() || target.Field(i).Field(1).IsNil() {
+				uninitialized = append(uninitialized, fieldPath)
+			}
+		case reflect.TypeFor[format.Reader]():
+			// The interface is wrapped in the first field.
 			if target.Field(i).Field(0).IsNil() {
 				uninitialized = append(uninitialized, fieldPath)
 			}

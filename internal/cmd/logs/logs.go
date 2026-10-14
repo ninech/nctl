@@ -4,7 +4,6 @@ package logs
 import (
 	"context"
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/alecthomas/kong"
@@ -40,8 +39,8 @@ type LogsCmd struct {
 }
 
 // BeforeApply initializes Writer from Kong's bound [io.Writer].
-func (cmd *LogsCmd) BeforeApply(writer io.Writer) error {
-	return cmd.Writer.BeforeApply(writer)
+func (cmd *LogsCmd) BeforeApply(kctx *kong.Context) error {
+	return cmd.Writer.BeforeApply(kctx)
 }
 
 // 30 days, we hardcode this for now as it's not possible to customize this on
