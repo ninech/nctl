@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"path"
 	"path/filepath"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -31,34 +32,39 @@ func TestKongVars(t *testing.T) {
 	is.NotEmpty(vars)
 }
 
-func TestNoAPIClientRequired(t *testing.T) {
+// TestCommandsWithoutAPIClient lists the commands which run without an API client.
+// Kong only builds the client for commands whose Run method takes one,
+// so these have to work without the user being logged in.
+func TestCommandsWithoutAPIClient(t *testing.T) {
 	t.Parallel()
-	is := assert.New(t)
 
-	// Commands use the resolved format from kong.Context.Command().
-	// --help and --version are not tested here because Kong exits
-	// during Parse before noAPIClientRequired is called.
-	tests := []struct {
-		command  string
-		expected bool
-	}{
-		{"auth login", true},
-		{"auth login <organization>", true},
-		{"auth logout", true},
-		{"auth oidc", true},
-		{"auth client-credentials", true},
-		{"completions", true},
-		{"completions bash", true},
-		{"get", false},
-		{"get application", false},
-		{"get application <name>", false},
-		{"create application <name>", false},
-		{"exec application <name>", false},
-		{"", false},
+	var withoutClient []string
+	for _, path := range commandPaths(newTestParser(t).Model.Node, nil) {
+		node := nodeAt(newTestParser(t).Model.Node, path)
+		run := node.Target.Addr().MethodByName("Run")
+		require.True(t, run.IsValid(), "command %q has no Run method", path)
+		if !slices.Contains(params(run.Type()), reflect.TypeFor[*api.Client]()) {
+			withoutClient = append(withoutClient, strings.Join(path, " "))
+		}
 	}
-	for _, tt := range tests {
-		is.Equal(tt.expected, noAPIClientRequired(tt.command), "command: %q", tt.command)
+
+	assert.ElementsMatch(t, []string{
+		"auth login",
+		"auth logout",
+		"auth oidc",
+		"auth client-credentials",
+		"completions",
+	}, withoutClient)
+}
+
+// params returns the parameter types of the function type fn.
+func params(fn reflect.Type) []reflect.Type {
+	var types []reflect.Type
+	for i := range fn.NumIn() {
+		types = append(types, fn.In(i))
 	}
+
+	return types
 }
 
 func TestCompletionPredictorsRegistered(t *testing.T) {
