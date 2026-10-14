@@ -105,32 +105,20 @@ func main() {
 		parser.FatalIfErrorf(err)
 	}
 
-	binds := []any{
-		ctx,
-		kong.BindTo(writer, (*io.Writer)(nil)),
-		kong.BindTo(reader, (*io.Reader)(nil)),
-	}
-	// Kong exits during Parse for --help and --version, so those cases
-	// never reach here. Only auth and completions commands remain.
-	if !noAPIClientRequired(kongCtx.Command()) {
-		client, err := api.New(
-			ctx,
-			cmd.APICluster,
-			cmd.Project,
-			api.LogClient(ctx, cmd.LogAPIAddress, cmd.LogAPIInsecure),
-			api.DefaultAnnotations(api.ManagedByAnnotation, api.Name),
-		)
-		if err != nil {
-			fmt.Fprintln(writer, err)
-			fmt.Fprintf(writer, "\nUnable to get API client, are you logged in?\n\nUse `%s` to login.\n", cli.LoginCmd)
-			os.Exit(1)
-		}
-		binds = append(binds, client)
+	// Kong calls the provider only for commands taking an *api.Client,
+	// so commands like auth login work without being logged in.
+	var client *api.Client
+	if err := kongCtx.BindSingletonProvider(func(ctx context.Context) (*api.Client, error) {
+		c, err := newAPIClient(ctx, cmd.flags)
+		client = c
+		return c, err
+	}); err != nil {
+		kongCtx.FatalIfErrorf(err)
 	}
 
-	if err := kongCtx.Run(binds...); err != nil {
+	if err := kongCtx.Run(); err != nil {
 		if k8serrors.IsForbidden(err) {
-			if client := findClient(binds); client != nil {
+			if client != nil {
 				org, _ := client.Organization()
 				err = cli.ErrorWithContext(err).
 					WithExitCode(cli.ExitForbidden).
@@ -234,19 +222,26 @@ func newParser(ctx context.Context, cmd *rootCommand, w io.Writer, r io.Reader) 
 	return parser, nil
 }
 
-// noAPIClientRequired returns true if the command does not need to (or can't)
-// require an API client. The command parameter is the resolved command path
-// from [kong.Context.Command].
-func noAPIClientRequired(command string) bool {
-	return matchCommand(command, auth.CmdName, "login") ||
-		matchCommand(command, auth.CmdName, "logout") ||
-		matchCommand(command, auth.CmdName, auth.OIDCCmdName) ||
-		matchCommand(command, auth.CmdName, auth.ClientCredentialsCmdName) ||
-		matchCommand(command, "completions")
-}
+// newAPIClient returns a client for the API cluster and project selected by the flags,
+// explaining how to log in when that fails.
+func newAPIClient(ctx context.Context, f flags) (*api.Client, error) {
+	client, err := api.New(
+		ctx,
+		f.APICluster,
+		f.Project,
+		api.LogClient(ctx, f.LogAPIAddress, f.LogAPIInsecure),
+		api.DefaultAnnotations(api.ManagedByAnnotation, api.Name),
+	)
+	if err == nil {
+		return client, nil
+	}
+	if _, ok := errors.AsType[*cli.Error](err); ok {
+		return nil, err
+	}
 
-func matchCommand(command string, parts ...string) bool {
-	return strings.HasPrefix(command, strings.Join(parts, " "))
+	return nil, cli.ErrorWithContext(fmt.Errorf("unable to get API client: %w", err)).
+		WithExitCode(cli.ExitError).
+		WithSuggestions("Login to the API: " + cli.LoginCmd)
 }
 
 func setupSignalHandler(ctx context.Context, cancel context.CancelFunc) {
@@ -318,16 +313,6 @@ func merge(existing kong.Vars, additional ...kong.Vars) error {
 		}
 	}
 
-	return nil
-}
-
-// findClient searches for an *api.Client in the provided binds slice
-func findClient(binds []any) *api.Client {
-	for _, b := range binds {
-		if client, ok := b.(*api.Client); ok {
-			return client
-		}
-	}
 	return nil
 }
 
