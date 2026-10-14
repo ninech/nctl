@@ -51,8 +51,8 @@ func (cmd *SetOrgCmd) Run(ctx context.Context, client *api.Client) error {
 
 	// Show default project info (which is the same as the organization name by default)
 	cmd.Successf("📝", "Default project set to: %q", cmd.Organization)
-	cmd.Printf("\nTo set a different project: %s\n", cli.Command().SetProject(""))
-	cmd.Printf("To list available projects: %s\n", cli.Command().GetProjects())
+	cmd.Printf("\nTo set a different project: %s\n", cli.SetProjectCmd(""))
+	cmd.Printf("To list available projects: %s\n", cli.GetProjectsCmd)
 
 	return nil
 }
