@@ -10,7 +10,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
@@ -59,18 +58,12 @@ func defaultGitInformationClient(url *url.URL, token string) *Client {
 			Cap:      2 * time.Second,
 		},
 	}
-	g.logRetryFunc = func(err error) {
-		g.logError("Retrying because of error: %v\n", err)
-	}
 	return g
 }
 
-func (g *Client) logError(format string, v ...any) {
-	fmt.Fprintf(os.Stderr, format, v...)
-}
-
-// SetLogRetryFunc allows to set the function which logs retries when doing
-// requests to the git information service
+// SetLogRetryFunc sets the function which logs retries
+// when doing requests to the git information service.
+// Without one, retries are not logged.
 func (g *Client) SetLogRetryFunc(f func(err error)) {
 	g.logRetryFunc = f
 }
@@ -156,16 +149,4 @@ func (g *Client) sendRequest(ctx context.Context, req apps.GitExploreRequest) (*
 		)
 	}
 	return exploreResponse, nil
-}
-
-// RetryLogFunc returns a retry log function depending on the given showErrors
-// parameter. If it is set to true, exact errors are shown when retrying to
-// connect to the git information service. Otherwise they are not shown.
-func RetryLogFunc(showErrors bool) func(err error) {
-	return func(err error) {
-		if showErrors {
-			fmt.Fprintf(os.Stderr, "got error: %v\n", err)
-		}
-		fmt.Fprintln(os.Stderr, "Retrying...")
-	}
 }
