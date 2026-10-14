@@ -21,10 +21,11 @@ import (
 const defaultAPICluster = "nineapis.ch"
 
 // newParser builds the Kong parser for root.
-// The given reader and writer are bound as [io.Reader] and [io.Writer],
-// so that commands can prompt for input and print output.
+// The given reader is bound as [io.Reader],
+// so that commands can prompt for input.
+// Commands print their output to stdout and diagnostics to stderr.
 // opts are applied after the options of nctl.
-func newParser(ctx context.Context, root *rootCommand, version string, r io.Reader, w io.Writer, opts ...kong.Option) (*kong.Kong, error) {
+func newParser(ctx context.Context, root *rootCommand, version string, stdin io.Reader, stdout, stderr io.Writer, opts ...kong.Option) (*kong.Kong, error) {
 	kongVars, err := kongVariables(version)
 	if err != nil {
 		return nil, err
@@ -80,8 +81,8 @@ func newParser(ctx context.Context, root *rootCommand, version string, r io.Read
 		kong.PostBuild(apifield.Apply()),
 		kongVars,
 		kong.BindTo(ctx, (*context.Context)(nil)),
-		kong.BindTo(w, (*io.Writer)(nil)),
-		kong.BindTo(r, (*io.Reader)(nil)),
+		kong.Writers(stdout, stderr),
+		kong.BindTo(stdin, (*io.Reader)(nil)),
 	}
 
 	parser, err := kong.New(root, append(options, opts...)...)

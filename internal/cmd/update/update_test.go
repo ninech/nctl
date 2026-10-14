@@ -196,7 +196,7 @@ func runUpdate(t *testing.T, client *api.Client, out io.Writer, args []string) e
 		kong.PostBuild(apifield.Apply()),
 		vars,
 		kong.BindTo(t.Context(), (*context.Context)(nil)),
-		kong.BindTo(out, (*io.Writer)(nil)),
+		kong.Writers(out, out),
 	)
 
 	kctx, err := parser.Parse(args)

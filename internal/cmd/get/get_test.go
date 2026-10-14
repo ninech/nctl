@@ -26,7 +26,7 @@ func NewTestCmd(w io.Writer, outFormat outputFormat, opts ...func(*Cmd)) *Cmd {
 			Format: outFormat,
 		},
 	}
-	_ = cmd.BeforeApply(w)
+	_ = cmd.BeforeApply(testutil.KongContext(w, io.Discard))
 	for _, opt := range opts {
 		opt(cmd)
 	}

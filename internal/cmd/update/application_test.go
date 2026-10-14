@@ -1,7 +1,6 @@
 package update
 
 import (
-	"io"
 	"strings"
 	"testing"
 	"time"
@@ -975,7 +974,7 @@ func TestApplicationFlags(t *testing.T) {
 	nilFlags := &applicationCmd{}
 	vars, err := application.KongVars()
 	is.NoError(err)
-	_, err = kong.Must(nilFlags, vars, kong.BindTo(t.Output(), (*io.Writer)(nil))).Parse([]string{`testname`})
+	_, err = kong.Must(nilFlags, vars, kong.Writers(t.Output(), t.Output())).Parse([]string{`testname`})
 	is.NoError(err)
 
 	is.Nil(nilFlags.Hosts)
@@ -983,7 +982,7 @@ func TestApplicationFlags(t *testing.T) {
 	is.Nil(nilFlags.BuildEnv)
 
 	emptyFlags := &applicationCmd{}
-	_, err = kong.Must(emptyFlags, vars, kong.BindTo(t.Output(), (*io.Writer)(nil))).Parse([]string{`testname`, `--hosts=""`, `--env=`, `--build-env=`})
+	_, err = kong.Must(emptyFlags, vars, kong.Writers(t.Output(), t.Output())).Parse([]string{`testname`, `--hosts=""`, `--env=`, `--build-env=`})
 	is.NoError(err)
 
 	is.NotNil(emptyFlags.Hosts)
@@ -991,24 +990,24 @@ func TestApplicationFlags(t *testing.T) {
 	is.NotNil(emptyFlags.BuildEnv)
 
 	pauseFlags := &applicationCmd{}
-	_, err = kong.Must(pauseFlags, vars, kong.BindTo(t.Output(), (*io.Writer)(nil))).Parse([]string{`testname`, `--pause`})
+	_, err = kong.Must(pauseFlags, vars, kong.Writers(t.Output(), t.Output())).Parse([]string{`testname`, `--pause`})
 	is.NoError(err)
 	is.NotNil(pauseFlags.Pause)
 	is.True(*pauseFlags.Pause)
 
 	noPauseFlags := &applicationCmd{}
-	_, err = kong.Must(noPauseFlags, vars, kong.BindTo(t.Output(), (*io.Writer)(nil))).Parse([]string{`testname`, `--no-pause`})
+	_, err = kong.Must(noPauseFlags, vars, kong.Writers(t.Output(), t.Output())).Parse([]string{`testname`, `--no-pause`})
 	is.NoError(err)
 	is.NotNil(noPauseFlags.Pause)
 	is.False(*noPauseFlags.Pause)
 
 	unsetReplicasFlags := &applicationCmd{}
-	_, err = kong.Must(unsetReplicasFlags, vars, kong.BindTo(t.Output(), (*io.Writer)(nil))).Parse([]string{`testname`, `--unset-replicas`})
+	_, err = kong.Must(unsetReplicasFlags, vars, kong.Writers(t.Output(), t.Output())).Parse([]string{`testname`, `--unset-replicas`})
 	is.NoError(err)
 	is.NotNil(unsetReplicasFlags.UnsetReplicas)
 	is.True(*unsetReplicasFlags.UnsetReplicas)
 
 	xorReplicasFlags := &applicationCmd{}
-	_, err = kong.Must(xorReplicasFlags, vars, kong.BindTo(t.Output(), (*io.Writer)(nil))).Parse([]string{`testname`, `--replicas=2`, `--unset-replicas`})
+	_, err = kong.Must(xorReplicasFlags, vars, kong.Writers(t.Output(), t.Output())).Parse([]string{`testname`, `--replicas=2`, `--unset-replicas`})
 	is.Error(err)
 }

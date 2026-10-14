@@ -3,7 +3,6 @@ package get
 import (
 	"context"
 	"fmt"
-	"os"
 	"path"
 	"time"
 
@@ -115,7 +114,7 @@ func pullImage(ctx context.Context, apiClient *api.Client, build *apps.Build, ou
 		return err
 	}
 
-	if err := jsonmessage.DisplayMessages(resp.JSONMessages(ctx), os.Stderr); err != nil {
+	if err := jsonmessage.DisplayMessages(resp.JSONMessages(ctx), out.Err()); err != nil {
 		return err
 	}
 

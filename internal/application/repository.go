@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
+	"io"
 	"strings"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
@@ -29,7 +29,7 @@ func (v *RepositoryValidator) Validate(ctx context.Context, target apps.GitTarge
 	if err != nil {
 		return target, err
 	}
-	v.Client.SetLogRetryFunc(retryRepoAccess(spinner, v.Debug))
+	v.Client.SetLogRetryFunc(retryRepoAccess(v.Err(), spinner, v.Debug))
 	if err := spinner.Start(); err != nil {
 		return target, err
 	}
@@ -56,7 +56,7 @@ func (v *RepositoryValidator) testRepositoryAccess(ctx context.Context, target a
 		)
 	}
 	if len(repoInfo.Warnings) > 0 {
-		fmt.Fprintf(os.Stderr, "warning: %s\n", strings.Join(repoInfo.Warnings, "."))
+		fmt.Fprintf(v.Err(), "warning: %s\n", strings.Join(repoInfo.Warnings, "."))
 	}
 	if repoInfo.Error != "" {
 		return target, errors.New(repoInfo.Error)
@@ -76,15 +76,16 @@ func (v *RepositoryValidator) testRepositoryAccess(ctx context.Context, target a
 	return target, nil
 }
 
-func retryRepoAccess(spinner *yacspin.Spinner, debug bool) func(err error) {
+// retryRepoAccess returns the function logging retries of the repository access check to stderr.
+func retryRepoAccess(stderr io.Writer, spinner *yacspin.Spinner, debug bool) func(err error) {
 	return func(err error) {
 		// in non debug mode we just change the color of the spinner to
 		// indicate that something went wrong, but we are still on it
 		if err := spinner.Colors("fgYellow"); err != nil {
-			fmt.Fprintf(os.Stderr, "\nerror: %v\n", err)
+			fmt.Fprintf(stderr, "\nerror: %v\n", err)
 		}
 		if debug {
-			fmt.Fprintf(os.Stderr, "\nerror: %v\n", err)
+			fmt.Fprintf(stderr, "\nerror: %v\n", err)
 		}
 	}
 }

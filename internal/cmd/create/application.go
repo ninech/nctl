@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"time"
@@ -218,7 +219,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	if err := c.wait(
 		appWaitCtx,
 		waitForBuildStart(newApp),
-		waitForBuildFinish(appWaitCtx, newApp, client.Log),
+		waitForBuildFinish(appWaitCtx, newApp, client.Log, cmd.Err()),
 		waitForRelease(newApp),
 	); err != nil {
 		printCtx, cancel := context.WithTimeout(context.Background(), logPrintTimeout)
@@ -455,10 +456,13 @@ func waitForBuildStart(app *apps.Application) waitStage {
 	}
 }
 
+// waitForBuildFinish shows the build log until the build of app finishes,
+// reporting errors of the log display to stderr.
 func waitForBuildFinish(
 	ctx context.Context,
 	app *apps.Application,
 	logClient *log.Client,
+	stderr io.Writer,
 ) waitStage {
 	msg := message{icon: "📦", text: "building application"}
 	p := tea.NewProgram(
@@ -494,14 +498,14 @@ func waitForBuildFinish(
 						Quiet:       true,
 					},
 				); err != nil {
-					fmt.Fprintf(os.Stderr, "error tailing the build log: %s", err)
+					fmt.Fprintf(stderr, "error tailing the build log: %s", err)
 				}
 			}()
 
 			go func() {
 				if _, err := p.Run(); err != nil {
 					if !errors.Is(err, tea.ErrProgramKilled) {
-						fmt.Fprintf(os.Stderr, "error running tea program: %s", err)
+						fmt.Fprintf(stderr, "error running tea program: %s", err)
 					}
 				}
 			}()
