@@ -22,7 +22,17 @@ func TestErrorExitCode(t *testing.T) {
 		{
 			name:     "default exit code when Code is zero",
 			err:      &Error{Err: errors.New("fail")},
-			wantCode: 0,
+			wantCode: ExitError,
+		},
+		{
+			name:     "default exit code without WithExitCode",
+			err:      ErrorWithContext(errors.New("fail")),
+			wantCode: ExitError,
+		},
+		{
+			name:     "WithExitCode builder with ExitOK",
+			err:      ErrorWithContext(errors.New("nothing found")).WithExitCode(ExitOK),
+			wantCode: ExitOK,
 		},
 		{
 			name:     "explicit usage error",
