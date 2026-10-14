@@ -1,9 +1,10 @@
-package main
+package cmd_test
 
 import (
 	"errors"
 	"go/build"
 	"io/fs"
+	"os"
 	"path"
 	"path/filepath"
 	"slices"
@@ -43,7 +44,7 @@ func TestVerbsDoNotImportEachOther(t *testing.T) {
 	verbImportPrefix := path.Join(module, verbDir) + "/"
 	found := map[verbImport]bool{}
 	for _, from := range verbPackages {
-		pkg, err := build.Default.ImportDir(filepath.Join(verbDir, from), 0)
+		pkg, err := build.Default.ImportDir(filepath.Join(moduleRoot(t), verbDir, from), 0)
 		require.NoError(t, err)
 		for _, imported := range slices.Concat(pkg.Imports, pkg.TestImports, pkg.XTestImports) {
 			if to, ok := strings.CutPrefix(imported, verbImportPrefix); ok && slices.Contains(verbPackages, to) {
@@ -121,9 +122,14 @@ func within(dir, root string) bool {
 func modulePackages(t *testing.T) map[string]*build.Package {
 	t.Helper()
 
+	root := moduleRoot(t)
 	packages := map[string]*build.Package{}
-	err := filepath.WalkDir(".", func(dir string, entry fs.DirEntry, err error) error {
+	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || !entry.IsDir() {
+			return err
+		}
+		dir, err := filepath.Rel(root, path)
+		if err != nil {
 			return err
 		}
 		// Skip what the go tool skips,
@@ -132,7 +138,7 @@ func modulePackages(t *testing.T) map[string]*build.Package {
 			slices.Contains([]string{"testdata", "completions", "dist"}, name)) {
 			return filepath.SkipDir
 		}
-		pkg, err := build.Default.ImportDir(dir, 0)
+		pkg, err := build.Default.ImportDir(path, 0)
 		if _, ok := errors.AsType[*build.NoGoError](err); ok {
 			return nil
 		}
@@ -146,4 +152,20 @@ func modulePackages(t *testing.T) map[string]*build.Package {
 	require.NoError(t, err)
 
 	return packages
+}
+
+// moduleRoot returns the directory holding the go.mod of the module.
+func moduleRoot(t *testing.T) string {
+	t.Helper()
+
+	dir, err := os.Getwd()
+	require.NoError(t, err)
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		require.NotEqual(t, dir, parent, "no go.mod found above the working directory")
+		dir = parent
+	}
 }
