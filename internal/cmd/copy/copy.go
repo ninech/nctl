@@ -2,10 +2,10 @@
 package copy
 
 import (
-	"io"
 	"math/rand"
 	"time"
 
+	"github.com/alecthomas/kong"
 	"github.com/lucasepe/codename"
 	"github.com/ninech/nctl/internal/format"
 )
@@ -25,8 +25,8 @@ type ResourceCmd struct {
 }
 
 // BeforeApply initializes Writer from Kong's bound [io.Writer].
-func (cmd *ResourceCmd) BeforeApply(writer io.Writer) error {
-	return cmd.Writer.BeforeApply(writer)
+func (cmd *ResourceCmd) BeforeApply(kctx *kong.Context) error {
+	return cmd.Writer.BeforeApply(kctx)
 }
 
 func getName(name string) string {

@@ -879,7 +879,7 @@ func TestApplicationFlags(t *testing.T) {
 	is.NoError(err)
 
 	defaultCmd := &applicationCmd{}
-	_, err = kong.Must(defaultCmd, vars, kong.BindTo(io.Discard, (*io.Writer)(nil))).Parse([]string{
+	_, err = kong.Must(defaultCmd, vars, kong.Writers(io.Discard, io.Discard)).Parse([]string{
 		`test-app`,
 		`--git-url=https://github.com/ninech/doesnotexist.git`,
 	})
@@ -887,7 +887,7 @@ func TestApplicationFlags(t *testing.T) {
 	is.Equal(int32(application.DefaultReplicas), defaultCmd.Replicas)
 
 	explicitCmd := &applicationCmd{}
-	_, err = kong.Must(explicitCmd, vars, kong.BindTo(io.Discard, (*io.Writer)(nil))).Parse([]string{
+	_, err = kong.Must(explicitCmd, vars, kong.Writers(io.Discard, io.Discard)).Parse([]string{
 		`test-app`,
 		`--git-url=https://github.com/ninech/doesnotexist.git`,
 		`--replicas=5`,

@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/alecthomas/kong"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -23,30 +25,33 @@ func TestNewWriter(t *testing.T) {
 func TestWriter_BeforeApply(t *testing.T) {
 	t.Parallel()
 
-	buf := &bytes.Buffer{}
+	stdout, stderr := &bytes.Buffer{}, &bytes.Buffer{}
 
 	tests := []struct {
 		name         string
 		writer       *Writer
-		input        io.Writer
+		kctx         *kong.Context
 		expectWriter io.Writer
+		expectErr    io.Writer
 	}{
 		{
-			name:         "sets writer from input",
+			name:         "sets writers from the context",
 			writer:       &Writer{},
-			input:        buf,
-			expectWriter: buf,
+			kctx:         testutil.KongContext(stdout, stderr),
+			expectWriter: stdout,
+			expectErr:    stderr,
 		},
 		{
 			name:   "nil receiver does not panic",
 			writer: nil,
-			input:  buf,
+			kctx:   testutil.KongContext(stdout, stderr),
 		},
 		{
-			name:         "nil input",
+			name:         "nil context",
 			writer:       &Writer{},
-			input:        nil,
+			kctx:         nil,
 			expectWriter: nil,
+			expectErr:    io.Discard,
 		},
 	}
 
@@ -55,14 +60,24 @@ func TestWriter_BeforeApply(t *testing.T) {
 			t.Parallel()
 			is := require.New(t)
 
-			err := tt.writer.BeforeApply(tt.input)
+			err := tt.writer.BeforeApply(tt.kctx)
 			is.NoError(err)
 
 			if tt.writer != nil {
 				is.Equal(tt.expectWriter, tt.writer.Writer)
+				is.Equal(tt.expectErr, tt.writer.Err())
 			}
 		})
 	}
+}
+
+func TestWriter_Err(t *testing.T) {
+	t.Parallel()
+	is := require.New(t)
+
+	var nilWriter *Writer
+	is.Equal(io.Discard, nilWriter.Err())
+	is.Equal(io.Discard, (&Writer{}).Err())
 }
 
 func TestWriter_writer(t *testing.T) {

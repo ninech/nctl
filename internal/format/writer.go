@@ -5,6 +5,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/alecthomas/kong"
 	"github.com/theckman/yacspin"
 )
 
@@ -12,6 +13,9 @@ import (
 // printing formatted messages.
 type Writer struct {
 	io.Writer
+
+	// err receives diagnostics, see [Writer.Err].
+	err io.Writer
 }
 
 // NewWriter returns a new [Writer].
@@ -28,6 +32,18 @@ func (w *Writer) writer() io.Writer {
 	return w.Writer
 }
 
+// Err returns the writer for diagnostics,
+// such as warnings, progress and the output of subprocesses,
+// which must not mix with the output of a command.
+// It is [io.Discard] if the receiver or its error writer is nil.
+func (w *Writer) Err() io.Writer {
+	if w == nil || w.err == nil {
+		return io.Discard
+	}
+
+	return w.err
+}
+
 // Write implements [io.Writer]. It shadows the promoted method of the embedded
 // [io.Writer] so that writing to an uninitialized Writer discards the output
 // instead of panicking. The receiver is a value so that Writer keeps
@@ -36,7 +52,8 @@ func (w Writer) Write(p []byte) (int, error) {
 	return w.writer().Write(p)
 }
 
-// BeforeApply ensures that Kong initializes the writer.
+// BeforeApply ensures that Kong initializes the writer
+// with the standard output and error of the Kong context.
 //
 // Kong discovers hook methods by descending into the embedded fields of the
 // selected command, and it only descends into fields that are exported. A
@@ -44,9 +61,10 @@ func (w Writer) Write(p []byte) (int, error) {
 // initialized, and every message printed through it is silently discarded.
 // Command structs that embed a Writer, and every struct that embeds those in
 // turn, must consequently be exported.
-func (w *Writer) BeforeApply(writer io.Writer) error {
-	if w != nil && writer != nil {
-		w.Writer = writer
+func (w *Writer) BeforeApply(kctx *kong.Context) error {
+	if w != nil && kctx != nil {
+		w.Writer = kctx.Stdout
+		w.err = kctx.Stderr
 	}
 
 	return nil

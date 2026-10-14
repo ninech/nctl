@@ -4,10 +4,10 @@ package create
 import (
 	"context"
 	"fmt"
-	"io"
 	"math/rand"
 	"time"
 
+	"github.com/alecthomas/kong"
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/lucasepe/codename"
@@ -56,8 +56,8 @@ type ResourceCmd struct {
 }
 
 // BeforeApply initializes Writer from Kong's bound [io.Writer].
-func (cmd *ResourceCmd) BeforeApply(writer io.Writer) error {
-	return cmd.Writer.BeforeApply(writer)
+func (cmd *ResourceCmd) BeforeApply(kctx *kong.Context) error {
+	return cmd.Writer.BeforeApply(kctx)
 }
 
 // resultFunc is the function called on a watch event during creation. It
