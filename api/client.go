@@ -234,7 +234,7 @@ func reloginNeeded(err error) error {
 	return fmt.Errorf(
 		"%w, please re-login by executing %q",
 		err,
-		cli.Command().Login(),
+		cli.LoginCmd,
 	)
 }
 

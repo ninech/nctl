@@ -125,7 +125,7 @@ func (cmd *applicationCmd) getReplica(ctx context.Context, client *api.Client) (
 			return "", buildType, cli.ErrorWithContext(fmt.Errorf("worker job %q not found", cmd.WorkerJob)).
 				WithAvailable(availableJobs...).
 				WithSuggestions(
-					fmt.Sprintf("List worker jobs: %s", cli.Command().Get(apps.ApplicationKind, cmd.Name, "-o", "yaml")),
+					fmt.Sprintf("List worker jobs: %s", cli.GetCmd(apps.ApplicationKind, cmd.Name, "-o", "yaml")),
 				)
 		}
 	}

@@ -1,10 +1,12 @@
 package api
 
+import "github.com/ninech/nctl/internal/cli"
+
 const (
 	// ManagedByAnnotation is the annotation key marking objects that nctl created or updated.
 	ManagedByAnnotation = "app.kubernetes.io/managed-by"
 	// Name is the name of the CLI and the value of ManagedByAnnotation on objects managed by it.
-	Name = "nctl"
+	Name = cli.Name
 )
 
 // IsManagedBy reports whether the annotations mark an object as managed by nctl.
