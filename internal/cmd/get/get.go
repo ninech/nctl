@@ -167,7 +167,7 @@ func (out *output) notFound(kind, project string) error {
 
 	pluralKind := flect.Pluralize(kind)
 	err := cli.ErrorWithContext(fmt.Errorf("no %q found", pluralKind)).
-		WithExitCode(0)
+		WithExitCode(cli.ExitOK)
 
 	if out.AllProjects {
 		return err

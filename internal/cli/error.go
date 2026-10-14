@@ -41,7 +41,9 @@ const (
 type Error struct {
 	// Err is the underlying error being wrapped.
 	Err error
-	// Code is the exit code for this error. When zero, ExitCode defaults to ExitError (1).
+	// Code is the exit code for this error.
+	// When zero, ExitCode defaults to ExitError (1),
+	// unless the code was set to ExitOK with WithExitCode.
 	Code int
 	// Context provides additional key-value metadata about the error (e.g., "Organization": "foo").
 	Context map[string]string
@@ -49,6 +51,10 @@ type Error struct {
 	Available []string
 	// Suggestions provides recommended commands or actions to fix the error.
 	Suggestions []string
+
+	// codeSet tells whether WithExitCode set Code,
+	// so that ExitOK can be told apart from no code.
+	codeSet bool
 }
 
 // Error returns the full formatted error for display to the user,
@@ -86,8 +92,13 @@ func (e *Error) Error() string {
 }
 
 // ExitCode returns the exit code for this error, satisfying [kong.ExitCoder].
-// When Code is zero, it defaults to ExitError (1).
+// When Code is zero, it defaults to ExitError (1),
+// unless the code was set to ExitOK with WithExitCode.
 func (e *Error) ExitCode() int {
+	if e.Code == ExitOK && !e.codeSet {
+		return ExitError
+	}
+
 	return e.Code
 }
 
@@ -108,6 +119,7 @@ func ErrorWithContext(err error) *Error {
 // WithExitCode sets the exit code for the error.
 func (e *Error) WithExitCode(code int) *Error {
 	e.Code = code
+	e.codeSet = true
 	return e
 }
 
