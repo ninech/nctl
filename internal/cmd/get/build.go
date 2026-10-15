@@ -7,11 +7,10 @@ import (
 	"path"
 	"time"
 
-	"github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/client"
+	"github.com/moby/moby/api/pkg/authconfig"
 	"github.com/moby/moby/api/types/registry"
-	"github.com/moby/moby/pkg/jsonmessage"
-	"github.com/moby/term"
+	"github.com/moby/moby/client"
+	"github.com/moby/moby/client/pkg/jsonmessage"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
@@ -92,12 +91,13 @@ func printBuild(builds []apps.Build, out *output, header bool) error {
 }
 
 func pullImage(ctx context.Context, apiClient *api.Client, build *apps.Build, out *output) error {
-	cli, err := client.NewClientWithOpts(client.WithAPIVersionNegotiation(), client.FromEnv)
+	cli, err := client.New(client.FromEnv)
 	if err != nil {
 		return err
 	}
+	defer cli.Close()
 
-	registryAuth, err := registry.EncodeAuthConfig(registry.AuthConfig{
+	registryAuth, err := authconfig.Encode(registry.AuthConfig{
 		// technically the username does not matter, it just needs to be set to something
 		Username: "registry",
 		Password: apiClient.Token(ctx),
@@ -108,16 +108,14 @@ func pullImage(ctx context.Context, apiClient *api.Client, build *apps.Build, ou
 
 	out.Printf("Pulling image of build %s\n", build.Name)
 
-	reader, err := cli.ImagePull(ctx, ImageRef(build.Spec.ForProvider.Image), image.PullOptions{
+	resp, err := cli.ImagePull(ctx, ImageRef(build.Spec.ForProvider.Image), client.ImagePullOptions{
 		RegistryAuth: registryAuth,
 	})
 	if err != nil {
 		return err
 	}
-	defer reader.Close()
 
-	termFd, isTerm := term.GetFdInfo(os.Stderr)
-	if err := jsonmessage.DisplayJSONMessagesStream(reader, os.Stderr, termFd, isTerm, nil); err != nil {
+	if err := jsonmessage.DisplayMessages(resp.JSONMessages(ctx), os.Stderr); err != nil {
 		return err
 	}
 
@@ -132,18 +130,19 @@ func pullImage(ctx context.Context, apiClient *api.Client, build *apps.Build, ou
 
 func tagImage(ctx context.Context, cli *client.Client, build *apps.Build) error {
 	// tag the pulled image with "latest" for ease of use
-	if err := cli.ImageTag(ctx,
-		ImageRef(build.Spec.ForProvider.Image),
-		imageWithTag(build.Spec.ForProvider.Image, "latest"),
-	); err != nil {
+	if _, err := cli.ImageTag(ctx, client.ImageTagOptions{
+		Source: ImageRef(build.Spec.ForProvider.Image),
+		Target: imageWithTag(build.Spec.ForProvider.Image, "latest"),
+	}); err != nil {
 		return err
 	}
 
 	// tag the pulled image with the build name to tell versions apart
-	return cli.ImageTag(ctx,
-		ImageRef(build.Spec.ForProvider.Image),
-		imageWithBuildTag(build),
-	)
+	_, err := cli.ImageTag(ctx, client.ImageTagOptions{
+		Source: ImageRef(build.Spec.ForProvider.Image),
+		Target: imageWithBuildTag(build),
+	})
+	return err
 }
 
 func ImageRef(image meta.Image) string {
