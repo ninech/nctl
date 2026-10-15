@@ -285,11 +285,15 @@ func getPrinter(out io.Writer) (printer.Printer, error) {
 }
 
 func IsInteractiveEnvironment(out io.Writer) bool {
-	f, isFile := out.(*os.File)
-	if !isFile {
-		return false
-	}
-	return term.IsTerminal(int(f.Fd()))
+	return IsTerminal(out)
+}
+
+// IsTerminal reports whether stream, a reader or writer, is a terminal.
+// Only streams exposing their file descriptor, such as an [os.File], can be one,
+// so wrapping a stream hides its terminal.
+func IsTerminal(stream any) bool {
+	f, ok := stream.(interface{ Fd() uintptr })
+	return ok && term.IsTerminal(int(f.Fd()))
 }
 
 // stripObj removes some fields which simply add clutter to the yaml output.
