@@ -59,10 +59,6 @@ func flagNames(flag *kong.Flag) []string {
 // findFlag returns the application-level flag with the given name, or nil if
 // the parser does not define it.
 func findFlag(parser *kong.Kong, name string) *kong.Flag {
-	if parser == nil || parser.Model == nil {
-		return nil
-	}
-
 	for _, flag := range parser.Model.Flags {
 		if flag != nil && flag.Name == name {
 			return flag

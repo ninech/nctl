@@ -4,6 +4,7 @@ package completion
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"reflect"
 	"sync"
 
@@ -32,12 +33,15 @@ const (
 // lazily created client between them, so that completing a command line
 // authenticates at most once.
 type apiPredictors struct {
+	log     *slog.Logger
 	client  clientFunc
 	project projectFinder
 }
 
-func newAPIPredictors(ctx context.Context, parser *kong.Kong) *apiPredictors {
+// newAPIPredictors returns the predictors querying the API.
+func newAPIPredictors(ctx context.Context, parser *kong.Kong, log *slog.Logger) *apiPredictors {
 	return &apiPredictors{
+		log: log,
 		client: sync.OnceValues(func() (*api.Client, error) {
 			return newClient(ctx, apiCluster(parser))
 		}),
@@ -53,31 +57,29 @@ func (p *apiPredictors) options() []kongcompletion.Option {
 		kongcompletion.WithPredictor(localFile, complete.PredictFiles("*")),
 		kongcompletion.WithPredictors(apifield.Predictors()),
 		kongcompletion.WithPredictors(map[string]complete.Predictor{
-			ResourceName: unboundResourceName{},
-			ProjectName: newResourceNameWithKind(p.client, p.project,
+			ResourceName: unboundResourceName{p.log},
+			ProjectName: newResourceNameWithKind(p.log, p.client, p.project,
 				management.SchemeGroupVersion.WithKind(reflect.TypeFor[management.ProjectList]().Name())),
-			PostgresDatabases: newInstanceDatabases(p.client, p.project, storage.PostgresGroupVersionKind),
-			MySQLDatabases:    newInstanceDatabases(p.client, p.project, storage.MySQLGroupVersionKind),
+			PostgresDatabases: newInstanceDatabases(p.log, p.client, p.project, storage.PostgresGroupVersionKind),
+			MySQLDatabases:    newInstanceDatabases(p.log, p.client, p.project, storage.MySQLGroupVersionKind),
 		}),
 	}
 }
 
 func (p *apiPredictors) resourceName(resource string) complete.Predictor {
-	return newResourceName(p.client, p.project, resource)
+	return newResourceName(p.log, p.client, p.project, resource)
 }
 
 // Command builds the complete.Command tree for shell completion.
-func Command(ctx context.Context, parser *kong.Kong) (complete.Command, error) {
-	predictors := newAPIPredictors(ctx, parser)
+// The predictors report to log why they predict nothing.
+func Command(ctx context.Context, parser *kong.Kong, log *slog.Logger) (complete.Command, error) {
+	predictors := newAPIPredictors(ctx, parser, log)
 
 	cmd, err := kongcompletion.Command(parser, predictors.options()...)
 	if err != nil {
 		return complete.Command{}, err
 	}
 
-	if parser == nil || parser.Model == nil {
-		return cmd, nil
-	}
 	if err := bindResourceNames(cmd, parser.Model.Node, predictors.resourceName); err != nil {
 		return complete.Command{}, err
 	}
@@ -89,7 +91,8 @@ func Command(ctx context.Context, parser *kong.Kong) (complete.Command, error) {
 }
 
 // Register configures the Kong parser to intercept shell completion requests.
-func Register(ctx context.Context, parser *kong.Kong) error {
+// The predictors report to log why they predict nothing, see [NewDebugLogger].
+func Register(ctx context.Context, parser *kong.Kong, log *slog.Logger) error {
 	// Verify required flags exist; missing flags would cause completion
 	// to silently fall back to kubeconfig defaults.
 	for _, name := range []string{apiClusterFlag, projectFlag} {
@@ -100,7 +103,7 @@ func Register(ctx context.Context, parser *kong.Kong) error {
 
 	// Build the tree manually to retain bound resource predictors and catch
 	// misconfigurations before exiting.
-	cmd, err := Command(ctx, parser)
+	cmd, err := Command(ctx, parser, log)
 	if err != nil {
 		return fmt.Errorf("error on shell completion: %w", err)
 	}

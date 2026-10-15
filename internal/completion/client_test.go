@@ -78,7 +78,6 @@ func TestAPIClusterWithoutFlag(t *testing.T) {
 	is.NoError(err)
 
 	is.Empty(apiCluster(parser))
-	is.Empty(apiCluster(nil))
 }
 
 // newAPIClusterParser builds a parser declaring the API cluster flag the same

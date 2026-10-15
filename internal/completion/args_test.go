@@ -143,5 +143,4 @@ func TestFindFlag(t *testing.T) {
 
 	is.NotNil(findFlag(parser, "project"))
 	is.Nil(findFlag(parser, "unknown"))
-	is.Nil(findFlag(nil, "project"))
 }
