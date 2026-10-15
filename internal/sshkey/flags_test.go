@@ -2,7 +2,6 @@ package sshkey
 
 import (
 	"bytes"
-	"io"
 	"testing"
 
 	"github.com/alecthomas/kong"
@@ -58,7 +57,7 @@ func TestFlags(t *testing.T) {
 				SSHKeysFlags        `prefix:"rescue-" set:"ssh_keys_purpose=for the tests"`
 				DeprecatedKeysFlags `prefix:"rescue-public-"`
 			}
-			_, err := kong.Must(&cmd, kong.Writers(io.Discard, io.Discard)).Parse(tt.args)
+			_, err := kong.Must(&cmd).Parse(tt.args)
 			is.NoError(err)
 
 			out := &bytes.Buffer{}

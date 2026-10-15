@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/alecthomas/kong"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/mattn/go-isatty"
 	meta "github.com/ninech/apis/meta/v1alpha1"
@@ -65,11 +64,11 @@ type ServiceCmd struct {
 	openTTYForConfirm   func() (io.ReadCloser, error)                                                                 `kong:"-"`
 }
 
-// BeforeApply initializes Writer from the Kong context and Reader from Kong's bound io.Reader.
-func (cmd *ServiceCmd) BeforeApply(kctx *kong.Context, reader io.Reader) error {
+// BeforeApply initializes Writer and Reader from the bound [format.IOStreams].
+func (cmd *ServiceCmd) BeforeApply(streams format.IOStreams) error {
 	return errors.Join(
-		cmd.Writer.BeforeApply(kctx),
-		cmd.Reader.BeforeApply(reader),
+		cmd.Writer.BeforeApply(streams),
+		cmd.Reader.BeforeApply(streams),
 	)
 }
 

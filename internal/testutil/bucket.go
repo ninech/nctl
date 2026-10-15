@@ -7,6 +7,7 @@ import (
 
 	"github.com/alecthomas/kong"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/format"
 )
 
 // RunNamedWithFlags is a generic test helper for running Kong command.
@@ -46,7 +47,7 @@ func RunNamedWithFlags(
 		kong.Name("nctl-test"),
 		vars,
 		kong.BindTo(t.Context(), (*context.Context)(nil)),
-		kong.Writers(t.Output(), t.Output()),
+		KongStreams(format.IOStreams{Out: t.Output(), ErrOut: t.Output()}),
 	)
 
 	kctx, err := parser.Parse(args)

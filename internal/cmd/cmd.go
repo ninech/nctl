@@ -22,6 +22,7 @@ import (
 	"github.com/ninech/nctl/internal/cmd/logs"
 	"github.com/ninech/nctl/internal/cmd/update"
 	"github.com/ninech/nctl/internal/completion"
+	"github.com/ninech/nctl/internal/format"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
@@ -73,7 +74,8 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 	}()
 
 	root := &rootCommand{}
-	parser, err := newParser(ctx, root, version, stdin, stdout, stderr,
+	streams := format.IOStreams{In: stdin, Out: stdout, ErrOut: stderr}
+	parser, err := newParser(ctx, root, version, streams,
 		kong.Exit(func(code int) { panic(exit(code)) }),
 	)
 	if err != nil {

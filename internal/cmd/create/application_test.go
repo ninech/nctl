@@ -19,6 +19,7 @@ import (
 	"github.com/ninech/nctl/api/gitinfo"
 	"github.com/ninech/nctl/api/log"
 	"github.com/ninech/nctl/internal/application"
+	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 
@@ -879,7 +880,7 @@ func TestApplicationFlags(t *testing.T) {
 	is.NoError(err)
 
 	defaultCmd := &applicationCmd{}
-	_, err = kong.Must(defaultCmd, vars, kong.Writers(io.Discard, io.Discard)).Parse([]string{
+	_, err = kong.Must(defaultCmd, vars, testutil.KongStreams(format.IOStreams{Out: io.Discard, ErrOut: io.Discard})).Parse([]string{
 		`test-app`,
 		`--git-url=https://github.com/ninech/doesnotexist.git`,
 	})
@@ -887,7 +888,7 @@ func TestApplicationFlags(t *testing.T) {
 	is.Equal(int32(application.DefaultReplicas), defaultCmd.Replicas)
 
 	explicitCmd := &applicationCmd{}
-	_, err = kong.Must(explicitCmd, vars, kong.Writers(io.Discard, io.Discard)).Parse([]string{
+	_, err = kong.Must(explicitCmd, vars, testutil.KongStreams(format.IOStreams{Out: io.Discard, ErrOut: io.Discard})).Parse([]string{
 		`test-app`,
 		`--git-url=https://github.com/ninech/doesnotexist.git`,
 		`--replicas=5`,

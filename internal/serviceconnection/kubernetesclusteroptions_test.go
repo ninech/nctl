@@ -1,7 +1,6 @@
 package serviceconnection
 
 import (
-	"io"
 	"testing"
 
 	"github.com/alecthomas/kong"
@@ -54,7 +53,7 @@ func TestKubernetesClusterOptionsAPIType(t *testing.T) {
 			var cmd struct {
 				KubernetesClusterOptions `embed:"" prefix:"source-"`
 			}
-			_, err := kong.Must(&cmd, KongVars(), kong.Writers(io.Discard, io.Discard)).Parse(tt.args)
+			_, err := kong.Must(&cmd, KongVars()).Parse(tt.args)
 			is.NoError(err)
 
 			is.Equal(tt.want, cmd.APIType())

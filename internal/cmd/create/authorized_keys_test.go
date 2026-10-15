@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ninech/nctl/internal/format"
+	"github.com/ninech/nctl/internal/testutil"
 )
 
 // Valid ed25519 public keys used across the tests of this package.
@@ -27,7 +28,7 @@ func parseDatabaseSSHKeys(t *testing.T, args ...string) DatabaseSSHKeysFlags {
 	var cmd struct {
 		DatabaseSSHKeysFlags `set:"ssh_keys_purpose=for the tests"`
 	}
-	_, err := kong.Must(&cmd, kong.Writers(io.Discard, io.Discard)).Parse(args)
+	_, err := kong.Must(&cmd, testutil.KongStreams(format.IOStreams{Out: io.Discard, ErrOut: io.Discard})).Parse(args)
 	require.NoError(t, err)
 
 	return cmd.DatabaseSSHKeysFlags
