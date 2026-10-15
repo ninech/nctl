@@ -17,7 +17,7 @@ func TestServiceConnection(t *testing.T) {
 	out := &bytes.Buffer{}
 	cmd := serviceConnectionCmd{
 		ResourceCmd: ResourceCmd{
-			Writer:      format.NewWriter(out),
+			Writer:      format.NewWriter(out, out),
 			Name:        "test",
 			Force:       true,
 			Wait:        false,

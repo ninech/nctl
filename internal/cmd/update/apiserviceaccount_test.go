@@ -48,7 +48,7 @@ func TestAPIServiceAccount(t *testing.T) {
 			t.Parallel()
 
 			out := &bytes.Buffer{}
-			tc.cmd.Writer = format.NewWriter(out)
+			tc.cmd.Writer = format.NewWriter(out, out)
 
 			apiClient := testutil.SetupClient(t,
 				testutil.WithObjects(tc.orig),

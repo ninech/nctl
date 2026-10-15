@@ -26,7 +26,7 @@ func TestDeleter(t *testing.T) {
 		testutil.WithObjects(asa),
 	)
 	out := &bytes.Buffer{}
-	cmd := &apiServiceAccountCmd{ResourceCmd{Writer: format.NewWriter(out)}}
+	cmd := &apiServiceAccountCmd{ResourceCmd{Writer: format.NewWriter(out, out)}}
 
 	d := cmd.newDeleter(asa, iam.APIServiceAccountKind)
 

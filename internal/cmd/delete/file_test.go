@@ -33,7 +33,7 @@ metadata:
 	is.NoError(err)
 
 	out := &bytes.Buffer{}
-	cmd := &fromFile{Writer: format.NewWriter(out), Filename: f}
+	cmd := &fromFile{Writer: format.NewWriter(out, out), Filename: f}
 	is.NoError(cmd.Run(t.Context(), apiClient))
 	is.Contains(out.String(), "deleted APIServiceAccount asa/default")
 	is.ErrorIs(f.Close(), os.ErrClosed, "file is closed")

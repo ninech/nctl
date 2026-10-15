@@ -203,13 +203,11 @@ func uninitializedIO(target reflect.Value, path string) []string {
 
 		switch field.Type {
 		case reflect.TypeFor[format.Writer]():
-			// The output is the first field, the diagnostics the second.
-			if target.Field(i).Field(0).IsNil() || target.Field(i).Field(1).IsNil() {
+			if target.Field(i).FieldByName("Writer").IsNil() || target.Field(i).FieldByName("err").IsNil() {
 				uninitialized = append(uninitialized, fieldPath)
 			}
 		case reflect.TypeFor[format.Reader]():
-			// The interface is wrapped in the first field.
-			if target.Field(i).Field(0).IsNil() {
+			if target.Field(i).FieldByName("Reader").IsNil() {
 				uninitialized = append(uninitialized, fieldPath)
 			}
 		default:

@@ -22,7 +22,7 @@ import (
 func NewTestCmd(w io.Writer, outFormat outputFormat, opts ...func(*Cmd)) *Cmd {
 	cmd := &Cmd{
 		output: output{
-			Writer: format.NewWriter(w),
+			Writer: format.NewWriter(w, w),
 			Format: outFormat,
 		},
 	}

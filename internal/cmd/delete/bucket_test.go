@@ -20,7 +20,7 @@ func TestBucket(t *testing.T) {
 	out := &bytes.Buffer{}
 	cmd := bucketCmd{
 		ResourceCmd: ResourceCmd{
-			Writer:      format.NewWriter(out),
+			Writer:      format.NewWriter(out, out),
 			Name:        "test",
 			Force:       true,
 			Wait:        false,

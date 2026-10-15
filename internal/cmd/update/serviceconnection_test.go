@@ -134,7 +134,7 @@ func TestServiceConnection(t *testing.T) {
 			t.Parallel()
 
 			out := &bytes.Buffer{}
-			tt.update.Writer = format.NewWriter(out)
+			tt.update.Writer = format.NewWriter(out, out)
 			tt.update.Name = "test-" + t.Name()
 
 			apiClient := testutil.SetupClient(t)

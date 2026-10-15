@@ -80,7 +80,7 @@ func TestLogin(t *testing.T) {
 			newConfig := singleEntryConfig("new")
 			newConfig.AuthInfos["new"].Token = "new-token"
 			out := &bytes.Buffer{}
-			is.NoError(Login(format.NewWriter(out), newConfig, kubeconfigPath, tt.userName, tt.toOrg, tt.opts...))
+			is.NoError(Login(format.NewWriter(out, out), newConfig, kubeconfigPath, tt.userName, tt.toOrg, tt.opts...))
 
 			merged, err := clientcmd.LoadFromFile(kubeconfigPath)
 			is.NoError(err)

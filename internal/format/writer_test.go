@@ -15,10 +15,11 @@ func TestNewWriter(t *testing.T) {
 	t.Parallel()
 	is := require.New(t)
 
-	buf := &bytes.Buffer{}
-	writer := NewWriter(buf)
+	out, errOut := &bytes.Buffer{}, &bytes.Buffer{}
+	writer := NewWriter(out, errOut)
 
-	is.Equal(buf, writer.Writer)
+	is.Equal(out, writer.Out())
+	is.Equal(errOut, writer.Err())
 }
 
 func TestWriter_BeforeApply(t *testing.T) {
@@ -151,7 +152,7 @@ func TestWriter_Write(t *testing.T) {
 	}{
 		{
 			name:     "writes to the wrapped writer",
-			writer:   NewWriter,
+			writer:   func(w io.Writer) Writer { return NewWriter(w, io.Discard) },
 			expected: "hello",
 		},
 		{
@@ -201,7 +202,7 @@ func TestWriter_Print(t *testing.T) {
 			is := require.New(t)
 
 			buf := &bytes.Buffer{}
-			writer := NewWriter(buf)
+			writer := NewWriter(buf, buf)
 			tt.action(writer)
 
 			is.Equal(tt.expected, buf.String())
@@ -245,7 +246,7 @@ func TestWriter_FormattedOutput(t *testing.T) {
 			is := require.New(t)
 
 			buf := &bytes.Buffer{}
-			writer := NewWriter(buf)
+			writer := NewWriter(buf, buf)
 			tt.action(writer)
 
 			for _, s := range tt.contains {
@@ -291,7 +292,7 @@ func TestConfirm(t *testing.T) {
 			is := require.New(t)
 
 			output := &bytes.Buffer{}
-			writer := NewWriter(output)
+			writer := NewWriter(output, output)
 			reader := NewReader(strings.NewReader(tt.input))
 
 			result, err := writer.Confirm(reader, "Continue?")
