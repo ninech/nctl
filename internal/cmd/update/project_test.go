@@ -49,7 +49,7 @@ func TestProject(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			out := &bytes.Buffer{}
-			tc.cmd.Writer = format.NewWriter(out)
+			tc.cmd.Writer = format.NewWriter(out, out)
 
 			apiClient := testutil.SetupClient(t,
 				testutil.WithObjects(tc.orig),

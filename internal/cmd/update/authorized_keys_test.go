@@ -92,7 +92,7 @@ func TestOptionalSSHKeysFlagsDecoding(t *testing.T) {
 
 			is.Equal(tt.wantSet, flags.SSHKeysSet())
 
-			w := format.NewWriter(io.Discard)
+			w := format.NewWriter(io.Discard, io.Discard)
 			keys, err := flags.Keys(&w, "")
 			is.NoError(err)
 			is.Equal(tt.wantKeys, keys)
@@ -116,7 +116,7 @@ func TestCloudVMRescueNilKeyFileKeepsKeys(t *testing.T) {
 
 	out := &bytes.Buffer{}
 	cmd := cloudVMCmd{}
-	cmd.Writer = format.NewWriter(out)
+	cmd.Writer = format.NewWriter(out, out)
 	cmd.SSHKeysFromFiles = []*os.File{nil}
 
 	is.NoError(cmd.applyUpdates(cloudVM))

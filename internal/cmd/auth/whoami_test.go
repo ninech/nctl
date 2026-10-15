@@ -56,7 +56,7 @@ func TestWhoAmICmd_Run(t *testing.T) {
 			buf := &bytes.Buffer{}
 			apiClient := testutil.SetupClient(t, testutil.WithKubeconfig())
 			cmd := &WhoAmICmd{
-				Writer:    format.NewWriter(buf),
+				Writer:    format.NewWriter(buf, buf),
 				IssuerURL: "https://auth.nine.ch/auth/realms/pub",
 				ClientID:  "nineapis.ch-f178254",
 				Format:    testCase.format,

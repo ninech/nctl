@@ -219,7 +219,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 	if err := c.wait(
 		appWaitCtx,
 		waitForBuildStart(newApp),
-		waitForBuildFinish(appWaitCtx, newApp, client.Log, cmd.Err()),
+		waitForBuildFinish(appWaitCtx, cmd.Err(), newApp, client.Log),
 		waitForRelease(newApp),
 	); err != nil {
 		printCtx, cancel := context.WithTimeout(context.Background(), logPrintTimeout)
@@ -460,9 +460,9 @@ func waitForBuildStart(app *apps.Application) waitStage {
 // reporting errors of the log display to stderr.
 func waitForBuildFinish(
 	ctx context.Context,
+	stderr io.Writer,
 	app *apps.Application,
 	logClient *log.Client,
-	stderr io.Writer,
 ) waitStage {
 	msg := message{icon: "📦", text: "building application"}
 	p := tea.NewProgram(

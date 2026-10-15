@@ -42,7 +42,7 @@ func TestLoginCluster(t *testing.T) {
 
 	out := &bytes.Buffer{}
 	// we run without the execPlugin, that would be something for an e2e test
-	is.NoError(LoginCluster(t.Context(), apiClient, format.NewWriter(out), api.ObjectName(cluster), false))
+	is.NoError(LoginCluster(t.Context(), apiClient, format.NewWriter(out, out), api.ObjectName(cluster), false))
 
 	merged, err := clientcmd.LoadFromFile(apiClient.KubeconfigPath)
 	is.NoError(err)

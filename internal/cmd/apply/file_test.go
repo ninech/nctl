@@ -26,7 +26,7 @@ func TestFromFile(t *testing.T) {
 	ctx := t.Context()
 
 	out := &bytes.Buffer{}
-	cmd := &fromFile{Writer: format.NewWriter(out), Filename: manifest(t, apiServiceAccountYAML)}
+	cmd := &fromFile{Writer: format.NewWriter(out, out), Filename: manifest(t, apiServiceAccountYAML)}
 	is.NoError(cmd.Run(ctx, apiClient))
 	is.Contains(out.String(), "created APIServiceAccount asa/default")
 	is.ErrorIs(cmd.Filename.Close(), os.ErrClosed, "file is closed")

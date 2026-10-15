@@ -27,7 +27,7 @@ func TestProjectConfig(t *testing.T) {
 
 	out := &bytes.Buffer{}
 	cmd := configCmd{
-		Writer: format.NewWriter(out),
+		Writer: format.NewWriter(out, out),
 		Force:  true,
 		Wait:   false,
 	}

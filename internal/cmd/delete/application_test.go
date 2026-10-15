@@ -147,7 +147,7 @@ func TestApplication(t *testing.T) {
 			out := &bytes.Buffer{}
 			cmd := applicationCmd{
 				ResourceCmd: ResourceCmd{
-					Writer: format.NewWriter(out),
+					Writer: format.NewWriter(out, out),
 					Force:  true,
 					Wait:   false,
 					Name:   testCase.name,

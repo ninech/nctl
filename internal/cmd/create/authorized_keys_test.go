@@ -105,7 +105,7 @@ func TestDatabaseSSHKeysFlags(t *testing.T) {
 			is := require.New(t)
 
 			out := &bytes.Buffer{}
-			w := format.NewWriter(out)
+			w := format.NewWriter(out, out)
 			flags := parseDatabaseSSHKeys(t, tt.args...)
 
 			keys, err := flags.StorageKeys(&w)

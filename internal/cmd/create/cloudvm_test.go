@@ -221,7 +221,7 @@ func TestCloudVMPublicKeys(t *testing.T) {
 
 			out := &bytes.Buffer{}
 			cmd := parseCloudVM(t, append([]string{`test-cloudvm`}, tt.args...)...)
-			cmd.Writer = format.NewWriter(out)
+			cmd.Writer = format.NewWriter(out, out)
 
 			cloudVM, err := cmd.newCloudVM("default")
 			if tt.wantErr != "" {
