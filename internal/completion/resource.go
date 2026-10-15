@@ -2,7 +2,7 @@ package completion
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 	"reflect"
 
 	management "github.com/ninech/apis/management/v1alpha1"
@@ -16,7 +16,7 @@ import (
 // resourcePredictor completes the names of a single API resource by querying
 // the API.
 type resourcePredictor struct {
-	debugLog
+	log     *slog.Logger
 	client  clientFunc
 	project projectFinder
 
@@ -30,14 +30,14 @@ type resourcePredictor struct {
 }
 
 // newResourceName returns a predictor for the named API resource.
-func newResourceName(log debugLog, client clientFunc, project projectFinder, resource string) *resourcePredictor {
-	return &resourcePredictor{debugLog: log, client: client, project: project, resource: resource}
+func newResourceName(log *slog.Logger, client clientFunc, project projectFinder, resource string) *resourcePredictor {
+	return &resourcePredictor{log: log, client: client, project: project, resource: resource}
 }
 
 // newResourceNameWithKind returns a predictor for a specific resource kind.
-func newResourceNameWithKind(log debugLog, client clientFunc, project projectFinder, gvk schema.GroupVersionKind) *resourcePredictor {
+func newResourceNameWithKind(log *slog.Logger, client clientFunc, project projectFinder, gvk schema.GroupVersionKind) *resourcePredictor {
 	return &resourcePredictor{
-		debugLog: log,
+		log:      log,
 		client:   client,
 		project:  project,
 		knownGVK: new(gvk),
@@ -47,7 +47,8 @@ func newResourceNameWithKind(log debugLog, client clientFunc, project projectFin
 func (r *resourcePredictor) Predict(args complete.Args) []string {
 	client, err := r.client()
 	if err != nil {
-		return r.fail(err)
+		r.log.Debug("cannot create the API client", "err", err)
+		return nil
 	}
 
 	u := &unstructured.UnstructuredList{}
@@ -56,7 +57,8 @@ func (r *resourcePredictor) Predict(args complete.Args) []string {
 	} else {
 		gvk, err := apiresource.FindListKind(client.Scheme(), r.resource)
 		if err != nil {
-			return r.fail(err)
+			r.log.Debug("cannot resolve the resource", "err", err)
+			return nil
 		}
 		u.SetGroupVersionKind(gvk)
 	}
@@ -70,7 +72,8 @@ func (r *resourcePredictor) Predict(args complete.Args) []string {
 	if kind.Kind == reflect.TypeFor[management.ProjectList]().Name() {
 		org, err := client.Organization()
 		if err != nil {
-			return r.fail(fmt.Errorf("cannot determine the organization: %w", err))
+			r.log.Debug("cannot determine the organization", "err", err)
+			return nil
 		}
 		ns = org
 	} else {
@@ -84,7 +87,8 @@ func (r *resourcePredictor) Predict(args complete.Args) []string {
 	}
 
 	if err := client.List(ctx, u, runtimeclient.InNamespace(ns)); err != nil {
-		return r.fail(fmt.Errorf("cannot list %s in project %q: %w", kind.Kind, ns, err))
+		r.log.Debug("cannot list resources", "kind", kind.Kind, "project", ns, "err", err)
+		return nil
 	}
 
 	resources := make([]string, 0, len(u.Items))

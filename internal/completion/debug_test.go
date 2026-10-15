@@ -8,28 +8,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDebugLog(t *testing.T) {
-	err := errors.New("no client")
+func TestDebugLogger(t *testing.T) {
+	t.Parallel()
+	is := require.New(t)
 
-	t.Run("reports to stderr when enabled", func(t *testing.T) {
-		t.Setenv(DebugENV, "1")
-		is := require.New(t)
+	stderr := &bytes.Buffer{}
+	log := NewDebugLogger(stderr)
+	log.Debug("cannot list resources", "kind", "Postgres", "err", errors.New("no client"))
+	log.Debug("second")
 
-		stderr := &bytes.Buffer{}
-		is.Nil(newDebugLog(stderr).fail(err))
-		is.Equal("\nnctl: completion: no client\n", stderr.String())
-	})
-
-	t.Run("reports nothing when disabled", func(t *testing.T) {
-		t.Setenv(DebugENV, "")
-		is := require.New(t)
-
-		stderr := &bytes.Buffer{}
-		is.Nil(newDebugLog(stderr).fail(err))
-		is.Empty(stderr.String())
-	})
-
-	t.Run("zero value reports nothing", func(t *testing.T) {
-		require.Nil(t, debugLog{}.fail(err))
-	})
+	is.Equal(
+		"\nlevel=DEBUG msg=\"cannot list resources\" component=\"nctl completion\" kind=Postgres err=\"no client\"\n"+
+			"\nlevel=DEBUG msg=second component=\"nctl completion\"\n",
+		stderr.String(),
+	)
 }

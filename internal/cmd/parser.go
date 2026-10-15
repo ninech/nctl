@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"os"
 
 	"github.com/alecthomas/kong"
 	"github.com/ninech/nctl/api"
@@ -94,7 +96,11 @@ func newParser(ctx context.Context, root *rootCommand, version string, streams f
 	// so root is still empty here.
 	// The predictors resolve the flags they need
 	// off the parser model and the command line being completed instead.
-	if err := completion.Register(ctx, parser); err != nil {
+	log := slog.New(slog.DiscardHandler)
+	if os.Getenv(completion.DebugENV) != "" {
+		log = completion.NewDebugLogger(streams.ErrOut)
+	}
+	if err := completion.Register(ctx, parser, log); err != nil {
 		return nil, err
 	}
 

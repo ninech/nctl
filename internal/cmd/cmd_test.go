@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"log/slog"
 	"path/filepath"
 	"reflect"
 	"slices"
@@ -69,7 +70,7 @@ func TestCompletionPredictorsRegistered(t *testing.T) {
 	t.Parallel()
 	is := require.New(t)
 
-	_, err := completion.Command(t.Context(), newTestParser(t))
+	_, err := completion.Command(t.Context(), newTestParser(t), slog.New(slog.DiscardHandler))
 	is.NoError(err)
 }
 
@@ -77,7 +78,7 @@ func TestAPIFieldFlagCompletion(t *testing.T) {
 	t.Parallel()
 	is := require.New(t)
 
-	cmd, err := completion.Command(t.Context(), newTestParser(t))
+	cmd, err := completion.Command(t.Context(), newTestParser(t), slog.New(slog.DiscardHandler))
 	is.NoError(err)
 
 	versions := apifield.Predictors()["apifield:postgres_version"].Predict(complete.Args{})
@@ -103,7 +104,7 @@ func TestResourceNameCompletionResolves(t *testing.T) {
 	require.NoError(t, err)
 
 	parser := newTestParser(t)
-	cmd, err := completion.Command(t.Context(), parser)
+	cmd, err := completion.Command(t.Context(), parser, slog.New(slog.DiscardHandler))
 	require.NoError(t, err)
 
 	var walk func(cmd complete.Command, node *kong.Node, path string)

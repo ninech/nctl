@@ -1,8 +1,8 @@
 package completion
 
 import (
-	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/alecthomas/kong"
@@ -17,11 +17,12 @@ const predictorTag = "completion-predictor"
 // is built, until [bindResourceNames] replaces it with a predictor bound to
 // the API resource of its command. Reaching it means a command was not bound.
 type unboundResourceName struct {
-	debugLog
+	log *slog.Logger
 }
 
 func (u unboundResourceName) Predict(complete.Args) []string {
-	return u.fail(errors.New("no API resource is bound to the command"))
+	u.log.Debug("no API resource is bound to the command")
+	return nil
 }
 
 // walkCommands calls bind for every command of the completion tree, paired with the Kong node it was built from.

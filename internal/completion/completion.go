@@ -4,7 +4,7 @@ package completion
 import (
 	"context"
 	"fmt"
-	"io"
+	"log/slog"
 	"reflect"
 	"sync"
 
@@ -33,19 +33,15 @@ const (
 // lazily created client between them, so that completing a command line
 // authenticates at most once.
 type apiPredictors struct {
-	log     debugLog
+	log     *slog.Logger
 	client  clientFunc
 	project projectFinder
 }
 
-func newAPIPredictors(ctx context.Context, parser *kong.Kong) *apiPredictors {
-	var stderr io.Writer
-	if parser != nil {
-		stderr = parser.Stderr
-	}
-
+// newAPIPredictors returns the predictors querying the API.
+func newAPIPredictors(ctx context.Context, parser *kong.Kong, log *slog.Logger) *apiPredictors {
 	return &apiPredictors{
-		log: newDebugLog(stderr),
+		log: log,
 		client: sync.OnceValues(func() (*api.Client, error) {
 			return newClient(ctx, apiCluster(parser))
 		}),
@@ -75,17 +71,15 @@ func (p *apiPredictors) resourceName(resource string) complete.Predictor {
 }
 
 // Command builds the complete.Command tree for shell completion.
-func Command(ctx context.Context, parser *kong.Kong) (complete.Command, error) {
-	predictors := newAPIPredictors(ctx, parser)
+// The predictors report to log why they predict nothing.
+func Command(ctx context.Context, parser *kong.Kong, log *slog.Logger) (complete.Command, error) {
+	predictors := newAPIPredictors(ctx, parser, log)
 
 	cmd, err := kongcompletion.Command(parser, predictors.options()...)
 	if err != nil {
 		return complete.Command{}, err
 	}
 
-	if parser == nil || parser.Model == nil {
-		return cmd, nil
-	}
 	if err := bindResourceNames(cmd, parser.Model.Node, predictors.resourceName); err != nil {
 		return complete.Command{}, err
 	}
@@ -97,7 +91,8 @@ func Command(ctx context.Context, parser *kong.Kong) (complete.Command, error) {
 }
 
 // Register configures the Kong parser to intercept shell completion requests.
-func Register(ctx context.Context, parser *kong.Kong) error {
+// The predictors report to log why they predict nothing, see [NewDebugLogger].
+func Register(ctx context.Context, parser *kong.Kong, log *slog.Logger) error {
 	// Verify required flags exist; missing flags would cause completion
 	// to silently fall back to kubeconfig defaults.
 	for _, name := range []string{apiClusterFlag, projectFlag} {
@@ -108,7 +103,7 @@ func Register(ctx context.Context, parser *kong.Kong) error {
 
 	// Build the tree manually to retain bound resource predictors and catch
 	// misconfigurations before exiting.
-	cmd, err := Command(ctx, parser)
+	cmd, err := Command(ctx, parser, log)
 	if err != nil {
 		return fmt.Errorf("error on shell completion: %w", err)
 	}

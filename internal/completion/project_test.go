@@ -170,8 +170,6 @@ func TestProjectFinderWithoutFlag(t *testing.T) {
 	})
 	is.Empty(project, "a CLI without a project flag finds no project")
 	is.False(incomplete, "a CLI without a project flag has nothing to complete")
-
-	is.Empty(newProjectFinder(nil))
 }
 
 // testProjectFinder returns a finder for a project flag declared the same way
