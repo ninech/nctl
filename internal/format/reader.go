@@ -38,11 +38,12 @@ func (eofReader) Read([]byte) (int, error) {
 	return 0, io.EOF
 }
 
-// BeforeApply ensures that Kong initializes the [Reader]. It is subject to the
-// same export requirement as [Writer.BeforeApply].
-func (r *Reader) BeforeApply(reader io.Reader) error {
-	if r != nil && reader != nil {
-		r.Reader = reader
+// BeforeApply ensures that Kong initializes the [Reader]
+// with the input of the bound [IOStreams].
+// It is subject to the same export requirement as [Writer.BeforeApply].
+func (r *Reader) BeforeApply(streams IOStreams) error {
+	if r != nil && streams.In != nil {
+		r.Reader = streams.In
 	}
 
 	return nil

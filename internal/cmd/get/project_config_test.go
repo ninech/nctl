@@ -9,6 +9,7 @@ import (
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/internal/application"
+	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -133,7 +134,7 @@ func TestProjectConfigs(t *testing.T) {
 			)
 
 			buf := &bytes.Buffer{}
-			_ = tc.get.BeforeApply(testutil.KongContext(buf, io.Discard))
+			_ = tc.get.BeforeApply(format.IOStreams{Out: buf, ErrOut: io.Discard})
 			cmd := configsCmd{}
 
 			err := cmd.Run(t.Context(), apiClient, tc.get)

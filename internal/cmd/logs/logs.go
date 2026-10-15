@@ -38,9 +38,9 @@ type LogsCmd struct {
 	out           log.Output
 }
 
-// BeforeApply initializes Writer from Kong's bound [io.Writer].
-func (cmd *LogsCmd) BeforeApply(kctx *kong.Context) error {
-	return cmd.Writer.BeforeApply(kctx)
+// BeforeApply initializes Writer from the bound [format.IOStreams].
+func (cmd *LogsCmd) BeforeApply(streams format.IOStreams) error {
+	return cmd.Writer.BeforeApply(streams)
 }
 
 // 30 days, we hardcode this for now as it's not possible to customize this on

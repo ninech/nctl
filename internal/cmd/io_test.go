@@ -56,7 +56,11 @@ func TestKongInitializesIO(t *testing.T) {
 func newTestParser(t *testing.T) *kong.Kong {
 	t.Helper()
 
-	parser, err := newParser(t.Context(), &rootCommand{}, "test", &bytes.Buffer{}, &bytes.Buffer{}, &bytes.Buffer{})
+	parser, err := newParser(t.Context(), &rootCommand{}, "test", format.IOStreams{
+		In:     &bytes.Buffer{},
+		Out:    &bytes.Buffer{},
+		ErrOut: &bytes.Buffer{},
+	})
 	require.NoError(t, err)
 
 	return parser

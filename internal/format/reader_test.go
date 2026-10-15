@@ -53,7 +53,7 @@ func TestReader_BeforeApply(t *testing.T) {
 			t.Parallel()
 			is := require.New(t)
 
-			err := tt.reader.BeforeApply(tt.input)
+			err := tt.reader.BeforeApply(IOStreams{In: tt.input})
 			is.NoError(err)
 
 			if tt.reader != nil {

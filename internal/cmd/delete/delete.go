@@ -5,10 +5,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"time"
 
-	"github.com/alecthomas/kong"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
@@ -49,12 +47,12 @@ type ResourceCmd struct {
 	WaitTimeout   time.Duration `default:"5m" help:"Duration to wait for the deletion. Only relevant if wait is set."`
 }
 
-// BeforeApply initializes Writer from the Kong context and Reader from Kong's bound io.Reader.
+// BeforeApply initializes Writer and Reader from the bound [format.IOStreams].
 // Because Kong wont apply hooks on embedded structs.
-func (cmd *ResourceCmd) BeforeApply(kctx *kong.Context, reader io.Reader) error {
+func (cmd *ResourceCmd) BeforeApply(streams format.IOStreams) error {
 	return errors.Join(
-		cmd.Writer.BeforeApply(kctx),
-		cmd.Reader.BeforeApply(reader),
+		cmd.Writer.BeforeApply(streams),
+		cmd.Reader.BeforeApply(streams),
 	)
 }
 
