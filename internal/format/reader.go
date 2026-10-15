@@ -12,6 +12,19 @@ func NewReader(r io.Reader) Reader {
 	return Reader{Reader: r}
 }
 
+// In returns the stream the Reader reads from.
+// It is the stream itself rather than a wrapper,
+// so that a terminal stays detectable and a subprocess inherits it,
+// unlike the Reader, which never is a terminal.
+// It is nil if the receiver or its stream is nil.
+func (r *Reader) In() io.Reader {
+	if r == nil {
+		return nil
+	}
+
+	return r.Reader
+}
+
 // reader returns the underlying reader, or an empty reader if the receiver or
 // the wrapped [io.Reader] is nil.
 func (r *Reader) reader() io.Reader {

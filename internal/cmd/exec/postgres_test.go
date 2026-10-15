@@ -42,6 +42,7 @@ func TestPostgresCmd(t *testing.T) {
 	newCidrCap, newCidrCmd := testDatabaseCmdConfirmed(pgName, &cidr, true)
 	credsCap, credsCmd := testDatabaseCmd(pgName, &[]meta.IPv4CIDR{"10.0.0.1/32"})
 	dbCap, dbCmd := testDatabaseCmd(pgName, &[]meta.IPv4CIDR{"10.0.0.1/32"})
+	streamsCap, streamsCmd := testDatabaseCmd(pgName, &[]meta.IPv4CIDR{"10.0.0.1/32"})
 
 	tests := []struct {
 		name        string
@@ -112,6 +113,23 @@ func TestPostgresCmd(t *testing.T) {
 				t.Helper()
 				if !strings.Contains(strings.Join(cmd.Args, " "), "/mydb") {
 					t.Errorf("expected database %q in args %v", "mydb", cmd.Args)
+				}
+			},
+		},
+		{
+			name: "subprocess uses the streams of the command",
+			cmd:  postgresCmd{ServiceCmd: streamsCmd},
+			cap:  streamsCap,
+			check: func(t *testing.T, cmd *exec.Cmd) {
+				t.Helper()
+				if cmd.Stdin != streamsCap.streams.In {
+					t.Errorf("expected stdin %v, got %v", streamsCap.streams.In, cmd.Stdin)
+				}
+				if cmd.Stdout != streamsCap.streams.Out {
+					t.Errorf("expected stdout %v, got %v", streamsCap.streams.Out, cmd.Stdout)
+				}
+				if cmd.Stderr != streamsCap.streams.ErrOut {
+					t.Errorf("expected stderr %v, got %v", streamsCap.streams.ErrOut, cmd.Stderr)
 				}
 			},
 		},

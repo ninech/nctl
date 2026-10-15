@@ -26,7 +26,7 @@ require (
 	github.com/jotaen/kong-completion v0.0.14
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 	github.com/lucasepe/codename v0.2.1-0.20230220151621-5e31bf1e775f
-	github.com/mattn/go-isatty v0.0.24
+	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/moby/moby/api v1.56.1
 	github.com/moby/moby/client v0.6.2
 	github.com/moby/term v0.5.2

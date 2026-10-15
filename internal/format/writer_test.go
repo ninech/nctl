@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"testing"
 
@@ -75,6 +76,38 @@ func TestWriter_Err(t *testing.T) {
 	var nilWriter *Writer
 	is.Equal(io.Discard, nilWriter.Err())
 	is.Equal(io.Discard, (&Writer{}).Err())
+}
+
+func TestWriter_Streams(t *testing.T) {
+	t.Parallel()
+	is := require.New(t)
+
+	_, stdout := pipe(t)
+	_, stderr := pipe(t)
+	w := &Writer{}
+	is.NoError(w.BeforeApply(IOStreams{Out: stdout, ErrOut: stderr}))
+
+	// Only the files themselves expose their file descriptors.
+	is.Same(stdout, w.Out())
+	is.Same(stderr, w.Err())
+
+	var nilWriter *Writer
+	is.Nil(nilWriter.Out())
+	is.Nil((&Writer{}).Out())
+}
+
+// pipe returns both ends of a pipe, [os.File]s closed at the end of the test.
+func pipe(t *testing.T) (r, w *os.File) {
+	t.Helper()
+
+	r, w, err := os.Pipe()
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = r.Close()
+		_ = w.Close()
+	})
+
+	return r, w
 }
 
 func TestWriter_writer(t *testing.T) {
