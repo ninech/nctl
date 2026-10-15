@@ -2,7 +2,7 @@ package completion
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 	"slices"
 	"strings"
 
@@ -14,14 +14,15 @@ import (
 
 // instanceDatabases completes database names from a database instance status.
 type instanceDatabases struct {
+	log      *slog.Logger
 	client   clientFunc
 	project  projectFinder
 	gvk      schema.GroupVersionKind
 	argFlags []string
 }
 
-func newInstanceDatabases(client clientFunc, project projectFinder, gvk schema.GroupVersionKind) *instanceDatabases {
-	return &instanceDatabases{client: client, project: project, gvk: gvk}
+func newInstanceDatabases(log *slog.Logger, client clientFunc, project projectFinder, gvk schema.GroupVersionKind) *instanceDatabases {
+	return &instanceDatabases{log: log, client: client, project: project, gvk: gvk}
 }
 
 // withArgFlags implements [argFlagScoped].
@@ -45,7 +46,8 @@ func (d *instanceDatabases) Predict(args complete.Args) []string {
 
 	client, err := d.client()
 	if err != nil {
-		return fail(err)
+		d.log.Debug("cannot create the API client", "err", err)
+		return nil
 	}
 
 	ns := client.Project
@@ -60,12 +62,14 @@ func (d *instanceDatabases) Predict(args complete.Args) []string {
 	defer cancel()
 
 	if err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: ns}, u); err != nil {
-		return fail(fmt.Errorf("cannot get %s %q in project %q: %w", d.gvk.Kind, name, ns, err))
+		d.log.Debug("cannot get the instance", "kind", d.gvk.Kind, "name", name, "project", ns, "err", err)
+		return nil
 	}
 
 	databases, found, err := unstructured.NestedMap(u.Object, "status", "atProvider", "databases")
 	if err != nil {
-		return fail(fmt.Errorf("%s %q reports no readable databases: %w", d.gvk.Kind, name, err))
+		d.log.Debug("the instance reports no readable databases", "kind", d.gvk.Kind, "name", name, "err", err)
+		return nil
 	}
 	// An instance without any database yet is not an error.
 	if !found {

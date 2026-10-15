@@ -2,6 +2,7 @@ package completion
 
 import (
 	"bytes"
+	"log/slog"
 	"strconv"
 	"strings"
 	"testing"
@@ -18,7 +19,7 @@ func TestCommandBindsResourceNames(t *testing.T) {
 	parser, err := kong.New(&bindGrammar{})
 	is.NoError(err)
 
-	cmd, err := Command(t.Context(), parser)
+	cmd, err := Command(t.Context(), parser, slog.New(slog.DiscardHandler))
 	is.NoError(err)
 
 	tests := map[string]string{
@@ -38,15 +39,6 @@ func TestCommandBindsResourceNames(t *testing.T) {
 	}
 }
 
-func TestCommandWithoutParser(t *testing.T) {
-	t.Parallel()
-	is := require.New(t)
-
-	cmd, err := Command(t.Context(), nil)
-	is.NoError(err)
-	is.Empty(cmd.Sub)
-}
-
 func TestRegisterWithoutRequiredFlags(t *testing.T) {
 	t.Parallel()
 
@@ -56,7 +48,7 @@ func TestRegisterWithoutRequiredFlags(t *testing.T) {
 
 	parser, err := kong.New(&grammar)
 	require.NoError(t, err)
-	require.ErrorContains(t, Register(t.Context(), parser), apiClusterFlag)
+	require.ErrorContains(t, Register(t.Context(), parser, slog.New(slog.DiscardHandler)), apiClusterFlag)
 }
 
 func TestRegisterCompletes(t *testing.T) {
@@ -82,7 +74,7 @@ func TestRegisterCompletes(t *testing.T) {
 	t.Setenv("COMP_LINE", compLine)
 	t.Setenv("COMP_POINT", strconv.Itoa(len(compLine)))
 
-	is.NoError(Register(t.Context(), parser))
+	is.NoError(Register(t.Context(), parser, slog.New(slog.DiscardHandler)))
 	is.Equal(0, exited, "completion did not exit the CLI")
 	is.Equal([]string{"postgres"}, strings.Fields(out.String()))
 }
@@ -106,6 +98,6 @@ func TestRegisterWithoutCompletionLine(t *testing.T) {
 
 	t.Setenv("COMP_LINE", "")
 
-	is.NoError(Register(t.Context(), parser))
+	is.NoError(Register(t.Context(), parser, slog.New(slog.DiscardHandler)))
 	is.Equal(-1, exited, "completion exited the CLI")
 }

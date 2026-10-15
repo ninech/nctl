@@ -1,8 +1,8 @@
 package completion
 
 import (
-	"fmt"
-	"os"
+	"io"
+	"log/slog"
 
 	"github.com/ninech/nctl/api"
 )
@@ -14,15 +14,34 @@ import (
 // is indistinguishable from a project holding no resources.
 const DebugENV = "NCTL_COMPLETION_DEBUG"
 
-// fail reports err on stderr if [DebugENV] is set and predicts nothing, so
-// that predictors can return it directly.
+// NewDebugLogger returns a logger writing to w
+// why predictors predict nothing.
 //
-// The output is written on its own lines because the shell prints it in the
+// Every record starts on a new line, because the shell prints it in the
 // middle of the line the user is currently completing.
-func fail(err error) []string {
-	if err != nil && os.Getenv(DebugENV) != "" {
-		fmt.Fprintf(os.Stderr, "\n%s: completion: %v\n", api.Name, err)
+func NewDebugLogger(w io.Writer) *slog.Logger {
+	return slog.New(slog.NewTextHandler(newlineWriter{w}, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			if len(groups) == 0 && a.Key == slog.TimeKey {
+				return slog.Attr{}
+			}
+			return a
+		},
+	})).With("component", api.Name+" completion")
+}
+
+// newlineWriter prefixes every write with a newline.
+// A [slog.TextHandler] writes each record with a single call to Write,
+// so every record starts on a line of its own.
+type newlineWriter struct {
+	w io.Writer
+}
+
+func (n newlineWriter) Write(p []byte) (int, error) {
+	if _, err := io.WriteString(n.w, "\n"); err != nil {
+		return 0, err
 	}
 
-	return nil
+	return n.w.Write(p)
 }

@@ -1,6 +1,7 @@
 package completion
 
 import (
+	"log/slog"
 	"sort"
 	"testing"
 
@@ -115,7 +116,7 @@ func TestInstanceDatabasesPredict(t *testing.T) {
 		testutil.WithDefaultProject(project),
 	)
 
-	predictor := newInstanceDatabases(staticClient(client), testProjectFinder(t), storage.PostgresGroupVersionKind)
+	predictor := newInstanceDatabases(slog.New(slog.DiscardHandler), staticClient(client), testProjectFinder(t), storage.PostgresGroupVersionKind)
 
 	tests := []struct {
 		name      string
