@@ -2,6 +2,7 @@ package sshkey
 
 import (
 	"bytes"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -154,7 +155,7 @@ func TestReadAuthorizedKeys(t *testing.T) {
 			}
 
 			out := &bytes.Buffer{}
-			w := format.NewWriter(out)
+			w := format.NewWriter(out, out)
 
 			keys, err := ReadAuthorizedKeys(&w, "rescue-ssh-keys", tt.values, files)
 			if tt.wantErr != "" {
@@ -210,7 +211,7 @@ func TestStorageKeysWithDeprecatedFile(t *testing.T) {
 		is := require.New(t)
 
 		out := &bytes.Buffer{}
-		w := format.NewWriter(out)
+		w := format.NewWriter(out, out)
 
 		keys, err := StorageKeysWithDeprecatedFile(&w, nil, nil)
 		is.NoError(err)
@@ -227,7 +228,7 @@ func TestStorageKeysWithDeprecatedFile(t *testing.T) {
 		is := require.New(t)
 
 		out := &bytes.Buffer{}
-		w := format.NewWriter(out)
+		w := format.NewWriter(out, out)
 
 		keys, err := StorageKeysWithDeprecatedFile(&w, []string{testPublicKeyA}, openKeyFile(t, "authorized_keys", testPublicKeyB+"\n"))
 		is.NoError(err)
@@ -239,7 +240,7 @@ func TestStorageKeysWithDeprecatedFile(t *testing.T) {
 		t.Parallel()
 		is := require.New(t)
 
-		w := format.NewWriter(&bytes.Buffer{})
+		w := format.NewWriter(io.Discard, io.Discard)
 
 		_, err := StorageKeysWithDeprecatedFile(&w, nil, openKeyFile(t, "invalid.pub", "not a key\n"))
 		is.ErrorContains(err, "invalid SSH public key on line 1")

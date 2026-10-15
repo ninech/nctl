@@ -222,7 +222,7 @@ func TestUpdateServices(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			buf := &bytes.Buffer{}
-			w := format.NewWriter(buf)
+			w := format.NewWriter(buf, buf)
 			got := UpdateServices(tt.existing, tt.toAdd, tt.toDelete, w)
 			require.Equal(t, tt.want, got)
 			if tt.wantWarn {

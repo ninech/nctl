@@ -71,7 +71,7 @@ func TestCloudVM(t *testing.T) {
 			t.Parallel()
 
 			out := &bytes.Buffer{}
-			tt.update.Writer = format.NewWriter(out)
+			tt.update.Writer = format.NewWriter(out, out)
 			tt.update.Name = "test-" + t.Name()
 
 			apiClient := testutil.SetupClient(t)
@@ -279,7 +279,7 @@ func TestCloudVMRescuePublicKeys(t *testing.T) {
 
 			out := &bytes.Buffer{}
 			cmd := parseCloudVM(t, append([]string{`test-cloudvm`}, tt.args...)...)
-			cmd.Writer = format.NewWriter(out)
+			cmd.Writer = format.NewWriter(out, out)
 
 			err := cmd.applyUpdates(cloudVM)
 			if tt.wantErr != "" {

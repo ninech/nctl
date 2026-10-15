@@ -17,7 +17,7 @@ func TestGrafana(t *testing.T) {
 	out := &bytes.Buffer{}
 	cmd := grafanaCmd{
 		ResourceCmd: ResourceCmd{
-			Writer:      format.NewWriter(out),
+			Writer:      format.NewWriter(out, out),
 			Name:        "test",
 			Force:       true,
 			Wait:        false,

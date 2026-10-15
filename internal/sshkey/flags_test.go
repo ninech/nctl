@@ -61,7 +61,7 @@ func TestFlags(t *testing.T) {
 			is.NoError(err)
 
 			out := &bytes.Buffer{}
-			w := format.NewWriter(out)
+			w := format.NewWriter(out, out)
 
 			keys, err := cmd.SSHKeysFlags.Keys(&w, "rescue-")
 			if tt.wantErr != "" {

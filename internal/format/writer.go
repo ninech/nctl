@@ -17,9 +17,10 @@ type Writer struct {
 	err io.Writer
 }
 
-// NewWriter returns a new [Writer].
-func NewWriter(w io.Writer) Writer {
-	return Writer{Writer: w}
+// NewWriter returns a new [Writer] writing the output of a command to out
+// and diagnostics to errOut.
+func NewWriter(out, errOut io.Writer) Writer {
+	return Writer{Writer: out, err: errOut}
 }
 
 // writer returns the underlying writer, or [io.Discard] if the receiver is nil.

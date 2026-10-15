@@ -18,7 +18,7 @@ func TestCloudVM(t *testing.T) {
 	out := &bytes.Buffer{}
 	cmd := cloudVMCmd{
 		ResourceCmd: ResourceCmd{
-			Writer:      format.NewWriter(out),
+			Writer:      format.NewWriter(out, out),
 			Name:        "test",
 			Force:       true,
 			Wait:        false,
