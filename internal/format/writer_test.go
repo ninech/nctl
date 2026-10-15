@@ -210,6 +210,53 @@ func TestWriter_Print(t *testing.T) {
 	}
 }
 
+func TestWriter_DiagnosticsGoToErr(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name   string
+		action func(*testing.T, Writer)
+		errOut string
+	}{
+		{
+			name:   "Warningf",
+			action: func(_ *testing.T, w Writer) { w.Warningf("careful") },
+			errOut: "careful",
+		},
+		{
+			name: "Spinner",
+			action: func(t *testing.T, w Writer) {
+				spinner, err := w.Spinner("working", "done")
+				require.NoError(t, err)
+				require.NoError(t, spinner.Start())
+				require.NoError(t, spinner.Stop())
+			},
+			errOut: "done",
+		},
+		{
+			name: "Confirm prompt",
+			action: func(t *testing.T, w Writer) {
+				_, err := w.Confirm(NewReader(strings.NewReader("y\n")), "Continue?")
+				require.NoError(t, err)
+			},
+			errOut: "Continue? [y|n]: ",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			is := require.New(t)
+
+			out, errOut := &bytes.Buffer{}, &bytes.Buffer{}
+			tt.action(t, NewWriter(out, errOut))
+
+			is.Empty(out.String())
+			is.Contains(errOut.String(), tt.errOut)
+		})
+	}
+}
+
 func TestWriter_FormattedOutput(t *testing.T) {
 	t.Parallel()
 

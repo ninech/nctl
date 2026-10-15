@@ -79,7 +79,7 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 		kong.Exit(func(code int) { panic(exit(code)) }),
 	)
 	if err != nil {
-		fmt.Fprintln(stdout, err)
+		fmt.Fprintln(stderr, err)
 		return cli.ExitError
 	}
 	// fatal reports err and returns the exit code through the exit hook.
@@ -93,7 +93,7 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 		// Instead of an error on a missing command or argument,
 		// print the usage and a friendly message.
 		if parseErr, ok := errors.AsType[*kong.ParseError](err); ok && missingCommand(parseErr) {
-			if err = printMissingCommand(stdout, parseErr); err == nil {
+			if err = printMissingCommand(stderr, parseErr); err == nil {
 				return cli.ExitError
 			}
 		}
@@ -118,7 +118,7 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 		}
 
 		if cliErr, ok := errors.AsType[*cli.Error](err); ok {
-			fmt.Fprintln(stdout, err.Error())
+			fmt.Fprintln(stderr, err.Error())
 			return cliErr.ExitCode()
 		}
 

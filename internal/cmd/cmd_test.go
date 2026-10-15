@@ -165,7 +165,8 @@ func TestRun(t *testing.T) {
 			name:       "missing command",
 			args:       []string{"get"},
 			wantCode:   cli.ExitError,
-			wantStdout: `💡 Your command: "nctl get"`,
+			wantStdout: "Usage: nctl get",
+			wantStderr: `💡 Your command: "nctl get"`,
 		},
 		{
 			name:       "unknown flag",
@@ -193,9 +194,10 @@ func TestRunWithoutLogin(t *testing.T) {
 	t.Setenv("KUBECONFIG", filepath.Join(t.TempDir(), "missing"))
 	is := assert.New(t)
 
-	var stdout bytes.Buffer
-	code := Run(t.Context(), []string{"get", "applications"}, &bytes.Buffer{}, &stdout, &bytes.Buffer{}, "test-version")
+	var stdout, stderr bytes.Buffer
+	code := Run(t.Context(), []string{"get", "applications"}, &bytes.Buffer{}, &stdout, &stderr, "test-version")
 
 	is.Equal(cli.ExitError, code)
-	is.Contains(stdout.String(), cli.LoginCmd)
+	is.Empty(stdout.String())
+	is.Contains(stderr.String(), cli.LoginCmd)
 }

@@ -50,14 +50,15 @@ func missingChildren(node *kong.Node) bool {
 }
 
 // printMissingCommand prints the usage of the command the user typed
-// and a friendly message about what is missing.
-func printMissingCommand(w io.Writer, parseErr *kong.ParseError) error {
+// and a friendly message about what is missing to stderr.
+// Like Kong on a parse error, it prints the usage to the parser's stdout.
+func printMissingCommand(stderr io.Writer, parseErr *kong.ParseError) error {
 	if err := parseErr.Context.PrintUsage(false); err != nil {
 		return err
 	}
 
 	command := strings.TrimSpace(parseErr.Context.Model.Name + " " + parseErr.Context.Command())
-	_, err := fmt.Fprintf(w, "\n💡 Your command: %q: %s\n", command, parseErr.Error())
+	_, err := fmt.Fprintf(stderr, "\n💡 Your command: %q: %s\n", command, parseErr.Error())
 
 	return err
 }

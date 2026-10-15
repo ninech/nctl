@@ -38,7 +38,6 @@ func (cmd *allCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error 
 	if err != nil {
 		return err
 	}
-	// we now print all warnings to stderr
 	for _, w := range warnings {
 		get.Warningf("%s", w)
 	}
