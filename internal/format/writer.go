@@ -85,8 +85,9 @@ func (w *Writer) BeforeApply(streams IOStreams) error {
 }
 
 // Spinner creates a new spinner with the given message and stop message.
+// As progress, it writes to [Writer.Err].
 func (w *Writer) Spinner(message, stopMessage string) (*yacspin.Spinner, error) {
-	return newSpinner(w.writer(), message, stopMessage)
+	return newSpinner(w.Err(), message, stopMessage)
 }
 
 // Successf is a formatted message for indicating a successful step.
@@ -100,8 +101,9 @@ func (w *Writer) Success(icon string, message string) {
 }
 
 // Warningf is a formatted message for indicating a warning.
+// As a diagnostic, it writes to [Writer.Err].
 func (w *Writer) Warningf(format string, a ...any) {
-	fmt.Fprint(w.writer(), warningf(format, a...)+"\n")
+	fmt.Fprint(w.Err(), warningf(format, a...)+"\n")
 }
 
 // Failuref is a formatted message for indicating a failure.
@@ -133,11 +135,12 @@ func (w *Writer) Println(a ...any) {
 
 // Confirm prints a confirm dialog using the supplied message and then waits
 // until prompt is confirmed or denied. Only y and yes are accepted for
-// confirmation.
+// confirmation. The prompt is written to [Writer.Err],
+// so that it is shown even if the output is redirected.
 func (w *Writer) Confirm(reader Reader, message string) (bool, error) {
 	var input string
 
-	w.Printf("%s [y|n]: ", message)
+	fmt.Fprintf(w.Err(), "%s [y|n]: ", message)
 	_, err := fmt.Fscanln(reader, &input)
 	if err != nil {
 		return false, err

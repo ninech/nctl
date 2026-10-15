@@ -193,9 +193,10 @@ func TestRunWithoutLogin(t *testing.T) {
 	t.Setenv("KUBECONFIG", filepath.Join(t.TempDir(), "missing"))
 	is := assert.New(t)
 
-	var stderr bytes.Buffer
-	code := Run(t.Context(), []string{"get", "applications"}, &bytes.Buffer{}, &bytes.Buffer{}, &stderr, "test-version")
+	var stdout, stderr bytes.Buffer
+	code := Run(t.Context(), []string{"get", "applications"}, &bytes.Buffer{}, &stdout, &stderr, "test-version")
 
 	is.Equal(cli.ExitError, code)
+	is.Empty(stdout.String())
 	is.Contains(stderr.String(), cli.LoginCmd)
 }
