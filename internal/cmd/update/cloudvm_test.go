@@ -117,7 +117,7 @@ func parseCloudVM(t *testing.T, args ...string) *cloudVMCmd {
 	t.Helper()
 
 	cmd := &cloudVMCmd{}
-	_, err := kong.Must(cmd, kong.Writers(io.Discard, io.Discard)).Parse(args)
+	_, err := kong.Must(cmd, testutil.KongStreams(format.IOStreams{Out: io.Discard, ErrOut: io.Discard})).Parse(args)
 	require.NoError(t, err)
 
 	return cmd

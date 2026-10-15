@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/alecthomas/kong"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	infra "github.com/ninech/apis/infrastructure/v1alpha1"
 	"github.com/ninech/nctl/api"
@@ -43,9 +42,9 @@ type ResourceCmd struct {
 	Name          string `arg:"" completion-predictor:"client:resource_name" help:"Name of the resource to update."`
 }
 
-// BeforeApply initializes Writer from Kong's bound [io.Writer].
-func (cmd *ResourceCmd) BeforeApply(kctx *kong.Context) error {
-	return cmd.Writer.BeforeApply(kctx)
+// BeforeApply initializes Writer from the bound [format.IOStreams].
+func (cmd *ResourceCmd) BeforeApply(streams format.IOStreams) error {
+	return cmd.Writer.BeforeApply(streams)
 }
 
 type updater struct {

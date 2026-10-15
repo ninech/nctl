@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/alecthomas/kong"
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/lucasepe/codename"
@@ -55,9 +54,9 @@ type ResourceCmd struct {
 	WaitTimeout   time.Duration `default:"30m" help:"Duration to wait for resource getting ready. Only relevant if wait is set."`
 }
 
-// BeforeApply initializes Writer from Kong's bound [io.Writer].
-func (cmd *ResourceCmd) BeforeApply(kctx *kong.Context) error {
-	return cmd.Writer.BeforeApply(kctx)
+// BeforeApply initializes Writer from the bound [format.IOStreams].
+func (cmd *ResourceCmd) BeforeApply(streams format.IOStreams) error {
+	return cmd.Writer.BeforeApply(streams)
 }
 
 // resultFunc is the function called on a watch event during creation. It

@@ -5,7 +5,6 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/alecthomas/kong"
 	"github.com/lucasepe/codename"
 	"github.com/ninech/nctl/internal/format"
 )
@@ -24,9 +23,9 @@ type ResourceCmd struct {
 	TargetProject string `help:"Target project of the new resource. The current project is used if omitted." default:"" completion-predictor:"client:project_name"`
 }
 
-// BeforeApply initializes Writer from Kong's bound [io.Writer].
-func (cmd *ResourceCmd) BeforeApply(kctx *kong.Context) error {
-	return cmd.Writer.BeforeApply(kctx)
+// BeforeApply initializes Writer from the bound [format.IOStreams].
+func (cmd *ResourceCmd) BeforeApply(streams format.IOStreams) error {
+	return cmd.Writer.BeforeApply(streams)
 }
 
 func getName(name string) string {

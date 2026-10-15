@@ -17,6 +17,7 @@ import (
 	"github.com/ninech/nctl/internal/apifield"
 	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/bucket"
+	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -196,7 +197,7 @@ func runUpdate(t *testing.T, client *api.Client, out io.Writer, args []string) e
 		kong.PostBuild(apifield.Apply()),
 		vars,
 		kong.BindTo(t.Context(), (*context.Context)(nil)),
-		kong.Writers(out, out),
+		testutil.KongStreams(format.IOStreams{Out: out, ErrOut: out}),
 	)
 
 	kctx, err := parser.Parse(args)

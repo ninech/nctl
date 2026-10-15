@@ -42,9 +42,9 @@ type resourceCmd struct {
 	Name          string `arg:"" completion-predictor:"client:resource_name" help:"Name of the resource to edit." required:""`
 }
 
-// BeforeApply initializes Writer from Kong's bound [io.Writer].
-func (cmd *resourceCmd) BeforeApply(kctx *kong.Context) error {
-	return cmd.Writer.BeforeApply(kctx)
+// BeforeApply initializes Writer from the bound [format.IOStreams].
+func (cmd *resourceCmd) BeforeApply(streams format.IOStreams) error {
+	return cmd.Writer.BeforeApply(streams)
 }
 
 const header = `# Please edit the %s below.

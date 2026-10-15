@@ -5,7 +5,6 @@ import (
 	"io"
 	"strings"
 
-	"github.com/alecthomas/kong"
 	"github.com/theckman/yacspin"
 )
 
@@ -53,7 +52,7 @@ func (w Writer) Write(p []byte) (int, error) {
 }
 
 // BeforeApply ensures that Kong initializes the writer
-// with the standard output and error of the Kong context.
+// with the output and error of the bound [IOStreams].
 //
 // Kong discovers hook methods by descending into the embedded fields of the
 // selected command, and it only descends into fields that are exported. A
@@ -61,10 +60,10 @@ func (w Writer) Write(p []byte) (int, error) {
 // initialized, and every message printed through it is silently discarded.
 // Command structs that embed a Writer, and every struct that embeds those in
 // turn, must consequently be exported.
-func (w *Writer) BeforeApply(kctx *kong.Context) error {
-	if w != nil && kctx != nil {
-		w.Writer = kctx.Stdout
-		w.err = kctx.Stderr
+func (w *Writer) BeforeApply(streams IOStreams) error {
+	if w != nil {
+		w.Writer = streams.Out
+		w.err = streams.ErrOut
 	}
 
 	return nil

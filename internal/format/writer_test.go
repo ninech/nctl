@@ -7,8 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/alecthomas/kong"
-	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -30,26 +28,25 @@ func TestWriter_BeforeApply(t *testing.T) {
 	tests := []struct {
 		name         string
 		writer       *Writer
-		kctx         *kong.Context
+		streams      IOStreams
 		expectWriter io.Writer
 		expectErr    io.Writer
 	}{
 		{
-			name:         "sets writers from the context",
+			name:         "sets writers from the streams",
 			writer:       &Writer{},
-			kctx:         testutil.KongContext(stdout, stderr),
+			streams:      IOStreams{Out: stdout, ErrOut: stderr},
 			expectWriter: stdout,
 			expectErr:    stderr,
 		},
 		{
-			name:   "nil receiver does not panic",
-			writer: nil,
-			kctx:   testutil.KongContext(stdout, stderr),
+			name:    "nil receiver does not panic",
+			writer:  nil,
+			streams: IOStreams{Out: stdout, ErrOut: stderr},
 		},
 		{
-			name:         "nil context",
+			name:         "empty streams",
 			writer:       &Writer{},
-			kctx:         nil,
 			expectWriter: nil,
 			expectErr:    io.Discard,
 		},
@@ -60,7 +57,7 @@ func TestWriter_BeforeApply(t *testing.T) {
 			t.Parallel()
 			is := require.New(t)
 
-			err := tt.writer.BeforeApply(tt.kctx)
+			err := tt.writer.BeforeApply(tt.streams)
 			is.NoError(err)
 
 			if tt.writer != nil {

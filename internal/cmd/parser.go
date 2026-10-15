@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"io"
 
 	"github.com/alecthomas/kong"
 	"github.com/ninech/nctl/internal/apifield"
@@ -15,17 +14,18 @@ import (
 	"github.com/ninech/nctl/internal/cmd/logs"
 	"github.com/ninech/nctl/internal/cmd/update"
 	"github.com/ninech/nctl/internal/completion"
+	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/serviceconnection"
 )
 
 const defaultAPICluster = "nineapis.ch"
 
 // newParser builds the Kong parser for root.
-// The given reader is bound as [io.Reader],
-// so that commands can prompt for input.
-// Commands print their output to stdout and diagnostics to stderr.
+// The streams are bound for the hooks of the commands
+// and are the writers of Kong itself,
+// so that help, errors and the output of commands share them.
 // opts are applied after the options of nctl.
-func newParser(ctx context.Context, root *rootCommand, version string, stdin io.Reader, stdout, stderr io.Writer, opts ...kong.Option) (*kong.Kong, error) {
+func newParser(ctx context.Context, root *rootCommand, version string, streams format.IOStreams, opts ...kong.Option) (*kong.Kong, error) {
 	kongVars, err := kongVariables(version)
 	if err != nil {
 		return nil, err
@@ -81,8 +81,8 @@ func newParser(ctx context.Context, root *rootCommand, version string, stdin io.
 		kong.PostBuild(apifield.Apply()),
 		kongVars,
 		kong.BindTo(ctx, (*context.Context)(nil)),
-		kong.Writers(stdout, stderr),
-		kong.BindTo(stdin, (*io.Reader)(nil)),
+		kong.Writers(streams.Out, streams.ErrOut),
+		kong.Bind(streams),
 	}
 
 	parser, err := kong.New(root, append(options, opts...)...)
