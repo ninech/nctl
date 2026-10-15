@@ -15,9 +15,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// capturingCmd records the exec.Cmd passed to runCommand.
+// capturingCmd records the exec.Cmd passed to runCommand
+// and the streams the command was initialized with.
 type capturingCmd struct {
-	cmd *exec.Cmd
+	cmd     *exec.Cmd
+	streams format.IOStreams
 }
 
 // testSecret creates a corev1.Secret with a single username→password entry.
@@ -49,11 +51,9 @@ func testDatabaseCmdConfirmed(name string, cidrs *[]meta.IPv4CIDR, confirmed boo
 	if confirmed {
 		reader = strings.NewReader("y\n")
 	}
-	cap := &capturingCmd{}
+	cap := &capturingCmd{streams: format.IOStreams{In: reader, Out: &bytes.Buffer{}, ErrOut: &bytes.Buffer{}}}
 	cmd := ServiceCmd{
 		resourceCmd:  resourceCmd{Name: name},
-		Writer:       format.NewWriter(&bytes.Buffer{}),
-		Reader:       format.NewReader(reader),
 		AllowedCidrs: cidrs,
 		WaitTimeout:  0,
 		runCommand: func(c *exec.Cmd) error {
@@ -69,6 +69,9 @@ func testDatabaseCmdConfirmed(name string, cidrs *[]meta.IPv4CIDR, confirmed boo
 		openTTYForConfirm: func() (io.ReadCloser, error) {
 			return nil, fmt.Errorf("no tty in tests")
 		},
+	}
+	if err := cmd.BeforeApply(cap.streams); err != nil {
+		panic(err)
 	}
 	return cap, cmd
 }

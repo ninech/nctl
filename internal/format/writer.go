@@ -31,9 +31,23 @@ func (w *Writer) writer() io.Writer {
 	return w.Writer
 }
 
+// Out returns the stream the Writer writes the output of a command to.
+// It is the stream itself rather than a wrapper,
+// so that a terminal stays detectable and a subprocess inherits it,
+// unlike the Writer, which never is a terminal.
+// It is nil if the receiver or its stream is nil.
+func (w *Writer) Out() io.Writer {
+	if w == nil {
+		return nil
+	}
+
+	return w.Writer
+}
+
 // Err returns the writer for diagnostics,
 // such as warnings, progress and the output of subprocesses,
 // which must not mix with the output of a command.
+// Like [Writer.Out], it is the stream itself rather than a wrapper.
 // It is [io.Discard] if the receiver or its error writer is nil.
 func (w *Writer) Err() io.Writer {
 	if w == nil || w.err == nil {

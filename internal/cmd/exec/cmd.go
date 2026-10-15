@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
-	"github.com/mattn/go-isatty"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/cli"
@@ -149,8 +148,8 @@ func connectAndExec[T resource.Managed](
 	}
 	defer cleanup()
 
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
+	cmd.Stdin = opts.In()
+	cmd.Stdout = opts.Out()
 	cmd.Stderr = opts.Err()
 	cmd.Env = append(os.Environ(), cmd.Env...)
 	cmd.Args = append(cmd.Args, opts.ExtraArgs...)
@@ -283,7 +282,7 @@ func (cmd ServiceCmd) checkPath(name string) error {
 // so that piped input (e.g. SQL dumps) does not consume the prompt, mirroring
 // the pattern used by git and ssh.
 func (cmd ServiceCmd) confirm(msg string) (bool, error) {
-	if !isatty.IsTerminal(os.Stdin.Fd()) {
+	if !format.IsTerminal(cmd.In()) {
 		tty, err := cmd.openTTY()()
 		if err == nil {
 			defer tty.Close()

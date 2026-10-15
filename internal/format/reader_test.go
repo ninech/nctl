@@ -18,6 +18,22 @@ func TestNewReader(t *testing.T) {
 	is.Equal(input, reader.Reader)
 }
 
+func TestReader_In(t *testing.T) {
+	t.Parallel()
+	is := require.New(t)
+
+	stdin, _ := pipe(t)
+	r := &Reader{}
+	is.NoError(r.BeforeApply(IOStreams{In: stdin}))
+
+	// Only the file itself exposes its file descriptor.
+	is.Same(stdin, r.In())
+
+	var nilReader *Reader
+	is.Nil(nilReader.In())
+	is.Nil((&Reader{}).In())
+}
+
 func TestReader_BeforeApply(t *testing.T) {
 	t.Parallel()
 

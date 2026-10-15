@@ -10,6 +10,7 @@ import (
 	"strings"
 	"syscall"
 
+	dockerterm "github.com/moby/term"
 	"github.com/ninech/nctl/internal/cmd"
 )
 
@@ -26,7 +27,10 @@ func main() {
 	// so that a second one terminates nctl even if the command does not stop.
 	context.AfterFunc(ctx, stop)
 
-	code := cmd.Run(ctx, os.Args[1:], os.Stdin, os.Stdout, os.Stderr, versionOutput(version, commit, date))
+	// On Windows, StdStreams enables the virtual terminal sequences of the console,
+	// or emulates them where the console does not support them.
+	stdin, stdout, stderr := dockerterm.StdStreams()
+	code := cmd.Run(ctx, os.Args[1:], stdin, stdout, stderr, versionOutput(version, commit, date))
 	stop()
 	os.Exit(code)
 }

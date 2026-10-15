@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"io"
 
-	dockerterm "github.com/moby/term"
 	apps "github.com/ninech/apis/apps/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/cli"
+	"github.com/ninech/nctl/internal/format"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -71,7 +71,7 @@ func (cmd applicationCmd) Help() string {
   `
 }
 
-func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client, exec *Cmd) error {
+func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client, streams format.IOStreams) error {
 	replicaName, buildType, err := cmd.getReplica(ctx, client)
 	if err != nil {
 		return fmt.Errorf("error when searching for replica to connect: %w", err)
@@ -80,8 +80,6 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client, exec *Cm
 	if err != nil {
 		return fmt.Errorf("can not create deplo.io cluster rest config: %w", err)
 	}
-	// use dockerterm to gather the std io streams (windows supported)
-	stdin, stdout, stderr := dockerterm.StdStreams()
 	return executeRemoteCommand(
 		ctx,
 		remoteCommandParameters{
@@ -90,9 +88,9 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client, exec *Cm
 			command:          replicaCommand(buildType, cmd.Command),
 			tty:              cmd.Tty,
 			enableStdin:      cmd.Stdin,
-			stdin:            stdin,
-			stdout:           stdout,
-			stderr:           stderr,
+			stdin:            streams.In,
+			stdout:           streams.Out,
+			stderr:           streams.ErrOut,
 			restConfig:       config,
 		})
 }
@@ -167,7 +165,7 @@ func setupTTY(params *remoteCommandParameters) term.TTY {
 		return t
 	}
 	// if we get to here, the user wants to attach stdin, wants a TTY, and
-	// os.Stdin is a terminal, so we can safely set t.Raw to true
+	// stdin is a terminal, so we can safely set t.Raw to true
 	t.Raw = true
 	return t
 }
