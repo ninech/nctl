@@ -31,7 +31,7 @@ func TestApplication(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	gitInfoService := testutil.NewGitInformationService()
+	gitInfoService := testutil.NewGitInformationService(t)
 	gitInfoService.Start()
 	defer gitInfoService.Close()
 

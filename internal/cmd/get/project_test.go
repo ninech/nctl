@@ -153,7 +153,7 @@ dev      <none>
 			is := require.New(t)
 
 			buf := &bytes.Buffer{}
-			get := NewTestCmd(buf, testCase.outputFormat)
+			get := NewTestCmd(t, buf, testCase.outputFormat)
 			get.AllProjects = testCase.allProjects
 
 			projects := testCase.projects

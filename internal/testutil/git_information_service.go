@@ -7,9 +7,9 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"sync"
+	"testing"
 
 	apps "github.com/ninech/apis/apps/v1alpha1"
 )
@@ -56,9 +56,10 @@ func defaultResponse() GitInformationServiceResponse {
 // NewGitInformationService returns a new git information service mock.
 // It can be used to verify requests sent to it
 // and also to just return with a previously set response.
-func NewGitInformationService() *gitInformationService {
+// It logs the errors of serving a request to the output of t.
+func NewGitInformationService(t testing.TB) *gitInformationService {
 	g := &gitInformationService{
-		logger:   slog.New(slog.NewJSONHandler(os.Stdout, nil)),
+		logger:   slog.New(slog.NewJSONHandler(t.Output(), nil)),
 		response: defaultResponse(),
 	}
 	mux := http.NewServeMux()

@@ -2,7 +2,6 @@ package update
 
 import (
 	"bytes"
-	"io"
 	"os"
 	"testing"
 
@@ -92,7 +91,7 @@ func TestOptionalSSHKeysFlagsDecoding(t *testing.T) {
 
 			is.Equal(tt.wantSet, flags.SSHKeysSet())
 
-			w := format.NewWriter(io.Discard, io.Discard)
+			w := format.NewWriter(t.Output(), t.Output())
 			keys, err := flags.Keys(&w, "")
 			is.NoError(err)
 			is.Equal(tt.wantKeys, keys)

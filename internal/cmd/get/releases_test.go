@@ -171,7 +171,7 @@ func TestReleases(t *testing.T) {
 				tc.output = full
 			}
 			buf := &bytes.Buffer{}
-			get := NewTestCmd(buf, tc.output)
+			get := NewTestCmd(t, buf, tc.output)
 			get.AllProjects = tc.inAllProjects
 
 			err := tc.cmd.Run(t.Context(), apiClient, get)

@@ -105,7 +105,7 @@ func TestEdit(t *testing.T) {
 func selectCommand(t *testing.T, command, name string) *kong.Context {
 	t.Helper()
 
-	parser, err := kong.New(&Cmd{}, testutil.KongStreams(format.IOStreams{Out: io.Discard, ErrOut: io.Discard}))
+	parser, err := kong.New(&Cmd{}, testutil.KongStreams(format.IOStreams{Out: t.Output(), ErrOut: t.Output()}))
 	require.NoError(t, err)
 
 	kctx, err := parser.Parse([]string{command, name})
@@ -121,7 +121,7 @@ func TestEditCommandsResolve(t *testing.T) {
 	scheme, err := api.NewScheme()
 	is.NoError(err)
 
-	parser, err := kong.New(&Cmd{}, testutil.KongStreams(format.IOStreams{Out: io.Discard, ErrOut: io.Discard}))
+	parser, err := kong.New(&Cmd{}, testutil.KongStreams(format.IOStreams{Out: t.Output(), ErrOut: t.Output()}))
 	is.NoError(err)
 
 	for _, node := range parser.Model.Children {

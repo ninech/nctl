@@ -2,7 +2,6 @@ package sshkey
 
 import (
 	"bytes"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -240,7 +239,7 @@ func TestStorageKeysWithDeprecatedFile(t *testing.T) {
 		t.Parallel()
 		is := require.New(t)
 
-		w := format.NewWriter(io.Discard, io.Discard)
+		w := format.NewWriter(t.Output(), t.Output())
 
 		_, err := StorageKeysWithDeprecatedFile(&w, nil, openKeyFile(t, "invalid.pub", "not a key\n"))
 		is.ErrorContains(err, "invalid SSH public key on line 1")

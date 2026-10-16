@@ -2,7 +2,6 @@ package update
 
 import (
 	"bytes"
-	"io"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -117,7 +116,7 @@ func parseCloudVM(t *testing.T, args ...string) *cloudVMCmd {
 	t.Helper()
 
 	cmd := &cloudVMCmd{}
-	_, err := kong.Must(cmd, testutil.KongStreams(format.IOStreams{Out: io.Discard, ErrOut: io.Discard})).Parse(args)
+	_, err := kong.Must(cmd, testutil.KongStreams(format.IOStreams{Out: t.Output(), ErrOut: t.Output()})).Parse(args)
 	require.NoError(t, err)
 
 	return cmd

@@ -2,7 +2,6 @@ package get
 
 import (
 	"bytes"
-	"io"
 	"strings"
 	"testing"
 	"time"
@@ -134,7 +133,7 @@ func TestProjectConfigs(t *testing.T) {
 			)
 
 			buf := &bytes.Buffer{}
-			_ = tc.get.BeforeApply(format.IOStreams{Out: buf, ErrOut: io.Discard})
+			_ = tc.get.BeforeApply(format.IOStreams{Out: buf, ErrOut: t.Output()})
 			cmd := configsCmd{}
 
 			err := cmd.Run(t.Context(), apiClient, tc.get)

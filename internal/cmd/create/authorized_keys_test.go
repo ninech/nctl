@@ -2,7 +2,6 @@ package create
 
 import (
 	"bytes"
-	"io"
 	"testing"
 
 	"github.com/alecthomas/kong"
@@ -28,7 +27,7 @@ func parseDatabaseSSHKeys(t *testing.T, args ...string) DatabaseSSHKeysFlags {
 	var cmd struct {
 		DatabaseSSHKeysFlags `set:"ssh_keys_purpose=for the tests"`
 	}
-	_, err := kong.Must(&cmd, testutil.KongStreams(format.IOStreams{Out: io.Discard, ErrOut: io.Discard})).Parse(args)
+	_, err := kong.Must(&cmd, testutil.KongStreams(format.IOStreams{Out: t.Output(), ErrOut: t.Output()})).Parse(args)
 	require.NoError(t, err)
 
 	return cmd.DatabaseSSHKeysFlags

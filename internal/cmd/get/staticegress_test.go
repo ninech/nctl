@@ -124,7 +124,7 @@ func TestStaticEgress(t *testing.T) {
 				tt.out = full
 			}
 			buf := &bytes.Buffer{}
-			cmd := NewTestCmd(buf, tt.out)
+			cmd := NewTestCmd(t, buf, tt.out)
 			cmd.AllProjects = tt.inAllProjects
 			err := tt.get.Run(t.Context(), apiClient, cmd)
 			if (err != nil) != tt.wantErr {

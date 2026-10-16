@@ -260,7 +260,7 @@ func TestOpenSearch(t *testing.T) {
 			if tt.out == "" {
 				tt.out = full
 			}
-			cmd := NewTestCmd(buf, tt.out)
+			cmd := NewTestCmd(t, buf, tt.out)
 			cmd.AllProjects = tt.inAllProjects
 			err := tt.get.Run(t.Context(), apiClient, cmd)
 			if (err != nil) != tt.wantErr {

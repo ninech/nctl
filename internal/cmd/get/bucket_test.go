@@ -253,7 +253,7 @@ func TestBucketGet(t *testing.T) {
 
 			buf := &bytes.Buffer{}
 			cmd := tt.getCmd
-			get := NewTestCmd(buf, tt.out)
+			get := NewTestCmd(t, buf, tt.out)
 			get.AllProjects = tt.inAllProjects
 			err := cmd.Run(t.Context(), apiClient, get)
 
