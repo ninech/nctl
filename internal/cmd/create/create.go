@@ -13,13 +13,10 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
-	"github.com/theckman/yacspin"
+	"github.com/ninech/nctl/internal/waiter"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/util/retry"
-	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Cmd struct {
@@ -59,10 +56,6 @@ func (cmd *ResourceCmd) BeforeApply(streams format.IOStreams) error {
 	return cmd.Writer.BeforeApply(streams)
 }
 
-// resultFunc is the function called on a watch event during creation. It
-// should return true whenever the wait can be considered done.
-type resultFunc func(watch.Event) (bool, error)
-
 type creator struct {
 	format.Writer
 
@@ -71,59 +64,6 @@ type creator struct {
 	kind   string
 
 	timeout time.Duration
-}
-
-type waitStage struct {
-	format.Writer
-
-	kind           string
-	waitMessage    *message
-	doneMessage    *message
-	objectList     runtimeclient.ObjectList
-	listOpts       []runtimeclient.ListOption
-	onResult       resultFunc
-	spinner        *yacspin.Spinner
-	disableSpinner bool
-	startTime      time.Time
-	// beforeWait is a hook that is called just before the wait is being run.
-	beforeWait func()
-	// afterWait is a hook that is called after the wait to clean up.
-	afterWait func()
-}
-
-type message struct {
-	icon     string
-	text     string
-	disabled bool
-}
-
-var watchBackoff = wait.Backoff{
-	Steps:    15,
-	Duration: 10 * time.Millisecond,
-	Factor:   1.0,
-	Jitter:   0.1,
-}
-
-const remainingTimeUpdateInterval = time.Second
-
-func (m *message) progress() string {
-	if m.disabled {
-		return ""
-	}
-
-	return format.Progress(m.icon, m.text)
-}
-
-// progressWithRemaining returns the progress message with the remaining time
-// from the context deadline appended.
-func (w *waitStage) progressWithRemaining(ctx context.Context) string {
-	text := w.waitMessage.text
-	if deadline, ok := ctx.Deadline(); ok {
-		if remaining := time.Until(deadline); remaining > 0 {
-			text += fmt.Sprintf(" (%s)", remaining.Truncate(time.Second))
-		}
-	}
-	return format.Progress(w.waitMessage.icon, text)
 }
 
 func (cmd *ResourceCmd) newCreator(client *api.Client, mg resource.Managed, kind string) *creator {
@@ -175,142 +115,9 @@ func (c *creator) createResourceInLocation(
 	return c.createResource(ctx)
 }
 
-func (c *creator) wait(ctx context.Context, stages ...waitStage) error {
-	for _, stage := range stages {
-		if stage.afterWait != nil {
-			defer stage.afterWait()
-		}
-
-		stage.setDefaults(c)
-		stage.Writer = c.Writer
-
-		spinner, err := c.Spinner(
-			stage.progressWithRemaining(ctx),
-			stage.progressWithRemaining(ctx),
-		)
-		if err != nil {
-			return err
-		}
-		stage.spinner = spinner
-
-		if stage.beforeWait != nil {
-			stage.beforeWait()
-		}
-
-		stage.startTime = time.Now()
-		if err := retry.OnError(watchBackoff, isWatchError, func() error {
-			return stage.wait(ctx, c.client)
-		}); err != nil {
-			_ = stage.spinner.StopFail()
-			_ = stage.spinner.Stop()
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (w *waitStage) setDefaults(c *creator) {
-	if len(w.kind) == 0 {
-		w.kind = c.kind
-	}
-
-	if w.waitMessage == nil {
-		w.waitMessage = &message{
-			text: fmt.Sprintf("waiting for %s to be ready", w.kind),
-			icon: "⏳",
-		}
-	}
-
-	if w.doneMessage == nil {
-		w.doneMessage = &message{
-			text: fmt.Sprintf("%s ready", w.kind),
-			icon: "🛫",
-		}
-	}
-
-	if len(w.listOpts) == 0 {
-		w.listOpts = []runtimeclient.ListOption{
-			runtimeclient.InNamespace(c.mg.GetNamespace()),
-			runtimeclient.MatchingFields{"metadata.name": c.mg.GetName()},
-		}
-	}
-}
-
-type watchError struct {
-	kind string
-}
-
-func (werr watchError) Error() string {
-	return fmt.Sprintf(
-		"error watching %s, the API might be experiencing connectivity issues",
-		werr.kind,
-	)
-}
-
-func isWatchError(err error) bool {
-	_, ok := err.(watchError)
-	return ok
-}
-
-func (w *waitStage) wait(ctx context.Context, client *api.Client) error {
-	if !w.disableSpinner {
-		_ = w.spinner.Start()
-	}
-
-	return w.watch(ctx, client)
-}
-
-func (w *waitStage) watch(ctx context.Context, client *api.Client) error {
-	wa, err := client.Watch(ctx, w.objectList, w.listOpts...)
-	if err != nil {
-		if err == context.Canceled {
-			return err
-		}
-		return watchError{kind: w.kind}
-	}
-
-	ticker := time.NewTicker(remainingTimeUpdateInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case res := <-wa.ResultChan():
-			if res.Type == watch.Error || res.Type == "" {
-				return watchError{kind: w.kind}
-			}
-
-			done, err := w.onResult(res)
-			if err != nil {
-				_ = w.spinner.StopFail()
-				return err
-			}
-
-			if done {
-				wa.Stop()
-				elapsed := time.Since(w.startTime).Truncate(time.Second)
-				w.spinner.StopMessage(w.waitMessage.progress())
-				_ = w.spinner.Stop()
-				w.Successf(w.doneMessage.icon, "%s (%s)", w.doneMessage.text, elapsed)
-
-				return nil
-			}
-		case <-ticker.C:
-			w.spinner.Message(w.progressWithRemaining(ctx))
-		case <-ctx.Done():
-			switch ctx.Err() {
-			case context.DeadlineExceeded:
-				msg := "timeout waiting for %s"
-				w.spinner.StopFailMessage(format.Progressf("", msg, w.kind))
-				_ = w.spinner.StopFail()
-
-				return fmt.Errorf(msg, w.kind)
-			case context.Canceled:
-				_ = w.spinner.StopFail()
-				return nil
-			}
-		}
-	}
+func (c *creator) wait(ctx context.Context, stages ...waiter.Stage) error {
+	w := &waiter.Waiter{Writer: c.Writer, Client: c.client, Kind: c.kind, Object: c.mg}
+	return w.Wait(ctx, stages...)
 }
 
 func resourceAvailable(event watch.Event) (bool, error) {

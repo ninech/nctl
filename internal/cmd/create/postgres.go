@@ -12,6 +12,7 @@ import (
 	storage "github.com/ninech/apis/storage/v1alpha1"
 
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/waiter"
 )
 
 type postgresCmd struct {
@@ -44,10 +45,9 @@ func (cmd *postgresCmd) Run(ctx context.Context, client *api.Client) error {
 		return nil
 	}
 
-	return c.wait(ctx, waitStage{
-		Writer:     cmd.Writer,
-		objectList: &storage.PostgresList{},
-		onResult: func(event watch.Event) (bool, error) {
+	return c.wait(ctx, waiter.Stage{
+		ObjectList: &storage.PostgresList{},
+		OnResult: func(event watch.Event) (bool, error) {
 			if c, ok := event.Object.(*storage.Postgres); ok {
 				return isAvailable(c), nil
 			}
