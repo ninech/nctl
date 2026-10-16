@@ -14,6 +14,7 @@ import (
 
 type mySQLCmd struct {
 	ResourceCmd
+	CredentialsResetFlags
 	MachineType           *string          `help:"Defines the sizing for a particular MySQL instance." completion-predictor:"apifield:mysql_machine_type"`
 	AllowedCidrs          *[]meta.IPv4CIDR `placeholder:"203.0.113.1/32" help:"Specifies the IP addresses allowed to connect to the instance."`
 	DatabaseSSHKeysFlags  `set:"ssh_keys_purpose=allowed to connect to the database server in order to up-/download and directly restore database backups"`
@@ -41,7 +42,7 @@ func (cmd *mySQLCmd) Run(ctx context.Context, client *api.Client) error {
 		}
 
 		return cmd.applyUpdates(mysql)
-	})
+	}).withCredentialsReset(&cmd.CredentialsResetFlags)
 
 	return upd.Update(ctx)
 }

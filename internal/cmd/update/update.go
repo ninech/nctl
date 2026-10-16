@@ -3,6 +3,7 @@ package update
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -39,21 +40,28 @@ type Cmd struct {
 // [format.Writer], see [format.Writer.BeforeApply].
 type ResourceCmd struct {
 	format.Writer `kong:"-"`
+	format.Reader `kong:"-"`
 	Name          string `arg:"" completion-predictor:"client:resource_name" help:"Name of the resource to update."`
 }
 
-// BeforeApply initializes Writer from the bound [format.IOStreams].
+// BeforeApply initializes Writer and Reader from the bound [format.IOStreams].
 func (cmd *ResourceCmd) BeforeApply(streams format.IOStreams) error {
-	return cmd.Writer.BeforeApply(streams)
+	return errors.Join(
+		cmd.Writer.BeforeApply(streams),
+		cmd.Reader.BeforeApply(streams),
+	)
 }
 
 type updater struct {
 	format.Writer
+	format.Reader
 	mg          resource.Managed
 	client      *api.Client
 	kind        string
 	updateFunc  updateFunc
 	forceUpdate bool
+	// credentialsReset, if set, resets the credentials after the update.
+	credentialsReset *CredentialsResetFlags
 }
 
 type updateFunc func(current resource.Managed) error
@@ -66,6 +74,7 @@ func (cmd *ResourceCmd) newUpdater(
 ) *updater {
 	return &updater{
 		Writer:     cmd.Writer,
+		Reader:     cmd.Reader,
 		client:     client,
 		mg:         mg,
 		kind:       kind,
@@ -76,6 +85,17 @@ func (cmd *ResourceCmd) newUpdater(
 func (u *updater) Update(ctx context.Context) error {
 	if err := u.client.Get(ctx, api.ObjectName(u.mg), u.mg); err != nil {
 		return err
+	}
+
+	if u.credentialsReset != nil {
+		ok, err := u.credentialsReset.confirm(u)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			u.Failuref("", "%s update canceled", u.kind)
+			return nil
+		}
 	}
 
 	before, ok := u.mg.DeepCopyObject().(resource.Managed)
@@ -91,16 +111,19 @@ func (u *updater) Update(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if !changed && !u.forceUpdate {
+	switch {
+	case changed || u.forceUpdate:
+		if err := u.client.Update(ctx, u.mg); err != nil {
+			return err
+		}
+		u.Successf("⬆️", "updated %s %q", u.kind, u.mg.GetName())
+	case u.credentialsReset == nil:
 		u.Infof("", "no changes made to %s %q", u.kind, u.mg.GetName())
-		return nil
 	}
 
-	if err := u.client.Update(ctx, u.mg); err != nil {
-		return err
+	if u.credentialsReset != nil {
+		return u.credentialsReset.reset(ctx, u)
 	}
-
-	u.Successf("⬆️", "updated %s %q", u.kind, u.mg.GetName())
 	return nil
 }
 
