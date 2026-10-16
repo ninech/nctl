@@ -203,9 +203,6 @@ func runUpdateWithInput(t *testing.T, client *api.Client, in io.Reader, out io.W
 	}
 	maps.Copy(vars, bucket.KongVars())
 	maps.Copy(vars, BucketKongVars())
-	// defined by create.MySQLKongVars,
-	// which the update package must not import.
-	vars["mysql_mode"] = strings.Join(storage.MySQLModeDefault, ", ")
 
 	parser := kong.Must(
 		&root,
