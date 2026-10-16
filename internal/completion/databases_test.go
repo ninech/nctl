@@ -1,8 +1,8 @@
 package completion
 
 import (
-	"log/slog"
 	"sort"
+	"strings"
 	"testing"
 
 	storage "github.com/ninech/apis/storage/v1alpha1"
@@ -116,12 +116,12 @@ func TestInstanceDatabasesPredict(t *testing.T) {
 		testutil.WithDefaultProject(project),
 	)
 
-	predictor := newInstanceDatabases(slog.New(slog.DiscardHandler), staticClient(client), testProjectFinder(t), storage.PostgresGroupVersionKind)
-
 	tests := []struct {
 		name      string
 		completed []string
 		want      []string
+		// wantLog is logged why no databases are predicted, empty if nothing is logged.
+		wantLog string
 	}{
 		{
 			name:      "returns databases for named instance",
@@ -137,12 +137,16 @@ func TestInstanceDatabasesPredict(t *testing.T) {
 			name:      "returns nil for unknown instance",
 			completed: []string{"doesnotexist", "--database"},
 			want:      nil,
+			wantLog:   "cannot get the instance",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
+			log, logged := newTestLogger(t)
+			predictor := newInstanceDatabases(log, staticClient(client), testProjectFinder(t), storage.PostgresGroupVersionKind)
 
 			got := predictor.Predict(complete.Args{Completed: tt.completed})
 			sort.Strings(got)
@@ -155,6 +159,12 @@ func TestInstanceDatabasesPredict(t *testing.T) {
 				if got[i] != tt.want[i] {
 					t.Errorf("Predict()[%d] = %q, want %q", i, got[i], tt.want[i])
 				}
+			}
+			if tt.wantLog == "" && logged.Len() > 0 {
+				t.Errorf("Predict() logged %q, want nothing", logged)
+			}
+			if !strings.Contains(logged.String(), tt.wantLog) {
+				t.Errorf("Predict() logged %q, want %q", logged, tt.wantLog)
 			}
 		})
 	}
