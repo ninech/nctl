@@ -6,6 +6,7 @@ import (
 
 	management "github.com/ninech/apis/management/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/waiter"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -33,10 +34,9 @@ func (cmd *projectCmd) Run(ctx context.Context, client *api.Client) error {
 		return nil
 	}
 
-	return c.wait(ctx, waitStage{
-		Writer:     cmd.Writer,
-		objectList: &management.ProjectList{},
-		onResult:   resourceAvailable,
+	return c.wait(ctx, waiter.Stage{
+		ObjectList: &management.ProjectList{},
+		OnResult:   resourceAvailable,
 	})
 }
 

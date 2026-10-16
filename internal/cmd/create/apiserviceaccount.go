@@ -6,6 +6,7 @@ import (
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	iam "github.com/ninech/apis/iam/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/waiter"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,9 +28,9 @@ func (cmd *apiServiceAccountCmd) Run(ctx context.Context, client *api.Client) er
 		return nil
 	}
 
-	return c.wait(ctx, waitStage{
-		objectList: &iam.APIServiceAccountList{},
-		onResult:   resourceAvailable,
+	return c.wait(ctx, waiter.Stage{
+		ObjectList: &iam.APIServiceAccountList{},
+		OnResult:   resourceAvailable,
 	})
 }
 

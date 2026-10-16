@@ -11,6 +11,7 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/sshkey"
+	"github.com/ninech/nctl/internal/waiter"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,9 +54,9 @@ func (cmd *cloudVMCmd) Run(ctx context.Context, client *api.Client) error {
 		return nil
 	}
 
-	if err := c.wait(ctx, waitStage{
-		objectList: &infrastructure.CloudVirtualMachineList{},
-		onResult: func(event watch.Event) (bool, error) {
+	if err := c.wait(ctx, waiter.Stage{
+		ObjectList: &infrastructure.CloudVirtualMachineList{},
+		OnResult: func(event watch.Event) (bool, error) {
 			if c, ok := event.Object.(*infrastructure.CloudVirtualMachine); ok {
 				cloudVM = c
 				return isAvailable(c), nil

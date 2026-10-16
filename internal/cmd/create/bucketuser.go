@@ -7,6 +7,7 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/waiter"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -32,9 +33,9 @@ func (cmd *bucketUserCmd) Run(ctx context.Context, client *api.Client) error {
 		return nil
 	}
 
-	return c.wait(ctx, waitStage{
-		objectList: &storage.BucketUserList{},
-		onResult: func(event watch.Event) (bool, error) {
+	return c.wait(ctx, waiter.Stage{
+		ObjectList: &storage.BucketUserList{},
+		OnResult: func(event watch.Event) (bool, error) {
 			if c, ok := event.Object.(*storage.BucketUser); ok {
 				return isAvailable(c), nil
 			}
