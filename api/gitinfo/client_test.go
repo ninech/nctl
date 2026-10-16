@@ -15,7 +15,7 @@ import (
 func TestRepositoryInformation(t *testing.T) {
 	t.Parallel()
 
-	gitInfo := testutil.NewGitInformationService()
+	gitInfo := testutil.NewGitInformationService(t)
 	gitInfo.Start()
 	defer gitInfo.Close()
 

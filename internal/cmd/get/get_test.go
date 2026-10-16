@@ -17,16 +17,13 @@ import (
 )
 
 // NewTestCmd creates a [Cmd] for testing with the given writer and output format.
-// It initializes the format.Writer and calls BeforeApply to ensure the output
-// is properly configured.
-func NewTestCmd(w io.Writer, outFormat outputFormat, opts ...func(*Cmd)) *Cmd {
-	cmd := &Cmd{
-		output: output{
-			Writer: format.NewWriter(w, w),
-			Format: outFormat,
-		},
-	}
-	_ = cmd.BeforeApply(format.IOStreams{Out: w, ErrOut: io.Discard})
+// It calls BeforeApply as Kong does, so the output is written to w
+// and the diagnostics to the output of t.
+func NewTestCmd(t testing.TB, w io.Writer, outFormat outputFormat, opts ...func(*Cmd)) *Cmd {
+	t.Helper()
+
+	cmd := &Cmd{output: output{Format: outFormat}}
+	require.NoError(t, cmd.BeforeApply(format.IOStreams{Out: w, ErrOut: t.Output()}))
 	for _, opt := range opts {
 		opt(cmd)
 	}
@@ -100,7 +97,7 @@ func TestListPrint(t *testing.T) {
 			)
 
 			buf := &bytes.Buffer{}
-			cmd := NewTestCmd(buf, tc.out)
+			cmd := NewTestCmd(t, buf, tc.out)
 			cmd.AllProjects = tc.inAllProjects
 			cmd.Watch = tc.watch
 			ctx, cancel := context.WithTimeout(t.Context(), 50*time.Millisecond)

@@ -89,7 +89,7 @@ func TestPostgresDatabase(t *testing.T) {
 				tt.out = full
 			}
 			buf := &bytes.Buffer{}
-			cmd := NewTestCmd(buf, tt.out)
+			cmd := NewTestCmd(t, buf, tt.out)
 			cmd.AllProjects = tt.inAllProjects
 			if err := tt.get.Run(t.Context(), apiClient, cmd); (err != nil) != tt.wantErr {
 				t.Errorf("postgresDatabaseCmd.Run() error = %v, wantErr %v", err, tt.wantErr)

@@ -29,7 +29,7 @@ func TestBuild(t *testing.T) {
 	build2.Name = build2.Name + "-2"
 
 	buf := &bytes.Buffer{}
-	get := NewTestCmd(buf, full)
+	get := NewTestCmd(t, buf, full)
 
 	apiClient := testutil.SetupClient(t,
 		testutil.WithNameIndexFor(&apps.Build{}),

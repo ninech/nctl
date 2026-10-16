@@ -3,7 +3,6 @@ package create
 import (
 	"bytes"
 	"context"
-	"io"
 	"os"
 	"strings"
 	"testing"
@@ -65,7 +64,7 @@ func TestCreateApplication(t *testing.T) {
 	}
 	defer os.Remove(filenameED25519Key)
 
-	gitInfoService := testutil.NewGitInformationService()
+	gitInfoService := testutil.NewGitInformationService(t)
 	gitInfoService.Start()
 	defer gitInfoService.Close()
 
@@ -880,7 +879,7 @@ func TestApplicationFlags(t *testing.T) {
 	is.NoError(err)
 
 	defaultCmd := &applicationCmd{}
-	_, err = kong.Must(defaultCmd, vars, testutil.KongStreams(format.IOStreams{Out: io.Discard, ErrOut: io.Discard})).Parse([]string{
+	_, err = kong.Must(defaultCmd, vars, testutil.KongStreams(format.IOStreams{Out: t.Output(), ErrOut: t.Output()})).Parse([]string{
 		`test-app`,
 		`--git-url=https://github.com/ninech/doesnotexist.git`,
 	})
@@ -888,7 +887,7 @@ func TestApplicationFlags(t *testing.T) {
 	is.Equal(int32(application.DefaultReplicas), defaultCmd.Replicas)
 
 	explicitCmd := &applicationCmd{}
-	_, err = kong.Must(explicitCmd, vars, testutil.KongStreams(format.IOStreams{Out: io.Discard, ErrOut: io.Discard})).Parse([]string{
+	_, err = kong.Must(explicitCmd, vars, testutil.KongStreams(format.IOStreams{Out: t.Output(), ErrOut: t.Output()})).Parse([]string{
 		`test-app`,
 		`--git-url=https://github.com/ninech/doesnotexist.git`,
 		`--replicas=5`,

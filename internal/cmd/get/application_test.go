@@ -34,7 +34,7 @@ func TestApplication(t *testing.T) {
 	app3.Namespace = otherProject
 
 	buf := &bytes.Buffer{}
-	get := NewTestCmd(buf, full)
+	get := NewTestCmd(t, buf, full)
 
 	apiClient := testutil.SetupClient(t,
 		testutil.WithNameIndexFor(&apps.Application{}),
@@ -293,7 +293,7 @@ dev      dev-second  dev-second  sample-second
 			is := require.New(t)
 			testCase := testCase
 			buf := &bytes.Buffer{}
-			get := NewTestCmd(buf, testCase.outputFormat)
+			get := NewTestCmd(t, buf, testCase.outputFormat)
 			get.AllProjects = testCase.project == ""
 
 			apiClient := testutil.SetupClient(t,
@@ -464,7 +464,7 @@ Visit https://docs.nine.ch/a/myshbw3EY1 to see instructions on how to setup cust
 			is := require.New(t)
 			testCase := testCase
 			buf := &bytes.Buffer{}
-			get := NewTestCmd(buf, testCase.outputFormat)
+			get := NewTestCmd(t, buf, testCase.outputFormat)
 			get.AllProjects = testCase.project == ""
 			apiClient := testutil.SetupClient(t,
 				testutil.WithProjectsFromResources(testCase.apps...),
