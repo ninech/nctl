@@ -11,6 +11,7 @@ import (
 	storage "github.com/ninech/apis/storage/v1alpha1"
 
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/waiter"
 )
 
 type mysqlDatabaseCmd struct {
@@ -36,10 +37,9 @@ func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error 
 		return nil
 	}
 
-	if err := c.wait(ctx, waitStage{
-		Writer:     cmd.Writer,
-		objectList: &storage.MySQLDatabaseList{},
-		onResult: func(event watch.Event) (bool, error) {
+	if err := c.wait(ctx, waiter.Stage{
+		ObjectList: &storage.MySQLDatabaseList{},
+		OnResult: func(event watch.Event) (bool, error) {
 			if mdb, ok := event.Object.(*storage.MySQLDatabase); ok {
 				return isAvailable(mdb), nil
 			}

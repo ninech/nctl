@@ -178,10 +178,23 @@ func probeFor[T resource.Managed](mg T, name, project string) T {
 func runUpdate(t *testing.T, client *api.Client, out io.Writer, args []string) error {
 	t.Helper()
 
+	return runUpdateWithInput(t, client, strings.NewReader(""), out, args)
+}
+
+// runUpdateWithInput is [runUpdate] with in as the input of the command,
+// e.g. to answer a confirmation prompt.
+func runUpdateWithInput(t *testing.T, client *api.Client, in io.Reader, out io.Writer, args []string) error {
+	t.Helper()
+
 	var root struct {
-		Postgres    postgresCmd    `cmd:"" name:"postgres"`
-		Application applicationCmd `cmd:"" name:"application"`
-		Bucket      bucketCmd      `cmd:"" name:"bucket"`
+		Postgres         postgresCmd         `cmd:"" name:"postgres"`
+		PostgresDatabase postgresDatabaseCmd `cmd:"" name:"postgresdatabase"`
+		MySQL            mySQLCmd            `cmd:"" name:"mysql"`
+		MySQLDatabase    mysqlDatabaseCmd    `cmd:"" name:"mysqldatabase"`
+		KeyValueStore    keyValueStoreCmd    `cmd:"" name:"keyvaluestore"`
+		OpenSearch       openSearchCmd       `cmd:"" name:"opensearch"`
+		Application      applicationCmd      `cmd:"" name:"application"`
+		Bucket           bucketCmd           `cmd:"" name:"bucket"`
 	}
 
 	vars, err := application.KongVars()
@@ -197,7 +210,7 @@ func runUpdate(t *testing.T, client *api.Client, out io.Writer, args []string) e
 		kong.PostBuild(apifield.Apply()),
 		vars,
 		kong.BindTo(t.Context(), (*context.Context)(nil)),
-		testutil.KongStreams(format.IOStreams{Out: out, ErrOut: out}),
+		testutil.KongStreams(format.IOStreams{In: in, Out: out, ErrOut: out}),
 	)
 
 	kctx, err := parser.Parse(args)

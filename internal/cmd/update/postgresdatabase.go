@@ -12,6 +12,7 @@ import (
 
 type postgresDatabaseCmd struct {
 	ResourceCmd
+	CredentialsResetFlags
 	BackupSchedule *storage.DatabaseBackupScheduleCalendar `help:"Backup schedule for the PostgreSQL database." completion-predictor:"apifield:postgresdatabase_backup_schedule"`
 }
 
@@ -31,7 +32,7 @@ func (cmd *postgresDatabaseCmd) Run(ctx context.Context, client *api.Client) err
 
 		cmd.applyUpdates(postgresDatabase)
 		return nil
-	})
+	}).withCredentialsReset(&cmd.CredentialsResetFlags)
 
 	return upd.Update(ctx)
 }

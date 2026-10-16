@@ -13,6 +13,7 @@ import (
 
 type keyValueStoreCmd struct {
 	ResourceCmd
+	CredentialsResetFlags
 	MemorySize       *storage.KeyValueStoreMemorySize      `help:"Available amount of memory." completion-predictor:"apifield:keyvaluestore_memory_size"`
 	MaxMemoryPolicy  *storage.KeyValueStoreMaxMemoryPolicy `help:"Behaviour when the memory limit is reached." completion-predictor:"apifield:keyvaluestore_max_memory_policy"`
 	AllowedCidrs     *[]meta.IPv4CIDR                      `placeholder:"203.0.113.1/32" help:"IP addresses allowed to connect to the public endpoint."`
@@ -37,7 +38,7 @@ func (cmd *keyValueStoreCmd) Run(ctx context.Context, client *api.Client) error 
 		}
 
 		return cmd.applyUpdates(keyValueStore)
-	}).Update(ctx)
+	}).withCredentialsReset(&cmd.CredentialsResetFlags).Update(ctx)
 }
 
 func (cmd *keyValueStoreCmd) applyUpdates(kvs *storage.KeyValueStore) error {
