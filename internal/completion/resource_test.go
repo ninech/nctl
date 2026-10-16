@@ -1,8 +1,8 @@
 package completion
 
 import (
-	"log/slog"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/ninech/nctl/internal/testutil"
@@ -21,7 +21,8 @@ func TestResourcePredictNames(t *testing.T) {
 		testutil.WithDefaultProject(project),
 	)
 
-	got := newResourceName(slog.New(slog.DiscardHandler), staticClient(client), testProjectFinder(t), "postgres").
+	log, _ := newTestLogger(t)
+	got := newResourceName(log, staticClient(client), testProjectFinder(t), "postgres").
 		Predict(complete.Args{})
 	sort.Strings(got)
 
@@ -41,8 +42,12 @@ func TestResourcePredictNamesOfUnknownResource(t *testing.T) {
 
 	client := testutil.SetupClient(t, testutil.WithDefaultProject(testutil.DefaultProject))
 
-	if got := newResourceName(slog.New(slog.DiscardHandler), staticClient(client), testProjectFinder(t), "nosuchthing").
+	log, logged := newTestLogger(t)
+	if got := newResourceName(log, staticClient(client), testProjectFinder(t), "nosuchthing").
 		Predict(complete.Args{}); got != nil {
 		t.Errorf("Predict() = %q, want no completions", got)
+	}
+	if !strings.Contains(logged.String(), "cannot resolve the resource") {
+		t.Errorf("Predict() logged %q, want the resource to be unresolved", logged)
 	}
 }

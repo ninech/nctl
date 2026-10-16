@@ -2,7 +2,6 @@ package completion
 
 import (
 	"bytes"
-	"log/slog"
 	"strconv"
 	"strings"
 	"testing"
@@ -147,9 +146,9 @@ func TestUnboundResourceNamePredictsNothing(t *testing.T) {
 
 	is := require.New(t)
 
-	stderr := &bytes.Buffer{}
-	is.Nil(unboundResourceName{NewDebugLogger(stderr)}.Predict(complete.Args{}))
-	is.Contains(stderr.String(), "no API resource is bound to the command")
+	log, logged := newTestLogger(t)
+	is.Nil(unboundResourceName{log}.Predict(complete.Args{}))
+	is.Contains(logged.String(), "no API resource is bound to the command")
 }
 
 // newBoundTestCommand builds the completion tree of [bindGrammar] with every
@@ -162,7 +161,7 @@ func newBoundTestCommand(t *testing.T) complete.Command {
 	is.NoError(err)
 
 	cmd, err := kongcompletion.Command(parser,
-		kongcompletion.WithPredictor(ResourceName, unboundResourceName{slog.New(slog.DiscardHandler)}))
+		kongcompletion.WithPredictor(ResourceName, unboundResourceName{NewDebugLogger(t.Output())}))
 	is.NoError(err)
 
 	is.NoError(bindResourceNames(cmd, parser.Model.Node, boundTo))

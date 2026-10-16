@@ -74,7 +74,7 @@ func TestRegisterCompletes(t *testing.T) {
 	t.Setenv("COMP_LINE", compLine)
 	t.Setenv("COMP_POINT", strconv.Itoa(len(compLine)))
 
-	is.NoError(Register(t.Context(), parser, slog.New(slog.DiscardHandler)))
+	is.NoError(Register(t.Context(), parser, NewDebugLogger(t.Output())))
 	is.Equal(0, exited, "completion did not exit the CLI")
 	is.Equal([]string{"postgres"}, strings.Fields(out.String()))
 }
