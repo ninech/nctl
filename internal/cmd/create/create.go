@@ -62,12 +62,10 @@ type creator struct {
 	client *api.Client
 	mg     resource.Managed
 	kind   string
-
-	timeout time.Duration
 }
 
 func (cmd *ResourceCmd) newCreator(client *api.Client, mg resource.Managed, kind string) *creator {
-	return &creator{client: client, mg: mg, kind: kind, timeout: cmd.WaitTimeout, Writer: cmd.Writer}
+	return &creator{client: client, mg: mg, kind: kind, Writer: cmd.Writer}
 }
 
 func (c *creator) createResource(ctx context.Context) error {
