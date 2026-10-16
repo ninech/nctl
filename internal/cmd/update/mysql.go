@@ -18,7 +18,7 @@ type mySQLCmd struct {
 	MachineType           *string          `help:"Defines the sizing for a particular MySQL instance." completion-predictor:"apifield:mysql_machine_type"`
 	AllowedCidrs          *[]meta.IPv4CIDR `placeholder:"203.0.113.1/32" help:"Specifies the IP addresses allowed to connect to the instance."`
 	DatabaseSSHKeysFlags  `set:"ssh_keys_purpose=allowed to connect to the database server in order to up-/download and directly restore database backups"`
-	SQLMode               *[]storage.MySQLMode                    `placeholder:"\"MODE1, MODE2, ...\"" help:"Configures the sql_mode setting. Modes affect the SQL syntax MySQL supports and the data validation checks it performs. Defaults to: ${mysql_mode}"`
+	SQLMode               *[]storage.MySQLMode                    `placeholder:"\"MODE1, MODE2, ...\"" help:"Configures the sql_mode setting. Modes affect the SQL syntax MySQL supports and the data validation checks it performs."`
 	CharacterSetName      *string                                 `help:"Configures the character_set_server variable." completion-predictor:"apifield:mysql_character_set_name"`
 	CharacterSetCollation *string                                 `help:"Configures the collation_server variable." completion-predictor:"apifield:mysql_character_set_collation"`
 	LongQueryTime         *storage.LongQueryTime                  `help:"Configures the long_query_time variable. If a query takes longer than this duration, the query is logged to the slow query log file." completion-predictor:"apifield:mysql_long_query_time"`
