@@ -36,6 +36,7 @@ type Cmd struct {
 	PostgresDatabases   postgresDatabaseCmd   `cmd:"" group:"get-storage" name:"postgresdatabases" aliases:"postgresdatabase" help:"Get PostgreSQL databases."`
 	KeyValueStore       keyValueStoreCmd      `cmd:"" group:"get-storage" name:"keyvaluestore" aliases:"kvs" help:"Get KeyValueStore instances."`
 	CloudVirtualMachine cloudVMCmd            `cmd:"" group:"get-infra" name:"cloudvirtualmachine" aliases:"cloudvm" help:"Get a CloudVM."`
+	ManagedServer       managedServerCmd      `cmd:"" group:"get-infra" name:"managedserver" aliases:"managedservers,ms" help:"Get Managed Servers."`
 	ServiceConnection   serviceConnectionCmd  `cmd:"" group:"get-network" name:"serviceconnection" aliases:"sc,serviceconnections" help:"Get a ServiceConnection."`
 	StaticEgress        staticEgressCmd       `cmd:"" group:"get-network" name:"staticegress" aliases:"se,staticegresses" help:"Get StaticEgress resources."`
 	Bucket              bucketCmd             `cmd:"" group:"get-storage" name:"bucket" help:"Get Bucket instances."`
