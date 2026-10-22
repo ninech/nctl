@@ -6,25 +6,30 @@ import (
 	"time"
 
 	"github.com/alecthomas/kong"
+	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/ninech/nctl/internal/waiter"
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 // CredentialsResetFlags are the flags to reset the credentials of a resource
 // whose controller generates new credentials
 // when its connection secret is deleted.
+// Set credentials_wait_timeout to change the default of the wait timeout,
+// e.g. for resources which take longer to apply the new credentials.
 //
 // It has to be exported so that Kong picks up the flags of the embedded struct.
 type CredentialsResetFlags struct {
 	ResetCredentials bool          `help:"Generate new credentials. The current credentials stop working, every client using them has to be updated."`
 	Force            bool          `help:"Do not ask for confirmation before resetting the credentials."`
-	Wait             bool          `default:"true" help:"Wait until the new credentials are available. Only relevant if reset-credentials is set."`
-	WaitTimeout      time.Duration `default:"5m" help:"Duration to wait for the new credentials. Only relevant if reset-credentials and wait are set."`
+	Wait             bool          `default:"true" help:"Wait until the new credentials are generated and applied to the resource. Only relevant if reset-credentials is set."`
+	WaitTimeout      time.Duration `default:"${credentials_wait_timeout=5m}" help:"Duration to wait for the new credentials. Only relevant if reset-credentials and wait are set."`
 
 	// command is the name of the selected update sub-command,
 	// which is also the name of the get sub-command of the resource.
@@ -60,24 +65,13 @@ func (f *CredentialsResetFlags) confirm(u *updater) (bool, error) {
 	))
 }
 
-// reset deletes the connection secret of the resource,
-// which makes the controller generate new credentials
-// and write them to a new secret.
+// reset makes the controller of the resource generate new credentials,
+// see [api.Client.RotateCredentials],
+// and waits until the resource has applied them if requested by f.
 func (f *CredentialsResetFlags) reset(ctx context.Context, u *updater) error {
-	ref := u.mg.GetWriteConnectionSecretToReference()
-	if ref == nil {
-		return fmt.Errorf("%s %q has no connection secret, its credentials can not be reset", u.kind, u.mg.GetName())
-	}
-
-	secret := &corev1.Secret{}
-	if err := u.client.Get(ctx, types.NamespacedName{Name: ref.Name, Namespace: ref.Namespace}, secret); err != nil {
-		// a missing secret is being regenerated already,
-		// so we just wait for the new one.
-		if !kerrors.IsNotFound(err) {
-			return fmt.Errorf("unable to get the connection secret of %s %q: %w", u.kind, u.mg.GetName(), err)
-		}
-	} else if err := u.client.Delete(ctx, secret, runtimeclient.Preconditions{UID: &secret.UID}); runtimeclient.IgnoreNotFound(err) != nil {
-		return fmt.Errorf("unable to delete the connection secret of %s %q: %w", u.kind, u.mg.GetName(), err)
+	old, err := u.client.RotateCredentials(ctx, u.mg)
+	if err != nil {
+		return fmt.Errorf("unable to reset the credentials of %s %q: %w", u.kind, u.mg.GetName(), err)
 	}
 
 	if !f.Wait {
@@ -88,18 +82,42 @@ func (f *CredentialsResetFlags) reset(ctx context.Context, u *updater) error {
 	ctx, cancel := context.WithTimeout(ctx, f.WaitTimeout)
 	defer cancel()
 
+	// The reference is set, as the rotation succeeded.
+	ref := u.mg.GetWriteConnectionSecretToReference()
+	list, err := newListFor(u.client.Scheme(), u.mg)
+	if err != nil {
+		return err
+	}
+
+	// created is the creation time of the new secret.
+	// The resource has applied the new credentials
+	// as soon as it is ready again after that.
+	var created metav1.Time
 	w := &waiter.Waiter{
 		Writer: u.Writer,
 		Client: u.client,
-		Kind:   "credentials",
-		Object: &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: ref.Name, Namespace: ref.Namespace}},
+		Kind:   u.kind,
+		Object: u.mg,
 	}
-	if err := w.Wait(ctx, waiter.Stage{
-		ObjectList:  &corev1.SecretList{},
-		WaitMessage: &waiter.Message{Icon: "⏳", Text: fmt.Sprintf("waiting for new credentials of %s %q", u.kind, u.mg.GetName())},
-		DoneMessage: &waiter.Message{Icon: "🔑", Text: fmt.Sprintf("credentials of %s %q reset", u.kind, u.mg.GetName())},
-		OnResult:    newSecretWritten(secret.UID),
-	}); err != nil {
+	if err := w.Wait(ctx,
+		waiter.Stage{
+			Kind:       "credentials",
+			ObjectList: &corev1.SecretList{},
+			ListOpts: []runtimeclient.ListOption{
+				runtimeclient.InNamespace(ref.Namespace),
+				runtimeclient.MatchingFields{"metadata.name": ref.Name},
+			},
+			WaitMessage: &waiter.Message{Icon: "⏳", Text: fmt.Sprintf("waiting for new credentials of %s %q", u.kind, u.mg.GetName())},
+			DoneMessage: &waiter.Message{Icon: "🔑", Text: fmt.Sprintf("new credentials of %s %q generated", u.kind, u.mg.GetName())},
+			OnResult:    newSecretWritten(old, &created),
+		},
+		waiter.Stage{
+			ObjectList:  list,
+			WaitMessage: &waiter.Message{Icon: "⏳", Text: fmt.Sprintf("waiting for %s %q to apply the new credentials", u.kind, u.mg.GetName())},
+			DoneMessage: &waiter.Message{Icon: "🔑", Text: fmt.Sprintf("credentials of %s %q reset", u.kind, u.mg.GetName())},
+			OnResult:    readySince(&created),
+		},
+	); err != nil {
 		return err
 	}
 
@@ -118,15 +136,57 @@ func (f *CredentialsResetFlags) reset(ctx context.Context, u *updater) error {
 // newSecretWritten returns a [waiter.ResultFunc]
 // which is done as soon as a secret other than the one with the old UID exists.
 // An empty old UID accepts any secret.
-func newSecretWritten(old types.UID) waiter.ResultFunc {
+// It stores the creation time of the new secret in created.
+func newSecretWritten(old types.UID, created *metav1.Time) waiter.ResultFunc {
 	return func(event watch.Event) (bool, error) {
 		if event.Type == watch.Deleted {
 			return false, nil
 		}
 		secret, ok := event.Object.(*corev1.Secret)
+		if !ok || secret.UID == old {
+			return false, nil
+		}
+		*created = secret.CreationTimestamp
+		return true, nil
+	}
+}
+
+// readySince returns a [waiter.ResultFunc]
+// which is done as soon as the resource became available at or after since.
+// The controller marks the resource as not ready
+// until it has applied the new credentials,
+// so the last transition of the ready condition
+// tells apart the ready state from before the reset.
+// The comparison includes since, as the API stores the times in seconds.
+func readySince(since *metav1.Time) waiter.ResultFunc {
+	return func(event watch.Event) (bool, error) {
+		if event.Type == watch.Deleted {
+			return false, nil
+		}
+		mg, ok := event.Object.(resource.Managed)
 		if !ok {
 			return false, nil
 		}
-		return secret.UID != old, nil
+		ready := mg.GetCondition(runtimev1.TypeReady)
+		return ready.Status == corev1.ConditionTrue &&
+			ready.Reason == runtimev1.ReasonAvailable &&
+			!ready.LastTransitionTime.Before(since), nil
 	}
+}
+
+// newListFor returns an empty list of the kind of obj.
+func newListFor(scheme *runtime.Scheme, obj runtime.Object) (runtimeclient.ObjectList, error) {
+	gvk, err := apiutil.GVKForObject(obj, scheme)
+	if err != nil {
+		return nil, err
+	}
+	l, err := scheme.New(gvk.GroupVersion().WithKind(gvk.Kind + "List"))
+	if err != nil {
+		return nil, err
+	}
+	list, ok := l.(runtimeclient.ObjectList)
+	if !ok {
+		return nil, fmt.Errorf("%T is not a list", l)
+	}
+	return list, nil
 }
