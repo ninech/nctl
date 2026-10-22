@@ -8,6 +8,7 @@ import (
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	iam "github.com/ninech/apis/iam/v1alpha1"
 	"github.com/ninech/nctl/internal/testutil"
+	"github.com/ninech/nctl/internal/waiter"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
@@ -68,9 +69,9 @@ func TestCreate(t *testing.T) {
 	}()
 
 	resultFuncCalled := false
-	if err := c.wait(ctx, waitStage{
-		objectList: &iam.APIServiceAccountList{},
-		onResult: func(event watch.Event) (bool, error) {
+	if err := c.wait(ctx, waiter.Stage{
+		ObjectList: &iam.APIServiceAccountList{},
+		OnResult: func(event watch.Event) (bool, error) {
 			resultFuncCalled = true
 			return resourceAvailable(event)
 		},

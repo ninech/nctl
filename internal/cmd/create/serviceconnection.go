@@ -18,6 +18,7 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/serviceconnection"
+	"github.com/ninech/nctl/internal/waiter"
 )
 
 // These might be replaced to fetch compatible resources from the schema.
@@ -74,10 +75,9 @@ func (cmd *serviceConnectionCmd) Run(ctx context.Context, client *api.Client) er
 		return nil
 	}
 
-	return c.wait(ctx, waitStage{
-		Writer:     cmd.Writer,
-		objectList: &networking.ServiceConnectionList{},
-		onResult:   resourceAvailable,
+	return c.wait(ctx, waiter.Stage{
+		ObjectList: &networking.ServiceConnectionList{},
+		OnResult:   resourceAvailable,
 	},
 	)
 }

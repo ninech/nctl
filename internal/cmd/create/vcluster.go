@@ -8,6 +8,7 @@ import (
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/kubeconfig"
+	"github.com/ninech/nctl/internal/waiter"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 )
@@ -36,9 +37,9 @@ func (cmd *vclusterCmd) Run(ctx context.Context, client *api.Client) error {
 		return nil
 	}
 
-	if err := c.wait(ctx, waitStage{
-		objectList: &infrastructure.KubernetesClusterList{},
-		onResult: func(event watch.Event) (bool, error) {
+	if err := c.wait(ctx, waiter.Stage{
+		ObjectList: &infrastructure.KubernetesClusterList{},
+		OnResult: func(event watch.Event) (bool, error) {
 			if c, ok := event.Object.(*infrastructure.KubernetesCluster); ok {
 				return cmd.isAvailable(c), nil
 			}

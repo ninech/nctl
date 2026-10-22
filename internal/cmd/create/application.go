@@ -20,6 +20,7 @@ import (
 	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/logbox"
+	"github.com/ninech/nctl/internal/waiter"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -421,22 +422,22 @@ func (b buildError) Error() string {
 // Build returns the build that caused the error.
 func (b buildError) Build() *apps.Build { return b.build }
 
-func waitForBuildStart(app *apps.Application) waitStage {
-	return waitStage{
-		kind:       strings.ToLower(apps.BuildKind),
-		objectList: &apps.BuildList{},
-		listOpts: []runtimeclient.ListOption{
+func waitForBuildStart(app *apps.Application) waiter.Stage {
+	return waiter.Stage{
+		Kind:       strings.ToLower(apps.BuildKind),
+		ObjectList: &apps.BuildList{},
+		ListOpts: []runtimeclient.ListOption{
 			runtimeclient.InNamespace(app.GetNamespace()),
 			runtimeclient.MatchingLabels{application.ApplicationNameLabel: app.GetName()},
 		},
-		waitMessage: &message{
-			text: "waiting for build to start",
-			icon: "⏳",
+		WaitMessage: &waiter.Message{
+			Text: "waiting for build to start",
+			Icon: "⏳",
 		},
-		doneMessage: &message{
-			disabled: true,
+		DoneMessage: &waiter.Message{
+			Disabled: true,
 		},
-		onResult: func(e watch.Event) (bool, error) {
+		OnResult: func(e watch.Event) (bool, error) {
 			build, ok := e.Object.(*apps.Build)
 			if !ok {
 				return false, nil
@@ -463,27 +464,27 @@ func waitForBuildFinish(
 	stderr io.Writer,
 	app *apps.Application,
 	logClient *log.Client,
-) waitStage {
-	msg := message{icon: "📦", text: "building application"}
+) waiter.Stage {
+	msg := waiter.Message{Icon: "📦", Text: "building application"}
 	p := tea.NewProgram(
-		logbox.New(15, msg.progress()),
+		logbox.New(15, msg.Progress()),
 		tea.WithoutSignalHandler(),
 		tea.WithInput(nil),
 		tea.WithContext(ctx),
 	)
-	return waitStage{
-		disableSpinner: true,
-		kind:           strings.ToLower(apps.BuildKind),
-		objectList:     &apps.BuildList{},
-		listOpts: []runtimeclient.ListOption{
+	return waiter.Stage{
+		DisableSpinner: true,
+		Kind:           strings.ToLower(apps.BuildKind),
+		ObjectList:     &apps.BuildList{},
+		ListOpts: []runtimeclient.ListOption{
 			runtimeclient.InNamespace(app.GetNamespace()),
 			runtimeclient.MatchingLabels{application.ApplicationNameLabel: app.GetName()},
 		},
-		waitMessage: nil,
-		doneMessage: &message{
-			disabled: true,
+		WaitMessage: nil,
+		DoneMessage: &waiter.Message{
+			Disabled: true,
 		},
-		beforeWait: func() {
+		BeforeWait: func() {
 			// setup the log tailing and send it to the logbox. Run in the
 			// background until the context is cancelled.
 			go func() {
@@ -510,12 +511,12 @@ func waitForBuildFinish(
 				}
 			}()
 		},
-		afterWait: func() {
+		AfterWait: func() {
 			// ensure to cleanly shutdown the tea program
 			p.Quit()
 			p.Wait()
 		},
-		onResult: func(e watch.Event) (bool, error) {
+		OnResult: func(e watch.Event) (bool, error) {
 			build, ok := e.Object.(*apps.Build)
 			if !ok {
 				return false, nil
@@ -557,23 +558,23 @@ func (r releaseError) Error() string {
 // Release returns the release that caused the error.
 func (r releaseError) Release() *apps.Release { return r.release }
 
-func waitForRelease(app *apps.Application) waitStage {
-	return waitStage{
-		kind:       strings.ToLower(apps.ReleaseKind),
-		objectList: &apps.ReleaseList{},
-		listOpts: []runtimeclient.ListOption{
+func waitForRelease(app *apps.Application) waiter.Stage {
+	return waiter.Stage{
+		Kind:       strings.ToLower(apps.ReleaseKind),
+		ObjectList: &apps.ReleaseList{},
+		ListOpts: []runtimeclient.ListOption{
 			runtimeclient.InNamespace(app.GetNamespace()),
 			runtimeclient.MatchingLabels{application.ApplicationNameLabel: app.GetName()},
 		},
-		waitMessage: &message{
-			text: "releasing application",
-			icon: "🚦",
+		WaitMessage: &waiter.Message{
+			Text: "releasing application",
+			Icon: "🚦",
 		},
-		doneMessage: &message{
-			text: "release available",
-			icon: "⛺",
+		DoneMessage: &waiter.Message{
+			Text: "release available",
+			Icon: "⛺",
 		},
-		onResult: func(e watch.Event) (bool, error) {
+		OnResult: func(e watch.Event) (bool, error) {
 			release, ok := e.Object.(*apps.Release)
 			if !ok {
 				return false, nil

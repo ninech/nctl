@@ -6,6 +6,7 @@ import (
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	observability "github.com/ninech/apis/observability/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/waiter"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 )
@@ -31,9 +32,9 @@ func (cmd *grafanaCmd) Run(ctx context.Context, client *api.Client) error {
 		return nil
 	}
 
-	return c.wait(ctx, waitStage{
-		objectList: &observability.GrafanaList{},
-		onResult: func(event watch.Event) (bool, error) {
+	return c.wait(ctx, waiter.Stage{
+		ObjectList: &observability.GrafanaList{},
+		OnResult: func(event watch.Event) (bool, error) {
 			if g, ok := event.Object.(*observability.Grafana); ok {
 				return isAvailable(g), nil
 			}
