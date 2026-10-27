@@ -26,15 +26,20 @@ type allCmd struct {
 
 func (cmd *allCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
 	projectName := client.Project
+	projects := []string{projectName}
+	// listing projects requires access to the organization namespace, which
+	// project scoped service accounts do not have. We therefore only do it
+	// when we actually need to know all projects.
 	if get.AllProjects {
 		projectName = ""
-	}
-	projectList, err := client.Projects(ctx, projectName)
-	if err != nil {
-		return err
+		projectList, err := client.Projects(ctx, projectName)
+		if err != nil {
+			return err
+		}
+		projects = projectNames(projectList)
 	}
 
-	items, warnings, err := cmd.getProjectContent(ctx, client, projectNames(projectList))
+	items, warnings, err := cmd.getProjectContent(ctx, client, projects)
 	if err != nil {
 		return err
 	}

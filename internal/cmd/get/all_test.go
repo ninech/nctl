@@ -2,6 +2,8 @@ package get
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"os"
 	"strings"
 	"testing"
@@ -13,9 +15,12 @@ import (
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 func TestAllContent(t *testing.T) {
@@ -33,6 +38,7 @@ func TestAllContent(t *testing.T) {
 		output               string
 		errorExpected        bool
 		errorContains        []string
+		interceptorFuncs     interceptor.Funcs
 	}{
 		"all resources from one project, full format": {
 			projects:     testutil.Projects(organization, "dev", "staging", "prod"),
@@ -273,6 +279,38 @@ staging  melon        Release            apps.nine.ch            <none>
 			kinds:         []string{"jackofalltrades"},
 			errorExpected: true,
 		},
+		"project scoped access, single project": {
+			projects: testutil.Projects(organization, "dev", "staging"),
+			objects: []client.Object{
+				testApplication("banana", "dev"), testRelease("pear", "dev"),
+				testApplication("apple", "staging"),
+			},
+			outputFormat:     full,
+			projectName:      "dev",
+			interceptorFuncs: projectScopedAccess("dev"),
+			output: `PROJECT  NAME    KIND         GROUP         LOCATION
+dev      banana  Application  apps.nine.ch  <none>
+dev      pear    Release      apps.nine.ch  <none>
+`,
+		},
+		"project scoped access, empty project": {
+			projects:         testutil.Projects(organization, "dev"),
+			objects:          []client.Object{},
+			outputFormat:     full,
+			projectName:      "dev",
+			interceptorFuncs: projectScopedAccess("dev"),
+			errorExpected:    true,
+			errorContains:    []string{`no "Resources" found`, `Project: dev`},
+		},
+		"project scoped access, all projects": {
+			projects:         testutil.Projects(organization, "dev", "staging"),
+			objects:          []client.Object{testApplication("banana", "dev")},
+			outputFormat:     full,
+			allProjects:      true,
+			interceptorFuncs: projectScopedAccess("dev"),
+			errorExpected:    true,
+			errorContains:    []string{"forbidden"},
+		},
 		"excluded list kinds are not shown": {
 			projects: testutil.Projects(organization, "dev"),
 			objects: []client.Object{
@@ -306,7 +344,9 @@ dev      pear    Release      apps.nine.ch  <none>
 				WithIndex(&management.Project{}, "metadata.name", func(o client.Object) []string {
 					return []string{o.GetName()}
 				}).
-				WithObjects(append(testCase.projects, testCase.objects...)...).Build()
+				WithObjects(append(testCase.projects, testCase.objects...)...).
+				WithInterceptorFuncs(testCase.interceptorFuncs).
+				Build()
 
 			apiClient := &api.Client{WithWatch: client, Project: testCase.projectName}
 			kubeconfig, err := testutil.CreateTestKubeconfig(apiClient, organization)
@@ -329,6 +369,25 @@ dev      pear    Release      apps.nine.ch  <none>
 			is.NoError(err)
 			is.Equal(testCase.output, outputBuffer.String())
 		})
+	}
+}
+
+// projectScopedAccess simulates a client which only has access to resources
+// in the given project, like a project scoped API service account.
+func projectScopedAccess(project string) interceptor.Funcs {
+	return interceptor.Funcs{
+		List: func(ctx context.Context, c client.WithWatch, list client.ObjectList, opts ...client.ListOption) error {
+			listOpts := &client.ListOptions{}
+			listOpts.ApplyOptions(opts)
+			if listOpts.Namespace != project {
+				return kerrors.NewForbidden(
+					schema.GroupResource{},
+					"",
+					errors.New("access outside of the project is not allowed"),
+				)
+			}
+			return c.List(ctx, list, opts...)
+		},
 	}
 }
 
