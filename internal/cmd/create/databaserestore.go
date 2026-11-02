@@ -73,6 +73,7 @@ func (cmd *databaseRestoreCmd) Run(ctx context.Context, client *api.Client) erro
 	}
 
 	restore := database.NewRestore(cmd.Name, client.Project, cmd.Backup, target)
+	client.SetCreatedBy(ctx, restore)
 
 	// The admission validates that the backup can be restored into the target,
 	// e.g. its kind and version. A dry-run reports a rejection before the

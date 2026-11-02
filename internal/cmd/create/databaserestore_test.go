@@ -239,6 +239,7 @@ func TestDatabaseRestore(t *testing.T) {
 			want, err := database.LocalRef(cmd.Target.TypedReference)
 			is.NoError(err)
 			is.Equal(want, created.Spec.ForProvider.Target)
+			is.Equal("jrocket@example.com", created.Annotations[api.CreatedByAnnotation])
 		})
 	}
 }
