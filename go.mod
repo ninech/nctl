@@ -22,7 +22,7 @@ require (
 	github.com/grafana/dskit v0.0.0-20260209132809-8d1c6d34bb5a // https://github.com/grafana/loki/blob/v3.7.5/go.mod#L56
 	github.com/grafana/loki/v3 v3.7.9
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/int128/kubelogin v1.36.3
+	github.com/int128/kubelogin v1.36.4
 	github.com/jotaen/kong-completion v0.0.14
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 	github.com/lucasepe/codename v0.2.1-0.20230220151621-5e31bf1e775f
@@ -155,7 +155,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/godbus/dbus/v5 v5.2.2 // indirect
-	github.com/gofrs/flock v0.13.0 // indirect
+	github.com/gofrs/flock v0.13.1 // indirect
 	github.com/gogo/googleapis v1.4.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/gogo/status v1.1.1 // indirect
