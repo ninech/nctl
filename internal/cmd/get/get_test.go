@@ -5,7 +5,6 @@ import (
 	"context"
 	"io"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -13,8 +12,51 @@ import (
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/watch"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
+
+// cancelAfterWatch forwards the events of a watch and calls cancel once
+// the consumer received n of them. This stops a watch loop deterministically
+// after it has processed all expected events, without relying on timeouts.
+type cancelAfterWatch struct {
+	watch.Interface
+	result  chan watch.Event
+	stopped chan struct{}
+}
+
+func cancelAfter(w watch.Interface, n int, cancel context.CancelFunc) watch.Interface {
+	cw := &cancelAfterWatch{
+		Interface: w,
+		// unbuffered, so a send completes only once the consumer received it
+		result:  make(chan watch.Event),
+		stopped: make(chan struct{}),
+	}
+	go func() {
+		defer close(cw.result)
+		received := 0
+		for ev := range w.ResultChan() {
+			select {
+			case cw.result <- ev:
+			case <-cw.stopped:
+				return
+			}
+			received++
+			if received == n {
+				cancel()
+			}
+		}
+	}()
+	return cw
+}
+
+func (w *cancelAfterWatch) ResultChan() <-chan watch.Event { return w.result }
+
+func (w *cancelAfterWatch) Stop() {
+	close(w.stopped)
+	w.Interface.Stop()
+}
 
 // NewTestCmd creates a [Cmd] for testing with the given writer and output format.
 // It calls BeforeApply as Kong does, so the output is written to w
@@ -39,6 +81,7 @@ func TestListPrint(t *testing.T) {
 		existingResources []client.Object
 		toCreate          []client.Object
 		watch             bool
+		wantEvents        int
 		wantContain       []string
 		wantLines         int
 		wantErr           bool
@@ -64,7 +107,9 @@ func TestListPrint(t *testing.T) {
 			},
 			wantContain: []string{"new", "new2"},
 			wantLines:   4,
-			watch:       true,
+			// new3 is in another project and therefore not watched
+			wantEvents: 2,
+			watch:      true,
 		},
 		// TODO: watch currently does not support the all-projects or
 		// all-namespaces flags. This test should pass once that's implemented.
@@ -89,33 +134,63 @@ func TestListPrint(t *testing.T) {
 			t.Parallel()
 			is := require.New(t)
 
+			// The timeout only guards against a hanging test: a watch is
+			// stopped as soon as it delivered the expected events.
+			ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
+			defer cancel()
+
+			// The fake client ignores the resource version of a watch and only
+			// delivers events that happen after the watch has been
+			// established, so the resources are created once it is.
+			watching := make(chan struct{})
 			apiClient := testutil.SetupClient(t,
 				testutil.WithDefaultProject(testutil.DefaultProject),
 				testutil.WithProjectsFromResources(append(tc.existingResources, tc.toCreate...)...),
 				testutil.WithObjects(tc.existingResources...),
 				testutil.WithKubeconfig(),
+				testutil.WithInterceptorFuncs(interceptor.Funcs{
+					Watch: func(ctx context.Context, c client.WithWatch, list client.ObjectList, opts ...client.ListOption) (watch.Interface, error) {
+						w, err := c.Watch(ctx, list, opts...)
+						if err != nil {
+							return nil, err
+						}
+						close(watching)
+						return cancelAfter(w, tc.wantEvents, cancel), nil
+					},
+				}),
 			)
 
 			buf := &bytes.Buffer{}
 			cmd := NewTestCmd(t, buf, tc.out)
 			cmd.AllProjects = tc.inAllProjects
 			cmd.Watch = tc.watch
-			ctx, cancel := context.WithTimeout(t.Context(), 50*time.Millisecond)
-			defer cancel()
 
-			wg := sync.WaitGroup{}
-			wg.Go(func() {
-				if err := cmd.listPrint(ctx, apiClient, &cloudVMCmd{}); (err != nil) != tc.wantErr {
-					t.Errorf("cmd.list error = %v, wantErr %v", err, tc.wantErr)
-					t.Log(buf.String())
+			listed := make(chan error, 1)
+			go func() { listed <- cmd.listPrint(ctx, apiClient, &cloudVMCmd{}) }()
+			checkErr := func(err error) {
+				t.Helper()
+				if (err != nil) != tc.wantErr {
+					t.Fatalf("cmd.list error = %v, wantErr %v, out = %q", err, tc.wantErr, buf.String())
 				}
-			})
-			// delay the creation so watch is running
-			time.Sleep(time.Millisecond * 10)
+			}
+
+			if tc.watch {
+				select {
+				case <-watching:
+				case err := <-listed:
+					t.Fatalf("cmd.list returned before watching: %v", err)
+				}
+			} else {
+				// without watch, the resources are created after the list
+				// has been printed and must not appear in the output.
+				checkErr(<-listed)
+			}
 			for _, res := range tc.toCreate {
 				is.NoError(apiClient.Create(ctx, res))
 			}
-			wg.Wait()
+			if tc.watch {
+				checkErr(<-listed)
+			}
 			if tc.wantErr {
 				return
 			}
