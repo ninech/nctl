@@ -19,8 +19,9 @@ const apiClusterFlag = "api-cluster"
 type clientFunc func() (*api.Client, error)
 
 // newClient creates an API client configured for shell completion using a static token.
-func newClient(ctx context.Context, apiCluster string) (*api.Client, error) {
-	c, err := api.New(ctx, apiCluster, "", api.StaticToken(ctx))
+// The tokens and client secrets of the login are kept in creds.
+func newClient(ctx context.Context, apiCluster string, creds api.Credentials) (*api.Client, error) {
+	c, err := api.New(ctx, apiCluster, "", api.WithCredentials(creds), api.StaticToken())
 	if err != nil {
 		return nil, fmt.Errorf("cannot create an API client for the cluster %q: %w", apiCluster, err)
 	}

@@ -38,7 +38,7 @@ contexts:
 
 type fakeTokenGetter struct{}
 
-func (f *fakeTokenGetter) GetTokenString(ctx context.Context, issuerURL, clientID string, usePKCE bool) (string, error) {
+func (f *fakeTokenGetter) GetTokenString(context.Context, api.OIDCLogin) (string, error) {
 	return testutil.FakeJWTToken, nil
 }
 
@@ -75,7 +75,7 @@ func TestLoginCmd(t *testing.T) {
 		ForceInteractiveEnvOverride: true,
 		tk:                          &fakeTokenGetter{},
 	}
-	if err := cmd.Run(t.Context()); err != nil {
+	if err := cmd.Run(t.Context(), &testutil.Credentials{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -153,7 +153,8 @@ func TestLoginClientCredentials(t *testing.T) {
 			defer os.Remove(kubeconfig.Name())
 			os.Setenv(clientcmd.RecommendedConfigPathEnvVar, kubeconfig.Name())
 
-			err = tt.cmd.Run(t.Context())
+			creds := &testutil.Credentials{}
+			err = tt.cmd.Run(t.Context(), creds)
 			checkErrorRequire(t, err, tt.wantErr, tt.wantErrMessage)
 			if tt.wantErr {
 				return
@@ -180,9 +181,11 @@ func TestLoginClientCredentials(t *testing.T) {
 				CmdName,
 				ClientCredentialsCmdName,
 				api.ClientIDArg + tt.cmd.API.ClientID,
-				api.ClientSecretArg + tt.cmd.API.ClientSecret,
 				api.TokenURLArg + mockTokenServer.URL,
 			})
+			secret, err := creds.ClientSecretStore.Get(t.Context(), api.ClientSecretKey(tt.cmd.API.ClientID, mockTokenServer.URL))
+			is.NoError(err)
+			is.Equal(tt.cmd.API.ClientSecret, secret)
 		})
 	}
 }
@@ -244,7 +247,7 @@ func TestLoginStaticToken(t *testing.T) {
 			defer os.Remove(kubeconfig.Name())
 			os.Setenv(clientcmd.RecommendedConfigPathEnvVar, kubeconfig.Name())
 
-			err = tt.cmd.Run(t.Context())
+			err = tt.cmd.Run(t.Context(), &testutil.Credentials{})
 			checkErrorRequire(t, err, tt.wantErr, tt.wantErrMessage)
 
 			if tt.wantErr {
@@ -294,7 +297,7 @@ func TestLoginCmdWithoutExistingKubeconfig(t *testing.T) {
 		ForceInteractiveEnvOverride: true,
 		tk:                          &fakeTokenGetter{},
 	}
-	if err := cmd.Run(t.Context()); err != nil {
+	if err := cmd.Run(t.Context(), &testutil.Credentials{}); err != nil {
 		t.Fatal(err)
 	}
 

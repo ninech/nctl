@@ -9,6 +9,7 @@ import (
 
 	"github.com/alecthomas/kong"
 	kongcompletion "github.com/jotaen/kong-completion"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,7 +20,7 @@ func TestCommandBindsResourceNames(t *testing.T) {
 	parser, err := kong.New(&bindGrammar{})
 	is.NoError(err)
 
-	cmd, err := Command(t.Context(), parser, slog.New(slog.DiscardHandler))
+	cmd, err := Command(t.Context(), parser, &testutil.Credentials{}, slog.New(slog.DiscardHandler))
 	is.NoError(err)
 
 	tests := map[string]string{
@@ -48,7 +49,7 @@ func TestRegisterWithoutRequiredFlags(t *testing.T) {
 
 	parser, err := kong.New(&grammar)
 	require.NoError(t, err)
-	require.ErrorContains(t, Register(t.Context(), parser, slog.New(slog.DiscardHandler)), apiClusterFlag)
+	require.ErrorContains(t, Register(t.Context(), parser, &testutil.Credentials{}, slog.New(slog.DiscardHandler)), apiClusterFlag)
 }
 
 func TestRegisterCompletes(t *testing.T) {
@@ -74,7 +75,7 @@ func TestRegisterCompletes(t *testing.T) {
 	t.Setenv("COMP_LINE", compLine)
 	t.Setenv("COMP_POINT", strconv.Itoa(len(compLine)))
 
-	is.NoError(Register(t.Context(), parser, NewDebugLogger(t.Output())))
+	is.NoError(Register(t.Context(), parser, &testutil.Credentials{}, NewDebugLogger(t.Output())))
 	is.Equal(0, exited, "completion did not exit the CLI")
 	is.Equal([]string{"postgres"}, strings.Fields(out.String()))
 }
@@ -98,6 +99,6 @@ func TestRegisterWithoutCompletionLine(t *testing.T) {
 
 	t.Setenv("COMP_LINE", "")
 
-	is.NoError(Register(t.Context(), parser, slog.New(slog.DiscardHandler)))
+	is.NoError(Register(t.Context(), parser, &testutil.Credentials{}, slog.New(slog.DiscardHandler)))
 	is.Equal(-1, exited, "completion exited the CLI")
 }

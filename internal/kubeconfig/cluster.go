@@ -79,7 +79,7 @@ func LoginCluster(ctx context.Context, client *api.Client, w format.Writer, name
 			return fmt.Errorf("no Exec found in authInfo")
 		}
 
-		token, err := api.GetTokenFromExecConfig(ctx, authInfo.Exec)
+		token, err := api.GetTokenFromExecConfig(ctx, authInfo.Exec, client.Credentials())
 		if err != nil {
 			return err
 		}

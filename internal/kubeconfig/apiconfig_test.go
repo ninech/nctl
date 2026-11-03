@@ -54,7 +54,7 @@ func TestNewAPIConfig(t *testing.T) {
 		{
 			name: "client credentials exec plugin",
 			opts: []APIConfigOption{UseClientCredentials(ClientCredentials{
-				ClientID: "id", ClientSecret: "secret", TokenURL: "https://token.example.org",
+				ClientID: "id", TokenURL: "https://token.example.org",
 			})},
 			wantName: apiURL.Host,
 			wantAuthInfo: clientcmdapi.AuthInfo{
@@ -66,8 +66,48 @@ func TestNewAPIConfig(t *testing.T) {
 						api.AuthCmdName,
 						api.ClientCredentialsCmdName,
 						api.ClientIDArg + "id",
-						api.ClientSecretArg + "secret",
 						api.TokenURLArg + "https://token.example.org",
+					},
+				},
+			},
+		},
+		{
+			name: "client credentials exec plugin with insecure storage",
+			opts: []APIConfigOption{
+				UseClientCredentials(ClientCredentials{ClientID: "id", TokenURL: "https://token.example.org"}),
+				WithStorage(api.StorageFile),
+			},
+			wantName: apiURL.Host,
+			wantAuthInfo: clientcmdapi.AuthInfo{
+				Exec: &clientcmdapi.ExecConfig{
+					APIVersion:      "client.authentication.k8s.io/v1",
+					InteractiveMode: clientcmdapi.NeverExecInteractiveMode,
+					Command:         command,
+					Args: []string{
+						api.AuthCmdName,
+						api.ClientCredentialsCmdName,
+						api.ClientIDArg + "id",
+						api.TokenURLArg + "https://token.example.org",
+						api.InsecureStorageArg,
+					},
+				},
+			},
+		},
+		{
+			name:     "oidc exec plugin with insecure storage",
+			opts:     []APIConfigOption{WithStorage(api.StorageFile)},
+			wantName: apiURL.Host,
+			wantAuthInfo: clientcmdapi.AuthInfo{
+				Exec: &clientcmdapi.ExecConfig{
+					APIVersion: "client.authentication.k8s.io/v1beta1",
+					Command:    command,
+					Args: []string{
+						api.AuthCmdName,
+						api.OIDCCmdName,
+						api.IssuerURLArg + issuerURL.String(),
+						api.ClientIDArg + "client",
+						api.UsePKCEArg,
+						api.InsecureStorageArg,
 					},
 				},
 			},

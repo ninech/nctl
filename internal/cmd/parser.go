@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/alecthomas/kong"
+	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/apifield"
 	"github.com/ninech/nctl/internal/application"
 	"github.com/ninech/nctl/internal/bucket"
@@ -26,11 +27,24 @@ const defaultAPICluster = "nineapis.ch"
 // The streams are bound for the hooks of the commands
 // and are the writers of Kong itself,
 // so that help, errors and the output of commands share them.
+// The stores of the tokens and client secrets of the logins are bound as [api.Credentials].
 // opts are applied after the options of nctl.
 func newParser(ctx context.Context, root *rootCommand, version string, streams format.IOStreams, opts ...kong.Option) (*kong.Kong, error) {
 	kongVars, err := kongVariables(version)
 	if err != nil {
 		return nil, err
+	}
+
+	w := format.NewWriter(streams.Out, streams.ErrOut)
+	creds := api.KeyringCredentials{
+		OnFallback: func(path string, err error) {
+			w.Warningf(
+				"the keyring is unavailable (%v), stored the credentials in plain text in %s.\n"+
+					"Run %q again once the keyring is available to move them there, "+
+					"or pass --insecure-storage to it to keep them in plain text without this warning.",
+				err, path, cli.LoginCmd,
+			)
+		},
 	}
 
 	options := []kong.Option{
@@ -85,6 +99,7 @@ func newParser(ctx context.Context, root *rootCommand, version string, streams f
 		kong.BindTo(ctx, (*context.Context)(nil)),
 		kong.Writers(streams.Out, streams.ErrOut),
 		kong.Bind(streams),
+		kong.BindTo(creds, (*api.Credentials)(nil)),
 	}
 
 	parser, err := kong.New(root, append(options, opts...)...)
@@ -100,7 +115,7 @@ func newParser(ctx context.Context, root *rootCommand, version string, streams f
 	if os.Getenv(completion.DebugENV) != "" {
 		log = completion.NewDebugLogger(streams.ErrOut)
 	}
-	if err := completion.Register(ctx, parser, log); err != nil {
+	if err := completion.Register(ctx, parser, creds, log); err != nil {
 		return nil, err
 	}
 

@@ -2,12 +2,12 @@ package api
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
-	"path"
 	"strings"
 	"time"
 
@@ -21,8 +21,6 @@ import (
 	"github.com/int128/kubelogin/pkg/oidc"
 	"github.com/int128/kubelogin/pkg/oidc/client"
 	"github.com/int128/kubelogin/pkg/tlsclientconfig/loader"
-	"github.com/int128/kubelogin/pkg/tokencache"
-	"github.com/int128/kubelogin/pkg/tokencache/repository"
 	"github.com/int128/kubelogin/pkg/usecases/authentication"
 	"github.com/int128/kubelogin/pkg/usecases/authentication/authcode"
 	"github.com/int128/kubelogin/pkg/usecases/authentication/ropc"
@@ -31,16 +29,15 @@ import (
 	"k8s.io/client-go/pkg/apis/clientauthentication"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd/api"
-	"k8s.io/client-go/util/homedir"
 )
 
 const (
-	DefaultTokenCachePath    = ".kube/cache/oidc-login"
 	IssuerURLArg             = "--issuer-url="
 	ClientIDArg              = "--client-id="
 	ClientSecretArg          = "--client-secret="
 	TokenURLArg              = "--token-url="
 	UsePKCEArg               = "--use-pkce"
+	InsecureStorageArg       = "--insecure-storage"
 	CustomersPrefix          = "/Customers/"
 	AuthCmdName              = "auth"
 	ClientCredentialsCmdName = "client-credentials"
@@ -54,7 +51,8 @@ var (
 
 // GetTokenFromConfig takes a rest.Config and returns a valid OIDC access
 // token or the static bearer token if it's set in the config.
-func GetTokenFromConfig(ctx context.Context, cfg *rest.Config) (string, error) {
+// The tokens and client secrets of the login are kept in credentials.
+func GetTokenFromConfig(ctx context.Context, cfg *rest.Config, credentials Credentials) (string, error) {
 	if len(cfg.BearerToken) != 0 {
 		return cfg.BearerToken, nil
 	}
@@ -63,72 +61,66 @@ func GetTokenFromConfig(ctx context.Context, cfg *rest.Config) (string, error) {
 		return "", fmt.Errorf("config does not contain execProvider")
 	}
 
-	return GetTokenFromExecConfig(ctx, cfg.ExecProvider)
+	return GetTokenFromExecConfig(ctx, cfg.ExecProvider, credentials)
 }
 
-// GetTokenFromExecConfig takes the provided execConfig, parses out the args
-// and gets the token by executing the login flow.
-func GetTokenFromExecConfig(ctx context.Context, execConfig *api.ExecConfig) (string, error) {
-	if len(execConfig.Args) < 2 {
-		return "", fmt.Errorf("provided execConfig args are invalid, expected at least two")
+// GetTokenFromExecConfig runs the login of the exec plugin of execConfig in process
+// and returns its token.
+// The tokens and client secrets of the login are kept in credentials.
+// A client secret in [ClientSecretEnv] takes precedence over a stored one.
+func GetTokenFromExecConfig(ctx context.Context, execConfig *api.ExecConfig, credentials Credentials) (string, error) {
+	args, err := ParseExecArgs(execConfig.Args)
+	if err != nil {
+		return "", err
 	}
 
-	command := execConfig.Args[1]
-	switch command {
-	case ClientCredentialsCmdName:
-		cfg := &clientcredentials.Config{}
-		for _, arg := range execConfig.Args {
-			if after, ok := strings.CutPrefix(arg, ClientIDArg); ok {
-				cfg.ClientID = after
-			}
-			if after, ok := strings.CutPrefix(arg, ClientSecretArg); ok {
-				cfg.ClientSecret = after
-			}
-			if after, ok := strings.CutPrefix(arg, TokenURLArg); ok {
-				cfg.TokenURL = after
-			}
-		}
-		if cfg.ClientID == "" || cfg.ClientSecret == "" || cfg.TokenURL == "" {
-			return "", fmt.Errorf("provided execConfig does not include expected args %s/%s/%s", ClientIDArg, ClientSecretArg, TokenURLArg)
-		}
-		token, err := cfg.Token(ctx)
+	if args.Command == OIDCCmdName {
+		return NewTokenGetter(credentials).GetTokenString(ctx, args.OIDCLogin())
+	}
+
+	secret := cmp.Or(args.ClientSecret, os.Getenv(ClientSecretEnv))
+	if secret == "" {
+		secret, err = LookupClientSecret(ctx, credentials.ClientSecrets(args.Storage), args.ClientID, args.TokenURL)
 		if err != nil {
 			return "", err
 		}
-		return token.AccessToken, nil
-	case OIDCCmdName:
-		var issuerURL, clientID string
-		var usePKCE bool
-		for _, arg := range execConfig.Args {
-			if after, ok := strings.CutPrefix(arg, IssuerURLArg); ok {
-				issuerURL = after
-			}
-			if after, ok := strings.CutPrefix(arg, ClientIDArg); ok {
-				clientID = after
-			}
-			if arg == UsePKCEArg {
-				usePKCE = true
-			}
-		}
-		if issuerURL == "" || clientID == "" {
-			return "", fmt.Errorf("provided execConfig does not include expected args %s/%s", IssuerURLArg, ClientIDArg)
-		}
-		tk := DefaultTokenGetter{}
-		return tk.GetTokenString(ctx, issuerURL, clientID, usePKCE)
-	default:
-		return "", fmt.Errorf("unknown exec command provided: %s", command)
 	}
+	cfg := clientcredentials.Config{ClientID: args.ClientID, ClientSecret: secret, TokenURL: args.TokenURL}
+	token, err := cfg.Token(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return token.AccessToken, nil
 }
 
+// OIDCLogin configures an OIDC login.
+type OIDCLogin struct {
+	IssuerURL string
+	ClientID  string
+	UsePKCE   bool
+	// Storage is where the login caches its tokens.
+	Storage Storage
+}
+
+// TokenGetter gets the token of an OIDC login.
 type TokenGetter interface {
-	GetTokenString(ctx context.Context, issuerURL, clientID string, usePKCE bool) (string, error)
+	GetTokenString(ctx context.Context, login OIDCLogin) (string, error)
 }
 
-type DefaultTokenGetter struct{}
+// NewTokenGetter returns a [TokenGetter] running [GetToken]
+// with the tokens cached in credentials.
+func NewTokenGetter(credentials Credentials) TokenGetter {
+	return tokenGetter{credentials: credentials}
+}
 
-func (t *DefaultTokenGetter) GetTokenString(ctx context.Context, issuerURL, clientID string, usePKCE bool) (string, error) {
+type tokenGetter struct {
+	credentials Credentials
+}
+
+func (t tokenGetter) GetTokenString(ctx context.Context, login OIDCLogin) (string, error) {
 	buf := &bytes.Buffer{}
-	if err := GetToken(ctx, issuerURL, clientID, usePKCE, buf); err != nil {
+	if err := GetToken(ctx, login, t.credentials, buf); err != nil {
 		return "", err
 	}
 
@@ -144,17 +136,16 @@ func (t *DefaultTokenGetter) GetTokenString(ctx context.Context, issuerURL, clie
 	return creds.Status.Token, nil
 }
 
-// GetToken executes the OIDC login flow using the kubelogin with the provided
-// OIDC parameters writes the raw JSON ExecCredential result to out.
-func GetToken(ctx context.Context, issuerURL, clientID string, usePKCE bool, out io.Writer) error {
+// GetToken executes the OIDC login flow using kubelogin
+// and writes the raw JSON ExecCredential result to out.
+// The tokens are cached in credentials.Tokens(login.Storage).
+func GetToken(ctx context.Context, login OIDCLogin, credentials Credentials, out io.Writer) error {
 	in := credentialplugin.Input{
 		Provider: oidc.Provider{
-			IssuerURL: issuerURL,
-			ClientID:  clientID,
+			IssuerURL: login.IssuerURL,
+			ClientID:  login.ClientID,
 		},
-		TokenCacheConfig: tokencache.Config{
-			Directory: path.Join(homedir.HomeDir(), DefaultTokenCachePath),
-		},
+		TokenCacheConfig: TokenCacheConfig(),
 		GrantOptionSet: authentication.GrantOptionSet{
 			AuthCodeBrowserOption: &authcode.BrowserOption{
 				BindAddress:           defaultBindAddresses,
@@ -193,7 +184,7 @@ func GetToken(ctx context.Context, issuerURL, clientID string, usePKCE bool, out
 			},
 		},
 		Logger:                 logger,
-		TokenCacheRepository:   &repository.Repository{},
+		TokenCacheRepository:   kubeloginRepository{ctx: ctx, cache: TokenCache{Store: credentials.Tokens(login.Storage)}},
 		CredentialPluginReader: &credreader.Reader{},
 		CredentialPluginWriter: &writer.Writer{
 			Stdout: out,

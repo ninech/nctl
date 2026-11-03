@@ -15,9 +15,12 @@ import (
 	"github.com/ninech/nctl/internal/apiresource"
 	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/completion"
+	"github.com/ninech/nctl/internal/testutil"
 	"github.com/posener/complete"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 // TestKongVars makes sure that the kongVariables function will not run into an
@@ -70,7 +73,7 @@ func TestCompletionPredictorsRegistered(t *testing.T) {
 	t.Parallel()
 	is := require.New(t)
 
-	_, err := completion.Command(t.Context(), newTestParser(t), slog.New(slog.DiscardHandler))
+	_, err := completion.Command(t.Context(), newTestParser(t), &testutil.Credentials{}, slog.New(slog.DiscardHandler))
 	is.NoError(err)
 }
 
@@ -78,7 +81,7 @@ func TestAPIFieldFlagCompletion(t *testing.T) {
 	t.Parallel()
 	is := require.New(t)
 
-	cmd, err := completion.Command(t.Context(), newTestParser(t), slog.New(slog.DiscardHandler))
+	cmd, err := completion.Command(t.Context(), newTestParser(t), &testutil.Credentials{}, slog.New(slog.DiscardHandler))
 	is.NoError(err)
 
 	versions := apifield.Predictors()["apifield:postgres_version"].Predict(complete.Args{})
@@ -104,7 +107,7 @@ func TestResourceNameCompletionResolves(t *testing.T) {
 	require.NoError(t, err)
 
 	parser := newTestParser(t)
-	cmd, err := completion.Command(t.Context(), parser, slog.New(slog.DiscardHandler))
+	cmd, err := completion.Command(t.Context(), parser, &testutil.Credentials{}, slog.New(slog.DiscardHandler))
 	require.NoError(t, err)
 
 	var walk func(cmd complete.Command, node *kong.Node, path string)
@@ -200,4 +203,37 @@ func TestRunWithoutLogin(t *testing.T) {
 	is.Equal(cli.ExitError, code)
 	is.Empty(stdout.String())
 	is.Contains(stderr.String(), cli.LoginCmd)
+}
+
+func TestRunWarnsOfClientSecretInKubeconfig(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "kubeconfig")
+	t.Setenv("KUBECONFIG", path)
+	is := assert.New(t)
+	execArgs := api.ExecArgs{
+		Command:      api.ClientCredentialsCmdName,
+		ClientID:     "id",
+		ClientSecret: "plain-text-secret",
+		TokenURL:     "https://token.example.org",
+	}
+	require.NoError(t, clientcmd.WriteToFile(clientcmdapi.Config{
+		// Nothing listens on the server, the command fails after building the client.
+		Clusters: map[string]*clientcmdapi.Cluster{defaultAPICluster: {Server: "https://127.0.0.1:1"}},
+		Contexts: map[string]*clientcmdapi.Context{defaultAPICluster: {Cluster: defaultAPICluster, AuthInfo: defaultAPICluster}},
+		AuthInfos: map[string]*clientcmdapi.AuthInfo{defaultAPICluster: {Exec: &clientcmdapi.ExecConfig{
+			Command:         "false",
+			Args:            execArgs.Args(),
+			APIVersion:      "client.authentication.k8s.io/v1",
+			InteractiveMode: clientcmdapi.NeverExecInteractiveMode,
+		}}},
+		CurrentContext: defaultAPICluster,
+	}, path))
+
+	var stdout, stderr bytes.Buffer
+	Run(t.Context(), []string{"get", "applications"}, &bytes.Buffer{}, &stdout, &stderr, "test-version")
+
+	is.Contains(stderr.String(), "stored in plain text in the kubeconfig")
+	is.Contains(stderr.String(), cli.LoginCmd+" --api-client-id=id --api-client-secret=<secret>")
+	is.Contains(stderr.String(), "--api-url=https://127.0.0.1:1")
+	is.Contains(stderr.String(), "--api-token-url=https://token.example.org")
+	is.NotContains(stderr.String()+stdout.String(), "plain-text-secret", "the secret is never printed")
 }

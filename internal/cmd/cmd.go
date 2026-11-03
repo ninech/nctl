@@ -101,9 +101,12 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 	// Kong calls the provider only for commands taking an *api.Client,
 	// so commands like auth login work without being logged in.
 	var client *api.Client
-	if err := kongCtx.BindSingletonProvider(func(ctx context.Context) (*api.Client, error) {
-		c, err := newAPIClient(ctx, root.flags)
+	if err := kongCtx.BindSingletonProvider(func(ctx context.Context, creds api.Credentials) (*api.Client, error) {
+		c, err := newAPIClient(ctx, root.flags, creds)
 		client = c
+		if err == nil {
+			warnKubeconfigClientSecret(format.NewWriter(stdout, stderr), c)
+		}
 		return c, err
 	}); err != nil {
 		return report(parser, err)
@@ -140,11 +143,13 @@ func report(parser *kong.Kong, err error) int {
 
 // newAPIClient returns a client for the API cluster and project selected by the flags,
 // explaining how to log in when that fails.
-func newAPIClient(ctx context.Context, f flags) (*api.Client, error) {
+// The tokens and client secrets of the login are kept in creds.
+func newAPIClient(ctx context.Context, f flags, creds api.Credentials) (*api.Client, error) {
 	client, err := api.New(
 		ctx,
 		f.APICluster,
 		f.Project,
+		api.WithCredentials(creds),
 		api.LogClient(ctx, f.LogAPIAddress, f.LogAPIInsecure),
 		api.DefaultAnnotations(api.ManagedByAnnotation, api.Name),
 	)
@@ -158,6 +163,25 @@ func newAPIClient(ctx context.Context, f flags) (*api.Client, error) {
 	return nil, cli.ErrorWithContext(fmt.Errorf("unable to get API client: %w", err)).
 		WithExitCode(cli.ExitError).
 		WithSuggestions("Login to the API: " + cli.LoginCmd)
+}
+
+// warnKubeconfigClientSecret warns if the kubeconfig context of client carries its client secret
+// in plain text, as kubeconfigs written by earlier versions do, and shows the login moving it to the keyring.
+// It warns here rather than in the exec plugin, which kubectl runs for every request.
+func warnKubeconfigClientSecret(w format.Writer, client *api.Client) {
+	if client.Config == nil {
+		return
+	}
+	org, _ := client.Organization()
+	login, ok := auth.KubeconfigClientSecretLogin(client.Config.ExecProvider, client.Config.Host, org)
+	if !ok {
+		return
+	}
+
+	w.Warningf(
+		"the client secret of %s is stored in plain text in the kubeconfig, move it to the keyring of the operating system with:\n  %s",
+		client.KubeconfigContext, login,
+	)
 }
 
 // forbiddenError explains how to get access after the API denied a request with err.
