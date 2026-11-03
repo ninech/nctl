@@ -34,6 +34,10 @@ type Client struct {
 	Log               *log.Client
 	KubeconfigContext string
 
+	// credentials stores the tokens and client secrets of the login.
+	credentials Credentials
+	// staticToken makes [New] set a bearer token once all options are applied, see [StaticToken].
+	staticToken bool
 	// defaultAnnotations is a map of default annotations to be set on all resources created or updated.
 	defaultAnnotations map[string]string
 }
@@ -44,10 +48,14 @@ type ClientOpt func(c *Client) error
 // and project. The kubeconfig is discovered like this:
 // * KUBECONFIG environment variable pointing at a file
 // * $HOME/.kube/config if exists
+//
+// The tokens and client secrets of the login are kept in [KeyringCredentials]
+// unless [WithCredentials] is set.
 func New(ctx context.Context, apiClusterContext, project string, opts ...ClientOpt) (*Client, error) {
 	client := &Client{
 		Project:            project,
 		KubeconfigContext:  apiClusterContext,
+		credentials:        KeyringCredentials{},
 		defaultAnnotations: map[string]string{},
 	}
 	if err := client.loadConfig(apiClusterContext); err != nil {
@@ -73,7 +81,23 @@ func New(ctx context.Context, apiClusterContext, project string, opts ...ClientO
 		}
 	}
 
+	if client.staticToken {
+		client.Config.BearerToken = client.Token(ctx)
+		tokenClient, err := runtimeclient.NewWithWatch(client.Config, runtimeclient.Options{
+			Scheme: scheme,
+		})
+		if err != nil {
+			return nil, err
+		}
+		client.WithWatch = tokenClient
+	}
+
 	return client, nil
+}
+
+// Credentials returns the stores of the tokens and client secrets of the login.
+func (c *Client) Credentials() Credentials {
+	return c.credentials
 }
 
 // LogClient sets up a log client connected to the provided address.
@@ -91,17 +115,19 @@ func LogClient(ctx context.Context, address string, insecure bool) ClientOpt {
 // StaticToken configures the client to get a bearer token once and then set it
 // statically in the client config. This means the client will not automatically
 // renew the token when it expires.
-func StaticToken(ctx context.Context) ClientOpt {
+// The token is obtained after all options are applied, so it uses the store of [WithCredentials].
+func StaticToken() ClientOpt {
 	return func(c *Client) error {
-		c.Config.BearerToken = c.Token(ctx)
-		tokenClient, err := runtimeclient.NewWithWatch(c.Config, runtimeclient.Options{
-			Scheme: c.Scheme(),
-		})
-		if err != nil {
-			return err
-		}
-		c.WithWatch = tokenClient
+		c.staticToken = true
+		return nil
+	}
+}
 
+// WithCredentials keeps the tokens and client secrets of the login in credentials
+// instead of [KeyringCredentials].
+func WithCredentials(credentials Credentials) ClientOpt {
+	return func(c *Client) error {
+		c.credentials = credentials
 		return nil
 	}
 }
@@ -186,7 +212,7 @@ func (c *Client) Token(ctx context.Context) string {
 		return ""
 	}
 
-	token, err := GetTokenFromConfig(ctx, c.Config)
+	token, err := GetTokenFromConfig(ctx, c.Config, c.credentials)
 	if err != nil {
 		return ""
 	}

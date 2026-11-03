@@ -2,23 +2,17 @@ package auth
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/gob"
-	"encoding/hex"
+	"errors"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"net/url"
-	"os"
-	"path"
 	"strings"
-
-	"github.com/int128/kubelogin/pkg/oidc"
-	"github.com/int128/kubelogin/pkg/tokencache"
-	"github.com/int128/kubelogin/pkg/tokencache/repository"
 
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
-	"k8s.io/client-go/util/homedir"
+	"github.com/ninech/nctl/internal/kubeconfig"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 type LogoutCmd struct {
@@ -29,40 +23,112 @@ type LogoutCmd struct {
 	tk            api.TokenGetter
 }
 
-func (l *LogoutCmd) Run(ctx context.Context) error {
-	key := tokencache.Key{
-		Provider: oidc.Provider{
-			ClientID:  l.ClientID,
-			IssuerURL: l.IssuerURL,
-		},
-	}
-
-	filename, err := computeFilename(key)
+// Run logs out and removes the tokens or client secret of the login from creds.
+// The login is the one of the exec plugin of the kubeconfig context of the API,
+// or else the OIDC login of --issuer-url and --client-id.
+func (l *LogoutCmd) Run(ctx context.Context, creds api.Credentials) error {
+	apiURL, err := url.Parse(l.APIURL)
 	if err != nil {
 		return err
 	}
-	filePath := path.Join(homedir.HomeDir(), api.DefaultTokenCachePath, filename)
+	loadingRules, err := api.LoadingRules()
+	if err != nil {
+		return err
+	}
+	contextName := apiURL.Host
 
-	if _, err = os.Stat(filePath); err != nil {
-		l.Failuref("🤔", "seems like you are already logged out from %s", l.APIURL)
-		return nil
+	args, ok, err := execArgs(loadingRules, contextName)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return l.logoutOIDC(ctx, creds, api.OIDCLogin{IssuerURL: l.IssuerURL, ClientID: l.ClientID})
 	}
 
-	r := repository.Repository{}
-	cache, err := r.FindByKey(
-		tokencache.Config{Directory: path.Join(homedir.HomeDir(), api.DefaultTokenCachePath)},
-		key,
-	)
+	switch args.Command {
+	case api.ClientCredentialsCmdName:
+		if args.ClientSecret != "" {
+			return l.logoutKubeconfigClientSecret(loadingRules, contextName)
+		}
+		return l.logoutClientCredentials(ctx, args, creds.ClientSecrets(args.Storage))
+	default:
+		return l.logoutOIDC(ctx, creds, args.OIDCLogin())
+	}
+}
+
+// execArgs returns the arguments of the exec plugin with which the kubeconfig context
+// contextName authenticates. ok is false if the context does not use an exec plugin.
+func execArgs(loadingRules *clientcmd.ClientConfigLoadingRules, contextName string) (args api.ExecArgs, ok bool, err error) {
+	config, err := loadingRules.Load()
 	if err != nil {
-		return fmt.Errorf("error finding cache file: %w", err)
+		return api.ExecArgs{}, false, err
+	}
+
+	kubeContext, ok := config.Contexts[contextName]
+	if !ok {
+		return api.ExecArgs{}, false, nil
+	}
+	authInfo, ok := config.AuthInfos[kubeContext.AuthInfo]
+	if !ok || authInfo.Exec == nil {
+		return api.ExecArgs{}, false, nil
+	}
+
+	args, err = api.ParseExecArgs(authInfo.Exec.Args)
+	if err != nil {
+		return api.ExecArgs{}, false, fmt.Errorf("reading the login of the kubeconfig context %q: %w", contextName, err)
+	}
+
+	return args, true, nil
+}
+
+// logoutKubeconfigClientSecret removes the kubeconfig context contextName,
+// whose exec plugin carries the client secret as an argument, as the secret can not be removed on its own.
+func (l *LogoutCmd) logoutKubeconfigClientSecret(configAccess clientcmd.ConfigAccess, contextName string) error {
+	if err := kubeconfig.RemoveContext(configAccess, contextName); err != nil {
+		return fmt.Errorf("removing the kubeconfig context %q holding the client secret: %w", contextName, err)
+	}
+
+	l.Successf("🗑", "removed %s and its client secret from the kubeconfig", contextName)
+	l.Successf("👋", "logged out from %s", l.APIURL)
+
+	return nil
+}
+
+// logoutClientCredentials removes the client secret of args from secrets.
+func (l *LogoutCmd) logoutClientCredentials(ctx context.Context, args api.ExecArgs, secrets api.SecretStore) error {
+	if err := secrets.Delete(ctx, api.ClientSecretKey(args.ClientID, args.TokenURL)); err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			l.Failuref("🤔", "seems like you are already logged out from %s", l.APIURL)
+			return nil
+		}
+		return fmt.Errorf("removing the client secret: %w", err)
+	}
+
+	l.Successf("👋", "logged out from %s", l.APIURL)
+
+	return nil
+}
+
+// logoutOIDC ends the session of login and removes its tokens from creds.
+func (l *LogoutCmd) logoutOIDC(ctx context.Context, creds api.Credentials, login api.OIDCLogin) error {
+	cache := api.TokenCache{Store: creds.Tokens(login.Storage)}
+	key := api.TokenCacheKey(login.IssuerURL, login.ClientID)
+
+	tokens, err := cache.Find(ctx, key)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			l.Failuref("🤔", "seems like you are already logged out from %s", l.APIURL)
+			return nil
+		}
+		return err
 	}
 
 	form := url.Values{}
-	form.Add("client_id", l.ClientID)
-	form.Add("refresh_token", cache.RefreshToken)
+	form.Add("client_id", login.ClientID)
+	form.Add("refresh_token", tokens.RefreshToken)
 
 	logoutEndpoint := strings.Join(
-		[]string{l.IssuerURL, "protocol", "openid-connect", "logout"},
+		[]string{login.IssuerURL, "protocol", "openid-connect", "logout"},
 		"/",
 	)
 
@@ -76,7 +142,7 @@ func (l *LogoutCmd) Run(ctx context.Context) error {
 		return fmt.Errorf("error creating request: %w", err)
 	}
 
-	token, err := l.tokenGetter().GetTokenString(ctx, l.IssuerURL, l.ClientID, false)
+	token, err := l.tokenGetter(creds).GetTokenString(ctx, login)
 	if err != nil {
 		return fmt.Errorf("error getting token: %w", err)
 	}
@@ -91,11 +157,11 @@ func (l *LogoutCmd) Run(ctx context.Context) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode <= 200 && resp.StatusCode > 300 {
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return fmt.Errorf("http request error %d to %s", resp.StatusCode, logoutEndpoint)
 	}
 
-	if err := os.Remove(filePath); err != nil {
+	if err := cache.Delete(ctx, key); err != nil {
 		return fmt.Errorf("error removing the local cache: %w", err)
 	}
 
@@ -104,21 +170,9 @@ func (l *LogoutCmd) Run(ctx context.Context) error {
 	return nil
 }
 
-func (l *LogoutCmd) tokenGetter() api.TokenGetter {
+func (l *LogoutCmd) tokenGetter(creds api.Credentials) api.TokenGetter {
 	if l.tk != nil {
 		return l.tk
 	}
-	return &api.DefaultTokenGetter{}
-}
-
-// This function is copied from kubelogin to find out the cache filename
-// See: github.com/int128/kubelogin/pkg/tokencache/repository
-func computeFilename(key tokencache.Key) (string, error) {
-	s := sha256.New()
-	e := gob.NewEncoder(s)
-	if err := e.Encode(&key); err != nil {
-		return "", fmt.Errorf("could not encode the key: %w", err)
-	}
-	h := hex.EncodeToString(s.Sum(nil))
-	return h, nil
+	return api.NewTokenGetter(creds)
 }

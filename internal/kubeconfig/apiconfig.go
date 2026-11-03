@@ -11,11 +11,11 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
-// ClientCredentials are the APIServiceAccount credentials the exec plugin uses to obtain a token.
+// ClientCredentials identify the APIServiceAccount the exec plugin obtains a token for.
+// The client secret is not part of the kubeconfig, the exec plugin reads it with [api.LookupClientSecret].
 type ClientCredentials struct {
-	ClientID     string
-	ClientSecret string
-	TokenURL     string
+	ClientID string
+	TokenURL string
 }
 
 type apiConfig struct {
@@ -24,6 +24,7 @@ type apiConfig struct {
 	credentials  ClientCredentials
 	caCert       []byte
 	organization string
+	storage      api.Storage
 }
 
 // APIConfigOption configures the kubeconfig built by [NewAPIConfig].
@@ -55,6 +56,14 @@ func UseStaticToken(token string) APIConfigOption {
 func UseClientCredentials(credentials ClientCredentials) APIConfigOption {
 	return func(ac *apiConfig) {
 		ac.credentials = credentials
+	}
+}
+
+// WithStorage sets where the exec plugin caches its tokens or reads its client secret,
+// [api.StorageKeyring] by default.
+func WithStorage(storage api.Storage) APIConfigOption {
+	return func(ac *apiConfig) {
+		ac.storage = storage
 	}
 }
 
@@ -112,45 +121,46 @@ func NewAPIConfig(apiURL, issuerURL *url.URL, command, clientID string, opts ...
 
 	if cfg.credentials.ClientID != "" {
 		clientConfig.AuthInfos[cfg.name] = &clientcmdapi.AuthInfo{
-			Exec: clientCredentialsExecConfig(command, cfg.credentials),
+			Exec: clientCredentialsExecConfig(command, cfg.credentials, cfg.storage),
 		}
 		return clientConfig, nil
 	}
 
 	clientConfig.AuthInfos[cfg.name] = &clientcmdapi.AuthInfo{
-		Exec: oidcExecConfig(command, clientID, issuerURL),
+		Exec: oidcExecConfig(command, clientID, issuerURL, cfg.storage),
 	}
 
 	return clientConfig, nil
 }
 
 // oidcExecConfig returns an exec config that obtains a token through the interactive OIDC login of nctl.
-func oidcExecConfig(command, clientID string, issuerURL *url.URL) *clientcmdapi.ExecConfig {
+func oidcExecConfig(command, clientID string, issuerURL *url.URL, storage api.Storage) *clientcmdapi.ExecConfig {
+	args := api.ExecArgs{
+		Command:   api.OIDCCmdName,
+		IssuerURL: issuerURL.String(),
+		ClientID:  clientID,
+		UsePKCE:   true,
+		Storage:   storage,
+	}
+
 	return &clientcmdapi.ExecConfig{
 		APIVersion: "client.authentication.k8s.io/v1beta1",
 		Command:    command,
-		Args: []string{
-			api.AuthCmdName,
-			api.OIDCCmdName,
-			api.IssuerURLArg + issuerURL.String(),
-			api.ClientIDArg + clientID,
-			api.UsePKCEArg,
-		},
+		Args:       args.Args(),
 	}
 }
 
 // clientCredentialsExecConfig returns an exec config that obtains a token through the client-credentials login of nctl.
-func clientCredentialsExecConfig(command string, credentials ClientCredentials) *clientcmdapi.ExecConfig {
+func clientCredentialsExecConfig(command string, credentials ClientCredentials, storage api.Storage) *clientcmdapi.ExecConfig {
 	return &clientcmdapi.ExecConfig{
 		APIVersion:      "client.authentication.k8s.io/v1",
 		InteractiveMode: clientcmdapi.NeverExecInteractiveMode,
 		Command:         command,
-		Args: []string{
-			api.AuthCmdName,
-			api.ClientCredentialsCmdName,
-			api.ClientIDArg + credentials.ClientID,
-			api.ClientSecretArg + credentials.ClientSecret,
-			api.TokenURLArg + credentials.TokenURL,
-		},
+		Args: api.ExecArgs{
+			Command:  api.ClientCredentialsCmdName,
+			ClientID: credentials.ClientID,
+			TokenURL: credentials.TokenURL,
+			Storage:  storage,
+		}.Args(),
 	}
 }

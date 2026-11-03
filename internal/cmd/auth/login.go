@@ -25,13 +25,16 @@ type LoginCmd struct {
 	Organization                string `help:"Name of your organization to use when providing an API client ID/secret." env:"NCTL_ORGANIZATION"`
 	IssuerURL                   string `help:"OIDC issuer URL of the API." default:"${issuer_url}" hidden:""`
 	ClientID                    string `help:"OIDC client ID of the API." default:"${client_id}" hidden:""`
+	InsecureStorage             bool   `help:"Save credentials in plain text files instead of the keyring of the operating system."`
 	ForceInteractiveEnvOverride bool   `help:"Used for internal purposes only. Set to true to force interactive environment explicit override. Set to false to fall back to automatic interactivity detection." default:"false" hidden:""`
 	tk                          api.TokenGetter
 }
 
 const ErrNonInteractiveEnvironmentEmptyToken = "a static API token is required in non-interactive environments"
 
-func (cmd *LoginCmd) Run(ctx context.Context) error {
+// Run logs in and writes the kubeconfig context of the API.
+// The tokens or client secret of the login are kept in creds.
+func (cmd *LoginCmd) Run(ctx context.Context, creds api.Credentials) error {
 	apiURL, err := url.Parse(cmd.API.URL)
 	if err != nil {
 		return err
@@ -68,7 +71,12 @@ func (cmd *LoginCmd) Run(ctx context.Context) error {
 	}
 
 	if cmd.API.ClientID != "" {
-		userInfo, err := cmd.API.UserInfo(ctx)
+		secrets := creds.ClientSecrets(cmd.storage())
+		secret, err := cmd.API.clientSecret(ctx, secrets)
+		if err != nil {
+			return err
+		}
+		userInfo, err := cmd.API.UserInfo(ctx, secret)
 		if err != nil {
 			return err
 		}
@@ -79,7 +87,13 @@ func (cmd *LoginCmd) Run(ctx context.Context) error {
 		if org == "" {
 			org = userInfo.Orgs[0]
 		}
-		cfg, err := kubeconfig.NewAPIConfig(apiURL, issuerURL, command, cmd.API.ClientID, kubeconfig.UseClientCredentials(cmd.API.clientCredentials()), kubeconfig.WithOrganization(org))
+		// A secret read from the store is stored already.
+		if cmd.API.ClientSecret != "" {
+			if err := secrets.Set(ctx, api.ClientSecretKey(cmd.API.ClientID, cmd.API.TokenURL), cmd.API.ClientSecret); err != nil {
+				return fmt.Errorf("storing the client secret: %w", err)
+			}
+		}
+		cfg, err := kubeconfig.NewAPIConfig(apiURL, issuerURL, command, cmd.API.ClientID, kubeconfig.UseClientCredentials(cmd.API.clientCredentials()), kubeconfig.WithOrganization(org), kubeconfig.WithStorage(cmd.storage()))
 		if err != nil {
 			return err
 		}
@@ -94,9 +108,12 @@ func (cmd *LoginCmd) Run(ctx context.Context) error {
 		return errors.New(ErrNonInteractiveEnvironmentEmptyToken)
 	}
 
-	usePKCE := true
-
-	token, err := cmd.tokenGetter().GetTokenString(ctx, cmd.IssuerURL, cmd.ClientID, usePKCE)
+	token, err := cmd.tokenGetter(creds).GetTokenString(ctx, api.OIDCLogin{
+		IssuerURL: cmd.IssuerURL,
+		ClientID:  cmd.ClientID,
+		UsePKCE:   true,
+		Storage:   cmd.storage(),
+	})
 	if err != nil {
 		return err
 	}
@@ -117,7 +134,7 @@ func (cmd *LoginCmd) Run(ctx context.Context) error {
 		printAvailableOrgsString(cmd.Writer, org, userInfo.Orgs)
 	}
 
-	cfg, err := kubeconfig.NewAPIConfig(apiURL, issuerURL, command, cmd.ClientID, kubeconfig.WithOrganization(org))
+	cfg, err := kubeconfig.NewAPIConfig(apiURL, issuerURL, command, cmd.ClientID, kubeconfig.WithOrganization(org), kubeconfig.WithStorage(cmd.storage()))
 	if err != nil {
 		return err
 	}
@@ -140,11 +157,25 @@ func printAvailableOrgsString(w format.Writer, currentorg string, orgs []string)
 	w.Println()
 }
 
-func (cmd *LoginCmd) tokenGetter() api.TokenGetter {
+func (cmd *LoginCmd) tokenGetter(creds api.Credentials) api.TokenGetter {
 	if cmd.tk != nil {
 		return cmd.tk
 	}
-	return &api.DefaultTokenGetter{}
+	return api.NewTokenGetter(creds)
+}
+
+// storage returns where the login keeps its tokens or client secret.
+func (cmd *LoginCmd) storage() api.Storage {
+	return storage(cmd.InsecureStorage)
+}
+
+// storage returns the storage selected by --insecure-storage.
+func storage(insecure bool) api.Storage {
+	if insecure {
+		return api.StorageFile
+	}
+
+	return api.StorageKeyring
 }
 
 // LoginKongVars returns all variables which are used in the login command

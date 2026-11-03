@@ -63,8 +63,9 @@ func TestVerbsDoNotImportEachOther(t *testing.T) {
 
 // leafPackages use nothing else of the module:
 // cli holds the error and exit code vocabulary,
+// api/internal/credential implements the secret stores of package api,
 // format and logbox only render output.
-var leafPackages = []string{"internal/cli", "internal/format", "internal/logbox"}
+var leafPackages = []string{"api/internal/credential", "internal/cli", "internal/format", "internal/logbox"}
 
 // TestLayering guards the layers below the verbs.
 // Non-test imports are checked strictly;

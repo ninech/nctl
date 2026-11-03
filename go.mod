@@ -35,6 +35,7 @@ require (
 	github.com/prometheus/common v0.72.0
 	github.com/stretchr/testify v1.12.1
 	github.com/theckman/yacspin v0.13.12
+	github.com/zalando/go-keyring v0.2.8
 	golang.org/x/crypto v0.58.0
 	golang.org/x/oauth2 v0.37.0
 	golang.org/x/sync v0.24.0
@@ -279,7 +280,6 @@ require (
 	github.com/xlab/treeprint v1.2.0 // indirect
 	github.com/xo/terminfo v1.0.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
-	github.com/zalando/go-keyring v0.2.8 // indirect
 	go.etcd.io/etcd/api/v3 v3.6.14 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.6.14 // indirect
 	go.etcd.io/etcd/client/v3 v3.6.14 // indirect
