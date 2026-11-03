@@ -4,6 +4,7 @@ package waiter
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/theckman/yacspin"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/util/retry"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -44,6 +44,9 @@ type Stage struct {
 	spinner        *yacspin.Spinner
 	DisableSpinner bool
 	startTime      time.Time
+	// ContinueHint tells the user how to follow an operation which continues
+	// on the server after the wait ended, e.g. by a timeout or an interrupt.
+	ContinueHint string
 	// BeforeWait is a hook that is called just before the wait is being run.
 	BeforeWait func()
 	// AfterWait is a hook that is called after the wait to clean up.
@@ -57,11 +60,14 @@ type Message struct {
 	Disabled bool
 }
 
+// watchBackoff shapes the reconnect delays after a dropped watch. Steps is the
+// number of drops in a row before the wait fails.
 var watchBackoff = wait.Backoff{
-	Steps:    15,
-	Duration: 10 * time.Millisecond,
-	Factor:   1.0,
+	Steps:    8,
+	Duration: 250 * time.Millisecond,
+	Factor:   2.0,
 	Jitter:   0.1,
+	Cap:      15 * time.Second,
 }
 
 const remainingTimeUpdateInterval = time.Second
@@ -113,7 +119,7 @@ func (wa *Waiter) Wait(ctx context.Context, stages ...Stage) error {
 		}
 
 		stage.startTime = time.Now()
-		if err := retry.OnError(watchBackoff, isWatchError, func() error {
+		if err := retryWatch(ctx, watchBackoff, func() error {
 			return stage.wait(ctx, wa.Client)
 		}); err != nil {
 			_ = stage.spinner.StopFail()
@@ -164,8 +170,35 @@ func (werr watchError) Error() string {
 }
 
 func isWatchError(err error) bool {
-	_, ok := err.(watchError)
-	return ok
+	return errors.As(err, &watchError{})
+}
+
+// retryWatch runs watch until it ends with something else than a watchError.
+// A watch which stayed open for at least backoff.Cap refreshes the budget.
+// wait.Backoff ends the steps as soon as a delay reaches its cap, so the drops
+// are counted separately.
+func retryWatch(ctx context.Context, backoff wait.Backoff, watch func() error) error {
+	delays := backoff
+	drops := 0
+	for {
+		start := time.Now()
+		err := watch()
+		if !isWatchError(err) {
+			return err
+		}
+		if time.Since(start) >= backoff.Cap {
+			delays = backoff
+			drops = 0
+		}
+		if drops++; drops >= backoff.Steps {
+			return err
+		}
+		select {
+		case <-time.After(delays.Step()):
+		case <-ctx.Done():
+			// the next watch reports how the wait ended
+		}
+	}
 }
 
 func (w *Stage) wait(ctx context.Context, client *api.Client) error {
@@ -177,13 +210,18 @@ func (w *Stage) wait(ctx context.Context, client *api.Client) error {
 }
 
 func (w *Stage) watch(ctx context.Context, client *api.Client) error {
+	if ctx.Err() != nil {
+		return w.ended(ctx)
+	}
+
 	wa, err := client.Watch(ctx, w.ObjectList, w.ListOpts...)
 	if err != nil {
-		if err == context.Canceled {
-			return err
+		if ctx.Err() != nil {
+			return w.ended(ctx)
 		}
 		return watchError{kind: w.Kind}
 	}
+	defer wa.Stop()
 
 	ticker := time.NewTicker(remainingTimeUpdateInterval)
 	defer ticker.Stop()
@@ -202,7 +240,6 @@ func (w *Stage) watch(ctx context.Context, client *api.Client) error {
 			}
 
 			if done {
-				wa.Stop()
 				elapsed := time.Since(w.startTime).Truncate(time.Second)
 				w.spinner.StopMessage(w.WaitMessage.Progress())
 				_ = w.spinner.Stop()
@@ -213,17 +250,28 @@ func (w *Stage) watch(ctx context.Context, client *api.Client) error {
 		case <-ticker.C:
 			w.spinner.Message(w.progressWithRemaining(ctx))
 		case <-ctx.Done():
-			switch ctx.Err() {
-			case context.DeadlineExceeded:
-				msg := "timeout waiting for %s"
-				w.spinner.StopFailMessage(format.Progressf("", msg, w.Kind))
-				_ = w.spinner.StopFail()
-
-				return fmt.Errorf(msg, w.Kind)
-			case context.Canceled:
-				_ = w.spinner.StopFail()
-				return nil
-			}
+			return w.ended(ctx)
 		}
 	}
+}
+
+// ended reports how the wait ended once ctx is done. A cancelled wait is not
+// an error.
+func (w *Stage) ended(ctx context.Context) error {
+	if !errors.Is(ctx.Err(), context.DeadlineExceeded) {
+		_ = w.spinner.StopFail()
+		if w.ContinueHint != "" {
+			w.writer.Infof("💡", "%s", w.ContinueHint)
+		}
+		return nil
+	}
+
+	msg := "timeout waiting for %s"
+	w.spinner.StopFailMessage(format.Progressf("", msg, w.Kind))
+	_ = w.spinner.StopFail()
+
+	if w.ContinueHint != "" {
+		return fmt.Errorf(msg+"; %s", w.Kind, w.ContinueHint)
+	}
+	return fmt.Errorf(msg, w.Kind)
 }

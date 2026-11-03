@@ -56,7 +56,7 @@ func TestMySQLDatabase(t *testing.T) {
 					location: meta.LocationNineCZ41,
 				},
 			},
-			get:         mysqlDatabaseCmd{ServiceCmd: ServiceCmd{ResourceCmd: ResourceCmd{Name: "test1"}, PrintConnectionString: true}},
+			get:         mysqlDatabaseCmd{DatabaseCmd{ServiceCmd: ServiceCmd{ResourceCmd: ResourceCmd{Name: "test1"}, PrintConnectionString: true}}},
 			wantContain: []string{"mysql://foo_bar:topsecret@test1.example.com:3306/foo_bar?ssl-mode=REQUIRED"},
 			wantLines:   1,
 		},

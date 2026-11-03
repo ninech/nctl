@@ -30,7 +30,7 @@ require (
 	github.com/moby/moby/api v1.56.1
 	github.com/moby/moby/client v0.6.2
 	github.com/moby/term v0.5.2
-	github.com/ninech/apis v0.0.0-20260825052428-be03af566ecd
+	github.com/ninech/apis v0.0.0-20261102064537-5794b69c4b59
 	github.com/posener/complete v1.2.3
 	github.com/prometheus/common v0.72.0
 	github.com/stretchr/testify v1.12.1
