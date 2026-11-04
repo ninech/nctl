@@ -39,11 +39,11 @@ type applicationCmd struct {
 	ChangeBasicAuthPassword *bool             `help:"Generate a new basic auth password."`
 	Env                     map[string]string `help:"Environment variables which are passed to the app at runtime."`
 	SensitiveEnv            map[string]string `help:"Sensitive environment variables which are passed to the app at runtime."`
-	DeleteEnv               *[]string         `help:"Runtime environment variables names which are to be deleted."`
+	DeleteEnv               []string          `help:"Runtime environment variables names which are to be deleted."`
 
 	BuildEnv          map[string]string `help:"Environment variables names which are passed to the app build process."`
 	SensitiveBuildEnv map[string]string `help:"Sensitive environment variables names which are passed to the app build process."`
-	DeleteBuildEnv    *[]string         `help:"Build environment variables which are to be deleted."`
+	DeleteBuildEnv    []string          `help:"Build environment variables which are to be deleted."`
 
 	// DeployJob, ScheduledJob and WorkerJob are embedded pointers to
 	// structs. Due to the usage of kong these pointers will never be `nil`.
@@ -319,12 +319,7 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 		runtimeEnv[ReleaseTrigger] = triggerTimestamp()
 	}
 
-	var delEnv []string
-	if cmd.DeleteEnv != nil {
-		delEnv = *cmd.DeleteEnv
-	}
-
-	app.Spec.ForProvider.Config.Env = application.UpdateEnvVars(app.Spec.ForProvider.Config.Env, runtimeEnv, sensitiveRuntimeEnv, delEnv)
+	app.Spec.ForProvider.Config.Env = application.UpdateEnvVars(app.Spec.ForProvider.Config.Env, runtimeEnv, sensitiveRuntimeEnv, cmd.DeleteEnv)
 
 	// build env vars
 	buildEnv := cmd.BuildEnv
@@ -341,16 +336,11 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 		buildEnv[BuildTrigger] = triggerTimestamp()
 	}
 
-	var delBuildEnv []string
-	if cmd.DeleteBuildEnv != nil {
-		delBuildEnv = *cmd.DeleteBuildEnv
-	}
-
 	app.Spec.ForProvider.BuildEnv = application.UpdateEnvVars(
 		app.Spec.ForProvider.BuildEnv,
 		buildEnv,
 		sensitiveBuildEnv,
-		delBuildEnv,
+		cmd.DeleteBuildEnv,
 	)
 	if cmd.Pause != nil {
 		app.Spec.ForProvider.Paused = *cmd.Pause

@@ -249,7 +249,7 @@ func TestApplication(t *testing.T) {
 				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
-				DeleteEnv: &[]string{"foo"},
+				DeleteEnv: []string{"foo"},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				is := require.New(t)
@@ -284,7 +284,7 @@ func TestApplication(t *testing.T) {
 				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
-				DeleteBuildEnv: &[]string{"BP_ENVIRONMENT_VARIABLE"},
+				DeleteBuildEnv: []string{"BP_ENVIRONMENT_VARIABLE"},
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				is := require.New(t)
@@ -1011,4 +1011,32 @@ func TestApplicationFlags(t *testing.T) {
 	xorReplicasFlags := &applicationCmd{}
 	_, err = kong.Must(xorReplicasFlags, vars, testutil.KongStreams(format.IOStreams{Out: t.Output(), ErrOut: t.Output()})).Parse([]string{`testname`, `--replicas=2`, `--unset-replicas`})
 	is.Error(err)
+
+	// repeated delete flags need to accumulate instead of only keeping the
+	// last value, which is what kong does for pointers to slices.
+	deleteEnvFlags := &applicationCmd{}
+	_, err = kong.Must(deleteEnvFlags, vars, testutil.KongStreams(format.IOStreams{Out: t.Output(), ErrOut: t.Output()})).Parse([]string{
+		`testname`,
+		`--delete-env=FOO`, `--delete-env=BAR,BAZ`,
+		`--delete-build-env=FOO`, `--delete-build-env=BAR`,
+	})
+	is.NoError(err)
+	is.Equal([]string{"FOO", "BAR", "BAZ"}, deleteEnvFlags.DeleteEnv)
+	is.Equal([]string{"FOO", "BAR"}, deleteEnvFlags.DeleteBuildEnv)
+
+	// the same applies to the env maps.
+	envFlags := &applicationCmd{}
+	_, err = kong.Must(envFlags, vars, testutil.KongStreams(format.IOStreams{Out: t.Output(), ErrOut: t.Output()})).Parse([]string{
+		`testname`,
+		`--env=FOO=1`, `--env=BAR=2`,
+		`--sensitive-env=FOO=1`, `--sensitive-env=BAR=2`,
+		`--build-env=FOO=1`, `--build-env=BAR=2`,
+		`--sensitive-build-env=FOO=1`, `--sensitive-build-env=BAR=2`,
+	})
+	is.NoError(err)
+	expectedEnv := map[string]string{"FOO": "1", "BAR": "2"}
+	is.Equal(expectedEnv, envFlags.Env)
+	is.Equal(expectedEnv, envFlags.SensitiveEnv)
+	is.Equal(expectedEnv, envFlags.BuildEnv)
+	is.Equal(expectedEnv, envFlags.SensitiveBuildEnv)
 }
