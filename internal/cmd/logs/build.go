@@ -40,5 +40,5 @@ func (cmd *buildCmd) Run(ctx context.Context, client *api.Client) error {
 		query = log.BuildsOfAppQuery(cmd.ApplicationName, client.Project)
 	}
 
-	return cmd.LogsCmd.Run(ctx, client, query, apps.LogLabelBuild)
+	return cmd.LogsCmd.Run(ctx, client, query, apps.LogLabelBuild, apps.LogLabelSource)
 }

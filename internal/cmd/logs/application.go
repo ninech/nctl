@@ -12,7 +12,7 @@ import (
 type applicationCmd struct {
 	resourceCmd
 	LogsCmd
-	Type appLogType `short:"t" help:"Which type of app logs to output. ${enum}" enum:"all,app,build,worker_job,deploy_job,scheduled_job" default:"all"`
+	Type appLogType `short:"t" help:"Which type of app logs to output. ${enum}" enum:"all,app,build,worker_job,deploy_job,scheduled_job,event" default:"all"`
 }
 
 func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
@@ -36,7 +36,7 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 // applicationLogLabels are the labels shown in the output of application logs.
 var applicationLogLabels = []string{
 	apps.LogLabelBuild, apps.LogLabelReplica, apps.LogLabelWorkerJob, apps.LogLabelDeployJob,
-	apps.LogLabelScheduledJob,
+	apps.LogLabelScheduledJob, apps.LogLabelSource,
 }
 
 type appLogType string
@@ -48,6 +48,7 @@ const (
 	logTypeDeployJob    appLogType = "deploy_job"
 	logTypeWorkerJob    appLogType = "worker_job"
 	logTypeScheduledJob appLogType = "scheduled_job"
+	logTypeEvent        appLogType = "event"
 )
 
 // matchers returns the label matchers narrowing application logs down to the
@@ -71,6 +72,8 @@ func (a appLogType) matchers() []log.Matcher {
 		return []log.Matcher{log.NotEqual(apps.LogLabelWorkerJob, "")}
 	case logTypeScheduledJob:
 		return []log.Matcher{log.NotEqual(apps.LogLabelScheduledJob, "")}
+	case logTypeEvent:
+		return []log.Matcher{log.Equal(apps.LogLabelSource, apps.LogSourceEvent)}
 	}
 	return nil
 }

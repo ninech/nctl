@@ -23,6 +23,7 @@ func TestAppLogTypeMatchers(t *testing.T) {
 		logTypeDeployJob:    {`deploy_job!=""`},
 		logTypeWorkerJob:    {`worker_job!=""`},
 		logTypeScheduledJob: {`scheduled_job!=""`},
+		logTypeEvent:        {`source="event"`},
 	}
 	for logType, expected := range cases {
 		t.Run(string(logType), func(t *testing.T) {
@@ -58,6 +59,10 @@ func TestApplicationLogLabels(t *testing.T) {
 		"scheduled job": {
 			labels:   loghttp.LabelSet{apps.LogLabelScheduledJob: "cleanup"},
 			expected: `scheduled_job="cleanup"`,
+		},
+		"event": {
+			labels:   loghttp.LabelSet{apps.LogLabelSource: apps.LogSourceEvent},
+			expected: `source="event"`,
 		},
 	}
 	for name, tc := range cases {
