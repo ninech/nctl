@@ -29,8 +29,14 @@ func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
 			log.InProject(client.Project),
 			log.Equal(apps.LogLabelApplication, cmd.Name),
 		)...),
-		apps.LogLabelBuild, apps.LogLabelReplica, apps.LogLabelWorkerJob, apps.LogLabelDeployJob, apps.LogLabelDeployJob,
+		applicationLogLabels...,
 	)
+}
+
+// applicationLogLabels are the labels shown in the output of application logs.
+var applicationLogLabels = []string{
+	apps.LogLabelBuild, apps.LogLabelReplica, apps.LogLabelWorkerJob, apps.LogLabelDeployJob,
+	apps.LogLabelScheduledJob,
 }
 
 type appLogType string
