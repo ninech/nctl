@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/testutil"
-	"k8s.io/utils/ptr"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestPostgresDatabase(t *testing.T) {
@@ -37,8 +38,26 @@ func TestPostgresDatabase(t *testing.T) {
 		{
 			name:   "update-backup-schedule",
 			create: storage.PostgresDatabaseParameters{BackupSchedule: storage.DatabaseBackupScheduleCalendarDisabled},
-			update: postgresDatabaseCmd{BackupSchedule: ptr.To(storage.DatabaseBackupScheduleCalendarDaily)},
+			update: postgresDatabaseCmd{BackupSchedule: new(storage.DatabaseBackupScheduleCalendarDaily)},
 			want:   storage.PostgresDatabaseParameters{BackupSchedule: storage.DatabaseBackupScheduleCalendarDaily},
+		},
+		{
+			name:   "update-backup-daily-time",
+			create: storage.PostgresDatabaseParameters{BackupDailyTime: "03:00"},
+			update: postgresDatabaseCmd{BackupDailyTime: new("22:45")},
+			want:   storage.PostgresDatabaseParameters{BackupDailyTime: "22:45"},
+		},
+		{
+			name:   "update-backup-ttl",
+			create: storage.PostgresDatabaseParameters{BackupTTL: &metav1.Duration{Duration: 240 * time.Hour}},
+			update: postgresDatabaseCmd{BackupTTL: new(72 * time.Hour)},
+			want:   storage.PostgresDatabaseParameters{BackupTTL: &metav1.Duration{Duration: 72 * time.Hour}},
+		},
+		{
+			name:   "reset-backup-ttl",
+			create: storage.PostgresDatabaseParameters{BackupTTL: &metav1.Duration{Duration: 72 * time.Hour}},
+			update: postgresDatabaseCmd{BackupTTL: new(time.Duration(0))},
+			want:   storage.PostgresDatabaseParameters{},
 		},
 	}
 	for _, tt := range tests {

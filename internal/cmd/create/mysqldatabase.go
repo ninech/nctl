@@ -2,6 +2,7 @@ package create
 
 import (
 	"context"
+	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -20,6 +21,8 @@ type mysqlDatabaseCmd struct {
 	MysqlDatabaseVersion storage.MySQLVersion                   `help:"Version of the MySQL database." completion-predictor:"apifield:mysqldatabase_version"`
 	CharacterSet         string                                 `help:"Character set for the MySQL database." completion-predictor:"apifield:mysqldatabase_character_set"`
 	BackupSchedule       storage.DatabaseBackupScheduleCalendar `help:"Backup schedule for the MySQL database." completion-predictor:"apifield:mysqldatabase_backup_schedule"`
+	BackupDailyTime      string                                 `help:"Time of day in the format HH:MM (Europe/Zurich) at which daily backups of the MySQL database are created. If not set, a time between 02:00 and 03:59 is chosen."`
+	BackupTTL            time.Duration                          `help:"Duration after which scheduled backups of the MySQL database can be deleted. Must be between 24h and 720h. If not set, the default is used." completion-predictor:"apifield:mysqldatabase_backup_ttl"`
 }
 
 func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error {
@@ -75,9 +78,14 @@ func (cmd *mysqlDatabaseCmd) newMySQLDatabase(namespace string) *storage.MySQLDa
 				CharacterSet: storage.MySQLCharacterSet{
 					Name: cmd.CharacterSet,
 				},
-				BackupSchedule: cmd.BackupSchedule,
+				BackupSchedule:  cmd.BackupSchedule,
+				BackupDailyTime: cmd.BackupDailyTime,
 			},
 		},
+	}
+
+	if cmd.BackupTTL != 0 {
+		mysqlDatabase.Spec.ForProvider.BackupTTL = &metav1.Duration{Duration: cmd.BackupTTL}
 	}
 
 	return mysqlDatabase

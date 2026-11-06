@@ -51,6 +51,11 @@ func TestPostgresDatabase(t *testing.T) {
 			create: postgresDatabaseCmd{Collation: storage.PostgresDatabaseCollationDefault},
 			want:   storage.PostgresDatabaseParameters{Collation: storage.PostgresDatabaseCollationDefault},
 		},
+		{
+			name:   "backup daily time and ttl",
+			create: postgresDatabaseCmd{BackupDailyTime: "22:45", BackupTTL: 72 * time.Hour},
+			want:   storage.PostgresDatabaseParameters{BackupDailyTime: "22:45", BackupTTL: &metav1.Duration{Duration: 72 * time.Hour}},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

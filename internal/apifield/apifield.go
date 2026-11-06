@@ -65,7 +65,8 @@ var fields = map[string]field{
 		Default: string(storage.DatabaseBackupScheduleCalendarDaily),
 		Values:  stringSlice(storage.DatabaseBackupScheduleCalendars),
 	},
-	"postgresdatabase_collation": {Default: string(storage.PostgresDatabaseCollationDefault)},
+	"postgresdatabase_backup_ttl": {Default: fmt.Sprintf("%dh", int(storage.DatabaseBackupDefaultRetentionTime.Hours()))},
+	"postgresdatabase_collation":  {Default: string(storage.PostgresDatabaseCollationDefault)},
 
 	// MySQL
 	"mysql_location": {
@@ -104,6 +105,7 @@ var fields = map[string]field{
 		Default: string(storage.DatabaseBackupScheduleCalendarDaily),
 		Values:  stringSlice(storage.DatabaseBackupScheduleCalendars),
 	},
+	"mysqldatabase_backup_ttl": {Default: fmt.Sprintf("%dh", int(storage.DatabaseBackupDefaultRetentionTime.Hours()))},
 
 	// OpenSearch
 	"opensearch_location": {
