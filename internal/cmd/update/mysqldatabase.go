@@ -3,6 +3,7 @@ package update
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	storage "github.com/ninech/apis/storage/v1alpha1"
@@ -13,7 +14,9 @@ import (
 type mysqlDatabaseCmd struct {
 	ResourceCmd
 	CredentialsResetFlags
-	BackupSchedule *storage.DatabaseBackupScheduleCalendar `help:"Backup schedule for the MySQL database." completion-predictor:"apifield:mysqldatabase_backup_schedule"`
+	BackupSchedule  *storage.DatabaseBackupScheduleCalendar `help:"Backup schedule for the MySQL database." completion-predictor:"apifield:mysqldatabase_backup_schedule"`
+	BackupDailyTime *string                                 `help:"Time of day in the format HH:MM (Europe/Zurich) at which daily backups of the MySQL database are created."`
+	BackupTTL       *time.Duration                          `help:"Duration after which scheduled backups of the MySQL database can be deleted. Must be between 24h and 720h. Set to 0 to reset to the default." completion-predictor:"apifield:mysqldatabase_backup_ttl"`
 }
 
 func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error {
@@ -40,5 +43,15 @@ func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error 
 func (cmd *mysqlDatabaseCmd) applyUpdates(db *storage.MySQLDatabase) {
 	if cmd.BackupSchedule != nil {
 		db.Spec.ForProvider.BackupSchedule = *cmd.BackupSchedule
+	}
+	if cmd.BackupDailyTime != nil {
+		db.Spec.ForProvider.BackupDailyTime = *cmd.BackupDailyTime
+	}
+	if cmd.BackupTTL != nil {
+		if *cmd.BackupTTL == 0 {
+			db.Spec.ForProvider.BackupTTL = nil
+		} else {
+			db.Spec.ForProvider.BackupTTL = &metav1.Duration{Duration: *cmd.BackupTTL}
+		}
 	}
 }

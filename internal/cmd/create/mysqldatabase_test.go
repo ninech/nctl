@@ -46,6 +46,11 @@ func TestMySQLDatabase(t *testing.T) {
 			create: mysqlDatabaseCmd{MysqlDatabaseVersion: storage.MySQLDatabaseVersionDefault, CharacterSet: "ascii"},
 			want:   storage.MySQLDatabaseParameters{Version: storage.MySQLDatabaseVersionDefault, CharacterSet: storage.MySQLCharacterSet{Name: "ascii"}},
 		},
+		{
+			name:   "backup daily time and ttl",
+			create: mysqlDatabaseCmd{BackupDailyTime: "22:45", BackupTTL: 72 * time.Hour},
+			want:   storage.MySQLDatabaseParameters{BackupDailyTime: "22:45", BackupTTL: &metav1.Duration{Duration: 72 * time.Hour}},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

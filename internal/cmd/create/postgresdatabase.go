@@ -2,6 +2,7 @@ package create
 
 import (
 	"context"
+	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -19,6 +20,8 @@ type postgresDatabaseCmd struct {
 	Location                meta.LocationName                      `help:"Where the PostgreSQL database is created." completion-predictor:"apifield:postgresdatabase_location"`
 	PostgresDatabaseVersion storage.PostgresVersion                `help:"Release version with which the PostgreSQL database is created." completion-predictor:"apifield:postgresdatabase_version"`
 	BackupSchedule          storage.DatabaseBackupScheduleCalendar `help:"Backup schedule for the PostgreSQL database." completion-predictor:"apifield:postgresdatabase_backup_schedule"`
+	BackupDailyTime         string                                 `help:"Time of day in the format HH:MM (Europe/Zurich) at which daily backups of the PostgreSQL database are created. If not set, a time between 02:00 and 03:59 is chosen."`
+	BackupTTL               time.Duration                          `help:"Duration after which scheduled backups of the PostgreSQL database can be deleted. Must be between 24h and 720h. If not set, the default is used." completion-predictor:"apifield:postgresdatabase_backup_ttl"`
 	Collation               storage.PostgresDatabaseCollation      `help:"Collation for the PostgreSQL database." completion-predictor:"apifield:postgresdatabase_collation"`
 }
 
@@ -73,12 +76,17 @@ func (cmd *postgresDatabaseCmd) newPostgresDatabase(namespace string) *storage.P
 				},
 			},
 			ForProvider: storage.PostgresDatabaseParameters{
-				Location:       cmd.Location,
-				Version:        cmd.PostgresDatabaseVersion,
-				BackupSchedule: cmd.BackupSchedule,
-				Collation:      cmd.Collation,
+				Location:        cmd.Location,
+				Version:         cmd.PostgresDatabaseVersion,
+				BackupSchedule:  cmd.BackupSchedule,
+				BackupDailyTime: cmd.BackupDailyTime,
+				Collation:       cmd.Collation,
 			},
 		},
+	}
+
+	if cmd.BackupTTL != 0 {
+		postgresDatabase.Spec.ForProvider.BackupTTL = &metav1.Duration{Duration: cmd.BackupTTL}
 	}
 
 	return postgresDatabase

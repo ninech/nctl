@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/testutil"
-	"k8s.io/utils/ptr"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestMySQLDatabase(t *testing.T) {
@@ -37,8 +38,26 @@ func TestMySQLDatabase(t *testing.T) {
 		{
 			name:   "update-backup-schedule",
 			create: storage.MySQLDatabaseParameters{BackupSchedule: storage.DatabaseBackupScheduleCalendarDaily},
-			update: mysqlDatabaseCmd{BackupSchedule: ptr.To(storage.DatabaseBackupScheduleCalendarDisabled)},
+			update: mysqlDatabaseCmd{BackupSchedule: new(storage.DatabaseBackupScheduleCalendarDisabled)},
 			want:   storage.MySQLDatabaseParameters{BackupSchedule: storage.DatabaseBackupScheduleCalendarDisabled},
+		},
+		{
+			name:   "update-backup-daily-time",
+			create: storage.MySQLDatabaseParameters{BackupDailyTime: "03:00"},
+			update: mysqlDatabaseCmd{BackupDailyTime: new("22:45")},
+			want:   storage.MySQLDatabaseParameters{BackupDailyTime: "22:45"},
+		},
+		{
+			name:   "update-backup-ttl",
+			create: storage.MySQLDatabaseParameters{BackupTTL: &metav1.Duration{Duration: 240 * time.Hour}},
+			update: mysqlDatabaseCmd{BackupTTL: new(72 * time.Hour)},
+			want:   storage.MySQLDatabaseParameters{BackupTTL: &metav1.Duration{Duration: 72 * time.Hour}},
+		},
+		{
+			name:   "reset-backup-ttl",
+			create: storage.MySQLDatabaseParameters{BackupTTL: &metav1.Duration{Duration: 72 * time.Hour}},
+			update: mysqlDatabaseCmd{BackupTTL: new(time.Duration(0))},
+			want:   storage.MySQLDatabaseParameters{},
 		},
 	}
 	for _, tt := range tests {
