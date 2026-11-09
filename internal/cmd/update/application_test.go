@@ -739,6 +739,61 @@ func TestApplication(t *testing.T) {
 				is.NotNil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
 			},
 		},
+		"switching to dockerfile builds keeps the language": {
+			orig: func() *apps.Application {
+				app := existingApp.DeepCopy()
+				app.Spec.ForProvider.Language = apps.LanguageRuby
+				return app
+			}(),
+			cmd: applicationCmd{
+				ResourceCmd: ResourceCmd{
+					Name: existingApp.Name,
+				},
+				DockerfileBuild: dockerfileBuild{Enabled: new(true)},
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				is := require.New(t)
+				is.True(updated.Spec.ForProvider.DockerfileBuild.Enabled)
+				is.Equal(apps.LanguageRuby, updated.Spec.ForProvider.Language)
+			},
+		},
+		"switching to buildpack builds": {
+			orig: func() *apps.Application {
+				app := existingApp.DeepCopy()
+				app.Spec.ForProvider.DockerfileBuild.Enabled = true
+				return app
+			}(),
+			cmd: applicationCmd{
+				ResourceCmd: ResourceCmd{
+					Name: existingApp.Name,
+				},
+				Language:        new("ruby"),
+				DockerfileBuild: dockerfileBuild{Enabled: new(false)},
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				is := require.New(t)
+				is.False(updated.Spec.ForProvider.DockerfileBuild.Enabled)
+				is.Equal(apps.LanguageRuby, updated.Spec.ForProvider.Language)
+			},
+		},
+		"not passing the dockerfile flag keeps the build type": {
+			orig: func() *apps.Application {
+				app := existingApp.DeepCopy()
+				app.Spec.ForProvider.DockerfileBuild.Enabled = true
+				return app
+			}(),
+			cmd: applicationCmd{
+				ResourceCmd: ResourceCmd{
+					Name: existingApp.Name,
+				},
+				DockerfileBuild: dockerfileBuild{Path: new("Dockerfile.prod")},
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				is := require.New(t)
+				is.True(updated.Spec.ForProvider.DockerfileBuild.Enabled)
+				is.Equal("Dockerfile.prod", updated.Spec.ForProvider.DockerfileBuild.DockerfilePath)
+			},
+		},
 		"not setting language does not trigger a build": {
 			errorExpected: true,
 			orig:          existingApp,
@@ -1001,6 +1056,20 @@ func TestApplicationFlags(t *testing.T) {
 	is.NoError(err)
 	is.NotNil(noPauseFlags.Pause)
 	is.False(*noPauseFlags.Pause)
+
+	is.Nil(nilFlags.DockerfileBuild.Enabled)
+
+	dockerfileFlags := &applicationCmd{}
+	_, err = kong.Must(dockerfileFlags, vars, testutil.KongStreams(format.IOStreams{Out: t.Output(), ErrOut: t.Output()})).Parse([]string{`testname`, `--dockerfile`})
+	is.NoError(err)
+	is.NotNil(dockerfileFlags.DockerfileBuild.Enabled)
+	is.True(*dockerfileFlags.DockerfileBuild.Enabled)
+
+	noDockerfileFlags := &applicationCmd{}
+	_, err = kong.Must(noDockerfileFlags, vars, testutil.KongStreams(format.IOStreams{Out: t.Output(), ErrOut: t.Output()})).Parse([]string{`testname`, `--no-dockerfile`})
+	is.NoError(err)
+	is.NotNil(noDockerfileFlags.DockerfileBuild.Enabled)
+	is.False(*noDockerfileFlags.DockerfileBuild.Enabled)
 
 	unsetReplicasFlags := &applicationCmd{}
 	_, err = kong.Must(unsetReplicasFlags, vars, testutil.KongStreams(format.IOStreams{Out: t.Output(), ErrOut: t.Output()})).Parse([]string{`testname`, `--unset-replicas`})

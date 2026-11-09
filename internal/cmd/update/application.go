@@ -136,6 +136,7 @@ func (job scheduledJob) changesGiven() bool {
 }
 
 type dockerfileBuild struct {
+	Enabled      *bool   `name:"dockerfile" negatable:"" help:"${app_dockerfile_switch_help}"`
 	Path         *string `name:"dockerfile-path" help:"${app_dockerfile_path_help}" placeholder:"."`
 	BuildContext *string `name:"dockerfile-build-context" help:"${app_dockerfile_build_context_help}" placeholder:"."`
 }
@@ -344,6 +345,10 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 	)
 	if cmd.Pause != nil {
 		app.Spec.ForProvider.Paused = *cmd.Pause
+	}
+
+	if cmd.DockerfileBuild.Enabled != nil {
+		app.Spec.ForProvider.DockerfileBuild.Enabled = *cmd.DockerfileBuild.Enabled
 	}
 
 	if cmd.DockerfileBuild.Path != nil {
