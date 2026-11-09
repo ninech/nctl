@@ -37,6 +37,9 @@ func KongVars() (kong.Vars, error) {
 		"If left empty, deploio will detect the language automatically. "
 	result["app_dockerfile_enable_help"] = "Enable Dockerfile build (Beta) instead of the automatic " +
 		"buildpack detection"
+	result["app_dockerfile_switch_help"] = "Switch the app to Dockerfile builds (--dockerfile) or back to " +
+		"buildpack builds (--no-dockerfile). This triggers a new build, the current release stays active " +
+		"until the new build succeeds."
 	result["app_dockerfile_path_help"] = "Specifies the path to the Dockerfile. If left empty a file " +
 		"named Dockerfile will be searched in the application code root directory."
 	result["app_dockerfile_build_context_help"] = "Defines the build context. If left empty, the application code root directory will be used as build context."
