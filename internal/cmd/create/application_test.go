@@ -507,7 +507,7 @@ func TestCreateApplication(t *testing.T) {
 				is.Equal("banana", buildEnv.Value)
 			},
 		},
-		"with heroku buildpack stack": {
+		"with heroku build type": {
 			cmd: applicationCmd{
 				ResourceCmd: ResourceCmd{
 					Wait: false,
@@ -517,7 +517,7 @@ func TestCreateApplication(t *testing.T) {
 					URL:      "https://github.com/ninech/doesnotexist.git",
 					Revision: "main",
 				},
-				BuildpackStack:      string(apps.BuildpackStackHeroku),
+				BuildType:           new(string(apps.BuildpackStackHeroku)),
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
@@ -525,7 +525,7 @@ func TestCreateApplication(t *testing.T) {
 				is.Equal(apps.BuildpackStackHeroku, app.Spec.ForProvider.BuildpackStack.String())
 			},
 		},
-		"with paketo buildpack stack": {
+		"with paketo build type": {
 			cmd: applicationCmd{
 				ResourceCmd: ResourceCmd{
 					Wait: false,
@@ -535,7 +535,7 @@ func TestCreateApplication(t *testing.T) {
 					URL:      "https://github.com/ninech/doesnotexist.git",
 					Revision: "main",
 				},
-				BuildpackStack:      string(apps.BuildpackStackPaketo),
+				BuildType:           new(string(apps.BuildpackStackPaketo)),
 				SkipRepoAccessCheck: true,
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
@@ -543,7 +543,62 @@ func TestCreateApplication(t *testing.T) {
 				is.Equal(apps.BuildpackStackPaketo, app.Spec.ForProvider.BuildpackStack.String())
 			},
 		},
-		"without buildpack stack defaults to empty": {
+		"with dockerfile build type": {
+			cmd: applicationCmd{
+				ResourceCmd: ResourceCmd{
+					Wait: false,
+					Name: "dockerfile-build-type",
+				},
+				Git: gitConfig{
+					URL:      "https://github.com/ninech/doesnotexist.git",
+					Revision: "main",
+				},
+				BuildType:           new(application.BuildTypeDockerfile),
+				SkipRepoAccessCheck: true,
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				is := require.New(t)
+				is.True(app.Spec.ForProvider.DockerfileBuild.Enabled)
+			},
+		},
+		"with deprecated dockerfile flag": {
+			cmd: applicationCmd{
+				ResourceCmd: ResourceCmd{
+					Wait: false,
+					Name: "deprecated-dockerfile",
+				},
+				Git: gitConfig{
+					URL:      "https://github.com/ninech/doesnotexist.git",
+					Revision: "main",
+				},
+				DockerfileBuild:     dockerfileBuild{Enabled: true},
+				SkipRepoAccessCheck: true,
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				is := require.New(t)
+				is.True(app.Spec.ForProvider.DockerfileBuild.Enabled)
+			},
+		},
+		"with deprecated buildpack stack flag": {
+			cmd: applicationCmd{
+				ResourceCmd: ResourceCmd{
+					Wait: false,
+					Name: "deprecated-stack",
+				},
+				Git: gitConfig{
+					URL:      "https://github.com/ninech/doesnotexist.git",
+					Revision: "main",
+				},
+				BuildpackStack:      new(string(apps.BuildpackStackPaketo)),
+				SkipRepoAccessCheck: true,
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, app *apps.Application) {
+				is := require.New(t)
+				is.Equal(apps.BuildpackStackPaketo, app.Spec.ForProvider.BuildpackStack.String())
+				is.False(app.Spec.ForProvider.DockerfileBuild.Enabled)
+			},
+		},
+		"without build type defaults to empty": {
 			cmd: applicationCmd{
 				ResourceCmd: ResourceCmd{
 					Wait: false,
@@ -894,4 +949,34 @@ func TestApplicationFlags(t *testing.T) {
 	})
 	is.NoError(err)
 	is.Equal(int32(5), explicitCmd.Replicas)
+
+	buildTypeCmd := &applicationCmd{}
+	_, err = kong.Must(buildTypeCmd, vars, testutil.KongStreams(format.IOStreams{Out: t.Output(), ErrOut: t.Output()})).Parse([]string{
+		`test-app`,
+		`--git-url=https://github.com/ninech/doesnotexist.git`,
+		`--build-type=dockerfile`,
+	})
+	is.NoError(err)
+	is.Equal(application.BuildTypeDockerfile, buildTypeCmd.buildType())
+
+	deprecatedDockerfileCmd := &applicationCmd{}
+	_, err = kong.Must(deprecatedDockerfileCmd, vars, testutil.KongStreams(format.IOStreams{Out: t.Output(), ErrOut: t.Output()})).Parse([]string{
+		`test-app`,
+		`--git-url=https://github.com/ninech/doesnotexist.git`,
+		`--dockerfile`,
+	})
+	is.NoError(err)
+	is.Equal(application.BuildTypeDockerfile, deprecatedDockerfileCmd.buildType())
+
+	for _, conflicting := range [][]string{
+		{`--build-type=heroku`, `--dockerfile`},
+		{`--build-type=dockerfile`, `--buildpack-stack=paketo`},
+		{`--dockerfile`, `--buildpack-stack=paketo`},
+	} {
+		_, err = kong.Must(&applicationCmd{}, vars, testutil.KongStreams(format.IOStreams{Out: t.Output(), ErrOut: t.Output()})).Parse(append([]string{
+			`test-app`,
+			`--git-url=https://github.com/ninech/doesnotexist.git`,
+		}, conflicting...))
+		is.Error(err, conflicting)
+	}
 }

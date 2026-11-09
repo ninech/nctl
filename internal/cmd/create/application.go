@@ -54,8 +54,11 @@ type applicationCmd struct {
 	SkipRepoAccessCheck      bool                                `help:"Skip the git repository access check." default:"false"`
 	Debug                    bool                                `help:"Enable debug messages." default:"false"`
 	Language                 string                              `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static," default:""`
+	BuildType                *string                             `help:"${app_build_type_help} If left empty, the heroku stack is used. Possible values: ${enum}" enum:"dockerfile,heroku,paketo" xor:"build-type"`
 	DockerfileBuild          dockerfileBuild                     `embed:""`
-	BuildpackStack           string                              `help:"${app_buildpack_stack_help} Possible values: ${enum}" enum:"paketo,heroku," default:""`
+
+	// Deprecated Flags
+	BuildpackStack *string `hidden:"" enum:"paketo,heroku," xor:"build-type"`
 }
 
 type gitConfig struct {
@@ -97,7 +100,8 @@ type scheduledJob struct {
 }
 
 type dockerfileBuild struct {
-	Enabled      bool   `name:"dockerfile" help:"${app_dockerfile_enable_help}." default:"false"`
+	// Deprecated, use --build-type=dockerfile instead.
+	Enabled      bool   `name:"dockerfile" hidden:"" xor:"build-type"`
 	Path         string `name:"dockerfile-path" help:"${app_dockerfile_path_help}." default:""`
 	BuildContext string `name:"dockerfile-build-context" help:"${app_dockerfile_build_context_help}." default:""`
 }
@@ -128,6 +132,7 @@ const (
 )
 
 func (cmd *applicationCmd) Run(ctx context.Context, client *api.Client) error {
+	cmd.warnDeprecatedBuildFlags()
 	newApp := cmd.newApplication(client.Project)
 
 	sshPrivateKey, err := cmd.Git.sshPrivateKey()
@@ -381,7 +386,7 @@ func (h healthProbe) applyCreate(cfg *apps.Config) {
 func (cmd *applicationCmd) newApplication(project string) *apps.Application {
 	name := getName(cmd.Name)
 
-	return &apps.Application{
+	app := &apps.Application{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: project,
@@ -401,13 +406,39 @@ func (cmd *applicationCmd) newApplication(project string) *apps.Application {
 				BuildEnv: combineEnvVars(cmd.BuildEnv, cmd.SensitiveBuildEnv),
 				Services: application.ServicesFromReferences(cmd.Service, project),
 				DockerfileBuild: apps.DockerfileBuild{
-					Enabled:        cmd.DockerfileBuild.Enabled,
 					DockerfilePath: cmd.DockerfileBuild.Path,
 					BuildContext:   cmd.DockerfileBuild.BuildContext,
 				},
-				BuildpackStack: apps.BuildpackStack(cmd.BuildpackStack),
 			},
 		},
+	}
+	if buildType := cmd.buildType(); buildType != "" {
+		application.ApplyBuildType(app, buildType)
+	}
+	return app
+}
+
+// buildType returns the build type of --build-type or of the deprecated
+// --dockerfile and --buildpack-stack flags. These are mutually exclusive.
+func (cmd *applicationCmd) buildType() string {
+	switch {
+	case cmd.BuildType != nil:
+		return *cmd.BuildType
+	case cmd.DockerfileBuild.Enabled:
+		return application.BuildTypeDockerfile
+	case cmd.BuildpackStack != nil:
+		return *cmd.BuildpackStack
+	default:
+		return ""
+	}
+}
+
+func (cmd *applicationCmd) warnDeprecatedBuildFlags() {
+	if cmd.DockerfileBuild.Enabled {
+		cmd.Warningf("--dockerfile is deprecated, use --build-type=%s instead", application.BuildTypeDockerfile)
+	}
+	if cmd.BuildpackStack != nil && *cmd.BuildpackStack != "" {
+		cmd.Warningf("--buildpack-stack is deprecated, use --build-type=%s instead", *cmd.BuildpackStack)
 	}
 }
 

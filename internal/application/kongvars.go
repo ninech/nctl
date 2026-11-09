@@ -35,15 +35,10 @@ func KongVars() (kong.Vars, error) {
 	result["app_default_scheduled_job_retries"] = "0"
 	result["app_language_help"] = "Language specifies which language your app is. " +
 		"If left empty, deploio will detect the language automatically. "
-	result["app_dockerfile_enable_help"] = "Enable Dockerfile build (Beta) instead of the automatic " +
-		"buildpack detection"
-	result["app_dockerfile_switch_help"] = "Switch the app to Dockerfile builds (--dockerfile) or back to " +
-		"buildpack builds (--no-dockerfile). This triggers a new build, the current release stays active " +
-		"until the new build succeeds."
+	result["app_build_type_help"] = "Build type of the application. \"dockerfile\" builds it using a " +
+		"Dockerfile, \"heroku\" and \"paketo\" build it using the buildpacks of the respective stack."
 	result["app_dockerfile_path_help"] = "Specifies the path to the Dockerfile. If left empty a file " +
 		"named Dockerfile will be searched in the application code root directory."
 	result["app_dockerfile_build_context_help"] = "Defines the build context. If left empty, the application code root directory will be used as build context."
-	result["app_buildpack_stack_help"] = "BuildpackStack sets the stack of buildpacks to use for building the application. " +
-		"If left empty, the default stack (heroku) will be used. "
 	return result, nil
 }
