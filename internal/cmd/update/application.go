@@ -63,8 +63,11 @@ type applicationCmd struct {
 	SkipRepoAccessCheck      bool                                `help:"Skip the git repository access check." default:"false"`
 	Debug                    bool                                `help:"Enable debug messages." default:"false"`
 	Language                 *string                             `help:"${app_language_help} Possible values: ${enum}" enum:"ruby,php,python,golang,nodejs,static,"`
+	BuildType                *string                             `help:"${app_build_type_help} Changing it triggers a new build, the current release stays active until the new build succeeds. Possible values: ${enum}" enum:"dockerfile,heroku,paketo" xor:"build-type"`
 	DockerfileBuild          dockerfileBuild                     `embed:""`
-	BuildpackStack           *string                             `help:"${app_buildpack_stack_help} Possible values: ${enum}" enum:"paketo,heroku,"`
+
+	// Deprecated Flags
+	BuildpackStack *string `hidden:"" enum:"paketo,heroku," xor:"build-type"`
 }
 
 type gitConfig struct {
@@ -136,7 +139,6 @@ func (job scheduledJob) changesGiven() bool {
 }
 
 type dockerfileBuild struct {
-	Enabled      *bool   `name:"dockerfile" negatable:"" help:"${app_dockerfile_switch_help}"`
 	Path         *string `name:"dockerfile-path" help:"${app_dockerfile_path_help}" placeholder:"."`
 	BuildContext *string `name:"dockerfile-build-context" help:"${app_dockerfile_build_context_help}" placeholder:"."`
 }
@@ -302,8 +304,16 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 	}
 
 	if cmd.BuildpackStack != nil && len(*cmd.BuildpackStack) != 0 {
-		app.Spec.ForProvider.BuildpackStack = apps.BuildpackStack(*cmd.BuildpackStack)
-		rebuildNeeded = true
+		cmd.Warningf("--buildpack-stack is deprecated, use --build-type=%s instead", *cmd.BuildpackStack)
+	}
+
+	if buildType := cmd.buildType(); buildType != "" {
+		application.ApplyBuildType(app, buildType)
+		// switching to dockerfile builds triggers a build by itself, a
+		// changed buildpack stack has always been rebuilt explicitly.
+		if buildType != application.BuildTypeDockerfile {
+			rebuildNeeded = true
+		}
 	}
 
 	runtimeEnv := cmd.Env
@@ -345,10 +355,6 @@ func (cmd *applicationCmd) applyUpdates(app *apps.Application) {
 	)
 	if cmd.Pause != nil {
 		app.Spec.ForProvider.Paused = *cmd.Pause
-	}
-
-	if cmd.DockerfileBuild.Enabled != nil {
-		app.Spec.ForProvider.DockerfileBuild.Enabled = *cmd.DockerfileBuild.Enabled
 	}
 
 	if cmd.DockerfileBuild.Path != nil {
@@ -531,6 +537,18 @@ func deleteScheduledJob(w format.Writer, name string, cfg *apps.Config) {
 		return
 	}
 	cfg.ScheduledJobs = newJobs
+}
+
+// buildType returns the build type of --build-type or of the deprecated
+// --buildpack-stack flag. These are mutually exclusive.
+func (cmd *applicationCmd) buildType() string {
+	if cmd.BuildType != nil {
+		return *cmd.BuildType
+	}
+	if cmd.BuildpackStack != nil {
+		return *cmd.BuildpackStack
+	}
+	return ""
 }
 
 func warnIfDockerfileNotEnabled(w format.Writer, app *apps.Application, flag string) {

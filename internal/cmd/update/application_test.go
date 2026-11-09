@@ -670,13 +670,13 @@ func TestApplication(t *testing.T) {
 			},
 			errorExpected: true,
 		},
-		"update buildpack stack to heroku triggers a build": {
+		"update build type to heroku triggers a build": {
 			orig: existingApp,
 			cmd: applicationCmd{
 				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
-				BuildpackStack: new(string(apps.BuildpackStackHeroku)),
+				BuildType: new(string(apps.BuildpackStackHeroku)),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				is := require.New(t)
@@ -684,7 +684,21 @@ func TestApplication(t *testing.T) {
 				is.NotNil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
 			},
 		},
-		"update buildpack stack to paketo triggers a build": {
+		"update build type to paketo triggers a build": {
+			orig: existingApp,
+			cmd: applicationCmd{
+				ResourceCmd: ResourceCmd{
+					Name: existingApp.Name,
+				},
+				BuildType: new(string(apps.BuildpackStackPaketo)),
+			},
+			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
+				is := require.New(t)
+				is.Equal(apps.BuildpackStack(apps.BuildpackStackPaketo), updated.Spec.ForProvider.BuildpackStack)
+				is.NotNil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
+			},
+		},
+		"deprecated buildpack stack flag still works": {
 			orig: existingApp,
 			cmd: applicationCmd{
 				ResourceCmd: ResourceCmd{
@@ -695,6 +709,7 @@ func TestApplication(t *testing.T) {
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				is := require.New(t)
 				is.Equal(apps.BuildpackStack(apps.BuildpackStackPaketo), updated.Spec.ForProvider.BuildpackStack)
+				is.False(updated.Spec.ForProvider.DockerfileBuild.Enabled)
 				is.NotNil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
 			},
 		},
@@ -739,22 +754,24 @@ func TestApplication(t *testing.T) {
 				is.NotNil(application.EnvVarByName(updated.Spec.ForProvider.BuildEnv, BuildTrigger))
 			},
 		},
-		"switching to dockerfile builds keeps the language": {
+		"switching to dockerfile builds keeps the language and buildpack stack": {
 			orig: func() *apps.Application {
 				app := existingApp.DeepCopy()
 				app.Spec.ForProvider.Language = apps.LanguageRuby
+				app.Spec.ForProvider.BuildpackStack = apps.BuildpackStackPaketo
 				return app
 			}(),
 			cmd: applicationCmd{
 				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
-				DockerfileBuild: dockerfileBuild{Enabled: new(true)},
+				BuildType: new(application.BuildTypeDockerfile),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				is := require.New(t)
 				is.True(updated.Spec.ForProvider.DockerfileBuild.Enabled)
 				is.Equal(apps.LanguageRuby, updated.Spec.ForProvider.Language)
+				is.Equal(apps.BuildpackStack(apps.BuildpackStackPaketo), updated.Spec.ForProvider.BuildpackStack)
 			},
 		},
 		"switching to buildpack builds": {
@@ -767,16 +784,17 @@ func TestApplication(t *testing.T) {
 				ResourceCmd: ResourceCmd{
 					Name: existingApp.Name,
 				},
-				Language:        new("ruby"),
-				DockerfileBuild: dockerfileBuild{Enabled: new(false)},
+				Language:  new("ruby"),
+				BuildType: new(string(apps.BuildpackStackPaketo)),
 			},
 			checkApp: func(t *testing.T, cmd applicationCmd, orig, updated *apps.Application) {
 				is := require.New(t)
 				is.False(updated.Spec.ForProvider.DockerfileBuild.Enabled)
+				is.Equal(apps.BuildpackStack(apps.BuildpackStackPaketo), updated.Spec.ForProvider.BuildpackStack)
 				is.Equal(apps.LanguageRuby, updated.Spec.ForProvider.Language)
 			},
 		},
-		"not passing the dockerfile flag keeps the build type": {
+		"not passing the build type keeps the build type": {
 			orig: func() *apps.Application {
 				app := existingApp.DeepCopy()
 				app.Spec.ForProvider.DockerfileBuild.Enabled = true
@@ -1057,19 +1075,25 @@ func TestApplicationFlags(t *testing.T) {
 	is.NotNil(noPauseFlags.Pause)
 	is.False(*noPauseFlags.Pause)
 
-	is.Nil(nilFlags.DockerfileBuild.Enabled)
+	is.Nil(nilFlags.BuildType)
 
-	dockerfileFlags := &applicationCmd{}
-	_, err = kong.Must(dockerfileFlags, vars, testutil.KongStreams(format.IOStreams{Out: t.Output(), ErrOut: t.Output()})).Parse([]string{`testname`, `--dockerfile`})
+	buildTypeFlags := &applicationCmd{}
+	_, err = kong.Must(buildTypeFlags, vars, testutil.KongStreams(format.IOStreams{Out: t.Output(), ErrOut: t.Output()})).Parse([]string{`testname`, `--build-type=dockerfile`})
 	is.NoError(err)
-	is.NotNil(dockerfileFlags.DockerfileBuild.Enabled)
-	is.True(*dockerfileFlags.DockerfileBuild.Enabled)
+	is.Equal(application.BuildTypeDockerfile, buildTypeFlags.buildType())
 
-	noDockerfileFlags := &applicationCmd{}
-	_, err = kong.Must(noDockerfileFlags, vars, testutil.KongStreams(format.IOStreams{Out: t.Output(), ErrOut: t.Output()})).Parse([]string{`testname`, `--no-dockerfile`})
+	invalidBuildTypeFlags := &applicationCmd{}
+	_, err = kong.Must(invalidBuildTypeFlags, vars, testutil.KongStreams(format.IOStreams{Out: t.Output(), ErrOut: t.Output()})).Parse([]string{`testname`, `--build-type=docker`})
+	is.Error(err)
+
+	deprecatedStackFlags := &applicationCmd{}
+	_, err = kong.Must(deprecatedStackFlags, vars, testutil.KongStreams(format.IOStreams{Out: t.Output(), ErrOut: t.Output()})).Parse([]string{`testname`, `--buildpack-stack=paketo`})
 	is.NoError(err)
-	is.NotNil(noDockerfileFlags.DockerfileBuild.Enabled)
-	is.False(*noDockerfileFlags.DockerfileBuild.Enabled)
+	is.Equal(apps.BuildpackStackPaketo, deprecatedStackFlags.buildType())
+
+	xorBuildTypeFlags := &applicationCmd{}
+	_, err = kong.Must(xorBuildTypeFlags, vars, testutil.KongStreams(format.IOStreams{Out: t.Output(), ErrOut: t.Output()})).Parse([]string{`testname`, `--build-type=dockerfile`, `--buildpack-stack=paketo`})
+	is.Error(err)
 
 	unsetReplicasFlags := &applicationCmd{}
 	_, err = kong.Must(unsetReplicasFlags, vars, testutil.KongStreams(format.IOStreams{Out: t.Output(), ErrOut: t.Output()})).Parse([]string{`testname`, `--unset-replicas`})
