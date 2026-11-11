@@ -60,15 +60,10 @@ func (cmd *grafanaCmd) printGrafanaInstances(list []observability.Grafana, out *
 	}
 
 	for _, g := range list {
-		location := g.Spec.ForProvider.Location
-		if location == "" {
-			// instances created before the location existed run in the default location.
-			location = observability.GrafanaLocationDefault
-		}
 		out.writeTabRow(
 			g.Namespace,
 			g.Name,
-			string(location),
+			string(g.Spec.ForProvider.Location),
 			g.Status.AtProvider.URL,
 			strconv.FormatBool(g.Spec.ForProvider.HighAvailability),
 			strconv.FormatBool(g.Spec.ForProvider.EnableAdminAccess),

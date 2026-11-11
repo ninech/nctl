@@ -108,14 +108,6 @@ func TestGrafana(t *testing.T) {
 			wantLines:   2,
 		},
 		{
-			name: "default location of instances without a location",
-			instances: []grafanaInstance{
-				{name: "test1", project: testutil.DefaultProject},
-			},
-			wantContain: []string{"test1", "LOCATION", string(observability.GrafanaLocationDefault)},
-			wantLines:   2,
-		},
-		{
 			name: "high availability",
 			instances: []grafanaInstance{
 				{name: "test1", project: testutil.DefaultProject, highAvailability: true},
