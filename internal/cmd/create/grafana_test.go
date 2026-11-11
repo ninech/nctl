@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	meta "github.com/ninech/apis/meta/v1alpha1"
 	observability "github.com/ninech/apis/observability/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/testutil"
@@ -50,6 +51,16 @@ func TestGrafana(t *testing.T) {
 			name:   "allow local users",
 			create: grafanaCmd{AllowLocalUsers: true},
 			want:   observability.GrafanaParameters{AllowLocalUsers: true},
+		},
+		{
+			name:   "location",
+			create: grafanaCmd{Location: meta.LocationNineCZ42},
+			want:   observability.GrafanaParameters{Location: meta.LocationNineCZ42},
+		},
+		{
+			name:   "high availability",
+			create: grafanaCmd{HighAvailability: true},
+			want:   observability.GrafanaParameters{HighAvailability: true},
 		},
 	}
 	for _, tt := range tests {

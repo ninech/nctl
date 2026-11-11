@@ -4,6 +4,7 @@ import (
 	"context"
 
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	meta "github.com/ninech/apis/meta/v1alpha1"
 	observability "github.com/ninech/apis/observability/v1alpha1"
 	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/waiter"
@@ -13,8 +14,10 @@ import (
 
 type grafanaCmd struct {
 	ResourceCmd
-	EnableAdminAccess bool `help:"Give admin permissions in the Grafana instance."`
-	AllowLocalUsers   bool `help:"Allow local Grafana users to sign in by disabling the automatic redirect to the OAuth sign-in page."`
+	Location          meta.LocationName `help:"Where the Grafana instance is created." completion-predictor:"apifield:grafana_location"`
+	HighAvailability  bool              `help:"Run Grafana with multiple replicas so that it stays available during maintenance and node failures. Cannot be changed after creation."`
+	EnableAdminAccess bool              `help:"Give admin permissions in the Grafana instance."`
+	AllowLocalUsers   bool              `help:"Allow local Grafana users to sign in by disabling the automatic redirect to the OAuth sign-in page."`
 }
 
 func (cmd *grafanaCmd) Run(ctx context.Context, client *api.Client) error {
@@ -54,6 +57,8 @@ func (cmd *grafanaCmd) newGrafana(namespace string) *observability.Grafana {
 		Spec: observability.GrafanaSpec{
 			ResourceSpec: runtimev1.ResourceSpec{},
 			ForProvider: observability.GrafanaParameters{
+				Location:          cmd.Location,
+				HighAvailability:  cmd.HighAvailability,
 				EnableAdminAccess: cmd.EnableAdminAccess,
 				AllowLocalUsers:   cmd.AllowLocalUsers,
 			},

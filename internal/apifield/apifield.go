@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	infrastructure "github.com/ninech/apis/infrastructure/v1alpha1"
+	observability "github.com/ninech/apis/observability/v1alpha1"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/posener/complete"
 )
@@ -132,6 +133,12 @@ var fields = map[string]field{
 	},
 	"keyvaluestore_memory_size":       {Default: storage.KeyValueStoreMemorySizeDefault},
 	"keyvaluestore_max_memory_policy": {Default: string(storage.KeyValueStoreMaxMemoryPolicyDefault)},
+
+	// Grafana
+	"grafana_location": {
+		Default: string(observability.GrafanaLocationDefault),
+		Values:  stringSlice(observability.GrafanaLocationOptions),
+	},
 
 	// Buckets
 	"bucket_location": {
