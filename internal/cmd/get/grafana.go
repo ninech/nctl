@@ -56,14 +56,16 @@ func (cmd *grafanaCmd) print(ctx context.Context, client *api.Client, list clien
 
 func (cmd *grafanaCmd) printGrafanaInstances(list []observability.Grafana, out *output, header bool) error {
 	if header {
-		out.writeHeader("NAME", "URL", "ADMIN ACCESS", "LOCAL USERS LOGIN")
+		out.writeHeader("NAME", "LOCATION", "URL", "HIGH AVAILABILITY", "ADMIN ACCESS", "LOCAL USERS LOGIN")
 	}
 
 	for _, g := range list {
 		out.writeTabRow(
 			g.Namespace,
 			g.Name,
+			string(g.Spec.ForProvider.Location),
 			g.Status.AtProvider.URL,
+			strconv.FormatBool(g.Spec.ForProvider.HighAvailability),
 			strconv.FormatBool(g.Spec.ForProvider.EnableAdminAccess),
 			strconv.FormatBool(g.Spec.ForProvider.AllowLocalUsers),
 		)

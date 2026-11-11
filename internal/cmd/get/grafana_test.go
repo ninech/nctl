@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	meta "github.com/ninech/apis/meta/v1alpha1"
 	observability "github.com/ninech/apis/observability/v1alpha1"
 	"github.com/ninech/nctl/internal/testutil"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -18,6 +19,8 @@ func TestGrafana(t *testing.T) {
 		project           string
 		enableAdminAccess bool
 		allowLocalUsers   bool
+		location          meta.LocationName
+		highAvailability  bool
 	}
 
 	tests := []struct {
@@ -97,6 +100,22 @@ func TestGrafana(t *testing.T) {
 			wantLines:   2,
 		},
 		{
+			name: "location",
+			instances: []grafanaInstance{
+				{name: "test1", project: testutil.DefaultProject, location: meta.LocationNineCZ42},
+			},
+			wantContain: []string{"test1", "LOCATION", string(meta.LocationNineCZ42)},
+			wantLines:   2,
+		},
+		{
+			name: "high availability",
+			instances: []grafanaInstance{
+				{name: "test1", project: testutil.DefaultProject, highAvailability: true},
+			},
+			wantContain: []string{"test1", "HIGH AVAILABILITY", "true"},
+			wantLines:   2,
+		},
+		{
 			name: "local users login disabled",
 			instances: []grafanaInstance{
 				{name: "test1", project: testutil.DefaultProject, allowLocalUsers: false},
@@ -114,6 +133,8 @@ func TestGrafana(t *testing.T) {
 				g := testutil.Grafana(instance.name, instance.project)
 				g.Spec.ForProvider.EnableAdminAccess = instance.enableAdminAccess
 				g.Spec.ForProvider.AllowLocalUsers = instance.allowLocalUsers
+				g.Spec.ForProvider.Location = instance.location
+				g.Spec.ForProvider.HighAvailability = instance.highAvailability
 				objects = append(objects, g)
 			}
 			apiClient := testutil.SetupClient(t,
