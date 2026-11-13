@@ -8,8 +8,10 @@ const (
 	// Name is the name of the CLI and the value of ManagedByAnnotation on objects managed by it.
 	Name = cli.Name
 	// RotateCredentialsAnnotation is the annotation key nctl sets to the time
-	// it reset the credentials of a resource,
-	// which makes the controller reconcile the resource.
+	// it reset the credentials of a resource.
+	// The controller resets the credentials whenever it is set to a value
+	// other than status.atProvider.lastCredentialsRotation.
+	// TODO: use meta.RotateCredentialsAnnotation from github.com/ninech/apis once it is exported.
 	RotateCredentialsAnnotation = "nine.ch/rotate-credentials"
 )
 

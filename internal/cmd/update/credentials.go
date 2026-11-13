@@ -2,25 +2,21 @@ package update
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/alecthomas/kong"
-	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	"github.com/ninech/nctl/api"
 	"github.com/ninech/nctl/internal/waiter"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
-	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 // CredentialsResetFlags are the flags to reset the credentials of a resource
-// whose controller generates new credentials
-// when its connection secret is deleted.
+// whose controller supports [api.RotateCredentialsAnnotation].
 // Set credentials_wait_timeout to change the default of the wait timeout,
 // e.g. for resources which take longer to apply the new credentials.
 //
@@ -69,7 +65,7 @@ func (f *CredentialsResetFlags) confirm(u *updater) (bool, error) {
 // see [api.Client.RotateCredentials],
 // and waits until the resource has applied them if requested by f.
 func (f *CredentialsResetFlags) reset(ctx context.Context, u *updater) error {
-	old, err := u.client.RotateCredentials(ctx, u.mg)
+	token, err := u.client.RotateCredentials(ctx, u.mg)
 	if err != nil {
 		return fmt.Errorf("unable to reset the credentials of %s %q: %w", u.kind, u.mg.GetName(), err)
 	}
@@ -82,43 +78,39 @@ func (f *CredentialsResetFlags) reset(ctx context.Context, u *updater) error {
 	ctx, cancel := context.WithTimeout(ctx, f.WaitTimeout)
 	defer cancel()
 
-	// The reference is set, as the rotation succeeded.
-	ref := u.mg.GetWriteConnectionSecretToReference()
-	list, err := newListFor(u.client.Scheme(), u.mg)
+	// The typed status of the resource might not know
+	// the credentials rotation fields yet, which would drop them.
+	list, err := newUnstructuredListFor(u.client.Scheme(), u.mg)
 	if err != nil {
 		return err
 	}
 
-	// created is the creation time of the new secret.
-	// The resource has applied the new credentials
-	// as soon as it is ready again after that.
-	var created metav1.Time
+	progress := &rotationProgress{token: token}
 	w := &waiter.Waiter{
 		Writer: u.Writer,
 		Client: u.client,
 		Kind:   u.kind,
 		Object: u.mg,
 	}
-	if err := w.Wait(ctx,
-		waiter.Stage{
-			Kind:       "credentials",
-			ObjectList: &corev1.SecretList{},
-			ListOpts: []runtimeclient.ListOption{
-				runtimeclient.InNamespace(ref.Namespace),
-				runtimeclient.MatchingFields{"metadata.name": ref.Name},
-			},
-			WaitMessage: &waiter.Message{Icon: "⏳", Text: fmt.Sprintf("waiting for new credentials of %s %q", u.kind, u.mg.GetName())},
-			DoneMessage: &waiter.Message{Icon: "🔑", Text: fmt.Sprintf("new credentials of %s %q generated", u.kind, u.mg.GetName())},
-			OnResult:    newSecretWritten(old, &created),
-		},
-		waiter.Stage{
-			ObjectList:  list,
-			WaitMessage: &waiter.Message{Icon: "⏳", Text: fmt.Sprintf("waiting for %s %q to apply the new credentials", u.kind, u.mg.GetName())},
-			DoneMessage: &waiter.Message{Icon: "🔑", Text: fmt.Sprintf("credentials of %s %q reset", u.kind, u.mg.GetName())},
-			OnResult:    readySince(&created),
-		},
-	); err != nil {
-		return err
+	if err := w.Wait(ctx, waiter.Stage{
+		ObjectList:  list,
+		WaitMessage: &waiter.Message{Icon: "⏳", Text: fmt.Sprintf("waiting for new credentials of %s %q", u.kind, u.mg.GetName())},
+		DoneMessage: &waiter.Message{Icon: "🔑", Text: fmt.Sprintf("new credentials of %s %q generated and applied", u.kind, u.mg.GetName())},
+		OnResult:    progress.onResult,
+	}); err != nil {
+		if !errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			return err
+		}
+		if !progress.acknowledged {
+			return fmt.Errorf("the API did not acknowledge the credentials reset of %s %q, "+
+				"it might not support resetting the credentials yet: %w",
+				u.kind, u.mg.GetName(), err,
+			)
+		}
+		return fmt.Errorf("the credentials of %s %q have been reset, "+
+			"but the new credentials have not been applied yet, the reset continues in the background: %w",
+			u.kind, u.mg.GetName(), err,
+		)
 	}
 
 	// the command is unknown if the update did not run through Kong.
@@ -127,66 +119,76 @@ func (f *CredentialsResetFlags) reset(ctx context.Context, u *updater) error {
 	}
 	// the project is always passed,
 	// as the update might not have been run in the default project.
-	u.Printf("You can retrieve the new credentials with:\n\n nctl get %s %s --project %s --print-connection-string\n",
-		f.command, u.mg.GetName(), u.mg.GetNamespace(),
+	u.Printf("You can retrieve the new credentials with:\n\n nctl get %s %s --project %s %s\n",
+		f.command, u.mg.GetName(), u.mg.GetNamespace(), printCredentialsFlag(f.command),
 	)
 	return nil
 }
 
-// newSecretWritten returns a [waiter.ResultFunc]
-// which is done as soon as a secret other than the one with the old UID exists.
-// An empty old UID accepts any secret.
-// It stores the creation time of the new secret in created.
-func newSecretWritten(old types.UID, created *metav1.Time) waiter.ResultFunc {
-	return func(event watch.Event) (bool, error) {
-		if event.Type == watch.Deleted {
-			return false, nil
-		}
-		secret, ok := event.Object.(*corev1.Secret)
-		if !ok || secret.UID == old {
-			return false, nil
-		}
-		*created = secret.CreationTimestamp
-		return true, nil
+// printCredentialsFlag returns the flag of the get sub-command
+// which prints the credentials of the resource.
+func printCredentialsFlag(command string) string {
+	if command == "bucketuser" {
+		return "--print-credentials"
 	}
+	return "--print-connection-string"
 }
 
-// readySince returns a [waiter.ResultFunc]
-// which is done as soon as the resource became available at or after since.
-// The controller marks the resource as not ready
-// until it has applied the new credentials,
-// so the last transition of the ready condition
-// tells apart the ready state from before the reset.
-// The comparison includes since, as the API stores the times in seconds.
-func readySince(since *metav1.Time) waiter.ResultFunc {
-	return func(event watch.Event) (bool, error) {
-		if event.Type == watch.Deleted {
-			return false, nil
-		}
-		mg, ok := event.Object.(resource.Managed)
-		if !ok {
-			return false, nil
-		}
-		ready := mg.GetCondition(runtimev1.TypeReady)
-		return ready.Status == corev1.ConditionTrue &&
-			ready.Reason == runtimev1.ReasonAvailable &&
-			!ready.LastTransitionTime.Before(since), nil
-	}
+// rotationProgress tracks the credentials reset requested with token
+// through the watch events of the resource.
+type rotationProgress struct {
+	token string
+	// acknowledged is set as soon as the controller has reset the credentials
+	// for token, i.e. stored it in status.atProvider.lastCredentialsRotation.
+	acknowledged bool
 }
 
-// newListFor returns an empty list of the kind of obj.
-func newListFor(scheme *runtime.Scheme, obj runtime.Object) (runtimeclient.ObjectList, error) {
+// onResult is a [waiter.ResultFunc] which is done
+// as soon as the controller has generated and applied new credentials for the token.
+// The controller sets lastCredentialsRotation and resettingCredentials
+// in the same status update,
+// so the token together with resettingCredentials being false
+// only appears once the reset is done.
+// It fails if the annotation has been set to another value in the meantime,
+// as the reset of the token is superseded then.
+func (p *rotationProgress) onResult(event watch.Event) (bool, error) {
+	if event.Type == watch.Deleted {
+		return false, nil
+	}
+	obj, ok := event.Object.(*unstructured.Unstructured)
+	if !ok {
+		content, err := runtime.DefaultUnstructuredConverter.ToUnstructured(event.Object)
+		if err != nil {
+			return false, nil
+		}
+		obj = &unstructured.Unstructured{Object: content}
+	}
+
+	if requested := obj.GetAnnotations()[api.RotateCredentialsAnnotation]; requested != p.token {
+		return false, fmt.Errorf("the credentials reset was superseded by another one requested at %q, "+
+			"the new credentials are generated in the background", requested)
+	}
+
+	last, _, err := unstructured.NestedString(obj.Object, "status", "atProvider", "lastCredentialsRotation")
+	if err != nil || last != p.token {
+		return false, nil
+	}
+	p.acknowledged = true
+
+	resetting, _, err := unstructured.NestedBool(obj.Object, "status", "atProvider", "resettingCredentials")
+	if err != nil {
+		return false, nil
+	}
+	return !resetting, nil
+}
+
+// newUnstructuredListFor returns an empty unstructured list of the kind of obj.
+func newUnstructuredListFor(scheme *runtime.Scheme, obj runtime.Object) (*unstructured.UnstructuredList, error) {
 	gvk, err := apiutil.GVKForObject(obj, scheme)
 	if err != nil {
 		return nil, err
 	}
-	l, err := scheme.New(gvk.GroupVersion().WithKind(gvk.Kind + "List"))
-	if err != nil {
-		return nil, err
-	}
-	list, ok := l.(runtimeclient.ObjectList)
-	if !ok {
-		return nil, fmt.Errorf("%T is not a list", l)
-	}
+	list := &unstructured.UnstructuredList{}
+	list.SetGroupVersionKind(gvk.GroupVersion().WithKind(gvk.Kind + "List"))
 	return list, nil
 }

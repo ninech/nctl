@@ -6,46 +6,36 @@ import (
 	"time"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
-	"k8s.io/apimachinery/pkg/types"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// RotateCredentials makes the controller of mg generate new credentials
-// and write them to a new connection secret.
-// It deletes the connection secret of mg and then sets
-// [RotateCredentialsAnnotation] on mg to the current time,
-// like kubectl rollout restart does.
-//
-// It returns the UID of the deleted secret,
-// which is empty if the secret was missing already.
-func (c *Client) RotateCredentials(ctx context.Context, mg resource.Managed) (types.UID, error) {
-	secret, err := c.GetConnectionSecret(ctx, mg)
-	// A missing secret is being regenerated already,
-	// the annotation makes sure it happens right away.
-	if runtimeclient.IgnoreNotFound(err) != nil {
+// RotateCredentials makes the controller of mg reset its credentials.
+// It sets [RotateCredentialsAnnotation] on mg to the current time,
+// like kubectl rollout restart does,
+// and returns the value it set.
+// The controller stores that value in status.atProvider.lastCredentialsRotation
+// once it has reset the credentials,
+// and clears status.atProvider.resettingCredentials
+// once it has applied the new ones.
+func (c *Client) RotateCredentials(ctx context.Context, mg resource.Managed) (string, error) {
+	requested := time.Now().UTC().Truncate(time.Second)
+	// The controller ignores a value it has reset the credentials for already,
+	// which happens for two resets within the same second.
+	if mg.GetAnnotations()[RotateCredentialsAnnotation] == requested.Format(time.RFC3339) {
+		requested = requested.Add(time.Second)
+	}
+	token := requested.Format(time.RFC3339)
+
+	if err := c.annotateRotation(ctx, mg, token); err != nil {
 		return "", err
 	}
-
-	var old types.UID
-	if err == nil {
-		old = secret.UID
-		if err := c.Delete(ctx, secret, runtimeclient.Preconditions{UID: &old}); runtimeclient.IgnoreNotFound(err) != nil {
-			return "", fmt.Errorf("unable to delete connection secret %v: %w", ObjectName(secret), err)
-		}
-	}
-
-	// The annotation has to be set after the deletion,
-	// as the reconcile would find the old secret otherwise.
-	if err := c.annotateRotation(ctx, mg); err != nil {
-		return "", err
-	}
-	return old, nil
+	return token, nil
 }
 
-// annotateRotation sets [RotateCredentialsAnnotation] on mg.
+// annotateRotation sets [RotateCredentialsAnnotation] on mg to token.
 // It patches the annotation only,
 // so it does not conflict with concurrent updates of the controller.
-func (c *Client) annotateRotation(ctx context.Context, mg resource.Managed) error {
+func (c *Client) annotateRotation(ctx context.Context, mg resource.Managed, token string) error {
 	before, ok := mg.DeepCopyObject().(resource.Managed)
 	if !ok {
 		return fmt.Errorf("resource %T does not implement resource.Managed after deepcopy", mg)
@@ -55,7 +45,7 @@ func (c *Client) annotateRotation(ctx context.Context, mg resource.Managed) erro
 	if annotations == nil {
 		annotations = map[string]string{}
 	}
-	annotations[RotateCredentialsAnnotation] = time.Now().UTC().Format(time.RFC3339)
+	annotations[RotateCredentialsAnnotation] = token
 	mg.SetAnnotations(annotations)
 
 	if err := c.Patch(ctx, mg, runtimeclient.MergeFrom(before)); err != nil {
