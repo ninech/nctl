@@ -195,6 +195,7 @@ func runUpdateWithInput(t *testing.T, client *api.Client, in io.Reader, out io.W
 		OpenSearch       openSearchCmd       `cmd:"" name:"opensearch"`
 		Application      applicationCmd      `cmd:"" name:"application"`
 		Bucket           bucketCmd           `cmd:"" name:"bucket"`
+		BucketUser       bucketUserCmd       `cmd:"" name:"bucketuser"`
 	}
 
 	vars, err := application.KongVars()
