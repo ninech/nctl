@@ -6,6 +6,7 @@ import (
 
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/format"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -17,6 +18,11 @@ type bucketUserCmd struct {
 	PrintAccessKey   bool `help:"Print the access key of the BucketUser. Requires name to be set." xor:"access"`
 	PrintSecretKey   bool `help:"Print the secret key of the BucketUser. Requires name to be set." xor:"secret"`
 }
+
+var _ cli.CredentialsPrinter = (*bucketUserCmd)(nil)
+
+// CredentialsFlag implements [cli.CredentialsPrinter].
+func (cmd *bucketUserCmd) CredentialsFlag() string { return "--print-credentials" }
 
 func (cmd *bucketUserCmd) Run(ctx context.Context, client *api.Client, get *Cmd) error {
 	return get.listPrint(ctx, client, cmd, api.MatchName(cmd.Name))

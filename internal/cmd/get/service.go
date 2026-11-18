@@ -9,6 +9,7 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/format"
 )
 
@@ -29,6 +30,11 @@ type ServiceCmd struct {
 	PrintConnectionString bool `help:"Print the connection string. Requires name to be set." xor:"print"`
 	PrintCACert           bool `help:"Print the ca certificate. Requires name to be set." xor:"print"`
 }
+
+var _ cli.CredentialsPrinter = (*ServiceCmd)(nil)
+
+// CredentialsFlag implements [cli.CredentialsPrinter].
+func (cmd *ServiceCmd) CredentialsFlag() string { return "--print-connection-string" }
 
 // service describes how the details of a specific on-demand service are printed by [ServiceCmd.run].
 type service struct {

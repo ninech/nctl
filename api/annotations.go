@@ -1,6 +1,9 @@
 package api
 
-import "github.com/ninech/nctl/internal/cli"
+import (
+	meta "github.com/ninech/apis/meta/v1alpha1"
+	"github.com/ninech/nctl/internal/cli"
+)
 
 const (
 	// ManagedByAnnotation is the annotation key marking objects that nctl created or updated.
@@ -8,9 +11,10 @@ const (
 	// Name is the name of the CLI and the value of ManagedByAnnotation on objects managed by it.
 	Name = cli.Name
 	// RotateCredentialsAnnotation is the annotation key nctl sets to the time
-	// it reset the credentials of a resource,
-	// which makes the controller reconcile the resource.
-	RotateCredentialsAnnotation = "nine.ch/rotate-credentials"
+	// it reset the credentials of a resource.
+	// The controller resets the credentials whenever it is set to a value
+	// other than status.atProvider.lastCredentialsRotationAnnotationValue.
+	RotateCredentialsAnnotation = meta.RotateCredentialsAnnotation
 )
 
 // IsManagedBy reports whether the annotations mark an object as managed by nctl.

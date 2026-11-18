@@ -7,11 +7,13 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/alecthomas/kong"
 	runtimev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/lucasepe/codename"
 	meta "github.com/ninech/apis/meta/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/format"
 	"github.com/ninech/nctl/internal/waiter"
 
@@ -49,23 +51,30 @@ type ResourceCmd struct {
 	Name          string        `arg:"" help:"Name of the new resource. A random name is generated if omitted." default:""`
 	Wait          bool          `default:"true" help:"Wait until resource is fully created."`
 	WaitTimeout   time.Duration `default:"30m" help:"Duration to wait for resource getting ready. Only relevant if wait is set."`
+
+	// command is the selected create sub-command,
+	// to suggest the get sub-command retrieving the credentials, see [cli.GetCredentialsCmd].
+	command *kong.Node
 }
 
-// BeforeApply initializes Writer from the bound [format.IOStreams].
-func (cmd *ResourceCmd) BeforeApply(streams format.IOStreams) error {
+// BeforeApply initializes Writer from the bound [format.IOStreams]
+// and stores the selected create sub-command.
+func (cmd *ResourceCmd) BeforeApply(streams format.IOStreams, kctx *kong.Context) error {
+	cmd.command = kctx.Selected()
 	return cmd.Writer.BeforeApply(streams)
 }
 
 type creator struct {
 	format.Writer
 
-	client *api.Client
-	mg     resource.Managed
-	kind   string
+	client  *api.Client
+	mg      resource.Managed
+	kind    string
+	command *kong.Node
 }
 
 func (cmd *ResourceCmd) newCreator(client *api.Client, mg resource.Managed, kind string) *creator {
-	return &creator{client: client, mg: mg, kind: kind, Writer: cmd.Writer}
+	return &creator{client: client, mg: mg, kind: kind, command: cmd.command, Writer: cmd.Writer}
 }
 
 func (c *creator) createResource(ctx context.Context) error {
@@ -113,9 +122,21 @@ func (c *creator) createResourceInLocation(
 	return c.createResource(ctx)
 }
 
+// wait waits for the stages
+// and suggests the get sub-command retrieving the credentials of the resource afterwards,
+// if there is one.
 func (c *creator) wait(ctx context.Context, stages ...waiter.Stage) error {
 	w := &waiter.Waiter{Writer: c.Writer, Client: c.client, Kind: c.kind, Object: c.mg}
-	return w.Wait(ctx, stages...)
+	if err := w.Wait(ctx, stages...); err != nil {
+		return err
+	}
+
+	// the project is always passed,
+	// as the resource might not have been created in the default project.
+	if get, ok := cli.GetCredentialsCmd(c.command, c.mg.GetName(), c.mg.GetNamespace()); ok {
+		c.Printf("You can retrieve the credentials with:\n\n %s\n", get)
+	}
+	return nil
 }
 
 func resourceAvailable(event watch.Event) (bool, error) {

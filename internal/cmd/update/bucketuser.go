@@ -12,7 +12,7 @@ import (
 
 type bucketUserCmd struct {
 	ResourceCmd
-	ResetCredentials *bool `help:"Permanently reset both the access key and the secret key of this user. This cannot be undone." placeholder:"false"`
+	CredentialsResetFlags
 }
 
 func (cmd *bucketUserCmd) Run(ctx context.Context, client *api.Client) error {
@@ -23,17 +23,10 @@ func (cmd *bucketUserCmd) Run(ctx context.Context, client *api.Client) error {
 		},
 	}
 
-	upd := cmd.newUpdater(client, bu, storage.BucketUserKind, func(current resource.Managed) error {
-		bu, ok := current.(*storage.BucketUser)
-		if !ok {
+	return cmd.newUpdater(client, bu, storage.BucketUserKind, func(current resource.Managed) error {
+		if _, ok := current.(*storage.BucketUser); !ok {
 			return fmt.Errorf("resource is of type %T, expected %T", current, storage.BucketUser{})
 		}
-
-		if cmd.ResetCredentials != nil {
-			bu.Spec.ForProvider.ResetCredentials = cmd.ResetCredentials
-		}
 		return nil
-	})
-
-	return upd.Update(ctx)
+	}).withCredentialsReset(&cmd.CredentialsResetFlags).Update(ctx)
 }

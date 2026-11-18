@@ -40,7 +40,7 @@ func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error 
 		return nil
 	}
 
-	if err := c.wait(ctx, waiter.Stage{
+	return c.wait(ctx, waiter.Stage{
 		ObjectList: &storage.MySQLDatabaseList{},
 		OnResult: func(event watch.Event) (bool, error) {
 			if mdb, ok := event.Object.(*storage.MySQLDatabase); ok {
@@ -48,13 +48,7 @@ func (cmd *mysqlDatabaseCmd) Run(ctx context.Context, client *api.Client) error 
 			}
 			return false, nil
 		},
-	}); err != nil {
-		return err
-	}
-
-	cmd.Successf("🚀", "Your MySQLDatabase %s is now available. You can retrieve the database, username and password with:\n\n nctl get mysqldatabase %s --print-connection-string", mysqlDatabase.Name, mysqlDatabase.Name)
-
-	return nil
+	})
 }
 
 func (cmd *mysqlDatabaseCmd) newMySQLDatabase(namespace string) *storage.MySQLDatabase {
