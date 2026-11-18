@@ -9,6 +9,7 @@ import (
 	"github.com/alecthomas/kong"
 	storage "github.com/ninech/apis/storage/v1alpha1"
 	"github.com/ninech/nctl/api"
+	"github.com/ninech/nctl/internal/cli"
 	"github.com/ninech/nctl/internal/waiter"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -28,17 +29,14 @@ type CredentialsResetFlags struct {
 	Wait             bool          `default:"true" help:"Wait until the new credentials are generated and applied to the resource. Only relevant if reset-credentials is set."`
 	WaitTimeout      time.Duration `default:"${credentials_wait_timeout=5m}" help:"Duration to wait for the new credentials. Only relevant if reset-credentials and wait are set."`
 
-	// command is the name of the selected update sub-command,
-	// which is also the name of the get sub-command of the resource.
-	command string
+	// command is the selected update sub-command,
+	// to suggest the get sub-command retrieving the new credentials, see [cli.GetCredentialsCmd].
+	command *kong.Node
 }
 
-// BeforeApply stores the name of the selected update sub-command
-// to suggest the get sub-command retrieving the new credentials.
+// BeforeApply stores the selected update sub-command.
 func (f *CredentialsResetFlags) BeforeApply(kctx *kong.Context) error {
-	if node := kctx.Selected(); node != nil {
-		f.command = node.Name
-	}
+	f.command = kctx.Selected()
 	return nil
 }
 
@@ -119,25 +117,12 @@ func (f *CredentialsResetFlags) reset(ctx context.Context, u *updater) error {
 		)
 	}
 
-	// the command is unknown if the update did not run through Kong.
-	if f.command == "" {
-		return nil
-	}
 	// the project is always passed,
 	// as the update might not have been run in the default project.
-	u.Printf("You can retrieve the new credentials with:\n\n nctl get %s %s --project %s %s\n",
-		f.command, u.mg.GetName(), u.mg.GetNamespace(), printCredentialsFlag(f.command),
-	)
-	return nil
-}
-
-// printCredentialsFlag returns the flag of the get sub-command
-// which prints the credentials of the resource.
-func printCredentialsFlag(command string) string {
-	if command == "bucketuser" {
-		return "--print-credentials"
+	if get, ok := cli.GetCredentialsCmd(f.command, u.mg.GetName(), u.mg.GetNamespace()); ok {
+		u.Printf("You can retrieve the new credentials with:\n\n %s\n", get)
 	}
-	return "--print-connection-string"
+	return nil
 }
 
 // rotationProgress tracks the credentials reset requested with token

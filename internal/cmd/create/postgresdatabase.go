@@ -40,7 +40,7 @@ func (cmd *postgresDatabaseCmd) Run(ctx context.Context, client *api.Client) err
 		return nil
 	}
 
-	if err := c.wait(ctx, waiter.Stage{
+	return c.wait(ctx, waiter.Stage{
 		ObjectList: &storage.PostgresDatabaseList{},
 		OnResult: func(event watch.Event) (bool, error) {
 			if pdb, ok := event.Object.(*storage.PostgresDatabase); ok {
@@ -48,16 +48,7 @@ func (cmd *postgresDatabaseCmd) Run(ctx context.Context, client *api.Client) err
 			}
 			return false, nil
 		},
-	}); err != nil {
-		return err
-	}
-
-	cmd.Successf("🚀", "Your PostgresDatabase %s is now available. You can retrieve the database, username and password with:\n\n nctl get postgresdatabase %s --print-connection-string",
-		postgresDatabase.Name,
-		postgresDatabase.Name,
-	)
-
-	return nil
+	})
 }
 
 func (cmd *postgresDatabaseCmd) newPostgresDatabase(namespace string) *storage.PostgresDatabase {

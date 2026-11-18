@@ -181,6 +181,18 @@ func runUpdate(t *testing.T, client *api.Client, out io.Writer, args []string) e
 	return runUpdateWithInput(t, client, strings.NewReader(""), out, args)
 }
 
+// printConnectionStringCmd stands in for a get sub-command
+// printing the credentials with --print-connection-string.
+type printConnectionStringCmd struct{}
+
+func (printConnectionStringCmd) CredentialsFlag() string { return "--print-connection-string" }
+
+// printCredentialsCmd stands in for a get sub-command
+// printing the credentials with --print-credentials.
+type printCredentialsCmd struct{}
+
+func (printCredentialsCmd) CredentialsFlag() string { return "--print-credentials" }
+
 // runUpdateWithInput is [runUpdate] with in as the input of the command,
 // e.g. to answer a confirmation prompt.
 func runUpdateWithInput(t *testing.T, client *api.Client, in io.Reader, out io.Writer, args []string) error {
@@ -196,6 +208,12 @@ func runUpdateWithInput(t *testing.T, client *api.Client, in io.Reader, out io.W
 		Application      applicationCmd      `cmd:"" name:"application"`
 		Bucket           bucketCmd           `cmd:"" name:"bucket"`
 		BucketUser       bucketUserCmd       `cmd:"" name:"bucketuser"`
+		// Get stands in for the get verb, which update must not import,
+		// to suggest the get sub-command retrieving the credentials.
+		Get struct {
+			KeyValueStore printConnectionStringCmd `cmd:"" name:"keyvaluestore"`
+			BucketUser    printCredentialsCmd      `cmd:"" name:"bucketuser"`
+		} `cmd:"" name:"get"`
 	}
 
 	vars, err := application.KongVars()

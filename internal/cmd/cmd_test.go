@@ -237,3 +237,56 @@ func TestRunWarnsOfClientSecretInKubeconfig(t *testing.T) {
 	is.Contains(stderr.String(), "--api-token-url=https://token.example.org")
 	is.NotContains(stderr.String()+stdout.String(), "plain-text-secret", "the secret is never printed")
 }
+
+func TestGetCredentialsCmd(t *testing.T) {
+	t.Parallel()
+
+	root := newTestParser(t).Model.Node
+	for _, verb := range []string{"create", "update"} {
+		for kind, flag := range map[string]string{
+			"mysql":            "--print-connection-string",
+			"mysqldatabase":    "--print-connection-string",
+			"postgres":         "--print-connection-string",
+			"postgresdatabase": "--print-connection-string",
+			"keyvaluestore":    "--print-connection-string",
+			"opensearch":       "--print-connection-string",
+			"bucketuser":       "--print-credentials",
+			"bucket":           "",
+		} {
+			t.Run(verb+" "+kind, func(t *testing.T) {
+				t.Parallel()
+				is := require.New(t)
+
+				get, ok := cli.GetCredentialsCmd(childNode(t, root, verb, kind), "test", "project")
+				if flag == "" {
+					is.False(ok)
+					return
+				}
+				is.True(ok)
+				is.Equal("nctl get "+kind+" test --project project "+flag, get)
+
+				// the suggested flag must exist.
+				var flags []string
+				for _, group := range childNode(t, root, "get", kind).AllFlags(false) {
+					for _, f := range group {
+						flags = append(flags, "--"+f.Name)
+					}
+				}
+				is.Contains(flags, flag)
+			})
+		}
+	}
+}
+
+// childNode returns the node of the command at path below node,
+// matching the names and aliases of the commands.
+func childNode(t *testing.T, node *kong.Node, path ...string) *kong.Node {
+	t.Helper()
+
+	for _, name := range path {
+		i := slices.IndexFunc(node.Children, func(child *kong.Node) bool { return child.Name == name || slices.Contains(child.Aliases, name) })
+		require.NotEqual(t, -1, i, "no command %q below %q", name, node.Path())
+		node = node.Children[i]
+	}
+	return node
+}
